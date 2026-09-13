@@ -18,7 +18,7 @@ export function LogoMark({ size = 26 }: { size?: number }) {
 }
 
 const NAV: { to: string; label: string; icon: typeof MapIcon; min: Role }[] = [
-  { to: '/', label: 'Map', icon: MapIcon, min: 'citizen' },
+  { to: '/map', label: 'Map', icon: MapIcon, min: 'citizen' },
   { to: '/citizen', label: 'Citizen', icon: Users, min: 'citizen' },
   { to: '/officer', label: 'Officer', icon: Building2, min: 'officer' },
   { to: '/admin', label: 'Admin', icon: ShieldCheck, min: 'admin' },
@@ -28,7 +28,16 @@ export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
   const minimal = pathname.startsWith('/verify/') || pathname === '/login' || pathname === '/welcome' || pathname === '/help';
-  const isMap = pathname === '/';
+  const isMap = pathname === '/map';
+
+  // The cinematic landing at `/` renders full-bleed without app chrome.
+  if (pathname === '/') {
+    return (
+      <main className="h-full overflow-y-auto">
+        <Outlet />
+      </main>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -62,7 +71,7 @@ export function Shell() {
         {!minimal && (
           <nav aria-label="Primary" className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-line bg-panel py-2">
             {NAV.filter((n) => roleAtLeast(role, n.min)).map((n) => {
-              const active = n.to === '/' ? pathname === '/' : pathname.startsWith(n.to);
+              const active = pathname.startsWith(n.to);
               return (
                 <Link
                   key={n.to}

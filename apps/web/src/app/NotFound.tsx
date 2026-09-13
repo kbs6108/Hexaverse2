@@ -11,7 +11,7 @@ export function NotFound() {
         title="Off the map"
         body="That page does not exist."
         action={
-          <Link to="/">
+          <Link to="/map">
             <Button variant="primary">Back to Map Explorer</Button>
           </Link>
         }

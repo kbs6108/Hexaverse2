@@ -65,7 +65,7 @@ export function TrackApplication() {
               <CardBody className="flex flex-col gap-4">
                 <p className="text-sm">
                   Parcel{' '}
-                  <Link to="/" search={{ ulpin: detail.data.ulpin }} className="font-mono text-primary underline underline-offset-2">{detail.data.ulpin}</Link>
+                  <Link to="/map" search={{ ulpin: detail.data.ulpin }} className="font-mono text-primary underline underline-offset-2">{detail.data.ulpin}</Link>
                   {detail.data.assigned_department && <span className="text-ink-3"> · with {titleCase(detail.data.assigned_department)} department</span>}
                 </p>
                 <StatusTimeline app={detail.data} />

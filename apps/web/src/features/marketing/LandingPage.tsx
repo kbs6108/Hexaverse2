@@ -51,7 +51,7 @@ export function LandingPage() {
           into one record, with per-source provenance you can trust.
         </p>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
-          <Link to="/" className={clsx(btnBase, btnPrimary)}>
+          <Link to="/map" className={clsx(btnBase, btnPrimary)}>
             Explore the map <ArrowRight size={16} />
           </Link>
           <Link to="/login" className={clsx(btnBase, btnSecondary)}>
@@ -199,7 +199,7 @@ export function LandingPage() {
           {STORY_PARCELS.map((p) => (
             <Link
               key={p.ulpin}
-              to="/"
+              to="/map"
               search={{ ulpin: p.ulpin }}
               className="group flex flex-col gap-1 rounded-lg border border-line bg-panel p-4 shadow-panel transition-colors hover:border-primary"
             >
@@ -220,7 +220,7 @@ export function LandingPage() {
       <section className="mt-16 flex flex-col items-center gap-4 rounded-xl border border-line bg-panel p-8 text-center shadow-panel">
         <h2 className="text-2xl font-semibold">Ready to look inside a parcel?</h2>
         <div className="flex flex-wrap items-center justify-center gap-2.5">
-          <Link to="/" className={clsx(btnBase, btnPrimary)}>
+          <Link to="/map" className={clsx(btnBase, btnPrimary)}>
             Explore the map <ArrowRight size={16} />
           </Link>
           <Link to="/help" className={clsx(btnBase, btnSecondary)}>

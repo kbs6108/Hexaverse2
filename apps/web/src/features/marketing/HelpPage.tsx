@@ -35,7 +35,7 @@ export function HelpPage() {
           <Link to="/welcome" className={clsx(btnBase, btnSecondary)}>
             <ArrowLeft size={15} /> Overview
           </Link>
-          <Link to="/" className={clsx(btnBase, btnPrimary)}>
+          <Link to="/map" className={clsx(btnBase, btnPrimary)}>
             Open the app <ArrowRight size={15} />
           </Link>
         </div>
@@ -123,7 +123,7 @@ export function HelpPage() {
           {STORY_PARCELS.map((p) => (
             <Link
               key={p.ulpin}
-              to="/"
+              to="/map"
               search={{ ulpin: p.ulpin }}
               className="group flex items-start justify-between gap-3 rounded-lg border border-line bg-panel p-3 shadow-panel transition-colors hover:border-primary"
             >

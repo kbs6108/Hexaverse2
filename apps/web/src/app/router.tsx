@@ -15,6 +15,7 @@ import { VerifyPage } from '@/features/verify/VerifyPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { LandingPage } from '@/features/marketing/LandingPage';
 import { HelpPage } from '@/features/marketing/HelpPage';
+import { CinematicLanding } from '@/features/landing/LandingPage';
 import { NotFound } from './NotFound';
 
 const rootRoute = createRootRoute({ component: Shell, notFoundComponent: NotFound });
@@ -25,33 +26,29 @@ function guard(min: Role) {
     await awaitAuthReady();
     const u = currentUser();
     if (!u) throw redirect({ to: '/login', search: { next: location.href } });
-    if (!roleAtLeast(u.role, min)) throw redirect({ to: '/' });
+    if (!roleAtLeast(u.role, min)) throw redirect({ to: '/map' });
   };
 }
 
 type MapSearch = { ulpin?: string };
 
-/** First-visit gate: send a brand-new browser to the /welcome landing once.
- *  Deep-links (/?ulpin=…) always go straight to the map; the flag makes it
- *  fire at most once per browser, so it never disrupts normal use. */
-function landingGate({ search }: { search: MapSearch }) {
-  if (search.ulpin) return;
-  let seen = true;
-  try {
-    seen = !!localStorage.getItem('ls_seen_welcome');
-    if (!seen) localStorage.setItem('ls_seen_welcome', '1');
-  } catch {
-    seen = true; // storage unavailable → don't gate
-  }
-  if (!seen) throw redirect({ to: '/welcome' });
-}
-
+/** `/` is the cinematic landing; the map explorer lives at /map.
+ *  Legacy deep-links (/?ulpin=…) are forwarded to /map so shared URLs keep working. */
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  component: CinematicLanding,
+  validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
+  beforeLoad: ({ search }: { search: MapSearch }) => {
+    if (search.ulpin) throw redirect({ to: '/map', search: { ulpin: search.ulpin } });
+  },
+});
+
+const mapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/map',
   component: MapPage,
   validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
-  beforeLoad: landingGate,
 });
 
 const welcomeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/welcome', component: LandingPage });
@@ -105,6 +102,7 @@ const adminRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  mapRoute,
   welcomeRoute,
   helpRoute,
   loginRoute,
@@ -122,4 +120,4 @@ declare module '@tanstack/react-router' {
   }
 }
 
-export { indexRoute, citizenVerify, citizenRequest, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };
+export { indexRoute, mapRoute, citizenVerify, citizenRequest, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };

@@ -100,7 +100,7 @@ export function LoginPage() {
 
       <p className="text-center text-xs text-ink-3">
         Just exploring?{' '}
-        <Link to="/" className="font-medium text-primary hover:underline">
+        <Link to="/map" className="font-medium text-primary hover:underline">
           Continue as guest to the map
         </Link>
       </p>
