@@ -1,4 +1,4 @@
-# Root build context (apps/api/Dockerfile is built from the repo root)
+# Root build context (backend/Dockerfile is built from the repo root)
 .git
 .github
 **/node_modules

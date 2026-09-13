@@ -59,7 +59,7 @@ flowchart LR
 ## Quick start (Docker)
 
 ```bash
-cp apps/api/.env.example apps/api/.env && cp apps/web/.env.example apps/web/.env
+cp backend/.env.example backend/.env && cp apps/web/.env.example apps/web/.env
 make up          # PostGIS → migrations + deterministic seed → API :8000 → web :5173
 open http://localhost:5173   # dev mode: switch between the six demo users in the header
 ```
@@ -73,7 +73,7 @@ open http://localhost:5173   # dev mode: switch between the six demo users in th
 | [docs/SETUP.md](docs/SETUP.md) | Step-by-step: local run, Neon, Firebase, Cloud Run, keys, demo-day checklist, troubleshooting |
 | [docs/CONTRACTS.md](docs/CONTRACTS.md) | Source of truth: layout, env vars, roles, schema, CDM, API, workflow, layers |
 | [docs/STD.md](docs/STD.md) | Standard Technical Document (architecture, schemas, API/GIS/security standards, UI, deployment) |
-| [apps/api/README.md](apps/api/README.md) | Gateway + department sub-apps |
+| [backend/README.md](backend/README.md) | Gateway + department sub-apps |
 | [apps/web/README.md](apps/web/README.md) | Web app |
 | [infra/README.md](infra/README.md) | docker-compose, Cloud Run, Firebase Hosting |
 | [data/README.md](data/README.md) | What is real vs synthetic in the demo AOI |
@@ -81,7 +81,7 @@ open http://localhost:5173   # dev mode: switch between the six demo users in th
 ## Repository map
 
 ```
-apps/api      FastAPI gateway + six department sub-apps (Python 3.12)     apps/web   Vite + React + MapLibre
+backend      FastAPI gateway + six department sub-apps (Python 3.12)     apps/web   Vite + React + MapLibre
 db/migrations plain SQL, idempotent, applied in order                     tools/     migrate · seed · demo_reset · set_claims · fetch_s2
 infra/        docker-compose · cloudrun/ · firebase/                      docs/      CONTRACTS · SETUP · STD
 ```

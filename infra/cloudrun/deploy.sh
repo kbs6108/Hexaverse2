@@ -66,7 +66,7 @@ if ! gcloud storage buckets describe "gs://${GCS_BUCKET}" >/dev/null 2>&1; then
 fi
 
 if [[ "$SKIP_BUILD" != "1" ]]; then
-  log "Cloud Build (context = repo root, Dockerfile = apps/api/Dockerfile)"
+  log "Cloud Build (context = repo root, Dockerfile = backend/Dockerfile)"
   gcloud builds submit "$root" --config "$here/cloudbuild.yaml" \
     --substitutions "_IMAGE=${IMAGE},_IMAGE_LATEST=${IMAGE_BASE}:latest" --quiet
 fi

@@ -20,7 +20,7 @@ from landstack.services import aggregator, audit
 
 router = APIRouter(prefix="/landstack/admin", tags=["admin"])
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = next((p for p in Path(__file__).resolve().parents if (p / "tools" / "demo_reset.py").exists()), Path(__file__).resolve().parents[3])
 DEMO_RESET = REPO_ROOT / "tools" / "demo_reset.py"
 
 

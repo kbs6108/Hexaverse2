@@ -49,19 +49,19 @@ demo-reset: ## Reset mutable tables (applications, alerts, audit…) to the seed
 venv: ## Create .venv with API + tools + dev dependencies
 	test -d $(VENV) || $(PY) -m venv $(VENV)
 	$(VENV_PY) -m pip install -q --upgrade pip
-	$(VENV_PY) -m pip install -q -r apps/api/requirements.txt -r tools/requirements.txt pytest pytest-asyncio ruff
+	$(VENV_PY) -m pip install -q -r backend/requirements.txt -r tools/requirements.txt pytest pytest-asyncio ruff
 
-dev-api: venv ## Run the API with uvicorn --reload from .venv (uses apps/api/.env)
-	cd apps/api && ../../$(VENV_PY) -m uvicorn landstack.main:app --reload --port 8000
+dev-api: venv ## Run the API with uvicorn --reload from .venv (uses backend/.env)
+	cd backend && ../../$(VENV_PY) -m uvicorn landstack.main:app --reload --port 8000
 
 dev-web: ## Run the Vite dev server (apps/web/.env)
 	cd apps/web && npm install --no-audit --no-fund && npm run dev
 
 test: venv ## pytest (integration tests run when DATABASE_URL is reachable)
-	cd apps/api && ../../$(VENV_PY) -m pytest -q
+	cd backend && ../../$(VENV_PY) -m pytest -q
 
 lint: venv ## ruff on the API + tools, tsc on the web app
-	$(VENV)/bin/ruff check apps/api tools
+	$(VENV)/bin/ruff check backend tools
 	cd apps/web && npm run typecheck
 
 build-web: ## Production build of apps/web into apps/web/dist
@@ -88,5 +88,5 @@ neon-reset: ## Demo-reset the Neon database (mutable tables only)
 	$(PY) tools/demo_reset.py --database-url "$(NEON_DATABASE_URL)"
 
 clean: ## Remove build artefacts and caches
-	rm -rf apps/web/dist apps/api/.pytest_cache .ruff_cache .pytest_cache
+	rm -rf apps/web/dist backend/.pytest_cache .ruff_cache .pytest_cache
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +

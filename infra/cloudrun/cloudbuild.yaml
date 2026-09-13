@@ -1,11 +1,11 @@
-# Builds apps/api/Dockerfile with the REPO ROOT as context (the image needs tools/ and db/ too).
+# Builds backend/Dockerfile with the REPO ROOT as context (the image needs tools/ and db/ too).
 # Used by infra/cloudrun/deploy.sh:  gcloud builds submit . --config infra/cloudrun/cloudbuild.yaml --substitutions _IMAGE=...
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - build
       - -f
-      - apps/api/Dockerfile
+      - backend/Dockerfile
       - -t
       - ${_IMAGE}
       - --cache-from

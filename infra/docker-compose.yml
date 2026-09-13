@@ -6,7 +6,7 @@ name: landstack
 x-api-image: &api-image
   build:
     context: ..
-    dockerfile: apps/api/Dockerfile
+    dockerfile: backend/Dockerfile
   image: landstack-api:dev
 
 x-db-url: &db-url postgresql+asyncpg://${POSTGRES_USER:-landstack}:${POSTGRES_PASSWORD:-landstack}@db:5432/${POSTGRES_DB:-landstack}
@@ -75,18 +75,18 @@ services:
       S2_OFFLINE: "1"
       S2_DATA_DIR: /app/data/s2
     env_file:
-      - path: ../apps/api/.env
+      - path: ../backend/.env
         required: false
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
-      - ../apps/api:/app/apps/api
+      - ../backend:/app/backend
       - ../tools:/app/tools
       - ../db:/app/db:ro
       - ../data:/app/data
     command: >
       uvicorn landstack.main:app --host 0.0.0.0 --port 8000 --reload
-      --reload-dir /app/apps/api --proxy-headers --forwarded-allow-ips='*'
+      --reload-dir /app/backend --proxy-headers --forwarded-allow-ips='*'
     depends_on:
       db:
         condition: service_healthy
