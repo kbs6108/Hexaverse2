@@ -2,7 +2,11 @@ import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { ShaderAnimation } from './ShaderAnimation';
+import { MapLaunch } from './MapLaunch';
 import { createTopDockController } from './top-dock-controller';
+
+const DOCK_ITEM =
+  'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]';
 
 export function HeroSection() {
   const dockRef = useRef<HTMLElement>(null);
@@ -16,8 +20,8 @@ export function HeroSection() {
   return (
     <section className="relative isolate flex min-h-screen w-full overflow-hidden bg-[#f5f5f7]">
       <ShaderAnimation />
-      {/* Light veil: the shader reads as a faint animated texture behind dark ink. */}
-      <div className="pointer-events-none absolute inset-0 bg-white/85" />
+      {/* Light veil: the emerald shader reads as a faint aurora behind dark ink. */}
+      <div className="pointer-events-none absolute inset-0 bg-white/80" />
 
       <div className="pointer-events-none fixed left-0 right-0 top-5 z-[9999] flex justify-center px-4">
         <header
@@ -28,15 +32,15 @@ export function HeroSection() {
             Land Stack
           </a>
           <nav ref={dockRef} className="atd-modern__dock hidden items-center gap-1 rounded-full border border-black/[0.05] bg-black/[0.04] p-1 md:flex" aria-label="Primary navigation">
-            <a data-dock-item href="#top" className="atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]">Overview</a>
-            <a data-dock-item href="#system-map" className="atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]">System</a>
-            <a data-dock-item href="#fragmentation" className="atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]">Land</a>
-            <a data-dock-item href="#identity" className="atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]">ULPIN</a>
-            <Link data-dock-item to="/help" className="atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]">Guide</Link>
+            <a data-dock-item href="#top" className={DOCK_ITEM}>Overview</a>
+            <a data-dock-item href="#departments" className={DOCK_ITEM}>Departments</a>
+            <a data-dock-item href="#how" className={DOCK_ITEM}>How it works</a>
+            <a data-dock-item href="#stories" className={DOCK_ITEM}>Stories</a>
+            <Link data-dock-item to="/help" className={DOCK_ITEM}>Guide</Link>
           </nav>
-          <Link to="/map" className="shrink-0 rounded-full bg-[#0066cc] px-4 py-2 text-[13px] font-normal text-white transition hover:bg-[#0071e3] active:scale-[0.98]">
+          <MapLaunch className="cta-glow shrink-0 rounded-full bg-[#0e6b54] px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#0a5a46] active:scale-[0.98]">
             Explore Platform
-          </Link>
+          </MapLaunch>
         </header>
       </div>
 
@@ -46,20 +50,22 @@ export function HeroSection() {
           <h1 className="font-display text-[clamp(3.4rem,8vw,7.5rem)] font-semibold leading-[0.91] tracking-[-0.07em] text-[#1d1d1f]">
             Land, clearly
             <br />
-            <span className="text-[#1d1d1f]">defined.</span>
+            defined.
           </h1>
-          <div className="mt-10 flex max-w-xl flex-col gap-8 sm:flex-row sm:items-end sm:gap-16">
-            <p className="max-w-sm text-base leading-7 text-[#515154] sm:text-lg">Every parcel. One connected identity for India&apos;s land governance.</p>
-            <a href="#fragmentation" className="group inline-flex shrink-0 items-center gap-3 text-sm font-semibold text-[#0066cc] transition hover:text-[#0071e3]">
-              Explore Land Stack
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#0066cc]/50 transition group-hover:border-[#0071e3] group-hover:bg-[#0066cc]/10">
-                <ArrowRight size={16} />
-              </span>
+          <p className="mt-10 max-w-xl text-base leading-7 text-[#515154] sm:text-lg">
+            Click any parcel and see everything government knows about it — ownership, registration, zoning, tax, disputes and utilities — assembled live from six departments through one parcel key.
+          </p>
+          <div className="mt-9 flex flex-wrap items-center gap-4">
+            <MapLaunch className="cta-glow inline-flex items-center gap-2.5 rounded-full bg-[#0e6b54] px-7 py-3.5 text-[15px] font-semibold text-white transition hover:bg-[#0a5a46] active:scale-[0.98]">
+              Open the live map <ArrowRight size={17} />
+            </MapLaunch>
+            <a href="#departments" className="inline-flex items-center gap-2.5 rounded-full border border-[#0e6b54]/35 px-6 py-3.5 text-[15px] font-semibold text-[#0e6b54] transition hover:border-[#0e6b54] hover:bg-[#0e6b54]/5">
+              See how it works
             </a>
           </div>
         </div>
-        <a href="#fragmentation" className="absolute bottom-8 left-6 flex items-center gap-3 text-[10px] uppercase tracking-[0.28em] text-[#86868b] sm:left-10 lg:left-16">
-          <ArrowDown size={14} className="animate-bounce text-[#23613C]" /> Scroll to explore
+        <a href="#departments" className="absolute bottom-8 left-6 flex items-center gap-3 text-[10px] uppercase tracking-[0.28em] text-[#86868b] sm:left-10 lg:left-16">
+          <ArrowDown size={14} className="animate-bounce text-[#0e6b54]" /> Scroll to explore
         </a>
       </div>
     </section>

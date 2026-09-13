@@ -12,9 +12,9 @@
   --ink: #1d1d1f;
   --ink-2: #515154;
   --ink-3: #86868b;
-  --primary: #0066cc;
+  --primary: #0e6b54;
   --primary-ink: #ffffff;
-  --primary-soft: #e8f1fb;
+  --primary-soft: #dff0e9;
   --amber: #9a6b12;
   --amber-soft: #f6ead0;
   --brick: #a63a2b;
@@ -23,7 +23,7 @@
   --violet-soft: #e8e0f3;
   --slate: #2f5d9e;
   --slate-soft: #dbe5f4;
-  --focus: #0066cc;
+  --focus: #0e6b54;
   --shadow: 0 1px 2px rgb(29 35 32 / 0.06), 0 8px 24px -12px rgb(29 35 32 / 0.18);
 }
 @media (prefers-color-scheme: dark) {
@@ -37,9 +37,9 @@
     --ink: #f8fafc;
     --ink-2: #b8c0cc;
     --ink-3: #8b94a3;
-    --primary: #2997ff;
-    --primary-ink: #0a1526;
-    --primary-soft: #16304d;
+    --primary: #4fc39f;
+    --primary-ink: #0d1f19;
+    --primary-soft: #173a31;
     --amber: #d9a441;
     --amber-soft: #3a2f16;
     --brick: #e0705f;
@@ -48,7 +48,7 @@
     --violet-soft: #2c2440;
     --slate: #7ea6e0;
     --slate-soft: #1c2a3d;
-    --focus: #2997ff;
+    --focus: #4fc39f;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
   }
 }
@@ -180,4 +180,33 @@ code, kbd, .mono { font-family: var(--font-mono); }
 
 @media (max-width: 767px) {
   .atd-modern__dock { display: none; }
+}
+
+/* Highlighted "enter the app" CTA — soft emerald pulse ring. */
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(14 107 84 / 0.38); }
+  55% { box-shadow: 0 0 0 12px rgb(14 107 84 / 0); }
+}
+.cta-glow { animation: cta-pulse 2.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .cta-glow { animation: none; }
+}
+
+/* Anchored landing sections stop below the floating dock. */
+.landing-section { scroll-margin-top: 96px; }
+
+/* Map-launch transition overlay */
+@keyframes launch-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes launch-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12); opacity: 0.85; }
+}
+.map-launch-overlay { animation: launch-in 220ms ease-out both; }
+.map-launch-mark { animation: launch-pulse 900ms ease-in-out infinite; }
+@keyframes launch-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-launch-mark { animation: none; }
 }

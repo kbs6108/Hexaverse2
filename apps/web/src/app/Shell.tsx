@@ -31,9 +31,11 @@ export function Shell() {
   const isMap = pathname === '/map';
 
   // The cinematic landing at `/` renders full-bleed without app chrome.
+  // scroll-smooth keeps dock anchor jumps gentle (scoped here so app-side
+  // scrolling is untouched).
   if (pathname === '/') {
     return (
-      <main className="h-full overflow-y-auto">
+      <main className="h-full overflow-y-auto scroll-smooth">
         <Outlet />
       </main>
     );

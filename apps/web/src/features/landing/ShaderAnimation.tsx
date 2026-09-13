@@ -35,14 +35,19 @@ export function ShaderAnimation() {
         float t = time * 0.05;
         float lineWidth = 0.002;
 
-        vec3 color = vec3(0.0);
+        vec3 glow = vec3(0.0);
         for(int j = 0; j < 3; j++){
           for(int i=0; i < 5; i++){
-            color[j] += lineWidth * float(i*i) / abs(fract(t - 0.01*float(j)+float(i)*0.01)*5.0 - length(uv) + mod(uv.x+uv.y, 0.2));
+            glow[j] += lineWidth * float(i*i) / abs(fract(t - 0.01*float(j)+float(i)*0.01)*5.0 - length(uv) + mod(uv.x+uv.y, 0.2));
           }
         }
 
-        gl_FragColor = vec4(color[0],color[1],color[2],1.0);
+        // Emerald palette: three staggered ripples blended into deep green → mint.
+        vec3 color = glow[0] * vec3(0.055, 0.42, 0.33)
+                   + glow[1] * vec3(0.16, 0.62, 0.47)
+                   + glow[2] * vec3(0.53, 0.94, 0.67);
+
+        gl_FragColor = vec4(color, 1.0);
       }
     `
 
