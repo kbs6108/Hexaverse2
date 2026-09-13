@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Field, Input } from '@/components/Field';
@@ -36,6 +37,10 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-14">
+      <Link to="/welcome" className="inline-flex w-fit items-center gap-1 text-xs font-medium text-ink-3 hover:text-ink">
+        <ArrowLeft size={14} /> Back to overview
+      </Link>
+
       <div className="flex items-center gap-3">
         <LogoMark size={36} />
         <div>
@@ -92,6 +97,13 @@ export function LoginPage() {
           </CardBody>
         </Card>
       )}
+
+      <p className="text-center text-xs text-ink-3">
+        Just exploring?{' '}
+        <Link to="/" className="font-medium text-primary hover:underline">
+          Continue as guest to the map
+        </Link>
+      </p>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { Building2, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
+import { Building2, HelpCircle, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { roleAtLeast } from '@/lib/auth';
 import { SearchBox } from '@/features/map/SearchBox';
@@ -27,7 +27,7 @@ const NAV: { to: string; label: string; icon: typeof MapIcon; min: Role }[] = [
 export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
-  const minimal = pathname.startsWith('/verify/') || pathname === '/login';
+  const minimal = pathname.startsWith('/verify/') || pathname === '/login' || pathname === '/welcome' || pathname === '/help';
   const isMap = pathname === '/';
 
   return (
@@ -44,6 +44,16 @@ export function Shell() {
           </div>
         )}
         <div className="ml-auto flex items-center gap-2">
+          {!minimal && (
+            <Link
+              to="/help"
+              title="Help & guide"
+              aria-label="Help & guide"
+              className="flex size-8 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
+            >
+              <HelpCircle size={18} />
+            </Link>
+          )}
           <UserMenu />
         </div>
       </header>

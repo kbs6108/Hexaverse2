@@ -13,6 +13,8 @@ import { AlertsPage } from '@/features/officer/Alerts';
 import { AdminConsole } from '@/features/admin/AdminConsole';
 import { VerifyPage } from '@/features/verify/VerifyPage';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { LandingPage } from '@/features/marketing/LandingPage';
+import { HelpPage } from '@/features/marketing/HelpPage';
 import { NotFound } from './NotFound';
 
 const rootRoute = createRootRoute({ component: Shell, notFoundComponent: NotFound });
@@ -28,12 +30,32 @@ function guard(min: Role) {
 }
 
 type MapSearch = { ulpin?: string };
+
+/** First-visit gate: send a brand-new browser to the /welcome landing once.
+ *  Deep-links (/?ulpin=…) always go straight to the map; the flag makes it
+ *  fire at most once per browser, so it never disrupts normal use. */
+function landingGate({ search }: { search: MapSearch }) {
+  if (search.ulpin) return;
+  let seen = true;
+  try {
+    seen = !!localStorage.getItem('ls_seen_welcome');
+    if (!seen) localStorage.setItem('ls_seen_welcome', '1');
+  } catch {
+    seen = true; // storage unavailable → don't gate
+  }
+  if (!seen) throw redirect({ to: '/welcome' });
+}
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: MapPage,
   validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
+  beforeLoad: landingGate,
 });
+
+const welcomeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/welcome', component: LandingPage });
+const helpRoute = createRoute({ getParentRoute: () => rootRoute, path: '/help', component: HelpPage });
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -83,6 +105,8 @@ const adminRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  welcomeRoute,
+  helpRoute,
   loginRoute,
   verifyRoute,
   citizenRoute.addChildren([citizenIndex, citizenVerify, citizenTrack, citizenTrackDetail, citizenRequest]),
