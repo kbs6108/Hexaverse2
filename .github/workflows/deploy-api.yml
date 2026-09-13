@@ -30,6 +30,12 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      # Hoisted to job env because the `secrets` context is not available in a step `if:`.
+      NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      EVENTS_SHARED_SECRET: ${{ secrets.EVENTS_SHARED_SECRET }}
+      REPORT_HMAC_SECRET: ${{ secrets.REPORT_HMAC_SECRET }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,13 +46,13 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
 
       - name: Materialise secrets.env (optional repository secrets)
-        if: ${{ secrets.NEON_DATABASE_URL != '' }}
+        if: ${{ env.NEON_DATABASE_URL != '' }}
         run: |
           {
-            echo "DATABASE_URL=${{ secrets.NEON_DATABASE_URL }}"
-            echo "EVENTS_SHARED_SECRET=${{ secrets.EVENTS_SHARED_SECRET }}"
-            echo "REPORT_HMAC_SECRET=${{ secrets.REPORT_HMAC_SECRET }}"
-            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}"
+            echo "DATABASE_URL=$NEON_DATABASE_URL"
+            echo "EVENTS_SHARED_SECRET=$EVENTS_SHARED_SECRET"
+            echo "REPORT_HMAC_SECRET=$REPORT_HMAC_SECRET"
+            echo "GEMINI_API_KEY=$GEMINI_API_KEY"
           } > infra/cloudrun/secrets.env
 
       - name: Deploy
