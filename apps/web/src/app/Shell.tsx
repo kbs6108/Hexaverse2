@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { roleAtLeast } from '@/lib/auth';
 import { SearchBox } from '@/features/map/SearchBox';
 import { UserMenu } from '@/features/auth/UserMenu';
+import { QuickNav } from '@/components/QuickNav';
 import type { Role } from '@/lib/cdm';
 
 export function LogoMark({ size = 26 }: { size?: number }) {
@@ -64,9 +65,12 @@ export function Shell() {
   // scrolling is untouched).
   if (pathname === '/') {
     return (
-      <main ref={mainRef} className="h-full overflow-y-auto scroll-smooth">
-        <Outlet />
-      </main>
+      <>
+        <main ref={mainRef} className="h-full overflow-y-auto scroll-smooth">
+          <Outlet />
+        </main>
+        <QuickNav />
+      </>
     );
   }
 
@@ -137,6 +141,7 @@ export function Shell() {
           <Outlet />
         </main>
       </div>
+      <QuickNav />
     </div>
   );
 }
