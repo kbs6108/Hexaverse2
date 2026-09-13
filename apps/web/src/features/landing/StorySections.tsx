@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowRight, Check, Search } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { DEPARTMENTS, PITCH_FIGURES, QUICK_START, ROLES, STORY_PARCELS, TIERS } from '@/features/marketing/pitch';
 import type { Tone } from '@/components/Badge';
 import { MapLaunch } from './MapLaunch';
@@ -9,6 +9,16 @@ import { MapLaunch } from './MapLaunch';
 /** Scroll-story landing (light, emerald). Cinematic scenes alternate with
  *  concrete info sections whose content is imported from marketing/pitch.ts —
  *  the same source of truth as /welcome, so the two never drift. */
+
+/** The landing scrolls inside Shell's <main>, not the window — useScroll must
+ *  be told that container or its progress never moves. Resolved via closest(). */
+function useLandingScroll(target: RefObject<HTMLElement | null>, offset: ['start start', 'end end'] | ['start end', 'end start']) {
+  const container = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    container.current = (target.current?.closest('main') as HTMLElement | null) ?? null;
+  }, [target]);
+  return useScroll({ target: target as RefObject<HTMLElement>, container: container as RefObject<HTMLElement>, offset });
+}
 
 const TONE_TEXT: Record<Tone, string> = {
   primary: 'text-primary',
@@ -162,8 +172,8 @@ function DepartmentsSection() {
   // Horizontal sticky scroll (desktop): the section pins while vertical scroll
   // drives the six department cards sideways. Small screens get a plain grid.
   const trackRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: trackRef, offset: ['start start', 'end end'] });
-  const x = useTransform(scrollYProgress, [0.02, 0.98], ['1%', '-58%']);
+  const { scrollYProgress } = useLandingScroll(trackRef, ['start start', 'end end']);
+  const x = useTransform(scrollYProgress, [0.02, 0.98], ['1%', '-62%']);
 
   const header = (
     <InfoHeader
@@ -298,9 +308,6 @@ function StoriesSection() {
 /* ---------- assembled page ---------- */
 
 export function StorySections() {
-  const apiRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: apiProgress } = useScroll({ target: apiRef, offset: ['start end', 'end start'] });
-  const apiX = useTransform(apiProgress, [0.1, 0.65], [-100, 0]);
   return (
     <div className="bg-[#f5f5f7]">
       <StatsStrip />
@@ -370,8 +377,8 @@ export function StorySections() {
           { head: 'Open APIs', sub: 'OGC-shaped, consent-aware endpoints any state system can integrate.' },
         ]}
       >
-        <div ref={apiRef} className="absolute inset-0 flex flex-col items-center justify-center gap-3 font-display text-sm uppercase tracking-[.18em] text-[#1d1d1f]">
-          <motion.div style={{ x: apiX }} className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#EFFFF7]">Andhra Pradesh</motion.div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 font-display text-sm uppercase tracking-[.18em] text-[#1d1d1f]">
+          <motion.div initial={{ x: -100, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#EFFFF7]">Andhra Pradesh</motion.div>
           <motion.div className="h-8 w-px bg-[#0e6b54]" />
           <motion.div className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#86EFAC]">State Adapter</motion.div>
           <ArrowDown size={14} className="text-[#0e6b54]" />
