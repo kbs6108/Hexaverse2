@@ -195,20 +195,12 @@ code, kbd, .mono { font-family: var(--font-mono); }
 /* Anchored landing sections stop below the floating dock. */
 .landing-section { scroll-margin-top: 96px; }
 
-/* Map-launch transition overlay */
+/* Map-launch transition overlay: strong page blur + a small centred loader. */
 @keyframes launch-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes launch-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.12); opacity: 0.85; }
-}
 .map-launch-overlay { animation: launch-in 220ms ease-out both; }
-.map-launch-mark { animation: launch-pulse 900ms ease-in-out infinite; }
 @keyframes launch-bar {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .map-launch-mark { animation: none; }
 }
 
 /* Gentle cross-page transition: re-applied on every route change (no remount). */
