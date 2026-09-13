@@ -33,13 +33,13 @@ services:
   # One-shot, idempotent: applies db/migrations/*.sql, then seeds only when landstack.parcels is empty.
   migrate:
     <<: *api-image
-    working_dir: /app
+    working_dir: /app/backend
     environment:
       DATABASE_URL: *db-url
       SEED_ON_UP: ${SEED_ON_UP:-1}
     volumes:
-      - ../tools:/app/tools:ro
-      - ../db:/app/db:ro
+      - ../backend/tools:/app/backend/tools:ro
+      - ../backend/db:/app/backend/db:ro
       - ../data/village.geojson:/app/data/village.geojson:ro
     depends_on:
       db:
@@ -81,8 +81,6 @@ services:
       - "${API_PORT:-8000}:8000"
     volumes:
       - ../backend:/app/backend
-      - ../tools:/app/tools
-      - ../db:/app/db:ro
       - ../data:/app/data
     command: >
       uvicorn landstack.main:app --host 0.0.0.0 --port 8000 --reload

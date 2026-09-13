@@ -55,7 +55,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import polygonize, transform, unary_union
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT / "apps" / "api"))
+sys.path.insert(0, str(REPO_ROOT if (REPO_ROOT / "landstack").exists() else REPO_ROOT / "backend"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ai.change_detection import classify  # noqa: E402

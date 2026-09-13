@@ -37,19 +37,19 @@ ps: ## Show service status + health
 	$(COMPOSE) ps
 
 migrate: ## Apply db/migrations/*.sql to DATABASE_URL (default: local compose db)
-	DATABASE_URL="$(DATABASE_URL)" $(PY) tools/migrate.py
+	DATABASE_URL="$(DATABASE_URL)" $(PY) backend/tools/migrate.py
 
 seed: ## (Re)load the deterministic demo cadastre into DATABASE_URL — truncates all tables
-	DATABASE_URL="$(DATABASE_URL)" $(PY) tools/seed.py
+	DATABASE_URL="$(DATABASE_URL)" $(PY) backend/tools/seed.py
 
 demo-reset: ## Reset mutable tables (applications, alerts, audit…) to the seeded state in <30 s
-	DATABASE_URL="$(DATABASE_URL)" $(PY) tools/demo_reset.py
+	DATABASE_URL="$(DATABASE_URL)" $(PY) backend/tools/demo_reset.py
 
 # ---- local dev without docker for the app processes ----
 venv: ## Create .venv with API + tools + dev dependencies
 	test -d $(VENV) || $(PY) -m venv $(VENV)
 	$(VENV_PY) -m pip install -q --upgrade pip
-	$(VENV_PY) -m pip install -q -r backend/requirements.txt -r tools/requirements.txt pytest pytest-asyncio ruff
+	$(VENV_PY) -m pip install -q -r backend/requirements.txt -r backend/tools/requirements.txt pytest pytest-asyncio ruff
 
 dev-api: venv ## Run the API with uvicorn --reload from .venv (uses backend/.env)
 	cd backend && ../../$(VENV_PY) -m uvicorn landstack.main:app --reload --port 8000
@@ -61,7 +61,7 @@ test: venv ## pytest (integration tests run when DATABASE_URL is reachable)
 	cd backend && ../../$(VENV_PY) -m pytest -q
 
 lint: venv ## ruff on the API + tools, tsc on the web app
-	$(VENV)/bin/ruff check backend tools
+	$(VENV)/bin/ruff check backend
 	cd apps/web && npm run typecheck
 
 build-web: ## Production build of apps/web into apps/web/dist
@@ -80,12 +80,12 @@ firebase-login: ## Log in the Firebase CLI
 
 neon-migrate: ## Migrate + seed the Neon database (NEON_DATABASE_URL=postgresql://...?sslmode=require)
 	@test -n "$(NEON_DATABASE_URL)" || { echo "set NEON_DATABASE_URL"; exit 1; }
-	$(PY) tools/migrate.py --database-url "$(NEON_DATABASE_URL)"
-	$(PY) tools/seed.py --database-url "$(NEON_DATABASE_URL)"
+	$(PY) backend/tools/migrate.py --database-url "$(NEON_DATABASE_URL)"
+	$(PY) backend/tools/seed.py --database-url "$(NEON_DATABASE_URL)"
 
 neon-reset: ## Demo-reset the Neon database (mutable tables only)
 	@test -n "$(NEON_DATABASE_URL)" || { echo "set NEON_DATABASE_URL"; exit 1; }
-	$(PY) tools/demo_reset.py --database-url "$(NEON_DATABASE_URL)"
+	$(PY) backend/tools/demo_reset.py --database-url "$(NEON_DATABASE_URL)"
 
 clean: ## Remove build artefacts and caches
 	rm -rf apps/web/dist backend/.pytest_cache .ruff_cache .pytest_cache

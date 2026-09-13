@@ -82,7 +82,7 @@ open http://localhost:5173   # dev mode: switch between the six demo users in th
 
 ```
 backend      FastAPI gateway + six department sub-apps (Python 3.12)     apps/web   Vite + React + MapLibre
-db/migrations plain SQL, idempotent, applied in order                     tools/     migrate · seed · demo_reset · set_claims · fetch_s2
+backend/db    plain SQL, idempotent, applied in order                     backend/tools  migrate · seed · demo_reset · set_claims · fetch_s2
 infra/        docker-compose · cloudrun/ · firebase/                      docs/      CONTRACTS · SETUP · STD
 ```
 
