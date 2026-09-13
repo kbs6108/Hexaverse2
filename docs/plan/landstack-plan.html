@@ -1,0 +1,655 @@
+<title>Land Stack Build Plan</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F6F5F0; --surface:#FFFFFF; --surface-2:#EEEDE6; --line:#D9D7CC; --line-strong:#B9B6A6;
+  --ink:#1D2320; --ink-2:#4A5450; --ink-3:#77817B;
+  --accent:#0E6B54; --accent-ink:#0A5240; --accent-soft:#DCEEE7;
+  --warn:#9A6B12; --warn-soft:#F5EAD0; --crit:#A63A2B; --crit-soft:#F6E0DB; --info:#2F5D9E; --info-soft:#DEE8F5;
+  --code-bg:#1B211F; --code-ink:#E4E8E5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181A; --surface:#1B2123; --surface-2:#22292B; --line:#2E3739; --line-strong:#465254;
+    --ink:#E6E8E4; --ink-2:#B4BBB6; --ink-3:#7F8985;
+    --accent:#4FC39F; --accent-ink:#7FD9BD; --accent-soft:#173A31;
+    --warn:#E0B25A; --warn-soft:#3A2F14; --crit:#F0806E; --crit-soft:#3F1F1A; --info:#7FA8E6; --info-soft:#1C2C44;
+    --code-bg:#0F1314; --code-ink:#D9DEDA;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181A; --surface:#1B2123; --surface-2:#22292B; --line:#2E3739; --line-strong:#465254;
+  --ink:#E6E8E4; --ink-2:#B4BBB6; --ink-3:#7F8985;
+  --accent:#4FC39F; --accent-ink:#7FD9BD; --accent-soft:#173A31;
+  --warn:#E0B25A; --warn-soft:#3A2F14; --crit:#F0806E; --crit-soft:#3F1F1A; --info:#7FA8E6; --info-soft:#1C2C44;
+  --code-bg:#0F1314; --code-ink:#D9DEDA;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.01em}
+h1{font-size:clamp(2rem,4vw,3rem);font-weight:700}
+h2{font-size:1.65rem;font-weight:700;margin-top:3.5rem;padding-top:1.25rem;border-top:1px solid var(--line-strong)}
+h3{font-size:1.15rem;font-weight:700;margin-top:2rem;color:var(--ink)}
+h4{font-size:.95rem;font-weight:600;margin-top:1.4rem;color:var(--ink-2)}
+p{margin:.8rem 0;max-width:68ch}
+li{max-width:66ch}
+a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+a:hover{border-bottom-color:var(--accent)}
+code,kbd{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--surface-2);padding:.08em .35em;border-radius:3px}
+pre{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.8rem;line-height:1.55;background:var(--code-bg);color:var(--code-ink);padding:1rem 1.15rem;border-radius:6px;overflow-x:auto;margin:1rem 0;max-width:100%}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:3rem;max-width:1240px;margin:0 auto;padding:2.5rem 2rem 6rem}
+nav.toc{position:sticky;top:1.5rem;align-self:start;font-size:.82rem;max-height:calc(100vh - 3rem);overflow:auto;padding-right:.5rem}
+nav.toc .eyebrow{margin-bottom:.6rem;display:block}
+nav.toc ol{list-style:none;padding:0;margin:0}
+nav.toc li{margin:0;padding:0;max-width:none}
+nav.toc a{display:block;padding:.28rem 0 .28rem .7rem;border:0;border-left:2px solid var(--line);color:var(--ink-2);line-height:1.35}
+nav.toc a:hover{color:var(--ink);border-left-color:var(--accent)}
+nav.toc .grp{margin-top:.9rem}
+main{min-width:0}
+header.hero{padding-bottom:2rem;border-bottom:1px solid var(--line-strong)}
+header.hero .meta{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;margin-top:1.2rem;font-size:.85rem;color:var(--ink-2)}
+header.hero .meta b{color:var(--ink);font-weight:600}
+.lede{font-size:1.1rem;color:var(--ink-2);max-width:62ch;margin-top:1rem}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:.85rem 1.1rem;border-radius:0 6px 6px 0;margin:1.2rem 0;max-width:72ch}
+.callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.callout p{margin:.3rem 0}
+.tablewrap{overflow-x:auto;margin:1rem 0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:560px}
+th,td{text-align:left;padding:.55rem .8rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:600;color:var(--ink-2);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{font-weight:600}
+.pill{display:inline-block;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:.15em .55em;border-radius:999px;white-space:nowrap}
+.pill.go{background:var(--accent-soft);color:var(--accent-ink)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)}
+.pill.info{background:var(--info-soft);color:var(--info)}
+.pill.mute{background:var(--surface-2);color:var(--ink-3)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin:1rem 0}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin:1rem 0}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1rem 1.1rem}
+.tile h4{margin-top:0;color:var(--ink)}
+.tile p{font-size:.9rem;margin:.4rem 0 0;max-width:none;color:var(--ink-2)}
+.layer{display:grid;grid-template-columns:110px 1fr;gap:1rem;padding:1rem 0;border-bottom:1px dashed var(--line)}
+.layer:last-child{border-bottom:0}
+.layer .tag{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--accent-ink);font-weight:500;padding-top:.2rem}
+.layer p{margin:.2rem 0;max-width:none}
+.day{display:grid;grid-template-columns:90px 1fr;gap:1.2rem;padding:1.1rem 0;border-bottom:1px solid var(--line)}
+.day:last-child{border-bottom:0}
+.day .d{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.05rem;line-height:1.2}
+.day .d small{display:block;font-family:"IBM Plex Sans",sans-serif;font-weight:500;font-size:.72rem;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin-top:.2rem}
+.day ul{margin:.3rem 0 0;padding-left:1.1rem;font-size:.92rem}
+.day li{margin:.25rem 0;max-width:none}
+.day .gate{margin-top:.5rem;font-size:.82rem;color:var(--accent-ink);font-weight:600}
+.arch{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1.2rem;overflow-x:auto;margin:1rem 0}
+.arch svg{display:block;min-width:820px;width:100%;height:auto}
+.arch text{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12.5px;fill:var(--ink)}
+.arch text.t{font-size:11px;fill:var(--ink-3);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.arch text.m{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--ink-2)}
+.arch text.s{font-size:11px;fill:var(--ink-2)}
+.arch .box{fill:var(--surface-2);stroke:var(--line-strong);stroke-width:1}
+.arch .box.acc{fill:var(--accent-soft);stroke:var(--accent)}
+.arch .box.info{fill:var(--info-soft);stroke:var(--info)}
+.arch .box.warn{fill:var(--warn-soft);stroke:var(--warn)}
+.arch .zone{fill:none;stroke:var(--line);stroke-dasharray:4 4}
+.arch .ln{stroke:var(--line-strong);stroke-width:1.2;fill:none;marker-end:url(#ar)}
+.arch .ln.acc{stroke:var(--accent)}
+.arch .ln.dash{stroke-dasharray:4 3}
+.arch #ar path{fill:var(--line-strong)}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin:1rem 0}
+.role{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.8rem .95rem;font-size:.87rem}
+.role b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:1rem;margin-bottom:.25rem}
+.role span{color:var(--ink-2)}
+.src{font-size:.85rem;columns:2;column-gap:2rem;padding-left:1.1rem}
+.src li{break-inside:avoid;margin-bottom:.35rem;max-width:none}
+.demo{counter-reset:step;padding-left:0}
+.demo li{list-style:none;position:relative;padding-left:2.4rem;margin:.6rem 0;max-width:70ch}
+.demo li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:.05rem;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--accent);color:#fff;font-size:.8rem;font-weight:600;display:grid;place-items:center;font-family:"IBM Plex Mono",monospace}
+.fine{font-size:.82rem;color:var(--ink-3)}
+@media (max-width:900px){.shell{grid-template-columns:1fr;gap:1.5rem;padding:1.5rem 1.1rem 4rem}nav.toc{position:static;max-height:none;display:none}.src{columns:1}.layer,.day{grid-template-columns:1fr;gap:.3rem}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="shell">
+<nav class="toc" aria-label="Contents">
+  <span class="eyebrow">Contents</span>
+  <ol>
+    <li><a href="#read">1 · What the PS actually grades</a></li>
+    <li><a href="#scope">2 · One-week scope</a></li>
+    <li><a href="#surfaces">3 · Product surfaces</a></li>
+    <li><a href="#arch">4 · Architecture</a></li>
+    <li><a href="#stack">5 · Stack decisions</a></li>
+    <li class="grp"><a href="#data">6 · Data model</a></li>
+    <li><a href="#gis">7 · GIS pipeline &amp; layers</a></li>
+    <li><a href="#api">8 · API contract</a></li>
+    <li><a href="#interop">9 · Interoperability layer</a></li>
+    <li><a href="#workflow">10 · Service workflows</a></li>
+    <li><a href="#ai">11 · AI feature</a></li>
+    <li><a href="#security">12 · Security &amp; audit</a></li>
+    <li class="grp"><a href="#repo">13 · Repo &amp; docker-compose</a></li>
+    <li><a href="#plan">14 · Seven-day plan</a></li>
+    <li><a href="#demo">15 · Demo script</a></li>
+    <li><a href="#risks">16 · Risks &amp; fallbacks</a></li>
+    <li><a href="#std">17 · Technical Document checklist</a></li>
+    <li><a href="#sources">Sources</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <span class="eyebrow">SIH 2026 · PS SIH26014 · Dept. of Land Resources</span>
+  <h1 style="margin-top:.5rem">Land Stack Build Plan</h1>
+  <p class="lede">A parcel-centric GIS platform where one click on a land parcel returns everything government knows about it — ownership, registration, tax, zoning, permissions, encumbrances, utilities — assembled live from separate department APIs through a single ULPIN-style key. This is the plan to build a working prototype in seven days with a six-person Python + JavaScript team.</p>
+  <div class="meta">
+    <span><b>Build window</b> 7 days</span>
+    <span><b>Team</b> 6 (3 Python, 3 JS)</span>
+    <span><b>Demo target</b> local docker-compose + public URL</span>
+    <span><b>Status</b> plan v1 · 13 Sep 2026</span>
+  </div>
+</header>
+
+<h2 id="read">1 · What the problem statement actually grades</h2>
+<p>The PS title is "An Integrated GIS-based Digital Public Infrastructure for Land Governance" (SIH26014, Ministry of Rural Development / DoLR, Software, theme Agriculture, FoodTech &amp; Rural Development). Reading the text, judges are asked to look for six concrete things. Everything in this plan traces back to one of them.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>PS requirement (paraphrased from the verbatim text)</th><th>What we ship to satisfy it</th></tr></thead>
+<tbody>
+<tr><td>R1</td><td>GIS-based parcel visualisation with three layer tiers: <b>base</b> (cadastral, boundaries, ULPIN), <b>essential</b> (RoR, registration, master plan, building permissions, encumbrance/mortgage, land use/zoning), <b>use-case</b> (utilities, property tax, valuation, infrastructure, environmental/restriction zones)</td><td>Map Explorer with a layer panel organised exactly by those three tiers; each layer backed by a PostGIS table and served as vector tiles</td></tr>
+<tr><td>R2</td><td>Integration of mock or sample land datasets, and <b>interoperable workflows between land records, registration, dispute, planning and fiscal systems</b></td><td>Six separately mounted "department" APIs with their own OpenAPI docs; a gateway that aggregates them; a webhook-driven sync you can trigger live</td></tr>
+<tr><td>R3</td><td>Role-based administrative dashboards</td><td>Officer Console (revenue / registration / planning views) with filters, KPIs and a work queue</td></tr>
+<tr><td>R4</td><td>Citizen-facing service interfaces: parcel search, ownership verification, transaction status tracking, service requests</td><td>Citizen Portal with exactly those four functions plus a signed, QR-verifiable Land Information Report</td></tr>
+<tr><td>R5</td><td>Open APIs, standardised metadata, secure authentication, role-based access, audit trails</td><td>OGC API Features-shaped endpoints, JWT + RBAC, append-only audit table surfaced in the UI</td></tr>
+<tr><td>R6</td><td>A <b>Standard Technical Document</b>: API standards, interoperability standards, data schemas, architecture, GIS standards, security framework, UI/UX guidelines, colour schema, deployment and scalability</td><td>The Word document produced alongside this page, kept in the repo under <code>/docs/STD.md</code> and regenerated as PDF</td></tr>
+</tbody></table></div>
+<div class="callout"><p><b>Context worth saying out loud in the pitch.</b> DoLR launched the real Land Stack pilot in Chandigarh and Tamil Nadu on 31 December 2025. The Chandigarh portal was built by NIC in about six months and shows per-parcel property, ownership, deed, encumbrance and litigation. Our differentiator is not the map — it is the <em>open interoperability layer</em>: standards-based APIs, a state-configurable adapter model, and consent-aware citizen access, which the pilot does not expose. Frame the whole project as "the API layer Land Stack needs to scale from 2 pilots to 36 states/UTs".</p></div>
+
+<h2 id="scope">2 · One-week scope: the cut line</h2>
+<p>Seven days is enough for a convincing prototype only if the scope is decided now and defended all week. Anything in the <em>Build</em> column is demoed live. <em>Stub</em> items exist as UI and a mocked endpoint but no real logic. <em>Deferred</em> items appear only in the roadmap slide.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Capability</th><th>Decision</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Map Explorer with 3-tier layers, hover/click, search by ULPIN / survey no. / owner</td><td><span class="pill go">Build</span></td><td>R1. The centrepiece; every other screen links back to it</td></tr>
+<tr><td>Unified Parcel Profile aggregated from 6 department APIs</td><td><span class="pill go">Build</span></td><td>R2. This is the "Land Stack" idea made visible</td></tr>
+<tr><td>Department mock APIs: Revenue (RoR), Registration, Planning &amp; Building, Fiscal (tax/valuation), Disputes &amp; Encumbrance, Utilities</td><td><span class="pill go">Build</span></td><td>R2. Each one is ~80 lines of FastAPI over a seeded table</td></tr>
+<tr><td>Live sync demo: register deed in Registration → event → Land Stack profile updates → audit entry</td><td><span class="pill go">Build</span></td><td>Turns "interoperability" from a slide into a 20-second moment</td></tr>
+<tr><td>Citizen Portal: search, ownership verification, status tracking, service request (mutation + building permission)</td><td><span class="pill go">Build</span></td><td>R4 lists exactly these</td></tr>
+<tr><td>Land Information Report (PDF, QR, HMAC-signed verify URL)</td><td><span class="pill go">Build</span></td><td>Tangible take-away; judges can scan it on their phone</td></tr>
+<tr><td>Officer Console: KPIs, filters, work queue, approve/reject with audit</td><td><span class="pill go">Build</span></td><td>R3</td></tr>
+<tr><td>Admin / Integration Console: connector status, last sync, schema-mapping view</td><td><span class="pill go">Build</span></td><td>Shows the DPI story; cheap (mostly static + health checks)</td></tr>
+<tr><td>Data-consistency checker (area / owner mismatches across departments)</td><td><span class="pill go">Build</span></td><td>One SQL query, high judge impact; addresses "inconsistent records"</td></tr>
+<tr><td>Satellite land-use change detection (Sentinel-2 NDVI/NDBI Δ per parcel)</td><td><span class="pill go">Build</span></td><td>The one AI feature. Deterministic method, offline fallback, 2-day budget</td></tr>
+<tr><td>OCR of scanned RoR to structured JSON (Gemini Flash, Tesseract fallback)</td><td><span class="pill warn">Stub → Build if Day 5 is green</span></td><td>Cheap with a hosted model; do it only after change detection is stable</td></tr>
+<tr><td>Bhuvan WMS overlay (LULC) as a toggle</td><td><span class="pill warn">Stub</span></td><td>Good "Indian data" line; Bhuvan uptime is unreliable so never depend on it</td></tr>
+<tr><td>Multi-state adapters (real AP / TN / Karnataka formats)</td><td><span class="pill mute">Deferred</span></td><td>Show one adapter interface + two config files; explain the pattern</td></tr>
+<tr><td>Mobile app, predictive valuation, 3D cadastre, Keycloak SSO, Temporal workflows</td><td><span class="pill crit">Not doing</span></td><td>No grading upside within a week; each adds a failure mode</td></tr>
+</tbody></table></div>
+
+<h2 id="surfaces">3 · Product surfaces</h2>
+<p>One React app, one route tree, five surfaces plus a satellite panel. Roles decide what a user lands on after sign-in; the map is shared by all.</p>
+<div class="grid2">
+  <div class="tile"><h4>Map Explorer <span class="pill mute">all roles</span></h4><p>Full-bleed MapLibre map. Left panel: layer tree in the PS's three tiers with toggles and legends. Top: search (ULPIN, survey no., owner name). Hover highlights a parcel and shows a mini-card; click opens the Parcel Profile drawer. Colour-by mode: land use, status (verified / disputed / mortgaged / pending), tax status, change-detection alert.</p></div>
+  <div class="tile"><h4>Parcel Profile <span class="pill mute">all roles, consent-masked</span></h4><p>The aggregated record, sectioned by department with a source badge and "fetched at" timestamp on each block. Tabs: Overview · Ownership &amp; RoR · Registration &amp; Encumbrance · Planning &amp; Permissions · Fiscal · Utilities · Timeline (audit) · Satellite. Citizens see owner name masked (R*** K****) unless they hold a consent token; officers see full detail.</p></div>
+  <div class="tile"><h4>Citizen Portal <span class="pill info">citizen</span></h4><p>Four cards mirroring R4: Search parcel · Verify ownership · Track application · Request a service. Service forms: Mutation (transfer of RoR) and Building Permission. Every submission gets an application ID, a status timeline and a downloadable PDF report with QR.</p></div>
+  <div class="tile"><h4>Officer Console <span class="pill info">officer (revenue / registration / planning)</span></h4><p>KPIs (total parcels, verified %, pending, disputed, mortgaged, tax arrears), land-use breakdown, a filterable map, and a work queue of applications routed to this officer's department. Approve / return / reject with a mandatory remark; every action writes to the audit log.</p></div>
+  <div class="tile"><h4>Admin &amp; Integration Console <span class="pill info">admin</span></h4><p>Connector grid (Revenue, Registration, Planning, Fiscal, Legal, Utilities, Satellite) with health, latency and last sync; the common-data-model field mapping per adapter; the consistency checker's findings; and a "Simulate upstream change" button used in the demo.</p></div>
+  <div class="tile"><h4>Satellite panel <span class="pill info">officer / admin</span></h4><p>For a parcel or a selected area: two Sentinel-2 dates side by side, NDVI/NDBI Δ, a classified label (vegetation → built-up, etc.), a confidence value and a "Send for field review" action that creates a task in the work queue.</p></div>
+</div>
+
+<h2 id="arch">4 · Architecture</h2>
+<p>Three planes: a client, a gateway that owns identity, aggregation, workflow and audit, and a set of department services that each own their own tables — deliberately separate so we can show one of them changing and the gateway noticing. Everything runs from a single <code>docker compose up</code>.</p>
+<div class="arch">
+<svg viewBox="0 0 1000 620" role="img" aria-label="Land Stack architecture: client, gateway, department services, data and external sources">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="zone" x="20" y="30" width="230" height="560" rx="6"/><text class="t" x="32" y="52">Client · Vite + React</text>
+<rect class="zone" x="285" y="30" width="300" height="560" rx="6"/><text class="t" x="297" y="52">Gateway · FastAPI (one process)</text>
+<rect class="zone" x="620" y="30" width="360" height="330" rx="6"/><text class="t" x="632" y="52">Department services · FastAPI sub-apps</text>
+<rect class="zone" x="620" y="380" width="360" height="210" rx="6"/><text class="t" x="632" y="402">Data · PostgreSQL 17 + PostGIS 3.5</text>
+<rect class="box acc" x="36" y="70" width="198" height="52" rx="4"/><text x="48" y="92">Map Explorer</text><text class="s" x="48" y="110">MapLibre GL · vector tiles</text>
+<rect class="box" x="36" y="134" width="198" height="52" rx="4"/><text x="48" y="156">Parcel Profile drawer</text><text class="s" x="48" y="174">consent-masked fields</text>
+<rect class="box" x="36" y="198" width="198" height="52" rx="4"/><text x="48" y="220">Citizen Portal</text><text class="s" x="48" y="238">search · verify · track · request</text>
+<rect class="box" x="36" y="262" width="198" height="52" rx="4"/><text x="48" y="284">Officer Console</text><text class="s" x="48" y="302">KPIs · queue · approvals</text>
+<rect class="box" x="36" y="326" width="198" height="52" rx="4"/><text x="48" y="348">Admin &amp; Integration</text><text class="s" x="48" y="366">connectors · mappings · sync</text>
+<rect class="box" x="36" y="410" width="198" height="52" rx="4"/><text x="48" y="432">State &amp; data layer</text><text class="s" x="48" y="450">TanStack Query · Zustand</text>
+<rect class="box" x="36" y="500" width="198" height="52" rx="4"/><text x="48" y="522">Basemaps</text><text class="s" x="48" y="540">OpenFreeMap · Esri imagery</text>
+<rect class="box" x="300" y="70" width="270" height="44" rx="4"/><text x="312" y="88">Auth · JWT · RBAC</text><text class="m" x="312" y="104">citizen | officer:&lt;dept&gt; | admin</text>
+<rect class="box acc" x="300" y="126" width="270" height="56" rx="4"/><text x="312" y="146">Parcel Aggregator</text><text class="m" x="312" y="164">GET /landstack/parcels/{ulpin}</text>
+<rect class="box" x="300" y="194" width="270" height="44" rx="4"/><text x="312" y="212">Adapter registry</text><text class="m" x="312" y="228">common data model ↔ source schema</text>
+<rect class="box" x="300" y="250" width="270" height="44" rx="4"/><text x="312" y="268">Workflow engine</text><text class="m" x="312" y="284">status enum + transitions table</text>
+<rect class="box" x="300" y="306" width="270" height="44" rx="4"/><text x="312" y="324">Audit log (append-only)</text><text class="m" x="312" y="340">who · what · parcel · before/after</text>
+<rect class="box" x="300" y="362" width="270" height="44" rx="4"/><text x="312" y="380">Consistency checker</text><text class="m" x="312" y="396">cross-dept area / owner mismatch</text>
+<rect class="box" x="300" y="418" width="270" height="44" rx="4"/><text x="312" y="436">Reports · WeasyPrint + QR</text><text class="m" x="312" y="452">/reports/{id}.pdf · /verify/{id}</text>
+<rect class="box warn" x="300" y="474" width="270" height="56" rx="4"/><text x="312" y="494">AI · change detection</text><text class="m" x="312" y="512">Sentinel-2 NDVI/NDBI Δ · offline COGs</text>
+<rect class="box info" x="300" y="542" width="270" height="36" rx="4"/><text x="312" y="565">Martin · PostGIS → MVT tiles</text>
+<rect class="box" x="636" y="70" width="160" height="40" rx="4"/><text x="646" y="87">Revenue / RoR</text><text class="m" x="646" y="102">/revenue/docs</text>
+<rect class="box" x="808" y="70" width="160" height="40" rx="4"/><text x="818" y="87">Registration</text><text class="m" x="818" y="102">/registration/docs</text>
+<rect class="box" x="636" y="122" width="160" height="40" rx="4"/><text x="646" y="139">Planning &amp; Building</text><text class="m" x="646" y="154">/planning/docs</text>
+<rect class="box" x="808" y="122" width="160" height="40" rx="4"/><text x="818" y="139">Fiscal (tax, valuation)</text><text class="m" x="818" y="154">/fiscal/docs</text>
+<rect class="box" x="636" y="174" width="160" height="40" rx="4"/><text x="646" y="191">Disputes &amp; Encumbrance</text><text class="m" x="646" y="206">/legal/docs</text>
+<rect class="box" x="808" y="174" width="160" height="40" rx="4"/><text x="818" y="191">Utilities</text><text class="m" x="818" y="206">/utilities/docs</text>
+<rect class="box acc" x="636" y="240" width="332" height="44" rx="4"/><text x="646" y="258">Event bus (in-DB outbox → webhook)</text><text class="m" x="646" y="274">registration.deed_registered → gateway /events</text>
+<rect class="box" x="636" y="300" width="332" height="44" rx="4"/><text x="646" y="318">External (optional, behind flags)</text><text class="m" x="646" y="334">Bhuvan WMS · Planetary Computer STAC · Gemini</text>
+<rect class="box" x="636" y="420" width="160" height="60" rx="4"/><text x="646" y="440">landstack schema</text><text class="s" x="646" y="456">parcels (geom), users,</text><text class="s" x="646" y="470">applications, audit, alerts</text>
+<rect class="box" x="808" y="420" width="160" height="60" rx="4"/><text x="818" y="440">dept_* schemas</text><text class="s" x="818" y="456">revenue, registration,</text><text class="s" x="818" y="470">planning, fiscal, legal, util</text>
+<rect class="box" x="636" y="494" width="160" height="44" rx="4"/><text x="646" y="512">gis schema</text><text class="s" x="646" y="528">zones, roads, utilities lines</text>
+<rect class="box" x="808" y="494" width="160" height="44" rx="4"/><text x="818" y="512">Object store (volume)</text><text class="s" x="818" y="528">PDFs · deeds · COGs</text>
+<rect class="box" x="636" y="550" width="332" height="30" rx="4"/><text x="646" y="570">Redis (optional) · cache aggregated profile, job queue</text>
+<path class="ln" d="M234 436 L300 154"/>
+<path class="ln" d="M234 436 L300 92"/>
+<path class="ln acc" d="M570 154 L636 90"/>
+<path class="ln acc" d="M570 154 L808 90"/>
+<path class="ln acc" d="M570 154 L636 142"/>
+<path class="ln acc" d="M570 154 L808 142"/>
+<path class="ln acc" d="M570 154 L636 194"/>
+<path class="ln acc" d="M570 154 L808 194"/>
+<path class="ln dash" d="M636 262 L570 328"/>
+<path class="ln" d="M234 96 L300 560"/>
+<path class="ln" d="M570 560 L636 516"/>
+<path class="ln" d="M570 502 L636 322"/>
+<path class="ln" d="M796 110 L888 420"/>
+<path class="ln" d="M435 462 L636 450"/>
+<path class="ln" d="M435 530 L808 516"/>
+</svg>
+</div>
+<p class="fine">Solid green arrows are synchronous fan-out on a parcel request (parallel <code>httpx</code> calls, 300 ms budget, partial results allowed with a per-block "source unavailable" state). The dashed arrow is the asynchronous event path used in the sync demo. Department services are separate FastAPI sub-applications in the same process for the hackathon; in production each becomes an adapter to a real state system, which is why they only ever talk to the gateway through HTTP and never share tables.</p>
+
+<h3>Why one process, six apps</h3>
+<p>Judges reward visible interoperability, not container count. Mounting <code>/revenue</code>, <code>/registration</code>, <code>/planning</code>, <code>/fiscal</code>, <code>/legal</code>, <code>/utilities</code> as sub-applications gives six independent <code>/docs</code> pages and six independent schemas while keeping a single <code>uvicorn</code> to debug. Each sub-app writes only to its own Postgres schema, enforced by a per-schema database role, so the separation is real even though the process is shared.</p>
+
+<h2 id="stack">5 · Stack decisions and the alternatives we rejected</h2>
+<p>Every choice below was made for a one-week build by a mixed team, with one eye on whether the same choice would still be defensible if a state asked "can this scale?" Versions are current as of September 2026.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Layer</th><th>Pick</th><th>Rejected</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>Map library</td><td><b>MapLibre GL JS 6 + react-map-gl 8</b></td><td>Leaflet, OpenLayers, deck.gl</td><td>Native vector tiles, WebGL handles 50k polygons, feature-state hover/select, first-class React binding. Leaflet's DOM rendering degrades past ~5–10k polygons; OpenLayers has weak React ergonomics; deck.gl is overkill</td></tr>
+<tr><td>Streets basemap</td><td><b>OpenFreeMap</b></td><td>OSM raster tiles, MapTiler, Stadia</td><td>No key, no card, no usage cap, OpenMapTiles schema. Never use tile.openstreetmap.org as an app basemap — the OSMF policy forbids it and blocks silently</td></tr>
+<tr><td>Satellite basemap</td><td><b>Esri World Imagery</b> (ArcGIS Location Platform free key, 2M tiles/mo)</td><td>Bhuvan alone</td><td>Reliable and CORS-clean; Bhuvan WMS is added as an optional overlay for the "Indian data" narrative</td></tr>
+<tr><td>Parcel tiles</td><td><b>Martin 1.8</b> (PostGIS → MVT) + GeoJSON from FastAPI for single features</td><td>pg_tileserv, tippecanoe/PMTiles, GeoJSON only</td><td>One container, zero config, publishes every geometry table at <code>/{table}/{z}/{x}/{y}</code>. Scales to the "5 lakh parcels" question with just a GiST index. PMTiles is static so edits would not show</td></tr>
+<tr><td>Backend</td><td><b>FastAPI ≥0.141 + SQLAlchemy 2 (async, asyncpg) + GeoAlchemy2 + Pydantic v2</b></td><td>Django/GeoDjango + DRF, NestJS + Prisma</td><td>Auto OpenAPI per sub-app, async fan-out with <code>httpx</code>, Python for the AI code path. GeoDjango is sync-first and heavier to scaffold; Prisma has no PostGIS types</td></tr>
+<tr><td>Database</td><td><b>postgis/postgis:17-3.5</b></td><td>kartoza/postgis, Supabase-only</td><td>Official image, smaller. Inspect with QGIS (geometry) and DBeaver (tables); skip pgAdmin</td></tr>
+<tr><td>Cache / queue</td><td><b>Redis 7</b> (optional)</td><td>Celery + RabbitMQ</td><td>Only for caching the aggregated profile (60 s TTL) and running the change-detection job via <code>arq</code>. If time is short, FastAPI <code>BackgroundTasks</code> is enough</td></tr>
+<tr><td>Auth</td><td><b>PyJWT + passlib, roles in claims</b></td><td>Keycloak, FastAPI-Users, Auth0/Clerk</td><td>Keycloak costs a day of realm config and 600 MB; hosted auth needs internet during the demo. Three seeded users cover every role</td></tr>
+<tr><td>Workflow</td><td><b>Status enum + <code>transitions</code> table</b></td><td>Temporal, python-statemachine</td><td>A transitions table (from, to, role, action) gives an audit trail and a timeline UI for free. ≤6 states per service</td></tr>
+<tr><td>Change detection</td><td><b>Sentinel-2 L2A via Microsoft Planetary Computer STAC</b>; NDVI/NDBI difference; <code>pystac-client</code>, <code>odc-stac</code>, <code>rasterstats</code></td><td>Copernicus Data Space, Google Earth Engine, pretrained models (Prithvi, torchgeo)</td><td>Anonymous STAC search, free SAS signing for Sentinel-2, pure Python. Pretrained models are unpredictable on peri-urban Indian parcels and eat the two-day budget in setup. Offline GeoTIFFs guarantee the demo</td></tr>
+<tr><td>OCR</td><td><b>Gemini Flash free tier → Pydantic-validated JSON</b>; Tesseract 5 + <code>hin/tel/tam</code> as offline path</td><td>Surya, PaddleOCR, EasyOCR</td><td>Only a vision LLM does Indic OCR <em>and</em> field extraction in one call. Surya is best open-source but ~650M params on CPU laptops</td></tr>
+<tr><td>Frontend</td><td><b>Vite 7 + React 19 + TypeScript, TanStack Router + Query, Zustand, Tailwind v4 + shadcn/ui, ECharts</b></td><td>Next.js 16, Recharts</td><td>SSR fights MapLibre (window access, hydration). A client-only SPA builds in seconds and deploys as static files. ECharts handles heatmaps and gauges better for the dashboard</td></tr>
+<tr><td>PDF / QR</td><td><b>WeasyPrint 70 + segno</b></td><td>ReportLab, browser print</td><td>Renders the same HTML template as the web profile; server-side artefact can be hashed and verified</td></tr>
+<tr><td>Public demo hosting</td><td><b>Render</b> (API, free) + <b>Vercel</b> (web) + <b>Neon</b> (Postgres with PostGIS, free)</td><td>Railway, Fly.io</td><td>Railway and Fly no longer have free tiers. Render spins down after 15 min — warm it before judging. Primary demo remains local docker-compose</td></tr>
+</tbody></table></div>
+<div class="callout warn"><p><b>Day-1 checks that gate these picks.</b> (a) Run one <code>pystac-client</code> search + <code>planetary_computer.sign()</code> and download the two fallback Sentinel-2 clips immediately. (b) Confirm the Esri key works from a browser tab. (c) Sign up for Gemini and record the actual rate limit shown in the console — third-party summaries of free tiers drift.</p></div>
+
+<h2 id="data">6 · Data model</h2>
+<p>The centre of the system is a <em>common data model</em> (CDM) for a parcel. Departments store data in their own vocabulary; adapters map into the CDM; the UI only ever renders the CDM. The field groups map onto ISO 19152 LADM's Party / RRR / Spatial Unit split, which is worth citing because the PS's "ownership, rights, restrictions, liabilities" wording is LADM language.</p>
+
+<h3>ULPIN-style identifier</h3>
+<p>Real ULPIN (Bhu-Aadhaar) is a 14-character ID derived from parcel vertex coordinates under ECCMA's PNIU scheme; the exact derivation is not public. For the prototype we generate a deterministic 14-character ID from the parcel geometry and label it "ULPIN-style" everywhere, which is honest and still demonstrates the key property: the ID is a function of <em>where the land is</em>, not of any department's register.</p>
+<pre><code>def ulpin_style(geom_wgs84) -> str:
+    c = geom_wgs84.centroid
+    gh = geohash.encode(c.y, c.x, precision=7)               # 7 chars, ~150 m cell
+    h  = blake2b(geom_wgs84.wkb, digest_size=4).hexdigest()  # 8 hex chars from vertices
+    return (gh + h).upper()[:14]                             # e.g. TDR1K3M9A2F7C1</code></pre>
+
+<h3>Tables (schema · table)</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Schema · table</th><th>Key columns</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>landstack.parcels</code></td><td>ulpin PK, state, district, taluk, village, survey_no, sub_division, geom (MultiPolygon, 4326), area_sqm (computed in 32643/44), land_use, zone, status_flags jsonb, updated_at</td><td>The base layer. GiST index on geom; trigram index on survey_no. Martin publishes this table directly</td></tr>
+<tr><td><code>landstack.users</code></td><td>id, email, password_hash, role (citizen | officer | admin), department, name</td><td>3–6 seeded accounts</td></tr>
+<tr><td><code>landstack.applications</code></td><td>id (APP-2026-000123), ulpin, type (mutation | building_permission | ownership_verification | field_review), applicant_id, status, payload jsonb, assigned_department, created_at</td><td>One table for every service type; the type decides the transition set</td></tr>
+<tr><td><code>landstack.transitions</code></td><td>type, from_status, to_status, allowed_role, action_label</td><td>Seeded rules; the engine refuses anything not listed</td></tr>
+<tr><td><code>landstack.audit_log</code></td><td>id, ts, actor_id, actor_role, action, entity_type, entity_id, ulpin, before jsonb, after jsonb, source</td><td>Append-only (no UPDATE/DELETE grant). Timeline tab reads it</td></tr>
+<tr><td><code>landstack.alerts</code></td><td>id, ulpin, kind (change_detected | inconsistency | pending_mutation), severity, detail jsonb, status, created_at</td><td>Fed by the AI job, the consistency checker and inbound events</td></tr>
+<tr><td><code>landstack.reports</code></td><td>id, ulpin, issued_to, issued_at, sha256, signature</td><td>What <code>/verify/{id}</code> checks</td></tr>
+<tr><td><code>dept_revenue.ror</code></td><td>khata_no, survey_no, ulpin, owner_name, father_name, ownership_type (patta | joint | govt), extent_sqm, classification, mutation_history jsonb</td><td>Uses revenue vocabulary on purpose (khata, patta)</td></tr>
+<tr><td><code>dept_registration.deeds</code></td><td>doc_no, ulpin, deed_type (sale | gift | partition | mortgage | release), executant, claimant, consideration, registered_on, sro_code</td><td>Latest deed drives "Registered ✓"</td></tr>
+<tr><td><code>dept_registration.encumbrances</code></td><td>id, ulpin, kind (mortgage | lien | court_attachment), holder, amount, from_date, to_date, active</td><td>Encumbrance certificate is a query over this</td></tr>
+<tr><td><code>dept_planning.zones</code></td><td>id, zone_code (R1 | C2 | AG | IND | PUB), name, geom</td><td>Master-plan polygons; parcel zone is derived by <code>ST_Intersects</code> at seed time and on demand</td></tr>
+<tr><td><code>dept_planning.building_permissions</code></td><td>permit_no, ulpin, status, floors, built_up_sqm, approved_on, conditions</td><td></td></tr>
+<tr><td><code>dept_fiscal.property_tax</code></td><td>assessment_no, ulpin, annual_demand, paid_till, arrears, last_paid_on</td><td></td></tr>
+<tr><td><code>dept_fiscal.valuation</code></td><td>ulpin, guideline_value_per_sqm, effective_from</td><td>Circle-rate reference</td></tr>
+<tr><td><code>dept_legal.disputes</code></td><td>case_no, ulpin, court, nature, filed_on, status, next_hearing</td><td></td></tr>
+<tr><td><code>dept_utilities.connections</code></td><td>ulpin, water bool, electricity bool, sewer bool, road_access_m, nearest_road_class</td><td>Plus <code>gis.roads</code>, <code>gis.water_lines</code> for the use-case layer</td></tr>
+<tr><td><code>gis.restriction_zones</code></td><td>kind (flood | eco_sensitive | heritage_buffer | airport_funnel), geom</td><td>Environmental / restriction layer</td></tr>
+<tr><td><code>gis.projects</code></td><td>name (proposed road, metro alignment), geom, status</td><td>Infrastructure layer</td></tr>
+</tbody></table></div>
+
+<h3>Common data model (what the aggregator returns)</h3>
+<pre><code>{
+  "ulpin": "TDR1K3M9A2F7C1",
+  "identifiers": { "state": "AP", "district": "Guntur", "village": "Mangalagiri", "survey_no": "123/4", "khata_no": "K-0421" },
+  "spatial":     { "area_sqm": 223.0, "centroid": [80.5683, 16.4310], "crs": "EPSG:4326",
+                   "geometry_ref": "/landstack/collections/parcels/items/TDR1K3M9A2F7C1" },
+  "party":       { "owners": [{ "name": "Ravi Kumar", "share": 1.0, "type": "patta" }], "masked": false },
+  "rights":      { "registration": { "status": "registered", "doc_no": "SRO-GNT-2026-1183", "registered_on": "2026-04-12" },
+                   "ror": { "khata_no": "K-0421", "classification": "dry", "extent_sqm": 223.0 } },
+  "restrictions":{ "encumbrances": [], "disputes": [], "restriction_zones": [] },
+  "planning":    { "zone": "R1", "land_use": "residential", "building_permission": { "status": "approved", "permit_no": "BP-5678" } },
+  "fiscal":      { "tax": { "annual_demand": 12500, "arrears": 0, "paid_till": "2026-27" }, "guideline_value_per_sqm": 18000 },
+  "utilities":   { "water": true, "electricity": true, "sewer": false, "road_access_m": 12 },
+  "alerts":      [],
+  "provenance":  { "revenue": { "ok": true, "ms": 41, "as_of": "2026-09-13T08:12:00Z" },
+                   "registration": { "ok": true, "ms": 37 },
+                   "fiscal": { "ok": false, "error": "timeout", "cached_as_of": "2026-09-13T06:00:00Z" } },
+  "consistency": { "area_match": true, "owner_match": true }
+}</code></pre>
+<p class="fine">Note <code>provenance</code>: each block carries its own success flag and latency so the UI can render "Fiscal: source unavailable, showing cached 2h-old value" instead of failing the whole page. That behaviour is the difference between a demo that survives a flaky service and one that does not.</p>
+
+<h2 id="gis">7 · GIS pipeline and the three layer tiers</h2>
+<h3>Where the parcels come from</h3>
+<p>There is no open parcel-level cadastral dataset for India; this was verified, and it is why the PS says mock data is acceptable. The honest and fast route is to synthesise a realistic cadastre inside a <em>real</em> village boundary so the map sits on real roads and real imagery.</p>
+<ol>
+  <li>Take one village polygon from the DataMeet Indian Village Boundaries dataset (EPSG:4326) — pick a peri-urban village next to a town so the satellite change-detection story has genuine construction between 2019 and 2025 (e.g. a village on the Amaravati or Hyderabad ORR fringe). Add an adjacent urban ward drawn from OSM <code>landuse</code> polygons.</li>
+  <li>Pull OSM roads for the area (Overpass) and use them to split the village polygon into blocks (<code>shapely.ops.split</code>, then <code>polygonize</code>).</li>
+  <li>Subdivide each block into parcels with a jittered Voronoi or recursive strip split in a projected CRS (EPSG:32644 for AP/TS, 32643 for Karnataka/TN west) so areas are honest; target 400–800 parcels with a realistic size distribution (60–400 m² urban, 0.2–2 ha agricultural).</li>
+  <li>Assign survey numbers (<code>123</code>, <code>123/1</code>, <code>123/2A</code>) following the Indian sub-division convention, land use by distance to road and to the town, owners via Faker with Indian locales, and 5–8 % anomalies: disputes, mortgages, tax arrears, area mismatches across departments, pending mutations.</li>
+  <li>Write <code>landstack.parcels</code> and populate every <code>dept_*</code> table from the same seed frame, then <em>deliberately</em> break a few rows (owner spelling drift, extent ±8 %) so the consistency checker has real findings.</li>
+</ol>
+<p>This is one Python script (<code>tools/seed.py</code>, GeoPandas + Shapely + Faker), idempotent, run by <code>make seed</code>. It should take under two minutes and finish before Day 2 ends, because everyone else is blocked on it.</p>
+
+<h3>CRS rules</h3>
+<p>Store and exchange in EPSG:4326 (GeoJSON RFC 7946 requires it). Compute area, length and buffers in the local UTM zone (EPSG:32643 / 32644) or with <code>geography</code> casts. State the caveat in the technical document that real Indian cadastral sheets sit on state-specific Lambert Conformal Conic / Everest datums and that a production adapter must reproject on ingest.</p>
+
+<h3>Layer tree as the PS defines it</h3>
+<div class="layer"><div class="tag">Tier 1 · Base</div><div><p><b>Cadastral parcels</b> (MVT from Martin, hover + click) · <b>Survey-number labels</b> (symbol layer, zoom ≥ 16) · <b>Village / ward boundaries</b> · <b>ULPIN grid reference</b> (geohash cells, off by default) · <b>Basemap switch</b> streets / imagery.</p></div></div>
+<div class="layer"><div class="tag">Tier 2 · Essential</div><div><p><b>Ownership type</b> (patta / joint / government) · <b>Registration status</b> · <b>Encumbrance &amp; mortgage</b> · <b>Disputes</b> (hatched fill) · <b>Land use</b> · <b>Master-plan zoning</b> (polygons) · <b>Building permissions</b> (point badge). All Tier 2 layers are the same parcel tiles restyled with data-driven <code>fill-color</code>, so they cost nothing extra to serve.</p></div></div>
+<div class="layer"><div class="tag">Tier 3 · Use-case</div><div><p><b>Property tax status</b> · <b>Guideline value heatmap</b> · <b>Utilities</b> (water / electricity / sewer lines) · <b>Roads by class</b> · <b>Restriction zones</b> (flood, eco-sensitive, heritage buffer) · <b>Proposed infrastructure</b> · <b>Satellite change alerts</b> · <b>Bhuvan LULC WMS</b> (optional, behind a flag).</p></div></div>
+
+<h3>Tile serving</h3>
+<pre><code># martin auto-discovers geometry tables; the client requests
+https://api.landstack.local/tiles/landstack.parcels/{z}/{x}/{y}
+https://api.landstack.local/tiles/dept_planning.zones/{z}/{x}/{y}
+https://api.landstack.local/tiles/gis.restriction_zones/{z}/{x}/{y}
+
+# feature-state drives hover/select without re-fetching
+map.setFeatureState({ source: 'parcels', sourceLayer: 'landstack.parcels', id: ulpin }, { hover: true })</code></pre>
+<p>Martin needs an integer or text feature id; we pass <code>ulpin</code> as the promoted id. For the 5-lakh-parcel question: Martin with a GiST index and <code>ST_Simplify</code> at low zooms serves a state's worth of parcels from one Postgres; beyond that you pre-render to PMTiles nightly and serve from a CDN. Both statements go in the scalability section of the technical document.</p>
+
+<h2 id="api">8 · API contract</h2>
+<p>Two API families. The <em>gateway</em> API is what the frontend and any third party call. The <em>department</em> APIs are what the gateway calls, and in production would be replaced by adapters to real state systems — so they are designed to look like plausible legacy services, each with its own vocabulary.</p>
+
+<h3>Gateway (<code>/landstack</code>), OGC API Features-shaped</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Method · path</th><th>Role</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td><code>POST /auth/login</code></td><td>public</td><td>JWT with <code>sub, role, department, exp</code></td></tr>
+<tr><td><code>GET /landstack/collections</code></td><td>public</td><td>OGC collections list: parcels, zones, restriction_zones, roads</td></tr>
+<tr><td><code>GET /landstack/collections/parcels/items?bbox=&amp;limit=&amp;land_use=&amp;status=</code></td><td>public</td><td>GeoJSON FeatureCollection (base attributes only)</td></tr>
+<tr><td><code>GET /landstack/collections/parcels/items/{ulpin}</code></td><td>public</td><td>GeoJSON Feature</td></tr>
+<tr><td><code>GET /landstack/search?q=</code></td><td>public</td><td>Matches on ULPIN, survey no., khata, owner (owner only for officer+)</td></tr>
+<tr><td><code>GET /landstack/parcels/{ulpin}</code></td><td>any (masked for citizen)</td><td>The aggregated CDM document above; fan-out to 6 departments in parallel</td></tr>
+<tr><td><code>GET /landstack/parcels/{ulpin}/timeline</code></td><td>officer, admin</td><td>Audit entries for the parcel</td></tr>
+<tr><td><code>POST /landstack/verify-ownership</code></td><td>citizen</td><td>Body: ulpin, claimed_name. Returns match/no-match + fields compared, never the full name</td></tr>
+<tr><td><code>POST /landstack/applications</code></td><td>citizen</td><td>Creates mutation / building-permission application; returns APP id + initial status</td></tr>
+<tr><td><code>GET /landstack/applications/{id}</code></td><td>owner or officer</td><td>Status, timeline, next possible actions for the caller's role</td></tr>
+<tr><td><code>POST /landstack/applications/{id}/transition</code></td><td>officer</td><td>Body: action, remark. Validated against <code>transitions</code>; writes audit</td></tr>
+<tr><td><code>GET /landstack/queue?department=</code></td><td>officer</td><td>Applications awaiting this department</td></tr>
+<tr><td><code>GET /landstack/stats</code></td><td>officer, admin</td><td>KPIs and breakdowns for the console</td></tr>
+<tr><td><code>GET /landstack/consistency</code></td><td>admin</td><td>Cross-department mismatches with severity</td></tr>
+<tr><td><code>GET /landstack/connectors</code></td><td>admin</td><td>Health, latency, last sync per department</td></tr>
+<tr><td><code>POST /landstack/events</code></td><td>service token</td><td>Inbound webhook from departments; invalidates cache, writes audit, raises alerts</td></tr>
+<tr><td><code>POST /landstack/reports/{ulpin}</code> → <code>GET /reports/{id}.pdf</code> · <code>GET /verify/{id}</code></td><td>any / public</td><td>Issue and verify a signed Land Information Report</td></tr>
+<tr><td><code>POST /landstack/ai/change-detection</code></td><td>officer, admin</td><td>Body: ulpin or bbox, date_a, date_b. Returns Δ metrics, label, confidence, image URLs</td></tr>
+<tr><td><code>POST /landstack/ai/extract-document</code></td><td>officer</td><td>Multipart scan → structured RoR JSON + confidence per field</td></tr>
+</tbody></table></div>
+
+<h3>Department APIs (each mounted with its own <code>/docs</code>)</h3>
+<pre><code>GET /revenue/ror?ulpin=            → { khata_no, owner_name, father_name, ownership_type, extent_sqm, classification }
+GET /revenue/ror/{khata_no}
+POST /revenue/mutations              → creates a mutation entry (called by workflow on approval)
+
+GET /registration/deeds?ulpin=      → [{ doc_no, deed_type, executant, claimant, registered_on }]
+GET /registration/encumbrances?ulpin=&amp;from=&amp;to=
+POST /registration/deeds             → registers a deed AND emits event deed_registered (demo trigger)
+
+GET /planning/zone?ulpin=           → { zone_code, name, permissible_uses[] }
+GET /planning/permissions?ulpin=
+POST /planning/permissions           → called by workflow
+
+GET /fiscal/tax?ulpin=              → { annual_demand, arrears, paid_till }
+GET /fiscal/valuation?ulpin=
+
+GET /legal/disputes?ulpin=
+GET /utilities/connections?ulpin=</code></pre>
+<p>Every department response includes an <code>X-Source-System</code> header and an <code>as_of</code> field; the aggregator copies both into <code>provenance</code>. Department endpoints accept <code>?delay_ms=</code> and <code>?fail=1</code> query parameters in dev mode so you can rehearse the "one source is down" state on stage.</p>
+
+<h3>Aggregator behaviour</h3>
+<pre><code>async def get_parcel(ulpin, caller):
+    base = await repo.parcel(ulpin)                           # PostGIS, always available
+    tasks = { name: adapter.fetch(ulpin) for name, adapter in registry.items() }
+    results = await gather_with_timeout(tasks, timeout=0.3)   # partial results allowed
+    cdm = merge(base, results)                                # adapters already emit CDM fragments
+    cdm.consistency = check(cdm)                              # area / owner match across sources
+    if caller.role == "citizen" and not caller.has_consent(ulpin):
+        cdm = mask(cdm)                                       # names → initials, doc numbers → last 4
+    return cdm</code></pre>
+
+<h2 id="interop">9 · Interoperability layer</h2>
+<p>This is the part of the project that answers "how does this work in Tamil Nadu <em>and</em> Andhra Pradesh?" and it is deliberately small: an adapter interface, a field-mapping config per source, and an event contract.</p>
+<pre><code>class DepartmentAdapter(Protocol):
+    name: str                       # "revenue"
+    async def fetch(self, ulpin: str) -> CDMFragment: ...
+    async def health(self) -> Health: ...
+    def mapping(self) -> dict[str, str]: ...   # source_field → cdm_field, shown in Admin console
+
+# adapters/revenue_ap.yaml
+source: "AP Meebhoomi (mock)"
+id_field: khata_no
+map:
+  owner_name:      party.owners[0].name
+  extent_sqm:      rights.ror.extent_sqm
+  classification:  rights.ror.classification
+units: { extent: sqm }
+
+# adapters/revenue_tn.yaml   (shown as the second config to prove the pattern)
+source: "TN Patta Chitta (mock)"
+id_field: patta_no
+map:
+  pattadar_name:   party.owners[0].name
+  extent_hectares: rights.ror.extent_sqm      # unit conversion: ha → sqm
+units: { extent: hectare }</code></pre>
+<p>The Admin console renders these YAML files as a mapping table, which is what an integration officer would actually configure. This makes the "configurable adapter architecture" claim concrete without building real state integrations.</p>
+<h3>Event contract and the live sync demo</h3>
+<pre><code>POST /landstack/events
+{ "event": "registration.deed_registered", "ulpin": "TDR1K3M9A2F7C1",
+  "source": "registration", "occurred_at": "…", "payload": { "doc_no": "SRO-GNT-2026-1190", "claimant": "Lakshmi Devi" } }
+
+gateway: invalidate cache(ulpin) → audit_log(insert) → if RoR owner != claimant: alerts(insert 'pending_mutation')
+         → open a system-initiated mutation application (mirrors Karnataka's Kaveri→Bhoomi "J-slip" flow)</code></pre>
+<p>In the demo, an admin clicks "Register a new sale deed" in the Registration mock; two seconds later the parcel on the map turns amber ("mutation pending"), the profile shows the new deed with a mismatch banner, and an officer's queue gains a task. That is the entire interoperability argument in one motion, and it is also a faithful sketch of the real Kaveri→Bhoomi hand-off, which is worth mentioning.</p>
+
+<h2 id="workflow">10 · Service workflows</h2>
+<p>Three workflows, one engine. States and transitions live in the <code>transitions</code> table so adding a fourth service is data, not code.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Service</th><th>States</th><th>Who moves it</th><th>Side effect on completion</th></tr></thead>
+<tbody>
+<tr><td>Mutation (transfer of RoR after sale / inheritance)</td><td>submitted → document_check → field_verification → approved | returned | rejected</td><td>citizen submits; revenue officer moves each step; "returned" goes back to citizen</td><td><code>POST /revenue/mutations</code>; RoR owner changes; audit + event <code>revenue.ror_updated</code></td></tr>
+<tr><td>Building permission</td><td>submitted → planning_check (zone &amp; FSI rule) → site_inspection → approved | rejected</td><td>citizen submits with floors / built-up area; planning officer</td><td><code>POST /planning/permissions</code>; permit number issued; parcel badge updates</td></tr>
+<tr><td>Ownership verification</td><td>instant</td><td>citizen</td><td>Compares claimed name against RoR + latest deed with fuzzy match; writes audit; optional PDF</td></tr>
+<tr><td>Field review (system-initiated)</td><td>open → assigned → resolved</td><td>created by change-detection or consistency checker; admin assigns; officer resolves</td><td>Alert status closed; parcel flag cleared</td></tr>
+</tbody></table></div>
+<p>The planning check is one real rule to show automation: a residential application on an <code>AG</code> zone parcel or inside a restriction zone is auto-flagged "not permissible" with the reason, before an officer ever sees it.</p>
+
+<h2 id="ai">11 · The AI feature: satellite land-use change detection</h2>
+<p>Pick one AI feature and make it unmissable. Change detection was chosen over OCR because it is visual, ties directly to the map, generates work for the officer queue, and can be made fully deterministic and offline. The method is index differencing, not a neural network, and that is a feature: it is explainable to a revenue officer in one sentence.</p>
+<h3>Method</h3>
+<ol>
+  <li>Search Sentinel-2 L2A on the Planetary Computer STAC for the AOI bbox, two windows (e.g. Jan–Mar 2019 and Jan–Mar 2025, dry season), cloud cover &lt; 10 %. Pick the least-cloudy scene per window.</li>
+  <li>Load bands B04 (red), B08 (NIR), B11 (SWIR) at 10–20 m with <code>odc-stac</code>, clipped to the AOI. Sign asset URLs with <code>planetary_computer.sign()</code>; no key required for Sentinel-2.</li>
+  <li>Compute NDVI = (B08−B04)/(B08+B04) and NDBI = (B11−B08)/(B11+B08) for both dates.</li>
+  <li>Zonal mean per parcel with <code>rasterstats</code>; ΔNDVI and ΔNDBI per ULPIN.</li>
+  <li>Classify: ΔNDVI &lt; −0.20 and ΔNDBI &gt; +0.10 → "vegetation → built-up"; ΔNDVI &lt; −0.20 only → "vegetation loss"; ΔNDBI &gt; +0.15 only → "new construction"; else "no significant change". Confidence = clipped normalised magnitude of the combined Δ, reported as a percentage with the thresholds shown.</li>
+  <li>Cross-check against the record: a parcel classified as built-up whose RoR says agricultural, with no building permission on file, becomes a <code>change_detected</code> alert with severity high and a "Send for field review" action.</li>
+</ol>
+<h3>Offline guarantee</h3>
+<p>On Day 2–3 the AI owner downloads the two clipped scenes as Cloud-Optimised GeoTIFFs into <code>data/s2/</code> and commits the resulting per-parcel Δ table to the seed. With <code>OFFLINE=1</code>, the endpoint reads local files and returns in under a second. The demo runs in offline mode; the online path is shown only if the venue network holds up.</p>
+<h3>Optional second feature: document extraction</h3>
+<p>If change detection is stable by Day 5 evening: an officer uploads a scanned RoR (Telugu or Hindi); the file goes to Gemini Flash with a Pydantic schema (survey_no, owner_name, extent, classification, each with confidence); the JSON is shown side by side with the scan for one-click acceptance into <code>dept_revenue.ror</code>. Tesseract with <code>tel</code>/<code>hin</code> traineddata sits behind a flag as the no-internet path. Pre-cache the three demo documents' results so the stage demo never waits on the API.</p>
+
+<h2 id="security">12 · Security, roles and audit</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Capability</th><th>citizen</th><th>officer:revenue</th><th>officer:registration</th><th>officer:planning</th><th>admin</th></tr></thead>
+<tbody>
+<tr><td>View map &amp; base attributes</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>View owner full name / doc numbers</td><td>masked</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Verify ownership (yes/no)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Submit application</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>Transition mutation</td><td>—</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>Transition building permission</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+<tr><td>Register deed (mock upstream)</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>✓</td></tr>
+<tr><td>Run change detection / assign field review</td><td>—</td><td>✓</td><td>—</td><td>✓</td><td>✓</td></tr>
+<tr><td>Connectors, mappings, consistency report</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+<tr><td>Read audit timeline</td><td>own applications</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+</tbody></table></div>
+<p><b>Auth.</b> Access JWT (15 min) + refresh (7 d), HS256 for the prototype with the key from env; note RS256 + key rotation for production. <b>RBAC.</b> One dependency <code>require(role, department=None)</code>. <b>Consent.</b> A citizen can request full detail on a parcel; the owner (or, in the demo, the admin) grants a consent token scoped to ULPIN + expiry, following the DEPA consent-artefact idea from India Stack. <b>Audit.</b> Every write and every full-detail read is an <code>audit_log</code> row; the table's DB role has INSERT only. <b>Report integrity.</b> PDF hash + HMAC signature stored; <code>/verify/{id}</code> returns issued-to, issued-at and a validity verdict, no personal data. <b>Transport.</b> HTTPS on the public demo (Render/Vercel give it free); CORS restricted to the web origin; rate limit on <code>/auth/login</code> and <code>/verify-ownership</code>.</p>
+
+<h2 id="repo">13 · Repository layout and docker-compose</h2>
+<pre><code>landstack/
+├── apps/
+│   ├── web/                     # Vite + React + TS
+│   │   └── src/{routes,features/{map,parcel,citizen,officer,admin,satellite},lib,components}
+│   └── api/                     # FastAPI
+│       ├── landstack/           # gateway: auth, aggregator, workflow, audit, reports, ai
+│       │   ├── adapters/        # DepartmentAdapter impls + *.yaml mappings
+│       │   ├── routers/
+│       │   ├── models/  schemas/  services/
+│       │   └── main.py          # mounts dept sub-apps
+│       ├── departments/         # revenue/ registration/ planning/ fiscal/ legal/ utilities/
+│       └── ai/                  # change_detection.py, extract.py
+├── tools/
+│   ├── seed.py                  # synthetic cadastre + all dept tables
+│   └── fetch_s2.py              # download + clip Sentinel-2 COGs for offline mode
+├── data/  { village.geojson, s2/, samples/ }
+├── infra/ { docker-compose.yml, martin.yaml, nginx.conf, .env.example }
+├── docs/  { STD.md, api/openapi-*.json, adr/ }
+└── Makefile                     # up · seed · s2 · test · demo-reset</code></pre>
+<pre><code># infra/docker-compose.yml (abridged)
+services:
+  db:      { image: postgis/postgis:17-3.5, environment: [POSTGRES_PASSWORD=landstack], volumes: [pg:/var/lib/postgresql/data], ports: ["5432:5432"] }
+  martin:  { image: ghcr.io/maplibre/martin:v1.8, command: ["--config","/config/martin.yaml"], depends_on: [db], ports: ["3000:3000"] }
+  redis:   { image: redis:7-alpine }
+  api:     { build: ../apps/api, env_file: .env, depends_on: [db, redis], ports: ["8000:8000"], volumes: [../data:/data] }
+  web:     { build: ../apps/web, ports: ["5173:80"], depends_on: [api] }
+volumes: { pg: {} }</code></pre>
+<p><code>make demo-reset</code> reseeds the database to the known starting state in ~30 s. Run it before every rehearsal and right before the judged demo.</p>
+
+<h2 id="plan">14 · Seven-day plan</h2>
+<p>Six people, six lanes. Each lane has one owner who is accountable for its gate; anyone can help. The gates are what stop scope creep: nothing new starts until the previous gate is green.</p>
+<div class="roles">
+  <div class="role"><b>L1 · Map</b><span>JS. MapLibre, layer tree, hover/click, search UI, satellite panel</span></div>
+  <div class="role"><b>L2 · Portals</b><span>JS. Citizen portal, officer console, admin console, ECharts, forms</span></div>
+  <div class="role"><b>L3 · Gateway</b><span>Python. Auth, aggregator, adapters, workflow, audit, events, reports</span></div>
+  <div class="role"><b>L4 · Data &amp; GIS</b><span>Python. PostGIS schema, seed.py, Martin, department mock APIs, consistency checker</span></div>
+  <div class="role"><b>L5 · AI</b><span>Python. Sentinel-2 pipeline, offline COGs, alerts; OCR if time allows</span></div>
+  <div class="role"><b>L6 · Docs &amp; QA</b><span>Either. Technical Document, deck, demo script, test data, rehearsals, deployment</span></div>
+</div>
+
+<div class="day"><div class="d">Day 1<small>foundations</small></div><div>
+<ul>
+<li><b>All:</b> repo, branch rules, docker-compose up, <code>.env</code>, agree on the CDM JSON (§6) and freeze it.</li>
+<li><b>L1:</b> Vite app, MapLibre with OpenFreeMap + Esri imagery toggle, empty layer tree. <b>L2:</b> route tree, auth screens, shadcn setup, role-based redirects.</li>
+<li><b>L3:</b> FastAPI skeleton, JWT login, <code>require()</code> dependency, seeded users, sub-app mounting. <b>L4:</b> PostGIS schemas + migrations (Alembic), Martin config, pick the village polygon, start <code>seed.py</code>.</li>
+<li><b>L5:</b> Planetary Computer smoke test, choose the two dates, start <code>fetch_s2.py</code>. <b>L6:</b> STD outline, deck skeleton, collect standards references.</li>
+</ul><div class="gate">Gate: login works, empty map renders imagery, Postgres has schemas, STAC search returns scenes.</div></div></div>
+
+<div class="day"><div class="d">Day 2<small>data on the map</small></div><div>
+<ul>
+<li><b>L4:</b> <code>seed.py</code> complete — 400–800 parcels, all <code>dept_*</code> tables, planted anomalies. Department read endpoints live with <code>/docs</code>.</li>
+<li><b>L1:</b> parcels as MVT from Martin, hover + click, search box wired to <code>/search</code>. <b>L3:</b> aggregator with parallel fan-out and provenance; <code>/parcels/{ulpin}</code> returns full CDM.</li>
+<li><b>L2:</b> Parcel Profile drawer rendering CDM sections with source badges. <b>L5:</b> offline COGs downloaded and clipped; NDVI/NDBI Δ computed per parcel and written to <code>alerts</code>.</li>
+<li><b>L6:</b> STD §data schema + §API standards drafted from the actual OpenAPI export.</li>
+</ul><div class="gate">Gate: click any parcel → full aggregated profile in &lt; 500 ms. This is the moment the project exists.</div></div></div>
+
+<div class="day"><div class="d">Day 3<small>layers &amp; workflows</small></div><div>
+<ul>
+<li><b>L1:</b> three-tier layer tree with data-driven styling, legends, colour-by mode, zones + restriction + roads layers. <b>L4:</b> zones, restriction zones, roads, utilities lines seeded; consistency checker query + endpoint.</li>
+<li><b>L3:</b> applications + transitions engine, audit log, <code>/queue</code>, <code>/stats</code>. <b>L2:</b> Citizen portal (4 cards), mutation + building-permission forms, status timeline.</li>
+<li><b>L5:</b> <code>/ai/change-detection</code> endpoint (offline first), side-by-side imagery tiles for a parcel. <b>L6:</b> UI/UX guidelines + colour schema section; first deck draft.</li>
+</ul><div class="gate">Gate: citizen submits a mutation → it appears in the revenue officer's queue → officer approves → RoR changes → timeline shows it.</div></div></div>
+
+<div class="day"><div class="d">Day 4<small>consoles &amp; interop</small></div><div>
+<ul>
+<li><b>L2:</b> Officer console (KPIs, filters, queue, approve/return/reject), Admin console (connectors, mappings from YAML, consistency findings). <b>L3:</b> <code>/events</code> webhook, cache invalidation, system-initiated mutation, second adapter YAML (TN) with unit conversion.</li>
+<li><b>L1:</b> Satellite panel in the profile; alert layer on the map; map filters bound to console filters. <b>L4:</b> <code>?delay_ms</code>/<code>?fail</code> dev switches; department "Register deed" action that emits the event.</li>
+<li><b>L5:</b> planning permissibility rule + alert cross-check with RoR; begin OCR only if everything above is done. <b>L6:</b> Deploy API to Render, DB to Neon, web to Vercel; STD §security + §deployment.</li>
+</ul><div class="gate">Gate: the live sync demo (§9) works end to end on a clean <code>make demo-reset</code>.</div></div></div>
+
+<div class="day"><div class="d">Day 5<small>reports, polish, OCR</small></div><div>
+<ul>
+<li><b>L3:</b> Land Information Report PDF (WeasyPrint) with static map image, QR, HMAC verify page. <b>L2:</b> download + verify flow, empty/error/partial states everywhere, consent-request flow.</li>
+<li><b>L1:</b> performance pass (tile simplification at low zoom, label collisions), mobile-width check. <b>L4:</b> demo dataset tuning: make sure the 5 "story parcels" tell clean stories.</li>
+<li><b>L5:</b> OCR extraction with cached results for 3 demo scans, or hardening of change detection if OCR is not started. <b>L6:</b> full STD draft, deck v2, write the demo script (§15).</li>
+</ul><div class="gate">Gate: feature freeze at 21:00. Nothing new after this; only fixes.</div></div></div>
+
+<div class="day"><div class="d">Day 6<small>rehearsal &amp; hardening</small></div><div>
+<ul>
+<li>Three full rehearsals of the demo script with a timer; fix whatever broke, then reset and repeat.</li>
+<li>Chaos pass: kill the fiscal service mid-demo and confirm the profile degrades gracefully; disconnect Wi-Fi and confirm offline change detection and cached OCR still work.</li>
+<li>Export OpenAPI JSON for all seven apps into <code>/docs/api</code>; final STD read-through against the R6 list; deck v3 with real screenshots.</li>
+<li>Record a 3-minute backup video of the demo in case the venue machine fails.</li>
+</ul><div class="gate">Gate: demo passes 3/3 rehearsals from a cold start.</div></div></div>
+
+<div class="day"><div class="d">Day 7<small>buffer</small></div><div>
+<ul>
+<li>Untouched unless a gate slipped. If everything is green: README with one-command setup, architecture diagram in the repo, seed a second village to show multi-tenant switching in the admin console.</li>
+</ul><div class="gate">Gate: tag v1.0, freeze the branch used on stage.</div></div></div>
+
+<h2 id="demo">15 · Demo script (6 minutes)</h2>
+<p>One story, one parcel family, no tab-hunting. Rehearse the words as much as the clicks.</p>
+<ol class="demo">
+<li><b>The problem (30 s).</b> Show the Admin console's connector grid with six disconnected systems. "Today Ravi visits six offices to learn one thing about one plot."</li>
+<li><b>The map (45 s).</b> Open Map Explorer over the village on satellite imagery. Toggle the three tiers in order — base, essential, use-case — naming them as the PS does. Switch colour-by to "status" so disputes and mortgages pop.</li>
+<li><b>One click (60 s).</b> Click parcel 123/4. Walk the profile: ownership from Revenue, deed from Registration, zone from Planning, tax from Fiscal, no disputes, utilities present — point at the source badges and the <code>as_of</code> times. Open Timeline.</li>
+<li><b>Interoperability, live (45 s).</b> In the Registration mock, register a sale deed on 123/4 to Lakshmi Devi. Switch back: the parcel turns amber, the profile shows the mismatch banner, and the revenue officer's queue has a system-initiated mutation. "That is the Kaveri-to-Bhoomi hand-off, done through an open event contract."</li>
+<li><b>Citizen service (45 s).</b> As Lakshmi (citizen), verify ownership (masked result), track the mutation, download the signed Land Information Report and scan the QR on a phone to verify it.</li>
+<li><b>Officer decision (30 s).</b> As the revenue officer, approve the mutation with a remark; the RoR updates, the map returns to green, the audit trail shows both machine and human steps.</li>
+<li><b>AI (60 s).</b> Open the Satellite panel on the neighbouring parcel 124: 2019 vs 2025 imagery, NDVI −0.31, NDBI +0.18, "vegetation → built-up, 91 %". The record says agricultural with no building permission; send for field review. Show the resulting alert on the map layer.</li>
+<li><b>Resilience &amp; scale (30 s).</b> Flip the fiscal service to fail; reload the profile; the fiscal block shows "source unavailable, cached 2 h" while everything else loads. Close on the Standard Technical Document and the OpenAPI pages: "six systems, one key, open standards."</li>
+</ol>
+
+<h2 id="risks">16 · Risks and fallbacks</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Risk</th><th>Likelihood</th><th>Fallback (decided now)</th></tr></thead>
+<tbody>
+<tr><td>Seed script slips past Day 2 and blocks everyone</td><td><span class="pill warn">Medium</span></td><td>Day 1 evening: ship a 50-parcel hand-made GeoJSON so L1–L3 can build against real shapes; swap in the generated set when ready</td></tr>
+<tr><td>Venue has no or poor internet</td><td><span class="pill crit">High</span></td><td>Everything runs locally; OpenFreeMap tiles cached by the browser during rehearsal; Esri imagery replaced by the two local Sentinel-2 COGs served as a raster layer; OCR responses pre-cached</td></tr>
+<tr><td>Planetary Computer signing changes or is slow</td><td><span class="pill warn">Medium</span></td><td>Offline COGs are the primary path from Day 3; Copernicus Data Space account created Day 1 as second source</td></tr>
+<tr><td>Bhuvan WMS down during demo</td><td><span class="pill crit">High</span></td><td>It is a flagged optional overlay; never on the demo path</td></tr>
+<tr><td>MapLibre performance with many styled layers</td><td><span class="pill mute">Low</span></td><td>One parcel source, many style layers; <code>ST_Simplify</code> below z14; labels only above z16</td></tr>
+<tr><td>Aggregator latency from six sequential calls</td><td><span class="pill mute">Low</span></td><td>Parallel <code>asyncio.gather</code> with per-source timeout; Redis cache 60 s; partial responses</td></tr>
+<tr><td>Team spends Day 4 on OCR and interop slips</td><td><span class="pill warn">Medium</span></td><td>OCR is gated behind the Day 4 gate; L6 enforces it</td></tr>
+<tr><td>Judges ask about real ULPIN / real data</td><td><span class="pill warn">Medium</span></td><td>Say plainly: ULPIN-style deterministic ID, synthetic cadastre in a real village, per PS guidance on mock data; show the adapter YAMLs as the integration path</td></tr>
+<tr><td>Demo machine failure</td><td><span class="pill mute">Low</span></td><td>Second laptop with the same image; public URL on Render/Vercel; 3-minute recorded video</td></tr>
+</tbody></table></div>
+
+<h2 id="std">17 · Standard Technical Document — what it must contain</h2>
+<p>R6 lists the sections by name. Use exactly these headings so the evaluator can tick them off.</p>
+<div class="grid3">
+  <div class="tile"><h4>1 · System architecture</h4><p>The diagram in §4, the three planes, sync vs async paths, one-process-six-apps rationale, production topology (adapters per state, gateway per state or central).</p></div>
+  <div class="tile"><h4>2 · Data schemas</h4><p>CDM JSON Schema; table DDL from §6; LADM mapping; ULPIN-style derivation; DoLR Glossary of Revenue Terms used for field names (khata, patta, khasra, survey no.).</p></div>
+  <div class="tile"><h4>3 · API standards</h4><p>OpenAPI 3.1 for all seven apps (exported); OGC API Features conventions for collections/items; versioning (<code>/v1</code>), pagination, error envelope, idempotency keys on POST.</p></div>
+  <div class="tile"><h4>4 · Interoperability standards</h4><p>Adapter interface and YAML mapping; event contract; API Setu / DEPA consent alignment; MeitY MDDS codes for state/district/village; NGDRS as the precedent for push-based registration data.</p></div>
+  <div class="tile"><h4>5 · GIS standards</h4><p>GeoJSON RFC 7946, EPSG:4326 exchange / UTM 43N-44N computation, MVT spec, WMS 1.3 / WFS 2.0 consumption (Bhuvan), topology rules (no overlaps, no gaps), metadata per layer (source, date, accuracy).</p></div>
+  <div class="tile"><h4>6 · Security framework</h4><p>JWT/RBAC matrix from §12, consent tokens, append-only audit, PII masking rules, report signing, TLS, rate limits, OWASP ASVS L1 as the baseline checklist.</p></div>
+  <div class="tile"><h4>7 · UI/UX guidelines</h4><p>Role-first navigation, map as shared canvas, provenance always visible, plain-language status names, bilingual labels (English + state language) as a design rule, WCAG 2.2 AA contrast.</p></div>
+  <div class="tile"><h4>8 · Colour schema</h4><p>Status colours (verified green, pending amber, disputed red hatch, mortgaged violet, government blue), land-use palette, zone palette, alert severities — with hex values and a colour-blind-safe check.</p></div>
+  <div class="tile"><h4>9 · Deployment &amp; scalability</h4><p>docker-compose for dev; Kubernetes sketch for a state (gateway HPA, PostGIS with read replicas, Martin behind CDN, PMTiles nightly above 5 lakh parcels, Redis, object storage); rollout from 1 village → 1 district → state; cost notes.</p></div>
+</div>
+
+<h2 id="sources">Sources and references</h2>
+<ul class="src">
+<li>PS SIH26014 text (mirrors): <a href="https://sih2026.vuce.in/ps/SIH26014">sih2026.vuce.in</a> · <a href="https://zaidsayyed.in/tools/sih-problem-statements/sih26014">zaidsayyed.in</a> · official portal <a href="https://sih.gov.in/sih2026PS">sih.gov.in</a></li>
+<li>Land Stack pilot launch, 31 Dec 2025: <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2210204">PIB</a> · <a href="https://en.wikipedia.org/wiki/Chandigarh_Landstack">Chandigarh Landstack</a></li>
+<li>ULPIN / Bhu-Aadhaar: <a href="https://dolr.gov.in/en/ulpin/">DoLR</a> · NGDRS: <a href="https://dolr.gov.in/en/national-generic-document-registration-system/">DoLR</a> · Glossary of Revenue Terms: <a href="https://dolr.gov.in/en/gort/">DoLR GoRT</a></li>
+<li>Bhu-Naksha: <a href="https://www.nic.gov.in/project/bhunaksha/">NIC</a> · Bhuvan WMS: <a href="https://bhuvan.nrsc.gov.in/wiki/index.php/How_to_use_WMS_services">NRSC wiki</a></li>
+<li>Village boundaries: <a href="https://projects.datameet.org/indian_village_boundaries/">DataMeet</a> · <a href="https://docs.devdatalab.org/SHRUG-Construction-Details/shrug-open-source-polygons/">SHRUG</a> · Survey of India free maps: <a href="https://onlinemaps.surveyofindia.gov.in/FreeMapSpecification.aspx">SoI</a></li>
+<li>Planetary Computer: <a href="https://planetarycomputer.microsoft.com/docs/quickstarts/reading-stac/">STAC quickstart</a> · <a href="https://planetarycomputer.microsoft.com/docs/concepts/sas/">SAS signing</a> · <a href="https://odc-stac.readthedocs.io/en/latest/notebooks/stac-load-S2-ms.html">odc-stac S2 example</a> · Copernicus quotas: <a href="https://documentation.dataspace.copernicus.eu/FAQ.html">CDSE FAQ</a></li>
+<li>MapLibre GL JS: <a href="https://www.npmjs.com/package/maplibre-gl">npm</a> · react-map-gl: <a href="https://visgl.github.io/react-map-gl/docs/whats-new">docs</a> · Martin: <a href="https://maplibre.org/martin/">maplibre.org/martin</a></li>
+<li>OpenFreeMap: <a href="https://openfreemap.org/">openfreemap.org</a> · OSM tile usage policy: <a href="https://operations.osmfoundation.org/policies/tiles/">OSMF</a> · Esri basemaps: <a href="https://www.esri.com/en-us/arcgis/products/arcgis-location-platform/services/basemaps">ArcGIS Location Platform</a></li>
+<li>PostGIS image: <a href="https://github.com/postgis/docker-postgis">postgis/docker-postgis</a> · WeasyPrint: <a href="https://github.com/Kozea/WeasyPrint/releases">releases</a> · Keycloak (rejected): <a href="https://www.keycloak.org/getting-started/getting-started-docker">docs</a></li>
+<li>Standards: <a href="https://docs.ogc.org/is/17-069r4/17-069r4.html">OGC API Features</a> · <a href="https://datatracker.ietf.org/doc/html/rfc7946">GeoJSON RFC 7946</a> · <a href="https://github.com/mapbox/vector-tile-spec">MVT spec</a> · <a href="https://epsg.io/32643">EPSG:32643</a> · <a href="https://www.iso.org/standard/51206.html">ISO 19152 LADM</a> · <a href="https://docs.apisetu.gov.in/document-central/mdds/Introduction.html">MeitY MDDS</a> · <a href="https://www.indiastack.org/data.html">DEPA</a></li>
+<li>Comparable SIH work: <a href="https://dev.to/sahilbhardwaj81/fra-atlas-a-project-blog-16k3">FRA Atlas (2025)</a> · <a href="https://github.com/Aadityasingh0709/bhoomisetu-sih26016">BhoomiSetu (SIH26016)</a></li>
+<li>Hosting free tiers (third-party summaries, re-verify at sign-up): <a href="https://dev.to/pavel-hostim/render-vs-railway-vs-flyio-pricing-compared-2026-2e5p">Render vs Railway vs Fly</a> · <a href="https://agentdeals.dev/neon-vs-supabase">Neon vs Supabase</a></li>
+</ul>
+<p class="fine">Verified items: PS text and outcomes, Land Stack pilot, ULPIN 14-char format, Planetary Computer anonymous Sentinel-2 signing, OpenFreeMap terms, OSMF tile policy, MapLibre 6 / react-map-gl 8 / Martin 1.8 / PostGIS 17-3.5 / WeasyPrint 70 versions. Inferred or assumed: exact ULPIN derivation (not public), Bhuvan CORS behaviour, Gemini free-tier limits (vendor console is the source of truth).</p>
+</main>
+</div>

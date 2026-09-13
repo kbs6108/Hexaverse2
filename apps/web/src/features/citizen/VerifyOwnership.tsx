@@ -1,0 +1,73 @@
+import { useState, type FormEvent } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
+import { CheckCircle2, XCircle } from 'lucide-react';
+import { api } from '@/lib/api';
+import { Card, CardBody, CardHeader } from '@/components/Card';
+import { Field, Input } from '@/components/Field';
+import { Button } from '@/components/Button';
+import { ErrorNote } from '@/components/EmptyState';
+import { PageTitle } from './CitizenHome';
+import { titleCase } from '@/lib/format';
+
+export function VerifyOwnership() {
+  const search = useSearch({ from: '/citizen/verify' });
+  const [ulpin, setUlpin] = useState(search.ulpin ?? '');
+  const [name, setName] = useState('');
+  const m = useMutation({ mutationFn: () => api.verifyOwnership(ulpin.trim(), name.trim()) });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    m.mutate();
+  };
+
+  return (
+    <>
+      <PageTitle title="Verify ownership" subtitle="Compares a claimed name with the record of rights and the latest registered deed. The result never reveals the actual owner." />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <Card>
+          <CardHeader title="Claim" />
+          <CardBody>
+            <form onSubmit={submit} className="flex flex-col gap-3">
+              <Field label="ULPIN" htmlFor="v-ulpin" hint="14-character parcel id; pick a parcel on the map to prefill.">
+                <Input id="v-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} placeholder="TDR1K3M9A2F7C1" />
+              </Field>
+              <Field label="Claimed owner name" htmlFor="v-name">
+                <Input id="v-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="As written on the sale deed" />
+              </Field>
+              <Button type="submit" variant="primary" loading={m.isPending} className="self-start">Verify</Button>
+            </form>
+          </CardBody>
+        </Card>
+
+        <div>
+          {m.isError && <ErrorNote error={m.error} />}
+          {m.data && (
+            <Card className={m.data.match ? 'border-primary/40' : 'border-brick/40'}>
+              <CardBody className="pt-5">
+                <div className="flex items-start gap-3">
+                  {m.data.match ? <CheckCircle2 size={36} className="text-primary" /> : <XCircle size={36} className="text-brick" />}
+                  <div>
+                    <p className="text-lg font-semibold">{m.data.match ? 'Name matches the record' : 'Name does not match'}</p>
+                    <p className="text-sm text-ink-2">Similarity score {Math.round(m.data.score * 100)}%</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-ground-2" role="meter" aria-valuenow={Math.round(m.data.score * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Similarity">
+                    <div className={`h-full ${m.data.match ? 'bg-primary' : 'bg-brick'}`} style={{ width: `${Math.round(m.data.score * 100)}%` }} />
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-ink-3">Compared against: {m.data.compared.map(titleCase).join(', ')}. The registered owner’s name is not disclosed by this service.</p>
+              </CardBody>
+            </Card>
+          )}
+          {!m.data && !m.isError && (
+            <div className="rounded-lg border border-dashed border-line p-6 text-sm text-ink-3">
+              Result appears here. A match does not by itself prove title; use it together with the Land Information Report.
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

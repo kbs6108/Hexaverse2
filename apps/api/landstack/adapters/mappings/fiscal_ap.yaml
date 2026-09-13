@@ -1,0 +1,15 @@
+source: "AP CDMA Property Tax (mock)"
+department: fiscal
+state: AP
+id_field: ulpin
+endpoints:
+  tax: {path: /fiscal/tax, params: {ulpin: "{ulpin}"}}
+  valuation: {path: /fiscal/valuation, params: {ulpin: "{ulpin}"}}
+map:
+  tax.item.assessment_no: fiscal.tax.assessment_no
+  tax.item.annual_demand: fiscal.tax.annual_demand
+  tax.item.arrears: fiscal.tax.arrears
+  tax.item.paid_till: fiscal.tax.paid_till
+  tax.item.last_paid_on: fiscal.tax.last_paid_on
+  valuation.item.guideline_value_per_sqm: fiscal.guideline_value_per_sqm
+  valuation.item.effective_from: fiscal.guideline_effective_from

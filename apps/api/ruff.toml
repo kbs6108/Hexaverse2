@@ -1,0 +1,16 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = ["data", "build", "dist"]
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "ASYNC", "RUF"]
+# B008: FastAPI Depends() in defaults · RUF001-003: unicode in docstrings/strings · UP046/UP040: PEP 695 syntax is
+# avoided so the package also imports on 3.10/3.11 tooling · ASYNC109: explicit timeout params are intentional
+ignore = ["B008", "RUF012", "UP017", "UP007", "UP035", "UP006", "UP045", "RUF001", "RUF002", "RUF003", "UP046", "UP040", "ASYNC109", "E741"]
+
+[lint.per-file-ignores]
+"tests/*" = ["E501", "RUF043", "RUF059"]
+
+[lint.pycodestyle]
+# formatter wraps code at 120; long SQL / HTML string literals may run to 150
+max-line-length = 150

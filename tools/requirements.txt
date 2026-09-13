@@ -1,0 +1,8 @@
+# Runtime deps for tools/migrate.py, tools/seed.py, tools/demo_reset.py, tools/set_claims.py.
+# (tools/fetch_s2.py needs the heavier raster stack listed in its docstring.)
+psycopg[binary]>=3.1
+shapely>=2.0
+pyproj>=3.6
+numpy>=1.26
+faker>=24
+firebase-admin>=6.5

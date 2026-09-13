@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+
+jobs:
+  api:
+    name: API (ruff · migrate · seed · pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgis:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: landstack
+          POSTGRES_PASSWORD: landstack
+          POSTGRES_DB: landstack
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U landstack -d landstack"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql+asyncpg://landstack:landstack@localhost:5432/landstack
+      AUTH_MODE: dev
+      S2_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            apps/api/requirements.txt
+            tools/requirements.txt
+
+      - name: Install WeasyPrint runtime libraries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            libpango-1.0-0 libpangoft2-1.0-0 libpangocairo-1.0-0 libcairo2 libharfbuzz0b libharfbuzz-subset0 \
+            libgdk-pixbuf-2.0-0 shared-mime-info fonts-dejavu-core
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/api/requirements.txt -r tools/requirements.txt pytest pytest-asyncio ruff
+
+      - name: Lint (ruff)
+        run: ruff check apps/api
+
+      - name: Apply migrations
+        # tools/migrate.py reads DATABASE_URL (or --database-url); it normalises the +asyncpg scheme itself.
+        run: python tools/migrate.py
+
+      - name: Seed demo data
+        run: python tools/seed.py
+
+      - name: Idempotency check (migrate again is a no-op)
+        run: python tools/migrate.py | tee /dev/stderr | grep -q "nothing to do"
+
+      - name: Tests (unit + integration; DATABASE_URL is set)
+        working-directory: apps/api
+        run: pytest -q
+
+  web:
+    name: Web (typecheck · build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          VITE_API_URL: http://localhost:8000
+          VITE_AUTH_MODE: dev
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+          retention-days: 7
+
+  sql:
+    name: SQL (pglast parse)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install pglast
+      - name: Parse every migration
+        run: |
+          python - <<'PY'
+          import glob, sys
+          import pglast
+          failed = 0
+          for path in sorted(glob.glob("db/migrations/*.sql")):
+              sql = open(path, encoding="utf-8").read()
+              try:
+                  stmts = pglast.parse_sql(sql)
+                  print(f"ok   {path}: {len(stmts)} statements")
+              except pglast.parser.ParseError as exc:
+                  failed += 1
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+          sys.exit(1 if failed else 0)
+          PY
+
+  compose:
+    name: Config sanity (compose · firebase.json · shell)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml config -q
+      - run: python3 -c "import json; json.load(open('firebase.json')); json.load(open('.firebaserc.example'))"
+      - run: bash -n infra/cloudrun/deploy.sh

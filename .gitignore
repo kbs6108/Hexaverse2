@@ -1,0 +1,38 @@
+# secrets & local env
+.env
+.env.*
+!.env.example
+*.pem
+serviceAccount*.json
+
+# data that is large or generated
+data/s2/*
+!data/s2/README.md
+!data/s2/.gitkeep
+data/storage/
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# node
+node_modules/
+apps/web/dist/
+*.local
+
+# editors / OS
+.DS_Store
+.idea/
+.vscode/
+
+# infra / deploy
+infra/cloudrun/secrets.env
+.firebase/
+firebase-debug.log
+.firebaserc
+!.firebaserc.example
+dist/

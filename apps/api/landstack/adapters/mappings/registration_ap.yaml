@@ -1,0 +1,20 @@
+source: "AP IGRS / CARD (mock)"
+department: registration
+state: AP
+id_field: ulpin
+endpoints:
+  deeds: {path: /registration/deeds, params: {ulpin: "{ulpin}"}}
+  encumbrances: {path: /registration/encumbrances, params: {ulpin: "{ulpin}", active: "1"}}
+map:
+  deeds.items[0].doc_no: rights.registration.doc_no
+  deeds.items[0].deed_type: rights.registration.deed_type
+  deeds.items[0].registered_on: rights.registration.registered_on
+  deeds.items[0].sro_code: rights.registration.sro_code
+  deeds.items[0].claimant: rights.registration.claimant
+  deeds.items[0].executant: rights.registration.executant
+  deeds.items[0].consideration: rights.registration.consideration
+  deeds.items[0].extent_sqm: rights.registration.extent_sqm
+lists:
+  restrictions.encumbrances:
+    from: encumbrances.items
+    map: {kind: kind, holder: holder, amount: amount, active: active, from_date: from_date, to_date: to_date}

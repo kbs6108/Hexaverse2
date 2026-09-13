@@ -1,0 +1,110 @@
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Check, Copy } from 'lucide-react';
+import { Drawer } from '@/components/Drawer';
+import { Tabs, TabPanel } from '@/components/Tabs';
+import { Loading } from '@/components/Spinner';
+import { ErrorNote } from '@/components/EmptyState';
+import { api, qk } from '@/lib/api';
+import { useUI } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
+import { statusChips } from '@/components/StatusChip';
+import { Overview } from './sections/Overview';
+import { Ownership } from './sections/Ownership';
+import { Registration } from './sections/Registration';
+import { PlanningSection } from './sections/Planning';
+import { FiscalSection } from './sections/Fiscal';
+import { UtilitiesSection } from './sections/Utilities';
+import { Timeline } from './sections/Timeline';
+import { SatelliteSection } from './sections/Satellite';
+
+export type ParcelTab = 'overview' | 'ownership' | 'registration' | 'planning' | 'fiscal' | 'utilities' | 'timeline' | 'satellite';
+
+const TABS: { id: ParcelTab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'ownership', label: 'Ownership & RoR' },
+  { id: 'registration', label: 'Registration & Encumbrance' },
+  { id: 'planning', label: 'Planning & Permissions' },
+  { id: 'fiscal', label: 'Fiscal' },
+  { id: 'utilities', label: 'Utilities' },
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'satellite', label: 'Satellite' },
+];
+
+export function ParcelDrawer({ onClose }: { onClose: () => void }) {
+  const { selectedUlpin, drawerOpen } = useUI();
+  const { user } = useAuth();
+  const [tab, setTab] = useState<ParcelTab>('overview');
+  useEffect(() => setTab('overview'), [selectedUlpin]);
+
+  const identity = user?.uid ?? 'anon';
+  const q = useQuery({
+    queryKey: qk.parcel(selectedUlpin ?? '', identity),
+    queryFn: () => api.parcel(selectedUlpin!),
+    enabled: !!selectedUlpin && drawerOpen,
+  });
+
+  const p = q.data;
+  return (
+    <Drawer
+      open={drawerOpen && !!selectedUlpin}
+      onClose={onClose}
+      ariaLabel="Parcel profile"
+      header={
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-wide text-ink-3">Parcel profile</p>
+          <h2 className="truncate text-lg font-semibold leading-tight">
+            {p ? `Sy. No. ${p.identifiers.survey_no}` : 'Loading…'}
+            {p && <span className="ml-2 text-sm font-normal text-ink-3">{p.identifiers.village}</span>}
+          </h2>
+          <UlpinLine ulpin={selectedUlpin ?? ''} />
+          {p && <div className="mt-2 flex flex-wrap gap-1">{statusChips(p.status)}</div>}
+        </div>
+      }
+    >
+      {q.isLoading && <Loading label="Aggregating six department systems…" />}
+      {q.isError && (
+        <div className="p-4">
+          <ErrorNote error={q.error} retry={() => void q.refetch()} />
+        </div>
+      )}
+      {p && (
+        <>
+          <Tabs ariaLabel="Parcel profile sections" items={TABS} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-panel px-2" />
+          <div className="p-4">
+            <TabPanel id="overview" active={tab === 'overview'}><Overview p={p} goTo={setTab} /></TabPanel>
+            <TabPanel id="ownership" active={tab === 'ownership'}><Ownership p={p} /></TabPanel>
+            <TabPanel id="registration" active={tab === 'registration'}><Registration p={p} /></TabPanel>
+            <TabPanel id="planning" active={tab === 'planning'}><PlanningSection p={p} /></TabPanel>
+            <TabPanel id="fiscal" active={tab === 'fiscal'}><FiscalSection p={p} /></TabPanel>
+            <TabPanel id="utilities" active={tab === 'utilities'}><UtilitiesSection p={p} /></TabPanel>
+            <TabPanel id="timeline" active={tab === 'timeline'}><Timeline ulpin={p.ulpin} /></TabPanel>
+            <TabPanel id="satellite" active={tab === 'satellite'}><SatelliteSection p={p} /></TabPanel>
+          </div>
+        </>
+      )}
+    </Drawer>
+  );
+}
+
+export function UlpinLine({ ulpin }: { ulpin: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-0.5 flex items-center gap-1.5">
+      <span className="font-mono text-[12.5px] text-ink-2">{ulpin}</span>
+      <button
+        type="button"
+        aria-label="Copy ULPIN"
+        onClick={() => {
+          void navigator.clipboard?.writeText(ulpin).then(() => {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1200);
+          });
+        }}
+        className="rounded p-0.5 text-ink-3 hover:bg-ground-2 hover:text-ink"
+      >
+        {copied ? <Check size={13} className="text-primary" /> : <Copy size={13} />}
+      </button>
+    </div>
+  );
+}

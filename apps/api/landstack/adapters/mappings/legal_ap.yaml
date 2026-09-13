@@ -1,0 +1,10 @@
+source: "eCourts / NJDG (mock)"
+department: legal
+state: AP
+id_field: ulpin
+endpoints:
+  disputes: {path: /legal/disputes, params: {ulpin: "{ulpin}"}}
+lists:
+  restrictions.disputes:
+    from: disputes.items
+    map: {case_no: case_no, court: court, nature: nature, status: status, filed_on: filed_on, next_hearing: next_hearing}
