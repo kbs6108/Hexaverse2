@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowDown, ArrowRight, Search } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, Search } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import { DEPARTMENTS, PITCH_FIGURES, QUICK_START, ROLES, STORY_PARCELS } from '@/features/marketing/pitch';
+import { DEPARTMENTS, PITCH_FIGURES, QUICK_START, ROLES, STORY_PARCELS, TIERS } from '@/features/marketing/pitch';
 import type { Tone } from '@/components/Badge';
 import { MapLaunch } from './MapLaunch';
 
@@ -32,28 +32,55 @@ const TONE_SOFT: Record<Tone, string> = {
 function SystemScene({
   chapter,
   title,
+  caption,
+  points,
   children,
   id,
 }: {
   chapter: string;
   title: React.ReactNode;
+  caption: string;
+  points?: { head: string; sub: string }[];
   children: React.ReactNode;
   id?: string;
 }) {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
-  const titleY = useTransform(scrollYProgress, [0.1, 0.5, 0.9], [60, 0, -60]);
-  const titleOpacity = useTransform(scrollYProgress, [0.06, 0.22, 0.85, 0.98], [0, 1, 1, 0]);
   return (
-    <section ref={ref} id={id} className="landing-section relative min-h-[115vh] overflow-hidden bg-[#f5f5f7] text-[#1d1d1f]">
-      <div className="sticky top-0 flex min-h-screen items-center px-6 py-20 sm:px-12 lg:px-20">
-        <div className="mx-auto grid w-full max-w-[1400px] items-center gap-10 lg:grid-cols-[.78fr_1.22fr]">
-          <motion.div style={{ y: titleY, opacity: titleOpacity }} className="relative z-10 max-w-xl">
-            <p className="mb-7 font-display text-[11px] uppercase tracking-[0.3em] text-[#0e6b54]">{chapter} / The System</p>
-            <h2 className="font-display text-5xl font-semibold leading-[.92] tracking-[-0.06em] sm:text-7xl">{title}</h2>
-          </motion.div>
-          <div className="relative min-h-[26rem]">{children}</div>
-        </div>
+    <section id={id} className="landing-section relative flex min-h-screen items-center overflow-hidden bg-[#f5f5f7] py-24 text-[#1d1d1f]">
+      <div className="mx-auto grid w-full max-w-[1400px] items-center gap-12 px-6 sm:px-12 lg:grid-cols-[.9fr_1.1fr] lg:px-20">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.35 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="relative z-10 max-w-xl"
+        >
+          <p className="mb-6 font-display text-[11px] uppercase tracking-[0.3em] text-[#0e6b54]">{chapter} / The System</p>
+          <h2 className="font-display text-5xl font-semibold leading-[.92] tracking-[-0.06em] sm:text-6xl">{title}</h2>
+          <p className="mt-6 max-w-md text-[15px] leading-7 text-[#515154]">{caption}</p>
+          {points && (
+            <ul className="mt-7 space-y-3">
+              {points.map((p) => (
+                <li key={p.head} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#0e6b54]/10">
+                    <Check size={12} className="text-[#0e6b54]" />
+                  </span>
+                  <p className="text-sm leading-6 text-[#515154]">
+                    <span className="font-semibold text-[#1d1d1f]">{p.head}</span> — {p.sub}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 48 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="relative min-h-[26rem]"
+        >
+          {children}
+        </motion.div>
       </div>
     </section>
   );
@@ -242,7 +269,13 @@ export function StorySections() {
     <div className="bg-[#f5f5f7]">
       <StatsStrip />
 
-      <SystemScene id="system-map" chapter="01" title={<>Land, <span className="text-[#0e6b54]">located.</span></>}>
+      <SystemScene
+        id="system-map"
+        chapter="01"
+        title={<>Land, <span className="text-[#0e6b54]">located.</span></>}
+        caption="A fast vector-tile map of the whole cadastre, organised in the three GIS tiers the problem statement asks for. Click any parcel and its full record opens."
+        points={TIERS.map((t) => ({ head: t.name, sub: t.blurb }))}
+      >
         <ParcelMap />
         <div className="absolute bottom-5 left-5 font-mono text-[10px] uppercase tracking-[.22em] text-[#86EFAC]/80">LIVE / GIS PARCEL LAYER</div>
       </SystemScene>
@@ -256,7 +289,16 @@ export function StorySections() {
 
       <DepartmentsSection />
 
-      <SystemScene chapter="03" title={<>Every record.<br /><span className="text-[#0e6b54]">One search.</span></>}>
+      <SystemScene
+        chapter="03"
+        title={<>Every record.<br /><span className="text-[#0e6b54]">One search.</span></>}
+        caption="Search a survey number, ULPIN or khata and get the assembled record in under a second — with every field traceable to the system it came from."
+        points={[
+          { head: 'Per-source provenance', sub: 'each block names its department, timestamp and health.' },
+          { head: 'Privacy by default', sub: 'owner details are masked unless you own the parcel or hold consent.' },
+          { head: 'Verifiable reports', sub: 'download a signed report anyone can check via its QR code.' },
+        ]}
+      >
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="w-full max-w-xl rounded-xl border border-[#86EFAC]/40 bg-[#0D1A13]/95 p-3 shadow-[0_24px_60px_-24px_rgba(13,26,19,0.55)] backdrop-blur-xl">
             <div className="flex items-center gap-4 border-b border-[#86EFAC]/20 px-3 py-4">
@@ -281,7 +323,17 @@ export function StorySections() {
         className="bg-[#f5f5f7]"
       />
 
-      <SystemScene id="identity" chapter="05" title={<>Different states.<br /><span className="text-[#0e6b54]">Common language.</span></>}>
+      <SystemScene
+        id="identity"
+        chapter="05"
+        title={<>Different states.<br /><span className="text-[#0e6b54]">Common language.</span></>}
+        caption="Every state keeps its own systems and vocabulary — khata in Andhra, patta in Tamil Nadu. An adapter maps each into one Common Land Model, so onboarding a state is a mapping file, not a migration."
+        points={[
+          { head: 'Per-state adapters', sub: 'field mappings translate local vocabulary into the shared model.' },
+          { head: 'Event contract', sub: 'a registered deed automatically notifies the revenue mutation queue.' },
+          { head: 'Open APIs', sub: 'OGC-shaped, consent-aware endpoints any state system can integrate.' },
+        ]}
+      >
         <div ref={apiRef} className="absolute inset-0 flex flex-col items-center justify-center gap-3 font-display text-sm uppercase tracking-[.18em] text-[#1d1d1f]">
           <motion.div style={{ x: apiX }} className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#EFFFF7]">Andhra Pradesh</motion.div>
           <motion.div className="h-8 w-px bg-[#0e6b54]" />

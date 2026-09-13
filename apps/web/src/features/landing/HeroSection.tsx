@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowRight } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ShaderAnimation } from './ShaderAnimation';
 import { MapLaunch } from './MapLaunch';
 import { createTopDockController } from './top-dock-controller';
@@ -8,13 +8,32 @@ import { createTopDockController } from './top-dock-controller';
 const DOCK_ITEM =
   'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]';
 
+/** Anchored sections the dock tracks, in page order. */
+const SPY_SECTIONS = ['top', 'departments', 'how', 'stories'] as const;
+
 export function HeroSection() {
   const dockRef = useRef<HTMLElement>(null);
+  const [active, setActive] = useState<string>('top');
 
   useEffect(() => {
     const dock = dockRef.current;
     if (!dock) return;
     return createTopDockController(dock, () => ({ proximity: 140, spring: 0.22, damping: 0.55, widthGrowth: 32, heightGrowth: 32, drop: 14 }));
+  }, []);
+
+  // Scrollspy: mark the dock item whose section currently occupies mid-viewport.
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) setActive(e.target.id);
+        }
+      },
+      { rootMargin: '-40% 0px -55% 0px' },
+    );
+    const els = SPY_SECTIONS.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -32,10 +51,10 @@ export function HeroSection() {
             Land Stack
           </a>
           <nav ref={dockRef} className="atd-modern__dock hidden items-center gap-1 rounded-full border border-black/[0.05] bg-black/[0.04] p-1 md:flex" aria-label="Primary navigation">
-            <a data-dock-item href="#top" className={DOCK_ITEM}>Overview</a>
-            <a data-dock-item href="#departments" className={DOCK_ITEM}>Departments</a>
-            <a data-dock-item href="#how" className={DOCK_ITEM}>How it works</a>
-            <a data-dock-item href="#stories" className={DOCK_ITEM}>Stories</a>
+            <a data-dock-item data-active={active === 'top'} href="#top" className={DOCK_ITEM}>Overview</a>
+            <a data-dock-item data-active={active === 'departments'} href="#departments" className={DOCK_ITEM}>Departments</a>
+            <a data-dock-item data-active={active === 'how'} href="#how" className={DOCK_ITEM}>How it works</a>
+            <a data-dock-item data-active={active === 'stories'} href="#stories" className={DOCK_ITEM}>Stories</a>
             <Link data-dock-item to="/help" className={DOCK_ITEM}>Guide</Link>
           </nav>
           <MapLaunch className="cta-glow shrink-0 rounded-full bg-[#0e6b54] px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#0a5a46] active:scale-[0.98]">

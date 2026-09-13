@@ -210,3 +210,19 @@ code, kbd, .mono { font-family: var(--font-mono); }
 @media (prefers-reduced-motion: reduce) {
   .map-launch-mark { animation: none; }
 }
+
+/* Gentle cross-page transition: re-applied on every route change (no remount). */
+@keyframes route-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.route-fade { animation: route-fade 240ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .route-fade { animation: none; }
+}
+
+/* Dock scrollspy: the section currently in view gets a quiet filled pill. */
+.atd-modern__item[data-active='true'] {
+  background: rgba(14, 107, 84, 0.1);
+  color: #0e6b54;
+}

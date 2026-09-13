@@ -1,6 +1,7 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { Building2, HelpCircle, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { ArrowLeft, Building2, HelpCircle, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { roleAtLeast } from '@/lib/auth';
 import { SearchBox } from '@/features/map/SearchBox';
@@ -24,18 +25,46 @@ const NAV: { to: string; label: string; icon: typeof MapIcon; min: Role }[] = [
   { to: '/admin', label: 'Admin', icon: ShieldCheck, min: 'admin' },
 ];
 
+/** Quiet "you are here" label shown next to the wordmark. */
+function routeLabel(pathname: string): string | null {
+  if (pathname.startsWith('/map')) return 'Map Explorer';
+  if (pathname.startsWith('/citizen')) return 'Citizen services';
+  if (pathname.startsWith('/officer')) return 'Officer console';
+  if (pathname.startsWith('/admin')) return 'Admin console';
+  if (pathname === '/welcome') return 'Overview';
+  if (pathname === '/help') return 'Guide';
+  if (pathname === '/login') return 'Sign in';
+  if (pathname.startsWith('/verify/')) return 'Report verification';
+  return null;
+}
+
+/** Re-triggers a subtle fade on the content area on every route change (no remount). */
+function useRouteFade(pathname: string) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.remove('route-fade');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('route-fade');
+  }, [pathname]);
+  return ref;
+}
+
 export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
   const minimal = pathname.startsWith('/verify/') || pathname === '/login' || pathname === '/welcome' || pathname === '/help';
   const isMap = pathname === '/map';
+  const label = routeLabel(pathname);
+  const mainRef = useRouteFade(pathname);
 
   // The cinematic landing at `/` renders full-bleed without app chrome.
   // scroll-smooth keeps dock anchor jumps gentle (scoped here so app-side
   // scrolling is untouched).
   if (pathname === '/') {
     return (
-      <main className="h-full overflow-y-auto scroll-smooth">
+      <main ref={mainRef} className="h-full overflow-y-auto scroll-smooth">
         <Outlet />
       </main>
     );
@@ -44,11 +73,24 @@ export function Shell() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="z-30 flex h-12 shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
+        <Link
+          to="/"
+          className="flex size-8 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
+          title="Back to landing"
+          aria-label="Back to landing"
+        >
+          <ArrowLeft size={17} />
+        </Link>
         <Link to="/" className="flex items-center gap-2 rounded-md pr-2 text-ink hover:opacity-90" aria-label="Land Stack home">
           <LogoMark />
           <span className="font-display text-[17px] font-semibold tracking-tight">Land Stack</span>
           <span className="hidden rounded-sm border border-line px-1 font-mono text-[10px] uppercase text-ink-3 lg:inline">Mangalagiri AOI</span>
         </Link>
+        {label && (
+          <span className="hidden items-center gap-1.5 text-[12px] text-ink-3 sm:flex" aria-current="page">
+            <span aria-hidden>/</span> {label}
+          </span>
+        )}
         {!minimal && (
           <div className="mx-auto w-full max-w-xl">
             <SearchBox />
@@ -91,7 +133,7 @@ export function Shell() {
             })}
           </nav>
         )}
-        <main className={clsx('relative min-w-0 flex-1', isMap ? 'overflow-hidden' : 'overflow-y-auto scroll-thin ground-texture')}>
+        <main ref={mainRef} className={clsx('relative min-w-0 flex-1', isMap ? 'overflow-hidden' : 'overflow-y-auto scroll-thin ground-texture')}>
           <Outlet />
         </main>
       </div>
