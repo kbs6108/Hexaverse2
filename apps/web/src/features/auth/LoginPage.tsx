@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Field, Input } from '@/components/Field';
@@ -18,8 +18,23 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [signedInAs, setSignedInAs] = useState<string | null>(null);
+  const doneTimer = useRef<number | null>(null);
 
-  const done = () => void navigate({ to: next && next.startsWith('/') ? next : '/' });
+  useEffect(
+    () => () => {
+      if (doneTimer.current !== null) window.clearTimeout(doneTimer.current);
+    },
+    [],
+  );
+
+  /** Confirm the sign-in with a quick toast, then continue — to the page that
+   *  sent us here (`next`, set by the role guard) or to the map by default. */
+  const done = (label?: string) => {
+    const to = next && next.startsWith('/') ? next : '/map';
+    setSignedInAs(label ?? 'Signed in');
+    doneTimer.current = window.setTimeout(() => void navigate({ to }), 900);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,7 +42,7 @@ export function LoginPage() {
     setErr(null);
     try {
       await signInWithEmail(email, password);
-      done();
+      done(email);
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : 'Sign-in failed');
     } finally {
@@ -56,12 +71,13 @@ export function LoginPage() {
             {devUsers.map((d) => (
               <button
                 key={d.id}
+                disabled={!!signedInAs}
                 onClick={() => {
                   setDevUser(d.id);
                   qc.clear();
-                  done();
+                  done(d.label);
                 }}
-                className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-left text-sm hover:border-primary hover:bg-primary-soft/40"
+                className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-left text-sm hover:border-primary hover:bg-primary-soft/40 disabled:pointer-events-none disabled:opacity-60"
               >
                 <span className="font-medium">{d.label}</span>
                 <span className="flex items-center gap-2 text-xs text-ink-3">
@@ -76,7 +92,7 @@ export function LoginPage() {
         <Card>
           <CardHeader title="Sign in" subtitle="Roles come from Firebase custom claims. New accounts default to citizen." />
           <CardBody className="flex flex-col gap-3">
-            <Button variant="primary" onClick={() => void signInWithGoogle().then(done).catch((e: Error) => setErr(e.message))}>
+            <Button variant="primary" onClick={() => void signInWithGoogle().then(() => done('Signed in with Google')).catch((e: Error) => setErr(e.message))}>
               Continue with Google
             </Button>
             <div className="flex items-center gap-2 text-xs text-ink-3">
@@ -104,6 +120,20 @@ export function LoginPage() {
           Continue as guest to the map
         </Link>
       </p>
+
+      {/* Quick signed-in confirmation, then off to the map */}
+      {signedInAs && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fade-up fixed bottom-8 left-1/2 z-[10000] flex -translate-x-1/2 items-center gap-2.5 rounded-full border border-primary/30 bg-panel px-5 py-3 shadow-panel"
+        >
+          <CheckCircle2 size={18} className="text-primary" />
+          <span className="text-sm font-medium text-ink">
+            {signedInAs} <span className="text-ink-3">· opening the map…</span>
+          </span>
+        </div>
+      )}
     </div>
   );
 }
