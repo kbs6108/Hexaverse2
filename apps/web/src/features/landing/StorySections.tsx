@@ -142,34 +142,70 @@ function StatsStrip() {
   );
 }
 
-function DepartmentsSection() {
+function DepartmentCard({ d, index }: { d: (typeof DEPARTMENTS)[number]; index: number }) {
   return (
-    <section id="departments" className="landing-section bg-[#f5f5f7] px-6 py-28 sm:px-12">
-      <InfoHeader
-        kicker="Six departments / one key"
-        title="Everything government knows, in one place"
-        sub="Each department keeps its own system and its own authority. Land Stack asks all six live — through one ULPIN parcel key — and shows where every answer came from."
-      />
-      <div className="mx-auto mt-14 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {DEPARTMENTS.map((d, i) => (
-          <motion.div
-            key={d.key}
-            initial={{ opacity: 0, y: 28 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.6, delay: i * 0.06 }}
-            className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)]"
-          >
-            <span className={`inline-flex size-10 items-center justify-center rounded-xl ${TONE_SOFT[d.tone]}`}>
-              <d.icon size={20} className={TONE_TEXT[d.tone]} />
-            </span>
-            <h3 className="mt-4 font-display text-lg font-semibold text-[#1d1d1f]">{d.name}</h3>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#0e6b54]">{d.vocab}</p>
-            <p className="mt-2 text-sm leading-6 text-[#515154]">{d.blurb}</p>
-          </motion.div>
-        ))}
+    <div className="flex h-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)]">
+      <div className="flex items-center justify-between">
+        <span className={`inline-flex size-10 items-center justify-center rounded-xl ${TONE_SOFT[d.tone]}`}>
+          <d.icon size={20} className={TONE_TEXT[d.tone]} />
+        </span>
+        <span className="font-display text-3xl font-semibold text-[#0e6b54]/15">{String(index + 1).padStart(2, '0')}</span>
       </div>
-    </section>
+      <h3 className="mt-4 font-display text-lg font-semibold text-[#1d1d1f]">{d.name}</h3>
+      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#0e6b54]">{d.vocab}</p>
+      <p className="mt-2 text-sm leading-6 text-[#515154]">{d.blurb}</p>
+    </div>
+  );
+}
+
+function DepartmentsSection() {
+  // Horizontal sticky scroll (desktop): the section pins while vertical scroll
+  // drives the six department cards sideways. Small screens get a plain grid.
+  const trackRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: trackRef, offset: ['start start', 'end end'] });
+  const x = useTransform(scrollYProgress, [0.02, 0.98], ['1%', '-58%']);
+
+  const header = (
+    <InfoHeader
+      kicker="Six departments / one key"
+      title="Everything government knows, in one place"
+      sub="Each department keeps its own system and its own authority. Land Stack asks all six live — through one ULPIN parcel key — and shows where every answer came from."
+    />
+  );
+
+  return (
+    <>
+      {/* Desktop: pinned horizontal strip */}
+      <section ref={trackRef} id="departments" className="landing-section relative hidden h-[280vh] bg-[#f5f5f7] lg:block">
+        <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden py-12">
+          <div className="px-12">{header}</div>
+          <motion.div style={{ x }} className="mt-12 flex w-max gap-5 pl-[8vw]">
+            {DEPARTMENTS.map((d, i) => (
+              <div key={d.key} className="w-[340px] shrink-0">
+                <DepartmentCard d={d} index={i} />
+              </div>
+            ))}
+            <div className="flex w-[300px] shrink-0 items-center">
+              <p className="text-sm leading-7 text-[#86868b]">
+                …and every one of them keeps its own vocabulary.
+                <span className="mt-2 block font-semibold text-[#0e6b54]">One ULPIN key ties them together.</span>
+              </p>
+            </div>
+          </motion.div>
+          <p className="mt-10 px-12 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-[#aeaeb2]">Keep scrolling — the cards follow</p>
+        </div>
+      </section>
+
+      {/* Mobile / tablet: plain grid */}
+      <section id="departments-grid" className="landing-section bg-[#f5f5f7] px-6 py-24 sm:px-12 lg:hidden">
+        {header}
+        <div className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-2">
+          {DEPARTMENTS.map((d, i) => (
+            <DepartmentCard key={d.key} d={d} index={i} />
+          ))}
+        </div>
+      </section>
+    </>
   );
 }
 

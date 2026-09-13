@@ -160,3 +160,92 @@ export const PITCH_FIGURES: PitchFigure[] = [
   { value: '3', label: 'GIS layer tiers' },
   { value: '1 key', label: 'ULPIN per parcel' },
 ];
+
+export interface ProfileTab {
+  tab: string;
+  what: string;
+  source: string;
+}
+
+/** The parcel-profile tabs, in order — what each shows and which system answers it. */
+export const PROFILE_TABS: ProfileTab[] = [
+  { tab: 'Overview', what: 'Status cards (registered, dispute, mortgage, tax, mutation, change alert), open alerts, area, land use, zone, khata, valuation and quick actions.', source: 'All six departments, merged' },
+  { tab: 'Ownership & RoR', what: 'Owner name and parentage, ownership type, khata number, extent and classification, plus the mutation history of the parcel.', source: 'Revenue — Record of Rights' },
+  { tab: 'Registration & Encumbrance', what: 'Registered deeds (sale, gift, mortgage) with dates and parties, and any active encumbrances such as bank mortgages.', source: 'Registration department' },
+  { tab: 'Planning & Permission', what: 'Master-plan zone, permissible land uses, and the status of building-permission applications on the parcel.', source: 'Planning department' },
+  { tab: 'Tax & Valuation', what: 'Property-tax demand and arrears, payment status, and the guideline (reference) value used for stamp duty.', source: 'Fiscal / municipal systems' },
+  { tab: 'Disputes', what: 'Court cases touching the parcel — case type, current status and next hearing date. Disputed parcels are hatched on the map.', source: 'Legal / eCourts' },
+  { tab: 'Utilities', what: 'Water, electricity and sewer connections and road access recorded at the parcel.', source: 'Utility providers' },
+  { tab: 'Satellite', what: 'Sentinel-2 change detection: NDVI/NDBI comparison between passes, flagging possible unrecorded construction or land-use change.', source: 'AI change-detection service' },
+  { tab: 'Timeline', what: 'Every recorded event on the parcel — deeds, mutations, permissions, alerts — in one chronological view.', source: 'Gateway event log' },
+];
+
+export interface Workflow {
+  title: string;
+  tagline: string;
+  steps: string[];
+}
+
+/** Cross-department workflows the demo shows end to end (CONTRACTS §8). */
+export const WORKFLOWS: Workflow[] = [
+  {
+    title: 'Deed → Mutation',
+    tagline: 'A sale in one department updates ownership in another — automatically.',
+    steps: [
+      'A sale deed is registered in the registration system.',
+      'The registration adapter emits an event to the gateway.',
+      'The parcel is flagged "mutation pending" — it turns amber on the map.',
+      'The revenue officer sees it in their queue and approves the mutation.',
+      'The Record of Rights updates; the new owner appears with full provenance.',
+    ],
+  },
+  {
+    title: 'Satellite → Officer review',
+    tagline: 'The map notices ground reality drifting from the record.',
+    steps: [
+      'Two Sentinel-2 passes of the parcel are compared (NDVI / NDBI indices).',
+      'A significant built-up change on an agricultural parcel raises an alert.',
+      'The alert lands in the planning officer’s inbox, linked to the parcel.',
+      'The officer opens the profile, checks the evidence, and resolves or escalates.',
+    ],
+  },
+  {
+    title: 'Citizen verification',
+    tagline: 'Anyone can check a parcel before a transaction — safely.',
+    steps: [
+      'Search the parcel by survey number, ULPIN or khata.',
+      'Read its status: registered? disputed? mortgaged? tax clear?',
+      'Owner details stay masked unless you own it or hold consent.',
+      'Download a signed report — anyone can verify it later via its QR code.',
+    ],
+  },
+];
+
+export interface Principle {
+  title: string;
+  detail: string;
+}
+
+/** Plain-language design principles — the "why you can trust this" section. */
+export const PRINCIPLES: Principle[] = [
+  { title: 'Data stays home', detail: 'No central copy. Each department keeps its records and its authority; the gateway asks live and assembles the answer.' },
+  { title: 'Every fact has a source', detail: 'Each block of the profile names the system it came from, when it answered, and whether it was healthy.' },
+  { title: 'Partial beats broken', detail: 'If one department is down, its block says so — the rest of the record still loads.' },
+  { title: 'Privacy by consent', detail: 'Citizens see masked personal details unless the owner grants time-boxed consent. Officers see what their role allows.' },
+  { title: 'Everything is audited', detail: 'Every read and every approval is written to an audit log — who, what, when.' },
+];
+
+export interface MapReading {
+  cue: string;
+  meaning: string;
+}
+
+/** How to read the map — visual cues and what they mean. */
+export const MAP_READING: MapReading[] = [
+  { cue: 'Parcel colour', meaning: 'Set by the "Colour parcels by" picker — land use by default; switch to ownership, registration, dispute, zone or permission.' },
+  { cue: 'Hatched parcel', meaning: 'Under an active court dispute. Hatching is used so the status is never colour-only.' },
+  { cue: 'Red dashed box + marker', meaning: 'Satellite change alert — imagery suggests unrecorded construction or land-use change.' },
+  { cue: 'Amber parcel', meaning: 'Needs attention: a pending mutation, tax arrears, or an open alert.' },
+  { cue: 'Survey-number labels', meaning: 'Appear at zoom 16 and closer, from the Base layer tier.' },
+  { cue: '3D units · preview', meaning: 'Extrudes seeded buildings into floors and units (3D-ULPIN), tilting the camera.' },
+];

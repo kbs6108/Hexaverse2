@@ -6,7 +6,7 @@ import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { LogoMark } from '@/app/Shell';
 import { useAuth } from '@/lib/auth';
-import { FAQ, GLOSSARY, QUICK_START, ROLES, STORY_PARCELS } from './pitch';
+import { FAQ, GLOSSARY, MAP_READING, PROFILE_TABS, QUICK_START, ROLES, STORY_PARCELS, WORKFLOWS } from './pitch';
 
 const btnBase =
   'inline-flex items-center justify-center gap-2 rounded-md border font-medium h-9 px-3.5 text-sm transition-[background,filter,border-color]';
@@ -85,6 +85,82 @@ export function HelpPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      {/* Reading the map */}
+      <section className="mt-10">
+        <H2>Reading the map</H2>
+        <p className="mb-3 text-sm text-ink-2">Every visual cue on the map means something specific — and none of them relies on colour alone.</p>
+        <div className="overflow-x-auto scroll-thin rounded-lg border border-line">
+          <table className="w-full min-w-[560px] border-collapse text-left text-sm">
+            <thead>
+              <tr className="bg-panel-2 text-[12px] uppercase tracking-wide text-ink-3">
+                <th className="px-4 py-2 font-medium">You see</th>
+                <th className="px-4 py-2 font-medium">It means</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MAP_READING.map((m) => (
+                <tr key={m.cue} className="border-t border-line align-top">
+                  <td className="px-4 py-3 font-medium">{m.cue}</td>
+                  <td className="px-4 py-3 text-ink-2">{m.meaning}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Parcel profile tabs */}
+      <section className="mt-10">
+        <H2>The parcel profile, tab by tab</H2>
+        <p className="mb-3 text-sm text-ink-2">
+          Click any parcel and its profile opens on the right. Each tab is answered by a different
+          system — the provenance badge on every section tells you which one, and whether it was
+          healthy when it answered.
+        </p>
+        <div className="overflow-x-auto scroll-thin rounded-lg border border-line">
+          <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+            <thead>
+              <tr className="bg-panel-2 text-[12px] uppercase tracking-wide text-ink-3">
+                <th className="px-4 py-2 font-medium">Tab</th>
+                <th className="px-4 py-2 font-medium">What you see</th>
+                <th className="px-4 py-2 font-medium">Answered by</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PROFILE_TABS.map((t) => (
+                <tr key={t.tab} className="border-t border-line align-top">
+                  <td className="px-4 py-3 font-medium">{t.tab}</td>
+                  <td className="px-4 py-3 text-ink-2">{t.what}</td>
+                  <td className="px-4 py-3 font-mono text-[12px] text-primary">{t.source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Workflows walkthrough */}
+      <section className="mt-10">
+        <H2>Walkthroughs: three cross-department workflows</H2>
+        <p className="mb-3 text-sm text-ink-2">These run end to end in the demo — follow the steps exactly and you’ll see each one happen.</p>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {WORKFLOWS.map((w) => (
+            <div key={w.title} className="rounded-lg border border-line bg-panel p-4 shadow-panel">
+              <h3 className="text-[14px] font-semibold">{w.title}</h3>
+              <p className="mt-0.5 text-[12px] text-ink-3">{w.tagline}</p>
+              <ol className="mt-2.5 flex flex-col gap-1.5">
+                {w.steps.map((s, i) => (
+                  <li key={s} className="flex items-start gap-2 text-[13px] text-ink-2">
+                    <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-primary-soft font-mono text-[10px] font-semibold text-primary">{i + 1}</span>
+                    {s}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
         </div>
       </section>
 

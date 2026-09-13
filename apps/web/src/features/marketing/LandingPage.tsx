@@ -5,7 +5,7 @@ import { ArrowRight, MapPin } from 'lucide-react';
 import { LogoMark } from '@/app/Shell';
 import { Badge } from '@/components/Badge';
 import { FeatureCard, PitchStat } from './components';
-import { DEPARTMENTS, FEATURES, PITCH_FIGURES, ROLES, STORY_PARCELS, TIERS } from './pitch';
+import { DEPARTMENTS, FEATURES, PITCH_FIGURES, PRINCIPLES, PROFILE_TABS, ROLES, STORY_PARCELS, TIERS, WORKFLOWS } from './pitch';
 
 const btnBase =
   'inline-flex items-center justify-center gap-2 rounded-md border font-medium h-10 px-4 text-sm transition-[background,filter,border-color]';
@@ -94,6 +94,30 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* How a click becomes a record */}
+      <section className="mt-16 rounded-xl border border-line bg-panel p-6 shadow-panel sm:p-8">
+        <Eyebrow>How it works</Eyebrow>
+        <h2 className="text-2xl font-semibold">How a click becomes a record</h2>
+        <ol className="mt-6 grid gap-4 md:grid-cols-5">
+          {[
+            { head: 'You click a parcel', sub: 'on the map, or search a survey no / ULPIN / khata.' },
+            { head: 'The gateway fans out', sub: 'asking all six departments in parallel, each with a timeout.' },
+            { head: 'Adapters translate', sub: 'each department’s vocabulary into the Common Data Model.' },
+            { head: 'Provenance attaches', sub: 'every block records its source, timestamp and health.' },
+            { head: 'You read one record', sub: 'in about a fifth of a second — masked by your role.' },
+          ].map((s, i, arr) => (
+            <li key={s.head} className="relative">
+              <div className="flex items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-sm font-semibold text-primary-ink">{i + 1}</span>
+                {i < arr.length - 1 && <span aria-hidden className="hidden h-px flex-1 bg-line md:block" />}
+              </div>
+              <h3 className="mt-3 text-[14px] font-semibold">{s.head}</h3>
+              <p className="mt-1 text-[13px] text-ink-2">{s.sub}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {/* Departments */}
       <section className="mt-16">
         <Eyebrow>Six systems, one interface</Eyebrow>
@@ -147,6 +171,52 @@ export function LandingPage() {
             <FeatureCard key={f.title} icon={f.icon} title={f.title} tone={f.tone}>
               {f.blurb}
             </FeatureCard>
+          ))}
+        </div>
+      </section>
+
+      {/* Reading a parcel profile */}
+      <section className="mt-16">
+        <Eyebrow>Reading a parcel profile</Eyebrow>
+        <h2 className="text-2xl font-semibold">Nine tabs, one parcel</h2>
+        <p className="mt-1 max-w-2xl text-sm text-ink-2">
+          Open any parcel and its profile is organised into tabs — each one answered by a different
+          system, and each one saying so.
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {PROFILE_TABS.map((t) => (
+            <div key={t.tab} className="rounded-lg border border-line bg-panel p-4 shadow-panel">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-[14px] font-semibold">{t.tab}</h3>
+              </div>
+              <p className="mt-1.5 text-[13px] text-ink-2">{t.what}</p>
+              <p className="mt-2 font-mono text-[11px] uppercase tracking-wide text-primary">{t.source}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Workflows */}
+      <section className="mt-16">
+        <Eyebrow>Interoperable by design</Eyebrow>
+        <h2 className="text-2xl font-semibold">Workflows that cross department walls</h2>
+        <p className="mt-1 max-w-2xl text-sm text-ink-2">
+          The point of one key is that changes flow. These three run end to end in the demo.
+        </p>
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {WORKFLOWS.map((w) => (
+            <div key={w.title} className="rounded-lg border border-line bg-panel p-5 shadow-panel">
+              <h3 className="text-[15px] font-semibold">{w.title}</h3>
+              <p className="mt-1 text-[13px] text-ink-3">{w.tagline}</p>
+              <ol className="mt-3 flex flex-col gap-2">
+                {w.steps.map((s, i) => (
+                  <li key={s} className="flex items-start gap-2.5 text-[13px] text-ink-2">
+                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft font-mono text-[11px] font-semibold text-primary">{i + 1}</span>
+                    {s}
+                  </li>
+                ))}
+              </ol>
+            </div>
           ))}
         </div>
       </section>
@@ -212,6 +282,21 @@ export function LandingPage() {
                 Open on map <ArrowRight size={13} />
               </span>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Principles */}
+      <section className="mt-16 rounded-xl border border-primary/25 bg-primary-soft/40 p-6 sm:p-8">
+        <Eyebrow>Why you can trust it</Eyebrow>
+        <h2 className="text-2xl font-semibold">Five rules the platform never breaks</h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {PRINCIPLES.map((p, i) => (
+            <div key={p.title}>
+              <p className="font-mono text-[12px] font-semibold text-primary">{String(i + 1).padStart(2, '0')}</p>
+              <h3 className="mt-1 text-[14px] font-semibold">{p.title}</h3>
+              <p className="mt-1 text-[13px] text-ink-2">{p.detail}</p>
+            </div>
           ))}
         </div>
       </section>
