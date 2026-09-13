@@ -18,7 +18,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const done = () => void navigate({ to: next && next.startsWith('/') ? next : '/' });
+  const done = () => void navigate({ to: next && next.startsWith('/') ? next : '/map' });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

@@ -56,7 +56,7 @@ export function AlertsPage() {
                   </p>
                   <p className="text-xs text-ink-3">
                     #{a.id} · {fmtDate(a.created_at, true)}
-                    {a.ulpin && <> · <Link to="/" search={{ ulpin: a.ulpin }} className="font-mono text-primary underline-offset-2 hover:underline">{a.ulpin}</Link></>}
+                    {a.ulpin && <> · <Link to="/map" search={{ ulpin: a.ulpin }} className="font-mono text-primary underline-offset-2 hover:underline">{a.ulpin}</Link></>}
                     {a.assigned_to && <> · assigned to {a.assigned_to}</>}
                   </p>
                 </div>

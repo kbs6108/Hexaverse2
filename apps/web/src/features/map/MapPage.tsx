@@ -8,7 +8,7 @@ import { useUI } from '@/lib/store';
 import { useOpenParcel } from './SearchBox';
 
 export function MapPage() {
-  const { ulpin } = useSearch({ from: '/' });
+  const { ulpin } = useSearch({ from: '/map' });
   const select = useUI((s) => s.select);
   const openParcel = useOpenParcel();
 

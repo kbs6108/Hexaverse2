@@ -78,7 +78,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
         {app && (
           <>
             <div>
-              <SectionTitle right={<Link to="/" search={{ ulpin: app.ulpin }} className="flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline">Open on map <ExternalLink size={12} /></Link>}>Parcel</SectionTitle>
+              <SectionTitle right={<Link to="/map" search={{ ulpin: app.ulpin }} className="flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline">Open on map <ExternalLink size={12} /></Link>}>Parcel</SectionTitle>
               {parcel.data ? (
                 <>
                   <KV items={[

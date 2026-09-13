@@ -18,7 +18,7 @@ export function LogoMark({ size = 26 }: { size?: number }) {
 }
 
 const NAV: { to: string; label: string; icon: typeof MapIcon; min: Role }[] = [
-  { to: '/', label: 'Map', icon: MapIcon, min: 'citizen' },
+  { to: '/map', label: 'Map', icon: MapIcon, min: 'citizen' },
   { to: '/citizen', label: 'Citizen', icon: Users, min: 'citizen' },
   { to: '/officer', label: 'Officer', icon: Building2, min: 'officer' },
   { to: '/admin', label: 'Admin', icon: ShieldCheck, min: 'admin' },
@@ -28,7 +28,10 @@ export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
   const minimal = pathname.startsWith('/verify/') || pathname === '/login';
-  const isMap = pathname === '/';
+  const isLanding = pathname === '/';
+  const isMap = pathname === '/map';
+
+  if (isLanding) return <main className="h-full"><Outlet /></main>;
 
   return (
     <div className="flex h-full min-h-0 flex-col">

@@ -45,7 +45,7 @@ export function UserMenu() {
     useUI.getState().select(null);
     qc.clear();
     setOpen(false);
-    void navigate({ to: '/' });
+    void navigate({ to: '/map' });
   };
 
   return (

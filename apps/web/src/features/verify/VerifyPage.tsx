@@ -36,7 +36,7 @@ export function VerifyPage() {
                 ]}
               />
             )}
-            <p className="mt-6 text-xs text-ink-3">The report’s SHA-256 digest is signed by the Land Stack gateway. Names are shown masked. {r.ulpin && <Link to="/" search={{ ulpin: r.ulpin }} className="text-primary underline">View parcel on the map</Link>}</p>
+            <p className="mt-6 text-xs text-ink-3">The report’s SHA-256 digest is signed by the Land Stack gateway. Names are shown masked. {r.ulpin && <Link to="/map" search={{ ulpin: r.ulpin }} className="text-primary underline">View parcel on the map</Link>}</p>
           </CardBody>
         </Card>
       )}

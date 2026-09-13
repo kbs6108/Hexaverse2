@@ -97,7 +97,7 @@ export function QueuePage() {
                     <td className="px-3 py-2 font-mono text-[13px]">{a.id}</td>
                     <td className="px-3 py-2">{titleCase(a.type)}{(a.payload as { system_initiated?: boolean }).system_initiated && <span className="ml-1 rounded bg-violet-soft px-1 text-[10px] text-violet">system</span>}</td>
                     <td className="px-3 py-2">
-                      <Link to="/" search={{ ulpin: a.ulpin }} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{a.survey_no ? `Sy. ${a.survey_no}` : a.ulpin}</Link>
+                      <Link to="/map" search={{ ulpin: a.ulpin }} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{a.survey_no ? `Sy. ${a.survey_no}` : a.ulpin}</Link>
                     </td>
                     <td className="px-3 py-2">{a.applicant_name ?? '—'}</td>
                     <td className="px-3 py-2"><StatusBadge status={a.status} /></td>

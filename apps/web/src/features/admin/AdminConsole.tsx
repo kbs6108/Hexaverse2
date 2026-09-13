@@ -82,7 +82,7 @@ function Consistency() {
                     <td className="px-3 py-2">{titleCase(f.field)}</td>
                     <td className="px-3 py-2 text-ink-2">{Object.entries(f.values).map(([k, v]) => `${titleCase(k)}: ${String(v)}`).join(' · ')}</td>
                     <td className="px-3 py-2"><Badge tone={f.severity === 'high' ? 'brick' : 'amber'}>{titleCase(f.severity ?? 'medium')}</Badge></td>
-                    <td className="px-3 py-2 text-right"><Link to="/" search={{ ulpin: f.ulpin }} className="text-primary underline-offset-2 hover:underline">Open parcel</Link></td>
+                    <td className="px-3 py-2 text-right"><Link to="/map" search={{ ulpin: f.ulpin }} className="text-primary underline-offset-2 hover:underline">Open parcel</Link></td>
                   </tr>
                 ))}
               </tbody>

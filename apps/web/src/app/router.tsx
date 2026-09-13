@@ -14,6 +14,7 @@ import { AdminConsole } from '@/features/admin/AdminConsole';
 import { VerifyPage } from '@/features/verify/VerifyPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { NotFound } from './NotFound';
+import { LandingPage } from '@/features/landing/LandingPage';
 
 const rootRoute = createRootRoute({ component: Shell, notFoundComponent: NotFound });
 
@@ -31,6 +32,12 @@ type MapSearch = { ulpin?: string };
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  component: LandingPage,
+});
+
+const mapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/map',
   component: MapPage,
   validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
 });
@@ -83,6 +90,7 @@ const adminRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  mapRoute,
   loginRoute,
   verifyRoute,
   citizenRoute.addChildren([citizenIndex, citizenVerify, citizenTrack, citizenTrackDetail, citizenRequest]),
