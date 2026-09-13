@@ -69,6 +69,29 @@ export function LandingPage() {
           ))}
         </div>
         <p className="mt-2 text-[11px] text-ink-3">Figures reflect the synthetic demo dataset.</p>
+
+        {/* On this page */}
+        <nav aria-label="On this page" className="mt-8 flex max-w-3xl flex-wrap justify-center gap-2">
+          {[
+            { id: 'how', label: 'How it works' },
+            { id: 'departments', label: 'Departments' },
+            { id: 'tiers', label: 'GIS tiers' },
+            { id: 'features', label: 'Features' },
+            { id: 'profile', label: 'Parcel profile' },
+            { id: 'workflows', label: 'Workflows' },
+            { id: 'roles', label: 'Roles' },
+            { id: 'stories', label: 'Story parcels' },
+            { id: 'principles', label: 'Principles' },
+          ].map((s) => (
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              className="rounded-full border border-line bg-panel px-3 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:border-primary hover:text-primary"
+            >
+              {s.label}
+            </a>
+          ))}
+        </nav>
       </section>
 
       {/* Problem → Solution */}
@@ -95,9 +118,9 @@ export function LandingPage() {
       </section>
 
       {/* How a click becomes a record */}
-      <section className="mt-16 rounded-xl border border-line bg-panel p-6 shadow-panel sm:p-8">
+      <section id="how" className="mt-16 scroll-mt-20 rounded-xl border border-line bg-panel p-6 shadow-panel sm:p-8">
         <Eyebrow>How it works</Eyebrow>
-        <h2 className="text-2xl font-semibold">How a click becomes a record</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">How a click becomes a record</h2>
         <ol className="mt-6 grid gap-4 md:grid-cols-5">
           {[
             { head: 'You click a parcel', sub: 'on the map, or search a survey no / ULPIN / khata.' },
@@ -119,9 +142,9 @@ export function LandingPage() {
       </section>
 
       {/* Departments */}
-      <section className="mt-16">
+      <section id="departments" className="mt-16 scroll-mt-20">
         <Eyebrow>Six systems, one interface</Eyebrow>
-        <h2 className="text-2xl font-semibold">The departments Land Stack unifies</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">The departments Land Stack unifies</h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           Each keeps its own data in its own words. The open interoperability layer is what turns them
           into a single answer.
@@ -136,9 +159,9 @@ export function LandingPage() {
       </section>
 
       {/* Three tiers */}
-      <section className="mt-16">
+      <section id="tiers" className="mt-16 scroll-mt-20">
         <Eyebrow>GIS, in three tiers</Eyebrow>
-        <h2 className="text-2xl font-semibold">Layers named the way the mandate names them</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Layers named the way the mandate names them</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {TIERS.map((t) => (
             <div key={t.n} className="rounded-lg border border-line bg-panel p-5 shadow-panel">
@@ -163,9 +186,9 @@ export function LandingPage() {
       </section>
 
       {/* Feature highlights */}
-      <section className="mt-16">
+      <section id="features" className="mt-16 scroll-mt-20">
         <Eyebrow>What you can do</Eyebrow>
-        <h2 className="text-2xl font-semibold">From a map click to a decision</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">From a map click to a decision</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((f) => (
             <FeatureCard key={f.title} icon={f.icon} title={f.title} tone={f.tone}>
@@ -176,9 +199,9 @@ export function LandingPage() {
       </section>
 
       {/* Reading a parcel profile */}
-      <section className="mt-16">
+      <section id="profile" className="mt-16 scroll-mt-20">
         <Eyebrow>Reading a parcel profile</Eyebrow>
-        <h2 className="text-2xl font-semibold">Nine tabs, one parcel</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Nine tabs, one parcel</h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           Open any parcel and its profile is organised into tabs — each one answered by a different
           system, and each one saying so.
@@ -197,9 +220,9 @@ export function LandingPage() {
       </section>
 
       {/* Workflows */}
-      <section className="mt-16">
+      <section id="workflows" className="mt-16 scroll-mt-20">
         <Eyebrow>Interoperable by design</Eyebrow>
-        <h2 className="text-2xl font-semibold">Workflows that cross department walls</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Workflows that cross department walls</h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           The point of one key is that changes flow. These three run end to end in the demo.
         </p>
@@ -222,9 +245,9 @@ export function LandingPage() {
       </section>
 
       {/* Roles */}
-      <section className="mt-16">
+      <section id="roles" className="mt-16 scroll-mt-20">
         <Eyebrow>Built for three audiences</Eyebrow>
-        <h2 className="text-2xl font-semibold">Who it’s for</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Who it’s for</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {ROLES.map((r) => (
             <div key={r.role} className="rounded-lg border border-line bg-panel p-5 shadow-panel">
@@ -242,7 +265,7 @@ export function LandingPage() {
       {/* Differentiator */}
       <section className="mt-16 rounded-xl border border-slate/30 bg-slate-soft/40 p-6 sm:p-8">
         <Eyebrow>The differentiator</Eyebrow>
-        <h2 className="max-w-3xl text-2xl font-semibold">An open interoperability layer, not another silo</h2>
+        <h2 className="max-w-3xl font-display text-[26px] font-semibold tracking-tight">An open interoperability layer, not another silo</h2>
         <p className="mt-2 max-w-3xl text-sm text-ink-2">
           The hard part isn’t the map — it’s making independent systems agree. Land Stack ships an
           adapter model with per-state field mappings, an event contract so an upstream deed can flow
@@ -259,9 +282,9 @@ export function LandingPage() {
       </section>
 
       {/* Story parcels */}
-      <section className="mt-16">
+      <section id="stories" className="mt-16 scroll-mt-20">
         <Eyebrow>See it on real scenarios</Eyebrow>
-        <h2 className="text-2xl font-semibold">Story parcels</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Story parcels</h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           Six hand-tuned parcels demonstrate the workflows end to end. Jump straight to one.
         </p>
@@ -287,9 +310,9 @@ export function LandingPage() {
       </section>
 
       {/* Principles */}
-      <section className="mt-16 rounded-xl border border-primary/25 bg-primary-soft/40 p-6 sm:p-8">
+      <section id="principles" className="mt-16 scroll-mt-20 rounded-xl border border-primary/25 bg-primary-soft/40 p-6 sm:p-8">
         <Eyebrow>Why you can trust it</Eyebrow>
-        <h2 className="text-2xl font-semibold">Five rules the platform never breaks</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Five rules the platform never breaks</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {PRINCIPLES.map((p, i) => (
             <div key={p.title}>
@@ -303,7 +326,7 @@ export function LandingPage() {
 
       {/* CTA + footer */}
       <section className="mt-16 flex flex-col items-center gap-4 rounded-xl border border-line bg-panel p-8 text-center shadow-panel">
-        <h2 className="text-2xl font-semibold">Ready to look inside a parcel?</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Ready to look inside a parcel?</h2>
         <div className="flex flex-wrap items-center justify-center gap-2.5">
           <Link to="/map" className={clsx(btnBase, btnPrimary)}>
             Explore the map <ArrowRight size={16} />

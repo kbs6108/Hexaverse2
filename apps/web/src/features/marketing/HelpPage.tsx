@@ -14,7 +14,36 @@ const btnPrimary = 'bg-primary text-primary-ink border-transparent hover:brightn
 const btnSecondary = 'bg-panel text-ink border-line hover:bg-panel-2 hover:border-line-strong';
 
 function H2({ children }: { children: ReactNode }) {
-  return <h2 className="mb-3 text-lg font-semibold">{children}</h2>;
+  return <h2 className="mb-3 font-display text-[22px] font-semibold tracking-tight">{children}</h2>;
+}
+
+/** On-page tracker — one place to see the whole guide and jump anywhere. */
+const SECTIONS: { id: string; label: string }[] = [
+  { id: 'quickstart', label: 'Quick start' },
+  { id: 'roles', label: 'Roles' },
+  { id: 'reading-map', label: 'Reading the map' },
+  { id: 'profile-tabs', label: 'Profile tabs' },
+  { id: 'walkthroughs', label: 'Walkthroughs' },
+  { id: 'identities', label: 'Identities' },
+  { id: 'story-parcels', label: 'Story parcels' },
+  { id: 'glossary', label: 'Glossary' },
+  { id: 'faq', label: 'FAQ' },
+];
+
+function OnThisPage() {
+  return (
+    <nav aria-label="On this page" className="mt-6 flex flex-wrap gap-2">
+      {SECTIONS.map((s) => (
+        <a
+          key={s.id}
+          href={`#${s.id}`}
+          className="rounded-full border border-line bg-panel px-3 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:border-primary hover:text-primary"
+        >
+          {s.label}
+        </a>
+      ))}
+    </nav>
+  );
 }
 
 export function HelpPage() {
@@ -41,8 +70,10 @@ export function HelpPage() {
         </div>
       </header>
 
+      <OnThisPage />
+
       {/* Quick start */}
-      <section className="mt-8">
+      <section id="quickstart" className="mt-10 scroll-mt-20">
         <H2>Quick start</H2>
         <ol className="grid gap-3 sm:grid-cols-2">
           {QUICK_START.map((s, i) => (
@@ -60,7 +91,7 @@ export function HelpPage() {
       </section>
 
       {/* Roles */}
-      <section className="mt-10">
+      <section id="roles" className="mt-12 scroll-mt-20">
         <H2>Roles &amp; what each can do</H2>
         <div className="overflow-x-auto scroll-thin rounded-lg border border-line">
           <table className="w-full min-w-[560px] border-collapse text-left text-sm">
@@ -89,7 +120,7 @@ export function HelpPage() {
       </section>
 
       {/* Reading the map */}
-      <section className="mt-10">
+      <section id="reading-map" className="mt-12 scroll-mt-20">
         <H2>Reading the map</H2>
         <p className="mb-3 text-sm text-ink-2">Every visual cue on the map means something specific — and none of them relies on colour alone.</p>
         <div className="overflow-x-auto scroll-thin rounded-lg border border-line">
@@ -113,7 +144,7 @@ export function HelpPage() {
       </section>
 
       {/* Parcel profile tabs */}
-      <section className="mt-10">
+      <section id="profile-tabs" className="mt-12 scroll-mt-20">
         <H2>The parcel profile, tab by tab</H2>
         <p className="mb-3 text-sm text-ink-2">
           Click any parcel and its profile opens on the right. Each tab is answered by a different
@@ -143,7 +174,7 @@ export function HelpPage() {
       </section>
 
       {/* Workflows walkthrough */}
-      <section className="mt-10">
+      <section id="walkthroughs" className="mt-12 scroll-mt-20">
         <H2>Walkthroughs: three cross-department workflows</H2>
         <p className="mb-3 text-sm text-ink-2">These run end to end in the demo — follow the steps exactly and you’ll see each one happen.</p>
         <div className="grid gap-3 lg:grid-cols-3">
@@ -165,7 +196,7 @@ export function HelpPage() {
       </section>
 
       {/* Dev identities */}
-      <section className="mt-10">
+      <section id="identities" className="mt-12 scroll-mt-20">
         <Card>
           <CardHeader
             title="Demo identities"
@@ -192,7 +223,7 @@ export function HelpPage() {
       </section>
 
       {/* Story parcels */}
-      <section className="mt-10">
+      <section id="story-parcels" className="mt-12 scroll-mt-20">
         <H2>Story parcels</H2>
         <p className="mb-3 text-sm text-ink-2">Each demonstrates a different workflow. Click to open it on the map.</p>
         <div className="grid gap-2.5 sm:grid-cols-2">
@@ -217,7 +248,7 @@ export function HelpPage() {
       </section>
 
       {/* Glossary */}
-      <section className="mt-10">
+      <section id="glossary" className="mt-12 scroll-mt-20">
         <H2>Glossary</H2>
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
           {GLOSSARY.map((t) => (
@@ -230,7 +261,7 @@ export function HelpPage() {
       </section>
 
       {/* FAQ */}
-      <section className="mt-10">
+      <section id="faq" className="mt-12 scroll-mt-20">
         <H2>FAQ</H2>
         <div className="flex flex-col gap-2">
           {FAQ.map((f) => (

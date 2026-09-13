@@ -133,7 +133,7 @@ export function Shell() {
             })}
           </nav>
         )}
-        <main ref={mainRef} className={clsx('relative min-w-0 flex-1', isMap ? 'overflow-hidden' : 'overflow-y-auto scroll-thin ground-texture')}>
+        <main ref={mainRef} className={clsx('relative min-w-0 flex-1', isMap ? 'overflow-hidden' : 'overflow-y-auto scroll-thin scroll-smooth')}>
           <Outlet />
         </main>
       </div>
