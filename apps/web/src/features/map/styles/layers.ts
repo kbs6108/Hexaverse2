@@ -49,6 +49,9 @@ export const STREETS_STYLE: StyleSpecification = {
   layers: [
     { id: 'background', type: 'background', paint: { 'background-color': '#e8e5df' } },
     { id: 'osm-raster', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.92 } },
+    // React MapLibre layers are appended relative to the base style. Keeping
+    // an explicit final anchor guarantees overlays stay above the raster map.
+    { id: 'landstack-overlay-anchor', type: 'background', paint: { 'background-opacity': 0 } },
   ],
 };
 

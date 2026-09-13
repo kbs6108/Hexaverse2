@@ -15,8 +15,10 @@ const MAX_BOUNDS: [number, number, number, number] = [AOI_BBOX[0] - 0.15, AOI_BB
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
+  const [mapReady, setMapReady] = useState(false);
   const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, drawerOpen, select, setHover } = useUI();
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
+  const [mapTick, setMapTick] = useState(0);
   const imagery = basemap === 'imagery' && !!env.esriApiKey;
 
   const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey) : L.STREETS_STYLE), [imagery]);
@@ -27,11 +29,78 @@ export function MapView() {
     staleTime: Infinity,
     retry: false,
   });
+  // The API's GeoJSON collection is a reliable fallback for cadastral fills
+  // when a browser/network drops the MVT tile request. It uses the same live
+  // parcel data and keeps the vector-tile path available for larger overlays.
+  const parcelFallback = useQuery({
+    queryKey: ['map', 'parcel-fallback'],
+    queryFn: () => api.items('parcels', { bbox: AOI_BBOX.join(','), limit: 1000 }),
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (mapReady) return;
+    const fallbackTimer = window.setTimeout(() => setMapReady(true), 1200);
+    const timer = window.setInterval(() => {
+      const map = mapRef.current?.getMap();
+      if (map?.isStyleLoaded()) {
+        setMapReady(true);
+        window.clearInterval(timer);
+      }
+    }, 50);
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      window.clearInterval(timer);
+    };
+  }, [mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    const data = parcelFallback.data as unknown as FeatureCollection | undefined;
+    if (!map || !layers.parcels || !data) return;
+
+    const sourceId = 'parcels-runtime-fallback';
+    const source = map.getSource(sourceId) as { setData?: (value: FeatureCollection) => void } | undefined;
+    if (source?.setData) source.setData(data);
+    else if (!map.getSource(sourceId)) map.addSource(sourceId, { type: 'geojson', data });
+
+    if (!map.getLayer('parcels-runtime-fill')) {
+      map.addLayer({ id: 'parcels-runtime-fill', type: 'fill', source: sourceId, paint: { 'fill-color': L.fillColour(colourBy), 'fill-opacity': 0.72 } });
+    }
+    if (!map.getLayer('parcels-runtime-line')) {
+      map.addLayer({ id: 'parcels-runtime-line', type: 'line', source: sourceId, paint: { 'line-color': '#146B57', 'line-width': 1.5, 'line-opacity': 0.95 } });
+    }
+  }, [mapReady, parcelFallback.data, layers.parcels, colourBy]);
+
+  const parcelPaths = useMemo(() => {
+    const map = mapRef.current?.getMap();
+    const features = parcelFallback.data?.features ?? [];
+    if (!map || !mapReady || features.length === 0) return [];
+    return features.flatMap((feature) => {
+      const geometry = feature.geometry as { type?: string; coordinates?: unknown } | null;
+      const polygons = geometry?.type === 'Polygon' ? [geometry.coordinates] : geometry?.type === 'MultiPolygon' ? geometry.coordinates : [];
+      return (polygons as unknown[]).flatMap((polygon) => {
+        const rings = Array.isArray(polygon) ? polygon : [];
+        return rings.slice(0, 1).map((ring) => {
+          const points = Array.isArray(ring)
+            ? ring.map((position) => {
+                const [lng, lat] = position as [number, number];
+                const point = map.project([lng, lat]);
+                return `${point.x},${point.y}`;
+              })
+            : [];
+          return points.length > 2 ? `M ${points.join(' L ')} Z` : '';
+        });
+      });
+    }).filter(Boolean);
+  }, [mapReady, mapTick, parcelFallback.data]);
 
   /* ---- images survive basemap switches ---- */
   const onLoad = useCallback(() => {
     const m = mapRef.current?.getMap();
     if (!m) return;
+    setMapReady(true);
     ensureImages(m);
     m.on('styleimagemissing', () => ensureImages(m));
     m.on('style.load', () => ensureImages(m));
@@ -114,69 +183,78 @@ export function MapView() {
         minZoom={11}
         maxZoom={20}
         attributionControl={{ compact: true }}
-        interactiveLayerIds={layers.parcels ? ['parcels-fill'] : []}
+        interactiveLayerIds={layers.parcels ? ['parcels-fill', 'parcels-runtime-fill'] : []}
         cursor={hoverUlpin ? 'pointer' : 'grab'}
         onLoad={onLoad}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
+        onMove={() => setMapTick((tick) => tick + 1)}
         style={{ width: '100%', height: '100%' }}
-        reuseMaps
       >
         <NavigationControl position="bottom-right" visualizePitch />
         <ScaleControl position="bottom-left" maxWidth={120} />
 
         {/* Tier 2: zones (under parcels) */}
         <Source id={L.SRC.zones} type="vector" tiles={[L.tileUrl('zones')]} minzoom={10} maxzoom={18}>
-          {layers.zones && <Layer {...L.zonesFill} />}
-          {layers.zones && <Layer {...L.zonesLine} />}
-          {layers.zones && <Layer {...L.zonesLabel} />}
+          {layers.zones && <Layer {...L.zonesFill} beforeId="landstack-overlay-anchor" />}
+          {layers.zones && <Layer {...L.zonesLine} beforeId="landstack-overlay-anchor" />}
+          {layers.zones && <Layer {...L.zonesLabel} beforeId="landstack-overlay-anchor" />}
         </Source>
 
         {/* Tier 3: restriction zones + projects (under parcels) */}
         <Source id={L.SRC.restriction} type="vector" tiles={[L.tileUrl('restriction_zones')]} minzoom={10} maxzoom={18}>
-          {layers.restriction_zones && <Layer {...L.restrictionFill} />}
-          {layers.restriction_zones && <Layer {...L.restrictionLine} />}
+          {layers.restriction_zones && <Layer {...L.restrictionFill} beforeId="landstack-overlay-anchor" />}
+          {layers.restriction_zones && <Layer {...L.restrictionLine} beforeId="landstack-overlay-anchor" />}
         </Source>
         <Source id={L.SRC.projects} type="vector" tiles={[L.tileUrl('projects')]} minzoom={10} maxzoom={18}>
-          {layers.projects && <Layer {...L.projectsFill} />}
-          {layers.projects && <Layer {...L.projectsLine} />}
-          {layers.projects && <Layer {...L.projectsLabel} />}
+          {layers.projects && <Layer {...L.projectsFill} beforeId="landstack-overlay-anchor" />}
+          {layers.projects && <Layer {...L.projectsLine} beforeId="landstack-overlay-anchor" />}
+          {layers.projects && <Layer {...L.projectsLabel} beforeId="landstack-overlay-anchor" />}
         </Source>
 
         {/* Tier 1: parcels */}
         <Source id={L.SRC.parcels} type="vector" tiles={[L.tileUrl('parcels')]} promoteId="ulpin" minzoom={10} maxzoom={18}>
-          {layers.parcels && <Layer {...L.parcelFill(colourBy, imagery)} />}
-          {layers.parcels && <Layer {...L.parcelDisputeHatch} />}
-          {layers.parcels && <Layer {...L.parcelSelectedGlow} />}
-          {layers.parcels && <Layer {...L.parcelOutline(imagery)} />}
-          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertOutline} />}
-          {layers.parcels && layers.survey_labels && <Layer {...L.surveyLabels(imagery)} />}
-          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertIcon} />}
+          {layers.parcels && <Layer {...L.parcelFill(colourBy, imagery)} beforeId="landstack-overlay-anchor" />}
+          {layers.parcels && <Layer {...L.parcelDisputeHatch} beforeId="landstack-overlay-anchor" />}
+          {layers.parcels && <Layer {...L.parcelSelectedGlow} beforeId="landstack-overlay-anchor" />}
+          {layers.parcels && <Layer {...L.parcelOutline(imagery)} beforeId="landstack-overlay-anchor" />}
+          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertOutline} beforeId="landstack-overlay-anchor" />}
+          {layers.parcels && layers.survey_labels && <Layer {...L.surveyLabels(imagery)} beforeId="landstack-overlay-anchor" />}
+          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertIcon} beforeId="landstack-overlay-anchor" />}
         </Source>
+
 
         {/* Tier 3: lines on top */}
         <Source id={L.SRC.water} type="vector" tiles={[L.tileUrl('water_lines')]} minzoom={10} maxzoom={18}>
-          {layers.water_lines && <Layer {...L.waterLine} />}
+          {layers.water_lines && <Layer {...L.waterLine} beforeId="landstack-overlay-anchor" />}
         </Source>
         <Source id={L.SRC.roads} type="vector" tiles={[L.tileUrl('roads')]} minzoom={10} maxzoom={18}>
-          {layers.roads && <Layer {...L.roadsLine} />}
-          {layers.roads && <Layer {...L.roadsLabel} />}
+          {layers.roads && <Layer {...L.roadsLine} beforeId="landstack-overlay-anchor" />}
+          {layers.roads && <Layer {...L.roadsLabel} beforeId="landstack-overlay-anchor" />}
         </Source>
 
         {/* Tier 1: village boundary (GeoJSON) */}
         {village.data && (
           <Source id={L.SRC.village} type="geojson" data={village.data as unknown as FeatureCollection}>
-            {layers.village_boundary && <Layer {...L.villageCasing} />}
-            {layers.village_boundary && <Layer {...L.villageLine} />}
+            {layers.village_boundary && <Layer {...L.villageCasing} beforeId="landstack-overlay-anchor" />}
+            {layers.village_boundary && <Layer {...L.villageLine} beforeId="landstack-overlay-anchor" />}
           </Source>
         )}
 
         {/* 3D preview */}
         <Source id={L.SRC.units} type="vector" tiles={[L.tileUrl('units')]} minzoom={12} maxzoom={18}>
-          {show3D && <Layer {...L.unitsExtrusion} />}
+          {show3D && <Layer {...L.unitsExtrusion} beforeId="landstack-overlay-anchor" />}
         </Source>
       </Map>
+
+      {layers.parcels && parcelPaths.length > 0 && (
+        <svg className="pointer-events-none absolute inset-0 z-[5] h-full w-full" aria-hidden="true">
+          {parcelPaths.map((path, index) => (
+            <path key={index} d={path} fill="rgba(20, 107, 87, 0.28)" stroke="#146B57" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
+          ))}
+        </svg>
+      )}
 
       {hoverInfo && !show3D && <HoverCard info={hoverInfo} />}
     </div>
