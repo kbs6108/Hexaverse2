@@ -107,12 +107,12 @@ services:
       VITE_AUTH_MODE: ${VITE_AUTH_MODE:-dev}
       CHOKIDAR_USEPOLLING: "1"
     env_file:
-      - path: ../apps/web/.env
+      - path: ../frontend/.env
         required: false
     ports:
       - "${WEB_PORT:-5173}:5173"
     volumes:
-      - ../apps/web:/app
+      - ../frontend:/app
       - ../data/samples:/data/samples:ro
       - web_node_modules:/app/node_modules
     command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
@@ -131,7 +131,7 @@ services:
   web-prod:
     profiles: ["prod"]
     build:
-      context: ../apps/web
+      context: ../frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
         VITE_AUTH_MODE: ${VITE_AUTH_MODE:-dev}

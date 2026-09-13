@@ -16,5 +16,5 @@ data/storage
 data/samples
 docs
 infra
-apps/web
+frontend
 *.md

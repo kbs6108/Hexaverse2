@@ -54,24 +54,24 @@ venv: ## Create .venv with API + tools + dev dependencies
 dev-api: venv ## Run the API with uvicorn --reload from .venv (uses backend/.env)
 	cd backend && ../../$(VENV_PY) -m uvicorn landstack.main:app --reload --port 8000
 
-dev-web: ## Run the Vite dev server (apps/web/.env)
-	cd apps/web && npm install --no-audit --no-fund && npm run dev
+dev-web: ## Run the Vite dev server (frontend/.env)
+	cd frontend && npm install --no-audit --no-fund && npm run dev
 
 test: venv ## pytest (integration tests run when DATABASE_URL is reachable)
 	cd backend && ../../$(VENV_PY) -m pytest -q
 
 lint: venv ## ruff on the API + tools, tsc on the web app
 	$(VENV)/bin/ruff check backend
-	cd apps/web && npm run typecheck
+	cd frontend && npm run typecheck
 
-build-web: ## Production build of apps/web into apps/web/dist
-	cd apps/web && npm ci --no-audit --no-fund && npm run build
+build-web: ## Production build of frontend into frontend/dist
+	cd frontend && npm ci --no-audit --no-fund && npm run build
 
 # ---- cloud ----
 deploy-api: ## Build + deploy the API to Cloud Run (PROJECT_ID=... REGION=asia-south1)
 	PROJECT_ID="$(PROJECT_ID)" REGION="$(REGION)" SERVICE="$(SERVICE)" ./infra/cloudrun/deploy.sh
 
-deploy-web: ## Build + deploy apps/web to Firebase Hosting (needs .firebaserc and `firebase login`)
+deploy-web: ## Build + deploy frontend to Firebase Hosting (needs .firebaserc and `firebase login`)
 	test -f .firebaserc || { echo "copy .firebaserc.example to .firebaserc and set your project id"; exit 1; }
 	npx --yes firebase-tools deploy --only hosting
 
@@ -88,5 +88,5 @@ neon-reset: ## Demo-reset the Neon database (mutable tables only)
 	$(PY) backend/tools/demo_reset.py --database-url "$(NEON_DATABASE_URL)"
 
 clean: ## Remove build artefacts and caches
-	rm -rf apps/web/dist backend/.pytest_cache .ruff_cache .pytest_cache
+	rm -rf frontend/dist backend/.pytest_cache .ruff_cache .pytest_cache
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +

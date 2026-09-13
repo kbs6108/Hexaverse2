@@ -21,7 +21,7 @@ venv/
 
 # node
 node_modules/
-apps/web/dist/
+frontend/dist/
 *.local
 
 # editors / OS

@@ -1,8 +1,8 @@
 {
   "hosting": {
-    "public": "apps/web/dist",
+    "public": "frontend/dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "predeploy": ["npm --prefix apps/web ci", "npm --prefix apps/web run build"],
+    "predeploy": ["npm --prefix frontend ci", "npm --prefix frontend run build"],
     "cleanUrls": true,
     "trailingSlash": false,
     "rewrites": [

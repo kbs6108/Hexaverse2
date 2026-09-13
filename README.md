@@ -18,7 +18,7 @@ Firebase Hosting + Auth, Cloud Run, Neon PostGIS.
 
 ```mermaid
 flowchart LR
-  subgraph Client["Browser · apps/web (Vite + React 19 + MapLibre)"]
+  subgraph Client["Browser · frontend (Vite + React 19 + MapLibre)"]
     UI[Map Explorer · Citizen · Officer · Admin]
   end
   subgraph GCP["Google Cloud project (free tier)"]
@@ -59,7 +59,7 @@ flowchart LR
 ## Quick start (Docker)
 
 ```bash
-cp backend/.env.example backend/.env && cp apps/web/.env.example apps/web/.env
+cp backend/.env.example backend/.env && cp frontend/.env.example frontend/.env
 make up          # PostGIS → migrations + deterministic seed → API :8000 → web :5173
 open http://localhost:5173   # dev mode: switch between the six demo users in the header
 ```
@@ -74,14 +74,14 @@ open http://localhost:5173   # dev mode: switch between the six demo users in th
 | [docs/CONTRACTS.md](docs/CONTRACTS.md) | Source of truth: layout, env vars, roles, schema, CDM, API, workflow, layers |
 | [docs/STD.md](docs/STD.md) | Standard Technical Document (architecture, schemas, API/GIS/security standards, UI, deployment) |
 | [backend/README.md](backend/README.md) | Gateway + department sub-apps |
-| [apps/web/README.md](apps/web/README.md) | Web app |
+| [frontend/README.md](frontend/README.md) | Web app |
 | [infra/README.md](infra/README.md) | docker-compose, Cloud Run, Firebase Hosting |
 | [data/README.md](data/README.md) | What is real vs synthetic in the demo AOI |
 
 ## Repository map
 
 ```
-backend      FastAPI gateway + six department sub-apps (Python 3.12)     apps/web   Vite + React + MapLibre
+backend      FastAPI gateway + six department sub-apps (Python 3.12)     frontend   Vite + React + MapLibre
 backend/db    plain SQL, idempotent, applied in order                     backend/tools  migrate · seed · demo_reset · set_claims · fetch_s2
 infra/        docker-compose · cloudrun/ · firebase/                      docs/      CONTRACTS · SETUP · STD
 ```
