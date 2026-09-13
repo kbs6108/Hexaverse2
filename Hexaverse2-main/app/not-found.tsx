@@ -1,0 +1,1 @@
+export default function NotFound() { return <main className="flex min-h-screen items-center justify-center bg-[#08100C] text-white"><div><p className="text-sm text-emerald-300">404</p><h1 className="mt-2 text-4xl font-semibold">Page not found</h1></div></main>; }
