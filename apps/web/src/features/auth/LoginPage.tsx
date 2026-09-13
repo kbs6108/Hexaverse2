@@ -37,16 +37,20 @@ export function LoginPage() {
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-14">
       <div className="flex items-center gap-3">
-        <LogoMark size={36} />
+        <LogoMark size={38} />
         <div>
-          <h1 className="text-2xl font-semibold">Land Stack</h1>
-          <p className="text-sm text-ink-3">Parcel-centric land governance · Guntur pilot</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">Tenrec</h1>
+            <Badge tone="primary" size="sm">SIH 2026</Badge>
+          </div>
+          <p className="text-xs text-ink-2 font-medium">Department of Land Resources (DoLR) · Ministry of Rural Development</p>
+          <p className="text-[11px] text-ink-3">Integrated Land Governance Digital Public Infrastructure</p>
         </div>
       </div>
 
       {mode === 'dev' ? (
         <Card>
-          <CardHeader title="Development identities" subtitle="AUTH_MODE=dev · identity is sent as X-Dev-User" />
+          <CardHeader title="Select Demo Persona" subtitle="Department of Land Resources · Role-based access testing" />
           <CardBody className="flex flex-col gap-1">
             {devUsers.map((d) => (
               <button

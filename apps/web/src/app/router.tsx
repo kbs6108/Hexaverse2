@@ -13,6 +13,7 @@ import { AlertsPage } from '@/features/officer/Alerts';
 import { AdminConsole } from '@/features/admin/AdminConsole';
 import { VerifyPage } from '@/features/verify/VerifyPage';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { TenrecHome } from '@/features/home/TenrecHome';
 import { NotFound } from './NotFound';
 
 const rootRoute = createRootRoute({ component: Shell, notFoundComponent: NotFound });
@@ -31,6 +32,16 @@ type MapSearch = { ulpin?: string };
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  component: TenrecHome,
+  validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
+  beforeLoad: ({ search }: { search: MapSearch }) => {
+    if (search.ulpin) throw redirect({ to: '/map', search: { ulpin: search.ulpin } });
+  },
+});
+
+const mapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/map',
   component: MapPage,
   validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
 });
@@ -83,6 +94,7 @@ const adminRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  mapRoute,
   loginRoute,
   verifyRoute,
   citizenRoute.addChildren([citizenIndex, citizenVerify, citizenTrack, citizenTrackDetail, citizenRequest]),
@@ -98,4 +110,4 @@ declare module '@tanstack/react-router' {
   }
 }
 
-export { indexRoute, citizenVerify, citizenRequest, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };
+export { indexRoute, mapRoute, citizenVerify, citizenRequest, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };

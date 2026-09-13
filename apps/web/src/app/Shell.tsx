@@ -1,6 +1,6 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { Building2, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
+import { Building2, Landmark, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { roleAtLeast } from '@/lib/auth';
 import { SearchBox } from '@/features/map/SearchBox';
@@ -18,7 +18,8 @@ export function LogoMark({ size = 26 }: { size?: number }) {
 }
 
 const NAV: { to: string; label: string; icon: typeof MapIcon; min: Role }[] = [
-  { to: '/', label: 'Map', icon: MapIcon, min: 'citizen' },
+  { to: '/', label: 'Overview', icon: Landmark, min: 'citizen' },
+  { to: '/map', label: 'GIS Map', icon: MapIcon, min: 'citizen' },
   { to: '/citizen', label: 'Citizen', icon: Users, min: 'citizen' },
   { to: '/officer', label: 'Officer', icon: Building2, min: 'officer' },
   { to: '/admin', label: 'Admin', icon: ShieldCheck, min: 'admin' },
@@ -32,11 +33,21 @@ export function Shell() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="h-1 w-full flex shrink-0">
+        <div className="h-full w-1/3 bg-[#FF9933]" />
+        <div className="h-full w-1/3 bg-white" />
+        <div className="h-full w-1/3 bg-[#138808]" />
+      </div>
       <header className="z-30 flex h-12 shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
-        <Link to="/" className="flex items-center gap-2 rounded-md pr-2 text-ink hover:opacity-90" aria-label="Land Stack home">
+        <Link to="/" className="flex items-center gap-2.5 rounded-md pr-2 text-ink hover:opacity-90" aria-label="Tenrec home">
           <LogoMark />
-          <span className="font-display text-[17px] font-semibold tracking-tight">Land Stack</span>
-          <span className="hidden rounded-sm border border-line px-1 font-mono text-[10px] uppercase text-ink-3 lg:inline">Mangalagiri AOI</span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5 leading-none">
+              <span className="font-display text-[16px] font-bold tracking-tight text-ink">Tenrec</span>
+              <span className="rounded-xs bg-primary-soft px-1 py-0.5 text-[8px] font-semibold text-primary uppercase">DoLR · SIH 2026</span>
+            </div>
+            <span className="text-[9px] text-ink-3 font-medium leading-tight">Govt. of India</span>
+          </div>
         </Link>
         {!minimal && (
           <div className="mx-auto w-full max-w-xl">

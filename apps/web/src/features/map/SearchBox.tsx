@@ -25,7 +25,7 @@ export function useOpenParcel() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { select, requestFlyTo } = useUI();
   return async (ulpin: string, bbox?: [number, number, number, number] | null) => {
-    if (pathname !== '/') await navigate({ to: '/', search: { ulpin } });
+    if (pathname !== '/map') await navigate({ to: '/map', search: { ulpin } });
     select(ulpin);
     let b = bbox ?? null;
     if (!b) {
