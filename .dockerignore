@@ -1,0 +1,20 @@
+# Root build context (apps/api/Dockerfile is built from the repo root)
+.git
+.github
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.env
+**/.env.*
+!**/.env.example
+data/s2/*
+!data/s2/README.md
+data/storage
+data/samples
+docs
+infra
+apps/web
+*.md

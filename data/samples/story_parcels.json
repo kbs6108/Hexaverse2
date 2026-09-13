@@ -1,0 +1,170 @@
+{
+  "seed": 42,
+  "aoi_bbox": [
+    80.545,
+    16.434,
+    80.567,
+    16.452
+  ],
+  "village": "Mangalagiri (R)",
+  "parcels": [
+    {
+      "survey_no": "123/4",
+      "key": "clean_residential",
+      "ulpin": "TFCM91641E6C82",
+      "land_use": "residential",
+      "zone_code": "R2",
+      "area_sqm": 874.3,
+      "owner_name": "Ravi Kumar",
+      "khata_no": "K-0421",
+      "centroid": [
+        80.555839,
+        16.443343
+      ],
+      "bbox": [
+        80.555669,
+        16.443216,
+        80.556011,
+        16.44346
+      ]
+    },
+    {
+      "survey_no": "124",
+      "key": "change_alert",
+      "ulpin": "TFCM91D3533DD2",
+      "land_use": "agricultural",
+      "zone_code": "AG",
+      "area_sqm": 7121.75,
+      "owner_name": "Nageswara Rao Mannava",
+      "khata_no": "K-0704",
+      "centroid": [
+        80.555706,
+        16.443939
+      ],
+      "bbox": [
+        80.555355,
+        16.443455,
+        80.556104,
+        16.444427
+      ]
+    },
+    {
+      "survey_no": "125/2",
+      "key": "disputed",
+      "ulpin": "TFCM9167B91686",
+      "land_use": "residential",
+      "zone_code": "C1",
+      "area_sqm": 706.81,
+      "owner_name": "Pardhasaradhi Mekala",
+      "khata_no": "K-0789",
+      "centroid": [
+        80.555792,
+        16.442495
+      ],
+      "bbox": [
+        80.555681,
+        16.442345,
+        80.555914,
+        16.442637
+      ]
+    },
+    {
+      "survey_no": "126",
+      "key": "mortgaged",
+      "ulpin": "TFCM916196F0FE",
+      "land_use": "residential",
+      "zone_code": "R2",
+      "area_sqm": 577.64,
+      "owner_name": "Koteswara Rao Bollineni",
+      "khata_no": "K-0785",
+      "centroid": [
+        80.555512,
+        16.442935
+      ],
+      "bbox": [
+        80.555351,
+        16.442849,
+        80.555669,
+        16.443017
+      ]
+    },
+    {
+      "survey_no": "127/1",
+      "key": "tax_arrears_area_mismatch",
+      "ulpin": "TFCM91KDED50FD",
+      "land_use": "agricultural",
+      "zone_code": "AG",
+      "area_sqm": 11761.92,
+      "owner_name": "Venkata Lakshmi Boppana",
+      "khata_no": "K-0695",
+      "centroid": [
+        80.558065,
+        16.443597
+      ],
+      "bbox": [
+        80.557354,
+        16.443135,
+        80.55873,
+        16.443999
+      ]
+    },
+    {
+      "survey_no": "128",
+      "key": "pending_mutation",
+      "ulpin": "TFCM914291996F",
+      "land_use": "residential",
+      "zone_code": "C1",
+      "area_sqm": 702.08,
+      "owner_name": "Venkata Rao Kandula",
+      "khata_no": "K-0761",
+      "centroid": [
+        80.555771,
+        16.442175
+      ],
+      "bbox": [
+        80.55566,
+        16.441994,
+        80.555878,
+        16.442354
+      ]
+    }
+  ],
+  "users": [
+    {
+      "uid": "dev-ravi-kumar",
+      "name": "Ravi Kumar",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-lakshmi-devi",
+      "name": "Lakshmi Devi",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-anitha",
+      "name": "Anitha",
+      "role": "officer",
+      "department": "revenue"
+    },
+    {
+      "uid": "dev-suresh",
+      "name": "Suresh",
+      "role": "officer",
+      "department": "registration"
+    },
+    {
+      "uid": "dev-farida",
+      "name": "Farida",
+      "role": "officer",
+      "department": "planning"
+    },
+    {
+      "uid": "dev-admin",
+      "name": "Admin",
+      "role": "admin",
+      "department": null
+    }
+  ]
+}

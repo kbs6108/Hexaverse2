@@ -1,0 +1,363 @@
+"""Application workflow (CONTRACTS §8) driven by the `landstack.transitions` table.
+
+Pure rule helpers (`find_transition`, `is_allowed`, `next_actions`) operate on plain transition rows so
+they are unit-testable with an in-memory list; the async functions wrap them with persistence, audit
+and the department side-effects that run when an application reaches `approved`.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import json
+import logging
+from typing import Any
+
+from landstack.adapters import client
+from landstack.auth import Principal
+from landstack.db import DBLike, json_dumps
+from landstack.errors import AppError, forbidden, not_found
+from landstack.services import audit
+from landstack.services.cache import TTLCache
+
+log = logging.getLogger("landstack.workflow")
+
+APPLICATION_TYPES = ("mutation", "building_permission", "ownership_verification", "field_review")
+INITIAL_STATUS = {
+    "mutation": "submitted",
+    "building_permission": "submitted",
+    "field_review": "open",
+    "ownership_verification": "completed",
+}
+DEFAULT_DEPARTMENT = {
+    "mutation": "revenue",
+    "building_permission": "planning",
+    "ownership_verification": "registration",
+    "field_review": None,
+}
+
+_transitions_cache: TTLCache[list[dict[str, Any]]] = TTLCache(ttl_s=60.0)
+
+
+# ----------------------------------------------------------------------------- pure rules
+def _norm(s: Any) -> str:
+    return str(s or "").strip().lower().replace(" ", "_")
+
+
+def find_transition(rows: list[dict[str, Any]], app_type: str, from_status: str, action: str) -> dict[str, Any] | None:
+    """Match `action` against `to_status` or `action_label` for the application's type/current status."""
+    wanted = _norm(action)
+    for row in rows:
+        if row["type"] != app_type or row["from_status"] != from_status:
+            continue
+        if _norm(row["to_status"]) == wanted or _norm(row.get("action_label")) == wanted:
+            return row
+    return None
+
+
+def is_allowed(row: dict[str, Any], principal: Principal, app: dict[str, Any]) -> bool:
+    """Role + department check; admin bypasses; citizens may only act on their own applications."""
+    if principal.is_admin:
+        return True
+    role = row.get("allowed_role")
+    if role and principal.role != role:
+        return False
+    dept = row.get("allowed_department")
+    if dept and principal.role == "officer" and principal.department != dept:
+        return False
+    if principal.role == "citizen" and app.get("applicant_uid") not in (None, principal.uid):
+        return False
+    return True
+
+
+def next_actions(rows: list[dict[str, Any]], app: dict[str, Any], principal: Principal | None) -> list[dict[str, Any]]:
+    """Actions the principal may take from the application's current status."""
+    out = []
+    for row in rows:
+        if row["type"] != app["type"] or row["from_status"] != app["status"]:
+            continue
+        if principal is None or not is_allowed(row, principal, app):
+            continue
+        out.append(
+            {
+                "action": row["to_status"],
+                "label": row.get("action_label") or row["to_status"].replace("_", " ").title(),
+                "to_status": row["to_status"],
+                "is_terminal": bool(row.get("is_terminal")),
+            }
+        )
+    return out
+
+
+def history_view(app: dict[str, Any]) -> list[dict[str, Any]]:
+    """`payload.history` (ts/from/status/by/role/remark) in the shape the web HistoryEntry type reads."""
+    payload = app.get("payload") or {}
+    if isinstance(payload, str):  # jsonb returned as text (some drivers / test fakes)
+        try:
+            payload = json.loads(payload)
+        except ValueError:
+            payload = {}
+    out = []
+    for h in (payload.get("history") if isinstance(payload, dict) else None) or []:
+        if not isinstance(h, dict):
+            continue
+        out.append(
+            {
+                "ts": h.get("ts"),
+                "from_status": h.get("from"),
+                "to_status": h.get("status"),
+                "action": h.get("remark") if h.get("remark") == "created" else None,
+                "actor_name": h.get("by"),
+                "actor_role": h.get("role"),
+                "remark": h.get("remark") if h.get("remark") != "created" else None,
+            }
+        )
+    return out
+
+
+def is_terminal(rows: list[dict[str, Any]], app_type: str, status: str) -> bool:
+    return not any(r["type"] == app_type and r["from_status"] == status for r in rows)
+
+
+# ----------------------------------------------------------------------------- persistence
+async def load_transitions(db: DBLike, force: bool = False) -> list[dict[str, Any]]:
+    rows = None if force else _transitions_cache.get("all")
+    if rows is None:
+        rows = await db.fetch(
+            "SELECT type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal "
+            "FROM landstack.transitions ORDER BY type, from_status, to_status"
+        )
+        _transitions_cache.set("all", rows)
+    return rows
+
+
+async def next_application_id(db: DBLike, year: int | None = None) -> str:
+    """`APP-<year>-<6 digits>`; serialised with an advisory lock inside the caller's transaction."""
+    year = year or dt.date.today().year
+    prefix = f"APP-{year}-"
+    await db.execute("SELECT pg_advisory_xact_lock(hashtext('landstack.applications.id'))")
+    last = await db.fetchval(
+        "SELECT max(substring(id from :n)::int) FROM landstack.applications WHERE id LIKE :like",
+        n=len(prefix) + 1,
+        like=prefix + "%",
+    )
+    return f"{prefix}{(int(last) if last else 0) + 1:06d}"
+
+
+async def get_application(db: DBLike, app_id: str) -> dict[str, Any]:
+    row = await db.fetchrow(
+        "SELECT a.*, p.survey_no, p.village FROM landstack.applications a "
+        "LEFT JOIN landstack.parcels p ON p.ulpin = a.ulpin WHERE a.id = :id",
+        id=app_id,
+    )
+    if row is None:
+        raise not_found("application", app_id)
+    row["history"] = history_view(row)
+    return row
+
+
+async def create_application(
+    db: DBLike,
+    principal: Principal,
+    ulpin: str,
+    app_type: str,
+    payload: dict[str, Any] | None,
+    *,
+    applicant_name: str | None = None,
+    status: str | None = None,
+    system_initiated: bool = False,
+) -> dict[str, Any]:
+    if app_type not in APPLICATION_TYPES:
+        raise AppError(422, "invalid_type", f"type must be one of {', '.join(APPLICATION_TYPES)}")
+    exists = await db.fetchval("SELECT 1 FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
+    if not exists:
+        raise not_found("parcel", ulpin)
+    payload = dict(payload or {})
+    if system_initiated:
+        payload["system_initiated"] = True
+    payload.setdefault("history", []).append(
+        {"ts": _now(), "status": status or INITIAL_STATUS[app_type], "by": principal.name, "remark": "created"}
+    )
+    async with db.transaction():
+        app_id = await next_application_id(db)
+        row = await db.fetchrow(
+            """
+            INSERT INTO landstack.applications
+                (id, ulpin, type, applicant_uid, applicant_name, status, payload, assigned_department, created_at, updated_at)
+            VALUES (:id, :ulpin, :type, :uid, :name, :status, CAST(:payload AS jsonb), :dept, now(), now())
+            RETURNING *
+            """,
+            id=app_id,
+            ulpin=ulpin,
+            type=app_type,
+            uid=principal.uid,
+            name=applicant_name or principal.name,
+            status=status or INITIAL_STATUS[app_type],
+            payload=json_dumps(payload),
+            dept=DEFAULT_DEPARTMENT[app_type],
+        )
+        await audit.record(
+            db,
+            principal,
+            "application.created",
+            "application",
+            app_id,
+            ulpin,
+            None,
+            row,
+            source="system" if system_initiated else "gateway",
+        )
+    if row is not None:
+        row["history"] = history_view(row)
+    return row or {"id": app_id}
+
+
+async def list_applications(
+    db: DBLike,
+    *,
+    applicant_uid: str | None = None,
+    ulpin: str | None = None,
+    status: str | None = None,
+    department: str | None = None,
+    app_type: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
+    clauses, params = ["TRUE"], {"limit": limit, "offset": offset}
+    for col, val in (
+        ("applicant_uid", applicant_uid),
+        ("ulpin", ulpin),
+        ("status", status),
+        ("assigned_department", department),
+        ("type", app_type),
+    ):
+        if val:
+            clauses.append(f"a.{col} = :{col}")
+            params[col] = val
+    rows = await db.fetch(
+        f"SELECT a.*, p.survey_no, p.village FROM landstack.applications a "
+        f"LEFT JOIN landstack.parcels p ON p.ulpin = a.ulpin "
+        f"WHERE {' AND '.join(clauses)} ORDER BY a.updated_at DESC LIMIT :limit OFFSET :offset",
+        **params,
+    )
+    for r in rows:
+        r["history"] = history_view(r)
+    return rows
+
+
+async def list_queue(
+    db: DBLike, principal: Principal, department: str | None = None, limit: int = 200
+) -> list[dict[str, Any]]:
+    """Open applications an officer can act on (terminal statuses excluded)."""
+    rows = await load_transitions(db)
+    dept = department or (principal.department if principal.role == "officer" else None)
+    apps = await list_applications(db, department=dept, limit=limit)
+    out = []
+    for app in apps:
+        if is_terminal(rows, app["type"], app["status"]):
+            continue
+        app["next_actions"] = next_actions(rows, app, principal)
+        out.append(app)
+    return out
+
+
+async def transition(
+    db: DBLike, app_id: str, action: str, principal: Principal, remark: str | None = None
+) -> dict[str, Any]:
+    """Apply `action`, enforce role/department/from_status, audit, run terminal side effects."""
+    rows = await load_transitions(db)
+    async with db.transaction():
+        app = await db.fetchrow("SELECT * FROM landstack.applications WHERE id = :id FOR UPDATE", id=app_id)
+        if app is None:
+            raise not_found("application", app_id)
+        row = find_transition(rows, app["type"], app["status"], action)
+        if row is None:
+            allowed = [r["to_status"] for r in rows if r["type"] == app["type"] and r["from_status"] == app["status"]]
+            raise AppError(409, "invalid_transition", f"cannot '{action}' from '{app['status']}'", {"allowed": allowed})
+        if not is_allowed(row, principal, app):
+            raise forbidden(
+                f"'{action}' requires {row.get('allowed_role')}"
+                + (f" ({row['allowed_department']})" if row.get("allowed_department") else "")
+            )
+        payload = dict(app.get("payload") or {})
+        payload.setdefault("history", []).append(
+            {
+                "ts": _now(),
+                "from": app["status"],
+                "status": row["to_status"],
+                "by": principal.name,
+                "role": principal.role,
+                "remark": remark,
+            }
+        )
+        updated = await db.fetchrow(
+            "UPDATE landstack.applications SET status = :status, payload = CAST(:payload AS jsonb), updated_at = now() "
+            "WHERE id = :id RETURNING *",
+            status=row["to_status"],
+            payload=json_dumps(payload),
+            id=app_id,
+        )
+        await audit.record(
+            db,
+            principal,
+            f"application.{row['to_status']}",
+            "application",
+            app_id,
+            app["ulpin"],
+            {"status": app["status"]},
+            {"status": row["to_status"], "remark": remark},
+        )
+    if row["to_status"] == "approved":
+        side = await run_side_effects(db, updated or app, principal)
+        if side:
+            payload["side_effect"] = side
+            updated = await db.fetchrow(
+                "UPDATE landstack.applications SET payload = CAST(:payload AS jsonb) WHERE id = :id RETURNING *",
+                payload=json_dumps(payload),
+                id=app_id,
+            )
+    from landstack.services import aggregator
+
+    aggregator.invalidate(app["ulpin"])
+    result = updated or app
+    result["history"] = history_view(result)
+    result["next_actions"] = next_actions(rows, result, principal)
+    return result
+
+
+async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal) -> dict[str, Any] | None:
+    """On approval: mutation → revenue POST /mutations; building_permission → planning POST /permissions."""
+    payload = app.get("payload") or {}
+    try:
+        if app["type"] == "mutation":
+            body = {
+                "ulpin": app["ulpin"],
+                "to_owner": payload.get("to_owner") or payload.get("new_owner_name") or app.get("applicant_name"),
+                "reason": payload.get("reason") or "mutation approved",
+                "application_id": app["id"],
+            }
+            res = await client.post_json("/revenue/mutations", body, timeout=5.0)
+            await audit.record(
+                db, principal, "revenue.mutation_recorded", "application", app["id"], app["ulpin"], None, res
+            )
+            return {"department": "revenue", "ok": True, "result": res}
+        if app["type"] == "building_permission":
+            body = {
+                "ulpin": app["ulpin"],
+                "floors": int(payload.get("floors") or 1),
+                "built_up_sqm": float(payload.get("built_up_sqm") or 0),
+                "application_id": app["id"],
+                "status": "approved",
+            }
+            res = await client.post_json("/planning/permissions", body, timeout=5.0)
+            await audit.record(
+                db, principal, "planning.permission_issued", "application", app["id"], app["ulpin"], None, res
+            )
+            return {"department": "planning", "ok": True, "result": res}
+    except Exception as exc:
+        log.warning("side effect failed for %s: %s", app["id"], exc)
+        return {"ok": False, "error": str(exc)[:200]}
+    return None
+
+
+def _now() -> str:
+    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")

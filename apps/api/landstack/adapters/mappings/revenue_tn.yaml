@@ -1,0 +1,17 @@
+# Tamil Nadu "Patta/Chitta" vocabulary: pattadar instead of owner, extent in hectares.
+source: "TN Patta Chitta (mock)"
+department: revenue
+state: TN
+id_field: ulpin
+endpoints:
+  ror: {path: /revenue/ror, params: {ulpin: "{ulpin}"}}
+units:
+  ror.items[0].extent_hectares: hectare
+map:
+  ror.items[0].patta_no: ["identifiers.khata_no", "rights.ror.khata_no"]
+  ror.items[0].survey_no: identifiers.survey_no
+  ror.items[0].pattadar_name: party.owners[0].name
+  ror.items[0].relation_name: party.owners[0].father_name
+  ror.items[0].tenure: ["party.owners[0].type", "rights.ror.ownership_type"]
+  ror.items[0].extent_hectares: rights.ror.extent_sqm
+  ror.items[0].land_class: rights.ror.classification

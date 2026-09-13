@@ -1,0 +1,12 @@
+source: "ULB Utilities (mock)"
+department: utilities
+state: AP
+id_field: ulpin
+endpoints:
+  connections: {path: /utilities/connections, params: {ulpin: "{ulpin}"}}
+map:
+  connections.item.water: utilities.water
+  connections.item.electricity: utilities.electricity
+  connections.item.sewer: utilities.sewer
+  connections.item.road_access_m: utilities.road_access_m
+  connections.item.nearest_road_class: utilities.nearest_road_class

@@ -1,0 +1,18 @@
+source: "APCRDA / DTCP (mock)"
+department: planning
+state: AP
+id_field: ulpin
+endpoints:
+  zone: {path: /planning/zone, params: {ulpin: "{ulpin}"}}
+  permissions: {path: /planning/permissions, params: {ulpin: "{ulpin}"}}
+map:
+  zone.item.zone_code: planning.zone_code
+  zone.item.name: planning.zone_name
+  zone.item.permissible_uses: planning.permissible_uses
+  permissions.items[0].permit_no: planning.building_permission.permit_no
+  permissions.items[0].status: planning.building_permission.status
+  permissions.items[0].floors: planning.building_permission.floors
+  permissions.items[0].built_up_sqm: planning.building_permission.built_up_sqm
+  permissions.items[0].applied_on: planning.building_permission.applied_on
+  permissions.items[0].approved_on: planning.building_permission.approved_on
+  permissions.items[0].conditions: planning.building_permission.conditions

@@ -1,0 +1,161 @@
+"""Parcel CDM, timeline and ownership verification."""
+
+from __future__ import annotations
+
+import datetime as dt
+from typing import Any
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
+
+from landstack.auth import Principal, require_officer, require_user
+from landstack.db import DBLike, get_db
+from landstack.services import aggregator, audit
+from landstack.services.consistency import OWNER_THRESHOLD, name_score
+
+router = APIRouter(prefix="/landstack", tags=["parcels"])
+
+
+@router.get("/parcels/{ulpin}")
+async def parcel_cdm(
+    ulpin: str, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    return await aggregator.get_parcel_cdm(db, ulpin, principal)
+
+
+def _iso(v: Any) -> Any:
+    return v.isoformat() if isinstance(v, dt.datetime | dt.date) else v
+
+
+@router.get("/parcels/{ulpin}/timeline")
+async def timeline(
+    ulpin: str, principal: Principal = Depends(require_officer), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Chronological events across departments (deeds, mutations, permissions, applications, alerts, audit)."""
+    events: list[dict[str, Any]] = []
+
+    def push(rows: list[dict[str, Any]], kind: str, source: str, ts_key: str, title_fn: Any) -> None:
+        for r in rows:
+            ts = r.get(ts_key)
+            if ts is None:
+                continue
+            events.append({"ts": _iso(ts), "kind": kind, "source": source, "title": title_fn(r), "detail": r})
+
+    push(
+        await db.fetch("SELECT * FROM dept_registration.deeds WHERE ulpin = :u", u=ulpin),
+        "deed",
+        "registration",
+        "registered_on",
+        lambda r: f"{r.get('deed_type', 'deed').title()} deed {r.get('doc_no')} → {r.get('claimant')}",
+    )
+    push(
+        await db.fetch("SELECT * FROM dept_revenue.mutations WHERE ulpin = :u", u=ulpin),
+        "mutation",
+        "revenue",
+        "created_at",
+        lambda r: f"Mutation {r.get('from_owner')} → {r.get('to_owner')}",
+    )
+    push(
+        await db.fetch("SELECT * FROM dept_planning.building_permissions WHERE ulpin = :u", u=ulpin),
+        "permission",
+        "planning",
+        "applied_on",
+        lambda r: f"Building permission {r.get('permit_no')} ({r.get('status')})",
+    )
+    push(
+        await db.fetch("SELECT * FROM dept_legal.disputes WHERE ulpin = :u", u=ulpin),
+        "dispute",
+        "legal",
+        "filed_on",
+        lambda r: f"Case {r.get('case_no')} filed at {r.get('court')}",
+    )
+    push(
+        await db.fetch("SELECT * FROM dept_registration.encumbrances WHERE ulpin = :u", u=ulpin),
+        "encumbrance",
+        "registration",
+        "from_date",
+        lambda r: f"{str(r.get('kind', '')).title()} in favour of {r.get('holder')}",
+    )
+    push(
+        await db.fetch(
+            "SELECT id, type, status, applicant_name, created_at FROM landstack.applications WHERE ulpin = :u", u=ulpin
+        ),
+        "application",
+        "gateway",
+        "created_at",
+        lambda r: f"{r.get('type')} application {r.get('id')} ({r.get('status')})",
+    )
+    push(
+        await db.fetch(
+            "SELECT id, kind, severity, title, status, created_at FROM landstack.alerts WHERE ulpin = :u", u=ulpin
+        ),
+        "alert",
+        "gateway",
+        "created_at",
+        lambda r: r.get("title") or r.get("kind"),
+    )
+    push(
+        await db.fetch(
+            "SELECT ts, action, actor_name, actor_role, source FROM landstack.audit_log WHERE ulpin = :u "
+            "ORDER BY ts DESC LIMIT 50",
+            u=ulpin,
+        ),
+        "audit",
+        "gateway",
+        "ts",
+        lambda r: f"{r.get('action')} by {r.get('actor_name')}",
+    )
+    ror = await db.fetchrow("SELECT mutation_history FROM dept_revenue.ror WHERE ulpin = :u LIMIT 1", u=ulpin)
+    for h in (ror or {}).get("mutation_history") or []:
+        if isinstance(h, dict) and (h.get("date") or h.get("on")):
+            events.append(
+                {
+                    "ts": h.get("date") or h.get("on"),
+                    "kind": "mutation",
+                    "source": "revenue",
+                    "title": f"RoR mutation: {h.get('from', '?')} → {h.get('to', '?')}",
+                    "detail": h,
+                }
+            )
+    events.sort(key=lambda e: str(e["ts"]), reverse=True)
+    return {"ulpin": ulpin, "events": events}
+
+
+class VerifyBody(BaseModel):
+    ulpin: str
+    claimed_name: str = Field(min_length=1, max_length=120)
+
+
+@router.post("/verify-ownership")
+async def verify_ownership(
+    body: VerifyBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Fuzzy-compare a claimed name against the RoR owner and the latest deed claimant."""
+    ror_owner = await db.fetchval("SELECT owner_name FROM dept_revenue.ror WHERE ulpin = :u LIMIT 1", u=body.ulpin)
+    deed_claimant = await db.fetchval(
+        "SELECT claimant FROM dept_registration.deeds WHERE ulpin = :u ORDER BY registered_on DESC LIMIT 1",
+        u=body.ulpin,
+    )
+    scores = {
+        "ror": name_score(ror_owner, body.claimed_name),
+        "latest_deed": name_score(deed_claimant, body.claimed_name),
+    }
+    best = max(scores.values()) if scores else 0.0
+    result = {
+        "ulpin": body.ulpin,
+        "match": best >= OWNER_THRESHOLD,
+        "score": round(best, 1),
+        "compared": [k for k, v in (("ror", ror_owner), ("latest_deed", deed_claimant)) if v],
+        "scores": scores,
+    }
+    await audit.record(
+        db,
+        principal,
+        "ownership.verified",
+        "parcel",
+        body.ulpin,
+        body.ulpin,
+        None,
+        {"claimed_name": body.claimed_name, "match": result["match"], "score": result["score"]},
+    )
+    return result

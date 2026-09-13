@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+/* ---------- Design tokens ---------- */
+:root {
+  --ground: #f6f5f0;
+  --ground-2: #eeece4;
+  --panel: #ffffff;
+  --panel-2: #fbfaf6;
+  --line: #d9d6cb;
+  --line-strong: #b9b5a6;
+  --ink: #1d2320;
+  --ink-2: #4b524d;
+  --ink-3: #7a807b;
+  --primary: #0e6b54;
+  --primary-ink: #ffffff;
+  --primary-soft: #dff0e9;
+  --amber: #9a6b12;
+  --amber-soft: #f6ead0;
+  --brick: #a63a2b;
+  --brick-soft: #f5dcd7;
+  --violet: #6b4e9a;
+  --violet-soft: #e8e0f3;
+  --slate: #2f5d9e;
+  --slate-soft: #dbe5f4;
+  --focus: #0e6b54;
+  --shadow: 0 1px 2px rgb(29 35 32 / 0.06), 0 8px 24px -12px rgb(29 35 32 / 0.18);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #14181a;
+    --ground-2: #1a1f22;
+    --panel: #1e2427;
+    --panel-2: #232a2e;
+    --line: #2f373b;
+    --line-strong: #465055;
+    --ink: #e6e8e4;
+    --ink-2: #b6bcb7;
+    --ink-3: #848b86;
+    --primary: #4fc39f;
+    --primary-ink: #0d1f19;
+    --primary-soft: #173a31;
+    --amber: #d9a441;
+    --amber-soft: #3a2f16;
+    --brick: #e0705f;
+    --brick-soft: #3f1f1a;
+    --violet: #ab93d6;
+    --violet-soft: #2c2440;
+    --slate: #7ea6e0;
+    --slate-soft: #1c2a3d;
+    --focus: #4fc39f;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-ground-2: var(--ground-2);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-brick: var(--brick);
+  --color-brick-soft: var(--brick-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-slate: var(--slate);
+  --color-slate-soft: var(--slate-soft);
+  --font-display: 'Bricolage Grotesque', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --shadow-panel: var(--shadow);
+  --radius-lg: 12px;
+}
+
+/* ---------- Base ---------- */
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+code, kbd, .mono { font-family: var(--font-mono); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+::selection { background: var(--primary-soft); }
+
+/* subtle topographic grain on the ground */
+.ground-texture {
+  background-color: var(--ground);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  background-blend-mode: multiply;
+}
+.ground-texture::before { content: ''; }
+
+/* hatch for disputed status (never colour-only) */
+.hatch-brick {
+  background-image: repeating-linear-gradient(135deg, var(--brick) 0 2px, transparent 2px 7px);
+}
+.hatch-violet {
+  background-image: repeating-linear-gradient(45deg, var(--violet) 0 2px, transparent 2px 7px);
+}
+
+/* maplibre chrome overrides */
+.maplibregl-ctrl-group { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.maplibregl-ctrl-group button + button { border-top-color: var(--line); }
+.maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--ink-2); font-size: 11px; }
+.maplibregl-ctrl-attrib a { color: var(--ink); }
+.maplibregl-canvas:focus-visible { outline: none; }
+
+/* thin scrollbars for panels */
+.scroll-thin { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.9; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes fade-up { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none; } }
+.fade-up { animation: fade-up 160ms ease-out both; }

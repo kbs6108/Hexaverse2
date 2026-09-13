@@ -1,0 +1,15 @@
+source: "AP Meebhoomi (mock)"
+department: revenue
+state: AP
+id_field: ulpin
+endpoints:
+  ror: {path: /revenue/ror, params: {ulpin: "{ulpin}"}}
+map:
+  ror.items[0].khata_no: ["identifiers.khata_no", "rights.ror.khata_no"]
+  ror.items[0].survey_no: identifiers.survey_no
+  ror.items[0].owner_name: party.owners[0].name
+  ror.items[0].father_name: party.owners[0].father_name
+  ror.items[0].ownership_type: ["party.owners[0].type", "rights.ror.ownership_type"]
+  ror.items[0].extent_sqm: rights.ror.extent_sqm
+  ror.items[0].classification: rights.ror.classification
+  ror.items[0].mutation_history: rights.ror.mutation_history

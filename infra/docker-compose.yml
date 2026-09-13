@@ -1,0 +1,170 @@
+# Land Stack local stack. Run from the repo root via the Makefile (`make up`) or:
+#   docker compose --env-file infra/.env -f infra/docker-compose.yml up -d
+# Profiles: (none) = db + migrate + api + web(dev server) · prod = nginx build of the web app · tiles = martin
+name: landstack
+
+x-api-image: &api-image
+  build:
+    context: ..
+    dockerfile: apps/api/Dockerfile
+  image: landstack-api:dev
+
+x-db-url: &db-url postgresql+asyncpg://${POSTGRES_USER:-landstack}:${POSTGRES_PASSWORD:-landstack}@db:5432/${POSTGRES_DB:-landstack}
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-landstack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-landstack}
+      POSTGRES_DB: ${POSTGRES_DB:-landstack}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-landstack} -d ${POSTGRES_DB:-landstack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  # One-shot, idempotent: applies db/migrations/*.sql, then seeds only when landstack.parcels is empty.
+  migrate:
+    <<: *api-image
+    working_dir: /app
+    environment:
+      DATABASE_URL: *db-url
+      SEED_ON_UP: ${SEED_ON_UP:-1}
+    volumes:
+      - ../tools:/app/tools:ro
+      - ../db:/app/db:ro
+      - ../data/village.geojson:/app/data/village.geojson:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["sh", "-ec"]
+    command:
+      - |
+        python tools/migrate.py
+        if [ "$${SEED_ON_UP:-1}" = "1" ]; then
+          if python - <<'PY'
+        import sys; sys.path.insert(0, "tools")
+        from dburl import connect, resolve_database_url
+        with connect(resolve_database_url()) as c, c.cursor() as cur:
+            cur.execute("SELECT count(*) FROM landstack.parcels")
+            n = cur.fetchone()[0]
+        print(f"landstack.parcels has {n} rows")
+        sys.exit(0 if n == 0 else 1)
+        PY
+          then python tools/seed.py; else echo "seed skipped (already seeded; run 'make seed' to force)"; fi
+        fi
+    restart: "no"
+
+  api:
+    <<: *api-image
+    environment:
+      DATABASE_URL: *db-url
+      PORT: "8000"
+      AUTH_MODE: ${AUTH_MODE:-dev}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:5173}
+      STORAGE_BACKEND: local
+      STORAGE_LOCAL_DIR: /app/data/storage
+      S2_OFFLINE: "1"
+      S2_DATA_DIR: /app/data/s2
+    env_file:
+      - path: ../apps/api/.env
+        required: false
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ../apps/api:/app/apps/api
+      - ../tools:/app/tools
+      - ../db:/app/db:ro
+      - ../data:/app/data
+    command: >
+      uvicorn landstack.main:app --host 0.0.0.0 --port 8000 --reload
+      --reload-dir /app/apps/api --proxy-headers --forwarded-allow-ips='*'
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz', timeout=3).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # Vite dev server with HMR; node_modules lives in a named volume so host installs never clash.
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+      VITE_AUTH_MODE: ${VITE_AUTH_MODE:-dev}
+      CHOKIDAR_USEPOLLING: "1"
+    env_file:
+      - path: ../apps/web/.env
+        required: false
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ../apps/web:/app
+      - ../data/samples:/data/samples:ro
+      - web_node_modules:/app/node_modules
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5173/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # Production-style static build behind nginx (mirrors what Firebase Hosting serves).
+  web-prod:
+    profiles: ["prod"]
+    build:
+      context: ../apps/web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-dev}
+        VITE_ESRI_API_KEY: ${VITE_ESRI_API_KEY:-}
+    ports:
+      - "${WEB_PROD_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # Optional vector-tile server straight from PostGIS (the API already serves MVT at /landstack/tiles).
+  martin:
+    profiles: ["tiles"]
+    image: ghcr.io/maplibre/martin:v0.15.0
+    command: ["--listen-addresses", "0.0.0.0:3000", "--default-srid", "4326"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-landstack}:${POSTGRES_PASSWORD:-landstack}@db:5432/${POSTGRES_DB:-landstack}
+    ports:
+      - "${MARTIN_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  web_node_modules:
