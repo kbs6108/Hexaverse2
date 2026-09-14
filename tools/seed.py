@@ -1061,7 +1061,7 @@ def make_department_records(frame: Frame, rng: random.Random, names: Names) -> N
         frame.ror.append({
             "khata_no": khata, "ulpin": p.ulpin, "survey_no": p.survey_no, "owner_name": owner,
             "father_name": father, "ownership_type": otype, "extent_sqm": area,
-            "classification": classification, "mutation_history": [],
+            "classification": classification, "mutation_history": [], "state": region.code,
             "updated_at": NOW - timedelta(days=rng.randint(30, 900)),
         })
 
@@ -1584,9 +1584,9 @@ def write_department_demo_tables(cur, frames: list[Frame]) -> dict[str, int]:
     cur.execute("TRUNCATE " + ", ".join(DEMO_DEPT_TABLES) + " RESTART IDENTITY")
     n: dict[str, int] = {}
     n["dept_revenue.ror"] = _insert(cur, "dept_revenue.ror",
-        ["khata_no", "ulpin", "survey_no", "owner_name", "father_name", "ownership_type", "extent_sqm", "classification", "mutation_history", "updated_at"],
+        ["khata_no", "ulpin", "survey_no", "owner_name", "father_name", "ownership_type", "extent_sqm", "classification", "mutation_history", "state", "updated_at"],
         [(r["khata_no"], r["ulpin"], r["survey_no"], r["owner_name"], r["father_name"], r["ownership_type"], r["extent_sqm"],
-          r["classification"], _j(r["mutation_history"]), r["updated_at"]) for f in frames for r in f.ror], {"mutation_history": JSONB})
+          r["classification"], _j(r["mutation_history"]), r["state"], r["updated_at"]) for f in frames for r in f.ror], {"mutation_history": JSONB})
     n["dept_registration.deeds"] = _insert(cur, "dept_registration.deeds",
         ["doc_no", "ulpin", "deed_type", "executant", "claimant", "consideration", "extent_sqm", "registered_on", "sro_code"],
         [(d["doc_no"], d["ulpin"], d["deed_type"], d["executant"], d["claimant"], d["consideration"], d["extent_sqm"], d["registered_on"], d["sro_code"])

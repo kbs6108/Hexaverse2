@@ -1,0 +1,18 @@
+# Telangana "Dharani" vocabulary: pattadar passbook number, extent in acres.
+source: "TG Dharani (mock)"
+department: revenue
+state: TG
+id_field: ulpin
+endpoints:
+  ror: {path: /revenue/ror, params: {ulpin: "{ulpin}"}}
+units:
+  ror.items[0].extent_acres: acre
+map:
+  ror.items[0].ppb_no: ["identifiers.khata_no", "rights.ror.khata_no"]
+  ror.items[0].survey_no: identifiers.survey_no
+  ror.items[0].pattadar_name: party.owners[0].name
+  ror.items[0].father_husband_name: party.owners[0].father_name
+  ror.items[0].land_nature: ["party.owners[0].type", "rights.ror.ownership_type"]
+  ror.items[0].extent_acres: rights.ror.extent_sqm
+  ror.items[0].land_classification: rights.ror.classification
+  ror.items[0].mutation_history: rights.ror.mutation_history

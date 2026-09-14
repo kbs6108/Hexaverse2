@@ -65,7 +65,7 @@ export function ServiceRequest() {
 function UlpinField({ ulpin, setUlpin }: { ulpin: string; setUlpin: (v: string) => void }) {
   return (
     <Field label="ULPIN" htmlFor="sr-ulpin" hint="Select a parcel on the map and choose “Request service” to prefill.">
-      <Input id="sr-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} placeholder="TDR1K3M9A2F7C1" />
+      <Input id="sr-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} placeholder="TFCM91641E6C82" />
     </Field>
   );
 }

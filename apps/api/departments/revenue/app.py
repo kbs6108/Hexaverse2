@@ -29,12 +29,51 @@ class MutationIn(BaseModel):
     application_id: str | None = None
 
 
+def _dialect(row: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Serve each state's real-world vocabulary (the interoperability story: the gateway's
+    per-state adapter mappings translate these dialects back into the CDM).
+
+    AP → Meebhoomi khata/owner/sqm (the table's native columns, unchanged);
+    TN → Patta Chitta patta/pattadar/hectares; TG → Dharani passbook/pattadar/acres.
+    """
+    if row is None:
+        return None
+    state = str(row.get("state") or "AP").upper()
+    if state == "TN":
+        return {
+            "state": state,
+            "patta_no": row["khata_no"],
+            "survey_no": row["survey_no"],
+            "pattadar_name": row["owner_name"],
+            "relation_name": row["father_name"],
+            "tenure": row["ownership_type"],
+            "extent_hectares": round(float(row["extent_sqm"]) / 10_000.0, 6),
+            "land_class": row["classification"],
+            "mutation_history": row["mutation_history"],
+            "updated_at": row["updated_at"],
+        }
+    if state == "TG":
+        return {
+            "state": state,
+            "ppb_no": row["khata_no"],
+            "survey_no": row["survey_no"],
+            "pattadar_name": row["owner_name"],
+            "father_husband_name": row["father_name"],
+            "land_nature": row["ownership_type"],
+            "extent_acres": round(float(row["extent_sqm"]) / 4046.8564224, 6),
+            "land_classification": row["classification"],
+            "mutation_history": row["mutation_history"],
+            "updated_at": row["updated_at"],
+        }
+    return row
+
+
 @app.get("/ror", dependencies=[Depends(chaos)])
 async def ror_by_ulpin(ulpin: str, db: DBLike = Depends(get_db)) -> dict[str, Any]:
     rows = await db.fetch(
         "SELECT * FROM dept_revenue.ror WHERE ulpin = :u ORDER BY updated_at DESC NULLS LAST", u=ulpin
     )
-    return envelope(SOURCE, count=len(rows), items=rows)
+    return envelope(SOURCE, count=len(rows), items=[_dialect(r) for r in rows])
 
 
 @app.get("/ror/{khata_no}", dependencies=[Depends(chaos)])
@@ -42,7 +81,7 @@ async def ror_by_khata(khata_no: str, db: DBLike = Depends(get_db)) -> dict[str,
     row = require_found(
         await db.fetchrow("SELECT * FROM dept_revenue.ror WHERE khata_no = :k", k=khata_no), "khata", khata_no
     )
-    return envelope(SOURCE, item=row)
+    return envelope(SOURCE, item=_dialect(row))
 
 
 @app.post("/mutations", status_code=201)

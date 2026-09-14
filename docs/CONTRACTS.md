@@ -183,6 +183,9 @@ Department sub-apps (mounted; each has its own OpenAPI at `/<dept>/docs`): see s
 
 ## 7. Department APIs (vocabulary is intentionally different per department)
 revenue:      GET /revenue/ror?ulpin= | GET /revenue/ror/{khata_no} | POST /revenue/mutations {ulpin,to_owner,reason,application_id}
+              RoR rows carry `state` (migration 007) and are served in that state's dialect: AP Meebhoomi
+              (khata_no/owner_name/extent_sqm), TN Patta Chitta (patta_no/pattadar_name/extent_hectares),
+              TG Dharani (ppb_no/pattadar_name/extent_acres) — translated back by revenue_{ap,tn,tg}.yaml.
 registration: GET /registration/deeds?ulpin= | GET /registration/encumbrances?ulpin=&active=1 | POST /registration/deeds {ulpin,deed_type,executant,claimant,consideration} → writes outbox + POSTs /landstack/events
 planning:     GET /planning/zone?ulpin= | GET /planning/permissions?ulpin= | POST /planning/permissions {ulpin,floors,built_up_sqm,application_id,status}
               GET /planning/check?ulpin=&use=residential&floors= → {permissible: bool, reasons[]}

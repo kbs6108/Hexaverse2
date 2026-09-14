@@ -30,7 +30,7 @@ export function VerifyOwnership() {
           <CardBody>
             <form onSubmit={submit} className="flex flex-col gap-3">
               <Field label="ULPIN" htmlFor="v-ulpin" hint="14-character parcel id; pick a parcel on the map to prefill.">
-                <Input id="v-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} placeholder="TDR1K3M9A2F7C1" />
+                <Input id="v-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} placeholder="TFCM91641E6C82" />
               </Field>
               <Field label="Claimed owner name" htmlFor="v-name">
                 <Input id="v-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="As written on the sale deed" />
