@@ -79,7 +79,7 @@ const citizenRequest = createRoute({ getParentRoute: () => citizenRoute, path: '
 /* ---- officer ---- */
 const officerRoute = createRoute({ getParentRoute: () => rootRoute, path: '/officer', component: OfficerLayout, beforeLoad: guard('officer') });
 const officerIndex = createRoute({ getParentRoute: () => officerRoute, path: '/', component: OfficerConsole });
-type QueueSearch = { department?: string; app?: string };
+type QueueSearch = { department?: string; app?: string; q?: string };
 const officerQueue = createRoute({
   getParentRoute: () => officerRoute,
   path: '/queue',
@@ -87,6 +87,7 @@ const officerQueue = createRoute({
   validateSearch: (s: Record<string, unknown>): QueueSearch => ({
     ...(typeof s.department === 'string' && s.department ? { department: s.department } : {}),
     ...(typeof s.app === 'string' && s.app ? { app: s.app } : {}),
+    ...(typeof s.q === 'string' && s.q ? { q: s.q } : {}),
   }),
 });
 const officerAlerts = createRoute({ getParentRoute: () => officerRoute, path: '/alerts', component: AlertsPage });

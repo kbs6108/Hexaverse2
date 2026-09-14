@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MapPin } from 'lucide-react';
 import { LogoMark } from '@/app/Shell';
 import { Badge } from '@/components/Badge';
 import { FeatureCard, PitchStat } from './components';
@@ -29,6 +29,9 @@ export function LandingPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+      <Link to="/" className="mb-6 inline-flex items-center gap-1 text-xs font-medium text-ink-3 hover:text-ink">
+        <ArrowLeft size={14} /> Back to home
+      </Link>
       {/* Hero */}
       <section className="fade-up flex flex-col items-center text-center">
         <LogoMark size={52} />
@@ -201,7 +204,7 @@ export function LandingPage() {
       {/* Reading a parcel profile */}
       <section id="profile" className="mt-16 scroll-mt-20">
         <Eyebrow>Reading a parcel profile</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">Nine tabs, one parcel</h2>
+        <h2 className="font-display text-[26px] font-semibold tracking-tight">Eight tabs, one parcel</h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           Open any parcel and its profile is organised into tabs — each one answered by a different
           system, and each one saying so.

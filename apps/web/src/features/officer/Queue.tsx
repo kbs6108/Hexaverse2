@@ -24,7 +24,7 @@ export function QueuePage() {
   const department = search.department ?? (user?.role === 'officer' ? user.department ?? '' : '');
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
-  const [text, setText] = useState('');
+  const [text, setText] = useState(search.q ?? '');
 
   const q = useQuery({ queryKey: qk.queue(department), queryFn: () => api.queue(department || undefined), refetchInterval: 20_000 });
 

@@ -109,7 +109,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           )}
           {role === 'officer' && (
             <>
-              <Link to="/officer/queue" search={{}}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
+              <Link to="/officer/queue" search={{ q: p.ulpin }}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
               <Button variant="primary" icon={<Satellite size={15} />} onClick={() => goTo('satellite')}>Run change detection</Button>
               <Button icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>Report</Button>
             </>
@@ -117,7 +117,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           {role === 'admin' && (
             <>
               <Link to="/admin" search={{ ulpin: p.ulpin }}><Button variant="primary" icon={<Wand2 size={15} />}>Simulate deed</Button></Link>
-              <Link to="/officer/queue" search={{}}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
+              <Link to="/officer/queue" search={{ q: p.ulpin }}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
               <Button icon={<Satellite size={15} />} onClick={() => goTo('satellite')}>Run change detection</Button>
             </>
           )}

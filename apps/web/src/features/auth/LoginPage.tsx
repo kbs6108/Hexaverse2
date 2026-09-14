@@ -52,8 +52,8 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-14">
-      <Link to="/welcome" className="inline-flex w-fit items-center gap-1 text-xs font-medium text-ink-3 hover:text-ink">
-        <ArrowLeft size={14} /> Back to overview
+      <Link to="/" className="inline-flex w-fit items-center gap-1 text-xs font-medium text-ink-3 hover:text-ink">
+        <ArrowLeft size={14} /> Back to home
       </Link>
 
       <div className="flex items-center gap-3">

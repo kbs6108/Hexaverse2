@@ -146,6 +146,25 @@ function SimulateDeed({ initialUlpin }: { initialUlpin: string }) {
           <Field label="Claimant (new owner)" htmlFor="sim-claimant"><Input id="sim-claimant" required value={claimant} onChange={(e) => setClaimant(e.target.value)} placeholder="Lakshmi Devi" /></Field>
           {m.isError && <ErrorNote error={m.error} />}
           <Button type="submit" variant="primary" icon={<Wand2 size={15} />} loading={m.isPending} className="self-start">Register deed</Button>
+          {m.data && (
+            <div className="mt-2 flex flex-col gap-2 rounded-md border border-primary/30 bg-primary-soft/40 p-3">
+              <p className="text-xs font-medium text-primary">Deed registered upstream. System-initiated mutation generated.</p>
+              <div className="flex flex-wrap gap-2">
+                <Link to="/officer/queue" search={{ department: 'revenue' }}>
+                  <Button size="sm" variant="primary">
+                    Open Revenue queue
+                  </Button>
+                </Link>
+                {ulpin && (
+                  <Link to="/map" search={{ ulpin: ulpin.trim() }}>
+                    <Button size="sm" variant="secondary">
+                      View parcel on map
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
           {m.data && <pre className="max-h-40 overflow-auto rounded-md bg-ground-2 p-2 font-mono text-[11px] text-ink-2">{JSON.stringify(m.data, null, 2)}</pre>}
         </form>
       </CardBody>

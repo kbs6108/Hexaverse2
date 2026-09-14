@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { useSearch } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Field, Input } from '@/components/Field';
@@ -58,6 +58,15 @@ export function VerifyOwnership() {
                   </div>
                 </div>
                 <p className="mt-4 text-xs text-ink-3">Compared against: {m.data.compared.map(titleCase).join(', ')}. The registered owner’s name is not disclosed by this service.</p>
+                {m.data.match && ulpin && (
+                  <div className="mt-5 border-t border-line pt-4">
+                    <Link to="/citizen/request" search={{ ulpin: ulpin.trim() }}>
+                      <Button variant="primary" icon={<ArrowRight size={15} />}>
+                        Request service for this parcel
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </CardBody>
             </Card>
           )}
