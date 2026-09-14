@@ -135,8 +135,10 @@ async def next_application_id(db: DBLike, year: int | None = None) -> str:
     year = year or dt.date.today().year
     prefix = f"APP-{year}-"
     await db.execute("SELECT pg_advisory_xact_lock(hashtext('landstack.applications.id'))")
+    # (:n)::int — asyncpg sends untyped params, and substring(text from $1) cannot
+    # infer the type, which fails at the driver (CLAUDE.md first-run issue #1).
     last = await db.fetchval(
-        "SELECT max(substring(id from :n)::int) FROM landstack.applications WHERE id LIKE :like",
+        "SELECT max(substring(id from (:n)::int)::int) FROM landstack.applications WHERE id LIKE :like",
         n=len(prefix) + 1,
         like=prefix + "%",
     )
