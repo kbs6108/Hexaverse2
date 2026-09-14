@@ -9,9 +9,11 @@ import { useUI } from '@/lib/store';
 import { ensureImages } from './patterns';
 import * as L from './styles/layers';
 import { HoverCard, type HoverInfo } from './HoverCard';
+import { RegionMarkers } from './RegionMarkers';
 
-const AOI_BBOX: [number, number, number, number] = [80.545, 16.434, 80.567, 16.452];
-const MAX_BOUNDS: [number, number, number, number] = [AOI_BBOX[0] - 0.15, AOI_BBOX[1] - 0.15, AOI_BBOX[2] + 0.15, AOI_BBOX[3] + 0.15];
+// The demo spans three state clusters (CONTRACTS §10), so the map allows a national
+// overview: bounds cover India + margin, and RegionMarkers guide users into a cluster.
+const MAX_BOUNDS: [number, number, number, number] = [55.0, 0.0, 110.0, 40.0];
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
@@ -111,7 +113,7 @@ export function MapView() {
         initialViewState={{ longitude: env.defaultCenter[0], latitude: env.defaultCenter[1], zoom: env.defaultZoom }}
         mapStyle={mapStyle}
         maxBounds={MAX_BOUNDS}
-        minZoom={11}
+        minZoom={3.2}
         maxZoom={20}
         attributionControl={{ compact: true }}
         interactiveLayerIds={layers.parcels ? ['parcels-fill'] : []}
@@ -125,6 +127,7 @@ export function MapView() {
       >
         <NavigationControl position="bottom-right" visualizePitch />
         <ScaleControl position="bottom-left" maxWidth={120} />
+        <RegionMarkers />
 
         {/* Tier 2: zones (under parcels) */}
         <Source id={L.SRC.zones} type="vector" tiles={[L.tileUrl('zones')]} minzoom={10} maxzoom={18}>

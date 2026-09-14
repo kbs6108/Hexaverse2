@@ -79,7 +79,7 @@ VITE_API_URL=http://localhost:8000
 VITE_AUTH_MODE=dev | firebase
 VITE_FIREBASE_API_KEY= VITE_FIREBASE_AUTH_DOMAIN= VITE_FIREBASE_PROJECT_ID= VITE_FIREBASE_APP_ID=
 VITE_ESRI_API_KEY=              # optional; imagery basemap disabled without it
-VITE_DEFAULT_CENTER=80.5560,16.4420 ; VITE_DEFAULT_ZOOM=15
+VITE_DEFAULT_CENTER=78.90,21.00 ; VITE_DEFAULT_ZOOM=4.4   # national overview framing the AP/TN/TG clusters
 ```
 
 ## 3. Auth & roles
@@ -202,6 +202,7 @@ System-initiated mutation (from deed event where claimant != RoR owner): type=mu
 
 ## 9. Map layers (web) — three tiers exactly as PS names them
 Tier 1 Base: parcels (fill+line, hover/select by feature-state, id=ulpin), survey labels (z≥16), village_boundary, basemap switch.
+National overview: below z8 the map shows one cluster marker per demo state (from story_parcels.json `regions`) plus a Regions panel; click flies into the cluster (parcel tiles render z≥10).
 Tier 2 Essential: parcels restyled by `colour_by` ∈ land_use | ownership_type | registered | encumbrance | dispute | zone | permission; zones polygons.
 Tier 3 Use-case: tax arrears, guideline value, roads, water_lines, restriction_zones, projects, settlement_schemes (resurvey phase), change alerts, (Bhuvan WMS behind flag).
 3D preview: units extrusion (fill-extrusion, base_m/height_m), toggle off by default.

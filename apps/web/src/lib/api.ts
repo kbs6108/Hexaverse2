@@ -197,6 +197,7 @@ export const qk = {
   consistency: () => ['consistency'] as const,
   villageBoundary: () => ['village_boundary'] as const,
   storyParcels: () => ['story_parcels'] as const,
+  demoRegions: () => ['demo_regions'] as const,
   verifyReport: (id: string) => ['verify', id] as const,
   planningCheck: (ulpin: string, use: string, floors: number) => ['planning_check', ulpin, use, floors] as const,
 };
