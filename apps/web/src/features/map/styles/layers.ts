@@ -118,7 +118,14 @@ export function parcelOutline(imagery: boolean): LineLayerSpecification {
     'source-layer': 'parcels',
     paint: {
       'line-color': ['case', selected, '#0E6B54', imagery ? '#FFFFFF' : '#3C4440'],
-      'line-width': ['case', selected, 3, hover, 2, ['interpolate', ['linear'], ['zoom'], 13, 0.3, 16, 0.8, 18, 1.4]],
+      // camera (zoom) expressions must be TOP-level interpolate/step in line-width;
+      // data expressions (case/feature-state) are legal inside the stop outputs.
+      'line-width': [
+        'interpolate', ['linear'], ['zoom'],
+        13, ['case', selected, 3, hover, 2, 0.3],
+        16, ['case', selected, 3, hover, 2, 0.8],
+        18, ['case', selected, 3.5, hover, 2.4, 1.4],
+      ],
       'line-opacity': imagery ? 0.85 : 0.7,
     },
   };
@@ -259,10 +266,11 @@ export const roadsLine: LineLayerSpecification = {
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: {
     'line-color': ['match', roadClass, 'national', '#7A4E12', 'state', '#9A6B12', 'district', '#B08A3E', C.neutralDark],
+    // top-level interpolate over zoom (required), road-class factor inside the outputs
     'line-width': [
-      '*',
-      ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5],
-      ['interpolate', ['linear'], ['zoom'], 13, 0.5, 17, 1.4],
+      'interpolate', ['linear'], ['zoom'],
+      13, ['*', ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5], 0.5],
+      17, ['*', ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5], 1.4],
     ],
     'line-opacity': 0.85,
   },
