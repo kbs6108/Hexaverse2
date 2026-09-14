@@ -53,7 +53,10 @@ export function QuickNav() {
   const isCurrent = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
-    <div className="fixed left-0 top-1/2 z-[9990] -translate-y-1/2">
+    // pointer-events-none: the wrapper spans the closed panel's box (an invisible
+    // ~w-64 rectangle mid-left) and would otherwise swallow clicks meant for the
+    // UI beneath it — only the handle and the open panel accept the pointer.
+    <div className="pointer-events-none fixed left-0 top-1/2 z-[9990] -translate-y-1/2">
       {/* Handle — the only thing visible by default */}
       <button
         type="button"
@@ -62,8 +65,8 @@ export function QuickNav() {
         title="All pages"
         onClick={() => (open ? closeNow() : setOpen(true))}
         className={clsx(
-          'absolute left-0 top-1/2 flex h-16 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-line bg-panel text-ink-3 shadow-panel transition-all duration-200 hover:w-7 hover:text-primary',
-          open && 'pointer-events-none opacity-0',
+          'pointer-events-auto absolute left-0 top-1/2 flex h-16 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-line bg-panel text-ink-3 shadow-panel transition-all duration-200 hover:w-7 hover:text-primary',
+          open && '!pointer-events-none opacity-0',
         )}
       >
         <Compass size={15} />
@@ -76,7 +79,7 @@ export function QuickNav() {
         aria-hidden={!open}
         className={clsx(
           'w-64 rounded-r-xl border border-l-0 border-line bg-panel shadow-panel transition-transform duration-200 ease-out',
-          open ? 'translate-x-0' : 'pointer-events-none -translate-x-full',
+          open ? 'pointer-events-auto translate-x-0' : 'pointer-events-none -translate-x-full',
         )}
       >
         <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
