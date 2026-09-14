@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Field, Input } from '@/components/Field';
+import { ParcelPicker } from '@/components/ParcelPicker';
 import { Button } from '@/components/Button';
 import { ErrorNote } from '@/components/EmptyState';
 import { PageTitle } from './CitizenHome';
@@ -29,8 +30,8 @@ export function VerifyOwnership() {
           <CardHeader title="Claim" />
           <CardBody>
             <form onSubmit={submit} className="flex flex-col gap-3">
-              <Field label="ULPIN" htmlFor="v-ulpin" hint="14-character parcel id; pick a parcel on the map to prefill.">
-                <Input id="v-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} placeholder="TFCM91641E6C82" />
+              <Field label="ULPIN" htmlFor="v-ulpin" hint="Pick a recently opened parcel, or select one on the map to prefill.">
+                <ParcelPicker id="v-ulpin" value={ulpin} onChange={setUlpin} />
               </Field>
               <Field label="Claimed owner name" htmlFor="v-name">
                 <Input id="v-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="As written on the sale deed" />

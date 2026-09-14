@@ -1,7 +1,11 @@
 import { Link, Outlet } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, FileSearch, ListChecks, MapPinned, ShieldCheck } from 'lucide-react';
 import { Card } from '@/components/Card';
+import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { StatusBadge } from '@/features/officer/ApplicationBits';
+import { relTime, titleCase } from '@/lib/format';
 
 export function CitizenLayout() {
   return (
@@ -32,9 +36,35 @@ const CARDS = [
 
 export function CitizenHome() {
   const { user } = useAuth();
+  const mine = useQuery({
+    queryKey: qk.myApplications(user?.uid ?? 'anon'),
+    queryFn: api.myApplications,
+    enabled: !!user,
+    staleTime: 30_000,
+  });
   return (
     <>
       <PageTitle title={`Namaste${user ? `, ${user.name.split(' ')[0]}` : ''}`} subtitle="Citizen services across the demo regions (AP · TN · TG)" />
+      {mine.data && mine.data.length > 0 && (
+        <Card className="mb-4 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Your applications</h2>
+            <Link to="/citizen/track" className="text-xs font-medium text-primary underline-offset-2 hover:underline">View all</Link>
+          </div>
+          <ul className="flex flex-col gap-1.5">
+            {mine.data.slice(0, 4).map((a) => (
+              <li key={a.id}>
+                <Link to="/citizen/track/$id" params={{ id: a.id }} className="flex flex-wrap items-center gap-2 rounded-md border border-line px-3 py-2 text-sm transition-colors hover:border-primary">
+                  <span className="font-mono text-[12.5px]">{a.id}</span>
+                  <span className="text-ink-2">{titleCase(a.type)}</span>
+                  <StatusBadge status={a.status} />
+                  <span className="ml-auto text-xs text-ink-3">{relTime(a.updated_at)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         {CARDS.map((c) => (
           <Link key={c.to} to={c.to} className="group rounded-lg focus-visible:outline-2">

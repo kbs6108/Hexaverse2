@@ -355,6 +355,8 @@ export interface AdapterFieldMapping {
 
 export interface AdapterMapping {
   department: string;
+  /** Which state's vocabulary this mapping translates (AP/TN/TG); one department can have several. */
+  state?: string | null;
   source_system: string;
   endpoint?: string | null;
   fields: AdapterFieldMapping[];

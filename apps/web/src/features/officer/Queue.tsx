@@ -1,15 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
+import { ChevronRight } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Application } from '@/lib/cdm';
 import { Card } from '@/components/Card';
+import { Button } from '@/components/Button';
 import { Field, Input, Select } from '@/components/Field';
 import { Loading } from '@/components/Spinner';
 import { EmptyState, ErrorNote } from '@/components/EmptyState';
-import { StatusBadge } from './ApplicationBits';
+import { toast } from '@/components/Toast';
+import { quickAdvanceAction, StatusBadge } from './ApplicationBits';
 import { ApplicationDetail } from './ApplicationDetail';
 import { fmtDate, relTime, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
@@ -27,6 +30,19 @@ export function QueuePage() {
   const [text, setText] = useState('');
 
   const q = useQuery({ queryKey: qk.queue(department), queryFn: () => api.queue(department || undefined), refetchInterval: 20_000 });
+  const qc = useQueryClient();
+  // One-click forward step from the queue (auto-remarked, audited). Terminal decisions
+  // (approve / reject / return) still require opening the application and writing a remark.
+  const quick = useMutation({
+    mutationFn: ({ app, action }: { app: Application; action: string }) =>
+      api.transition(app.id, action, 'Advanced from the work queue'),
+    onSuccess: (app) => {
+      toast.success(`Moved to ${titleCase(app.status)}`, app.id);
+      void qc.invalidateQueries({ queryKey: ['queue'] });
+      void qc.invalidateQueries({ queryKey: qk.stats() });
+    },
+    onError: (e: Error) => toast.error('Quick action failed', e.message),
+  });
 
   const rows = useMemo(() => {
     const t = text.trim().toLowerCase();
@@ -83,6 +99,7 @@ export function QueuePage() {
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium">Dept</th>
                   <th className="px-3 py-2 font-medium">Age</th>
+                  <th className="px-3 py-2 font-medium">Quick action</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,6 +120,22 @@ export function QueuePage() {
                     <td className="px-3 py-2"><StatusBadge status={a.status} /></td>
                     <td className="px-3 py-2 text-ink-2">{titleCase(a.assigned_department)}</td>
                     <td className="px-3 py-2 text-ink-3" title={fmtDate(a.created_at, true)}>{relTime(a.created_at)}</td>
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const next = quickAdvanceAction(a);
+                        if (!next) return <span className="text-xs text-ink-3">open to decide</span>;
+                        return (
+                          <Button
+                            size="sm"
+                            icon={<ChevronRight size={13} />}
+                            loading={quick.isPending && quick.variables?.app.id === a.id}
+                            onClick={() => quick.mutate({ app: a, action: next.action })}
+                          >
+                            {next.label}
+                          </Button>
+                        );
+                      })()}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -11,30 +11,10 @@ import { Loading } from '@/components/Spinner';
 import { ErrorNote } from '@/components/EmptyState';
 import { KV, SectionTitle } from '@/components/Section';
 import { toast } from '@/components/Toast';
-import { StatusBadge, StatusTimeline } from './ApplicationBits';
+import { fallbackActions, StatusBadge, StatusTimeline } from './ApplicationBits';
 import { fmtDate, titleCase } from '@/lib/format';
 import { statusChips } from '@/components/StatusChip';
 import { useAuth } from '@/lib/auth';
-
-/** Fallback when the API does not include `next_actions` (CONTRACTS §8 transitions). */
-function fallbackActions(type: string, status: string): NextAction[] {
-  const mk = (pairs: [string, string][]): NextAction[] => pairs.map(([to, label]) => ({ action: to, label, to_status: to, is_terminal: ['approved', 'rejected', 'resolved'].includes(to) }));
-  if (type === 'mutation') {
-    if (status === 'submitted') return mk([['document_check', 'Start document check']]);
-    if (status === 'document_check') return mk([['field_verification', 'Send for field verification'], ['returned', 'Return to applicant']]);
-    if (status === 'field_verification') return mk([['approved', 'Approve'], ['returned', 'Return'], ['rejected', 'Reject']]);
-  }
-  if (type === 'building_permission') {
-    if (status === 'submitted') return mk([['planning_check', 'Run planning check']]);
-    if (status === 'planning_check') return mk([['site_inspection', 'Schedule site inspection'], ['rejected', 'Reject']]);
-    if (status === 'site_inspection') return mk([['approved', 'Approve'], ['rejected', 'Reject']]);
-  }
-  if (type === 'field_review') {
-    if (status === 'open') return mk([['assigned', 'Assign']]);
-    if (status === 'assigned') return mk([['resolved', 'Resolve']]);
-  }
-  return [];
-}
 
 export function ApplicationDetail({ id, onClose }: { id: string | null; onClose: () => void }) {
   const qc = useQueryClient();

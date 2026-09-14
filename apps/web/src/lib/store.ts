@@ -51,6 +51,13 @@ export const DEV_USERS = [
 ] as const;
 export type DevUserId = (typeof DEV_USERS)[number]['id'];
 
+/** Recently opened parcels — powers pickers so nobody retypes a 14-char ULPIN. */
+export interface RecentParcel {
+  ulpin: string;
+  survey_no?: string;
+  village?: string;
+}
+
 interface UIState {
   selectedUlpin: string | null;
   hoverUlpin: string | null;
@@ -62,6 +69,7 @@ interface UIState {
   layerPanelOpen: boolean;
   devUser: DevUserId;
   flyTo: { bbox: [number, number, number, number]; nonce: number } | null;
+  recentParcels: RecentParcel[];
 
   select: (ulpin: string | null) => void;
   setHover: (ulpin: string | null) => void;
@@ -73,6 +81,7 @@ interface UIState {
   setLayerPanelOpen: (open: boolean) => void;
   setDevUser: (u: DevUserId) => void;
   requestFlyTo: (bbox: [number, number, number, number]) => void;
+  recordRecentParcel: (p: RecentParcel) => void;
 }
 
 export const useUI = create<UIState>()(
@@ -88,6 +97,7 @@ export const useUI = create<UIState>()(
       layerPanelOpen: true,
       devUser: 'citizen::Ravi Kumar',
       flyTo: null,
+      recentParcels: [],
 
       select: (ulpin) => set({ selectedUlpin: ulpin, drawerOpen: ulpin !== null }),
       setHover: (ulpin) => set({ hoverUlpin: ulpin }),
@@ -99,6 +109,8 @@ export const useUI = create<UIState>()(
       setLayerPanelOpen: (layerPanelOpen) => set({ layerPanelOpen }),
       setDevUser: (devUser) => set({ devUser }),
       requestFlyTo: (bbox) => set({ flyTo: { bbox, nonce: Date.now() } }),
+      recordRecentParcel: (p) =>
+        set((s) => ({ recentParcels: [p, ...s.recentParcels.filter((r) => r.ulpin !== p.ulpin)].slice(0, 6) })),
     }),
     {
       name: 'landstack-ui',
@@ -108,6 +120,7 @@ export const useUI = create<UIState>()(
         basemap: s.basemap,
         devUser: s.devUser,
         layerPanelOpen: s.layerPanelOpen,
+        recentParcels: s.recentParcels,
       }),
       // Deep-merge persisted layers over the defaults: zustand's persist replaces the
       // whole `layers` object, so a browser that stored it before a new LayerId shipped

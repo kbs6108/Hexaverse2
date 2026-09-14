@@ -32,7 +32,7 @@ const TABS: { id: ParcelTab; label: string }[] = [
 ];
 
 export function ParcelDrawer({ onClose }: { onClose: () => void }) {
-  const { selectedUlpin, drawerOpen } = useUI();
+  const { selectedUlpin, drawerOpen, recordRecentParcel } = useUI();
   const { user } = useAuth();
   const [tab, setTab] = useState<ParcelTab>('overview');
   useEffect(() => setTab('overview'), [selectedUlpin]);
@@ -45,6 +45,10 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
   });
 
   const p = q.data;
+  // Feed the "recently opened" list used by the parcel pickers (forms, admin tools).
+  useEffect(() => {
+    if (p) recordRecentParcel({ ulpin: p.ulpin, survey_no: p.identifiers.survey_no, village: p.identifiers.village });
+  }, [p, recordRecentParcel]);
   return (
     <Drawer
       open={drawerOpen && !!selectedUlpin}
