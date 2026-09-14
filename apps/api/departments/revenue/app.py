@@ -29,6 +29,16 @@ class MutationIn(BaseModel):
     application_id: str | None = None
 
 
+STATE_SOURCE = {"AP": "AP Meebhoomi (mock)", "TN": "TN Patta Chitta (mock)", "TG": "TG Dharani (mock)"}
+
+
+def _source_for(rows: list[dict[str, Any]] | dict[str, Any] | None) -> str:
+    """Label the envelope with the state system the row(s) came from (provenance honesty)."""
+    row = rows[0] if isinstance(rows, list) and rows else rows if isinstance(rows, dict) else None
+    state = str((row or {}).get("state") or "AP").upper()
+    return STATE_SOURCE.get(state, SOURCE)
+
+
 def _dialect(row: dict[str, Any] | None) -> dict[str, Any] | None:
     """Serve each state's real-world vocabulary (the interoperability story: the gateway's
     per-state adapter mappings translate these dialects back into the CDM).
@@ -73,7 +83,7 @@ async def ror_by_ulpin(ulpin: str, db: DBLike = Depends(get_db)) -> dict[str, An
     rows = await db.fetch(
         "SELECT * FROM dept_revenue.ror WHERE ulpin = :u ORDER BY updated_at DESC NULLS LAST", u=ulpin
     )
-    return envelope(SOURCE, count=len(rows), items=[_dialect(r) for r in rows])
+    return envelope(_source_for(rows), count=len(rows), items=[_dialect(r) for r in rows])
 
 
 @app.get("/ror/{khata_no}", dependencies=[Depends(chaos)])
@@ -81,7 +91,7 @@ async def ror_by_khata(khata_no: str, db: DBLike = Depends(get_db)) -> dict[str,
     row = require_found(
         await db.fetchrow("SELECT * FROM dept_revenue.ror WHERE khata_no = :k", k=khata_no), "khata", khata_no
     )
-    return envelope(SOURCE, item=_dialect(row))
+    return envelope(_source_for(row), item=_dialect(row))
 
 
 @app.post("/mutations", status_code=201)
