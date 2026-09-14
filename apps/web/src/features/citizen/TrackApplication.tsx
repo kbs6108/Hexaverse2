@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Loading } from '@/components/Spinner';
 import { EmptyState, ErrorNote } from '@/components/EmptyState';
-import { PageTitle } from './CitizenHome';
+import { PageTitle } from '@/components/PageTitle';
 import { StatusBadge, StatusTimeline } from '@/features/officer/ApplicationBits';
 import { fmtDate, titleCase } from '@/lib/format';
 import { Button } from '@/components/Button';

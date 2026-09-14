@@ -7,7 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Field, Input } from '@/components/Field';
 import { Button } from '@/components/Button';
 import { ErrorNote } from '@/components/EmptyState';
-import { PageTitle } from './CitizenHome';
+import { PageTitle } from '@/components/PageTitle';
 import { titleCase } from '@/lib/format';
 
 export function VerifyOwnership() {

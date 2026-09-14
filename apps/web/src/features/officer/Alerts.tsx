@@ -12,7 +12,7 @@ import { Loading } from '@/components/Spinner';
 import { EmptyState, ErrorNote } from '@/components/EmptyState';
 import { toast } from '@/components/Toast';
 import { fmtDate, titleCase } from '@/lib/format';
-import { PageTitle } from '@/features/citizen/CitizenHome';
+import { PageTitle } from '@/components/PageTitle';
 
 const KIND_ICON = { change_detected: Radar, inconsistency: Scale, pending_mutation: Clock } as const;
 const SEV_TONE: Record<string, Tone> = { high: 'brick', medium: 'amber', low: 'slate' };

@@ -12,7 +12,7 @@ import { EmptyState, ErrorNote } from '@/components/EmptyState';
 import { StatusBadge } from './ApplicationBits';
 import { ApplicationDetail } from './ApplicationDetail';
 import { fmtDate, relTime, titleCase } from '@/lib/format';
-import { PageTitle } from '@/features/citizen/CitizenHome';
+import { PageTitle } from '@/components/PageTitle';
 
 const TYPES = ['mutation', 'building_permission', 'field_review', 'ownership_verification'];
 const DEPTS = ['revenue', 'registration', 'planning'];

@@ -12,7 +12,7 @@ import { EmptyState, ErrorNote } from '@/components/EmptyState';
 import { Badge } from '@/components/Badge';
 import { toast } from '@/components/Toast';
 import { fmtDate, relTime, titleCase } from '@/lib/format';
-import { PageTitle } from '@/features/citizen/CitizenHome';
+import { PageTitle } from '@/components/PageTitle';
 
 export function AdminConsole() {
   const search = useSearch({ strict: false }) as { ulpin?: string };

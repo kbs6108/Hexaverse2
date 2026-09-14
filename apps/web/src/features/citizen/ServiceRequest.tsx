@@ -11,7 +11,7 @@ import { Button } from '@/components/Button';
 import { ErrorNote } from '@/components/EmptyState';
 import { Callout } from '@/components/Section';
 import { toast } from '@/components/Toast';
-import { PageTitle } from './CitizenHome';
+import { PageTitle } from '@/components/PageTitle';
 
 type Kind = 'mutation' | 'building_permission';
 const USES = ['residential', 'commercial', 'mixed', 'industrial', 'institutional'];

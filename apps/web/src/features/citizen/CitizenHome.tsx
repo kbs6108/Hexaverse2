@@ -2,23 +2,12 @@ import { Link, Outlet } from '@tanstack/react-router';
 import { ArrowRight, FileSearch, ListChecks, MapPinned, ShieldCheck } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { useAuth } from '@/lib/auth';
+import { PageTitle } from '@/components/PageTitle';
 
 export function CitizenLayout() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-6">
       <Outlet />
-    </div>
-  );
-}
-
-export function PageTitle({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
-  return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-ink-3">{subtitle}</p>}
-      </div>
-      {action}
     </div>
   );
 }

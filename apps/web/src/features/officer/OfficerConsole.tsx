@@ -10,7 +10,7 @@ import { Loading } from '@/components/Spinner';
 import { ErrorNote } from '@/components/EmptyState';
 import { fmtNum, pct, titleCase } from '@/lib/format';
 import { LAND_USE } from '@/features/map/legend';
-import { PageTitle } from '@/features/citizen/CitizenHome';
+import { PageTitle } from '@/components/PageTitle';
 
 const SUBNAV = [
   { to: '/officer', label: 'Console', exact: true },
