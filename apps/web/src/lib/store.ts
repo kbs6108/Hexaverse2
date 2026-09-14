@@ -109,6 +109,14 @@ export const useUI = create<UIState>()(
         devUser: s.devUser,
         layerPanelOpen: s.layerPanelOpen,
       }),
+      // Deep-merge persisted layers over the defaults: zustand's persist replaces the
+      // whole `layers` object, so a browser that stored it before a new LayerId shipped
+      // would otherwise get `undefined` for that key — a dead checkbox and a layer that
+      // can never render (this bit settlement_schemes when it was added).
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<UIState>;
+        return { ...current, ...p, layers: { ...defaultLayers, ...(p.layers ?? {}) } };
+      },
     },
   ),
 );

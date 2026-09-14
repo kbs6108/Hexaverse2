@@ -113,7 +113,7 @@ export function LayerPanel() {
           <Tier key={tier.key} title={tier.title} defaultOpen={tier.key !== 'usecase'}>
             {tier.layers.map((l) => (
               <div key={l.id} className="py-1">
-                <Checkbox label={l.label} hint={l.hint} checked={layers[l.id]} onChange={(e) => toggleLayer(l.id, e.target.checked)} />
+                <Checkbox label={l.label} hint={l.hint} checked={!!layers[l.id]} onChange={(e) => toggleLayer(l.id, e.target.checked)} />
                 {l.legend && layers[l.id] && <Legend entries={l.legend} className="ml-6 mt-1" />}
               </div>
             ))}
