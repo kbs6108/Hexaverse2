@@ -1,6 +1,12 @@
 import { HeroSection } from './HeroSection';
 import { StorySections } from './StorySections';
 
-export function LandingPage() {
-  return <div className="min-h-full bg-[#08100C]"><HeroSection /><StorySections /></div>;
+/** Cinematic landing (light) — Karthik's Tenrec template adapted to Land Stack. */
+export function CinematicLanding() {
+  return (
+    <div className="min-h-full bg-[#f5f5f7]">
+      <HeroSection />
+      <StorySections />
+    </div>
+  );
 }

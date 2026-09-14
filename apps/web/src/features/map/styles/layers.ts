@@ -25,35 +25,10 @@ export const SRC = {
 export const tileUrl = (layer: string) => `${env.apiUrl}/landstack/tiles/${layer}/{z}/{x}/{y}.pbf`;
 
 /* ---------- Basemaps ---------- */
+export const STREETS_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 export const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
 export const FONT = ['Noto Sans Regular'];
 export const FONT_BOLD = ['Noto Sans Bold'];
-
-// Keep the basemap independent from the remote style document. The remote
-// OpenFreeMap style can load without its vector tiles in restricted networks,
-// leaving MapLibre with an empty canvas. A direct raster source gives the map
-// a reliable visible base while all Land Stack overlays still come from the
-// backend vector-tile sources below.
-export const STREETS_STYLE: StyleSpecification = {
-  version: 8,
-  glyphs: GLYPHS,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-      maxzoom: 19,
-    },
-  },
-  layers: [
-    { id: 'background', type: 'background', paint: { 'background-color': '#e8e5df' } },
-    { id: 'osm-raster', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.92 } },
-    // React MapLibre layers are appended relative to the base style. Keeping
-    // an explicit final anchor guarantees overlays stay above the raster map.
-    { id: 'landstack-overlay-anchor', type: 'background', paint: { 'background-opacity': 0 } },
-  ],
-};
 
 export function imageryStyle(key: string): StyleSpecification {
   return {
@@ -142,20 +117,7 @@ export function parcelOutline(imagery: boolean): LineLayerSpecification {
     'source-layer': 'parcels',
     paint: {
       'line-color': ['case', selected, '#0E6B54', imagery ? '#FFFFFF' : '#3C4440'],
-      // MapLibre only permits `zoom` as the input to a top-level step/interpolate.
-      // Keep selected/hover widths as the interpolated output values instead of
-      // nesting the zoom expression inside a case expression.
-      'line-width': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        13,
-        ['case', selected, 3, hover, 2, 0.3],
-        16,
-        ['case', selected, 3, hover, 2, 0.8],
-        18,
-        ['case', selected, 3, hover, 2, 1.4],
-      ],
+      'line-width': ['case', selected, 3, hover, 2, ['interpolate', ['linear'], ['zoom'], 13, 0.3, 16, 0.8, 18, 1.4]],
       'line-opacity': imagery ? 0.85 : 0.7,
     },
   };
@@ -276,16 +238,10 @@ export const roadsLine: LineLayerSpecification = {
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: {
     'line-color': ['match', roadClass, 'national', '#7A4E12', 'state', '#9A6B12', 'district', '#B08A3E', C.neutralDark],
-    // Keep zoom at the top level; nested zoom expressions are invalid in
-    // MapLibre's style-spec and prevent the entire style from rendering.
     'line-width': [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      13,
-      ['*', ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5], 0.5],
-      17,
-      ['*', ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5], 1.4],
+      '*',
+      ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5],
+      ['interpolate', ['linear'], ['zoom'], 13, 0.5, 17, 1.4],
     ],
     'line-opacity': 0.85,
   },

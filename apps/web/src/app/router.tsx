@@ -13,8 +13,10 @@ import { AlertsPage } from '@/features/officer/Alerts';
 import { AdminConsole } from '@/features/admin/AdminConsole';
 import { VerifyPage } from '@/features/verify/VerifyPage';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { LandingPage } from '@/features/marketing/LandingPage';
+import { HelpPage } from '@/features/marketing/HelpPage';
+import { CinematicLanding } from '@/features/landing/LandingPage';
 import { NotFound } from './NotFound';
-import { LandingPage } from '@/features/landing/LandingPage';
 
 const rootRoute = createRootRoute({ component: Shell, notFoundComponent: NotFound });
 
@@ -24,15 +26,22 @@ function guard(min: Role) {
     await awaitAuthReady();
     const u = currentUser();
     if (!u) throw redirect({ to: '/login', search: { next: location.href } });
-    if (!roleAtLeast(u.role, min)) throw redirect({ to: '/' });
+    if (!roleAtLeast(u.role, min)) throw redirect({ to: '/map' });
   };
 }
 
 type MapSearch = { ulpin?: string };
+
+/** `/` is the cinematic landing; the map explorer lives at /map.
+ *  Legacy deep-links (/?ulpin=…) are forwarded to /map so shared URLs keep working. */
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: LandingPage,
+  component: CinematicLanding,
+  validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
+  beforeLoad: ({ search }: { search: MapSearch }) => {
+    if (search.ulpin) throw redirect({ to: '/map', search: { ulpin: search.ulpin } });
+  },
 });
 
 const mapRoute = createRoute({
@@ -41,6 +50,9 @@ const mapRoute = createRoute({
   component: MapPage,
   validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
 });
+
+const welcomeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/welcome', component: LandingPage });
+const helpRoute = createRoute({ getParentRoute: () => rootRoute, path: '/help', component: HelpPage });
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -91,6 +103,8 @@ const adminRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   mapRoute,
+  welcomeRoute,
+  helpRoute,
   loginRoute,
   verifyRoute,
   citizenRoute.addChildren([citizenIndex, citizenVerify, citizenTrack, citizenTrackDetail, citizenRequest]),
@@ -106,4 +120,4 @@ declare module '@tanstack/react-router' {
   }
 }
 
-export { indexRoute, citizenVerify, citizenRequest, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };
+export { indexRoute, mapRoute, citizenVerify, citizenRequest, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };

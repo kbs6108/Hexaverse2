@@ -27,6 +27,7 @@ export function MapView() {
     staleTime: Infinity,
     retry: false,
   });
+
   /* ---- images survive basemap switches ---- */
   const onLoad = useCallback(() => {
     const m = mapRef.current?.getMap();
@@ -127,54 +128,53 @@ export function MapView() {
 
         {/* Tier 2: zones (under parcels) */}
         <Source id={L.SRC.zones} type="vector" tiles={[L.tileUrl('zones')]} minzoom={10} maxzoom={18}>
-          {layers.zones && <Layer {...L.zonesFill} beforeId="landstack-overlay-anchor" />}
-          {layers.zones && <Layer {...L.zonesLine} beforeId="landstack-overlay-anchor" />}
-          {layers.zones && <Layer {...L.zonesLabel} beforeId="landstack-overlay-anchor" />}
+          {layers.zones && <Layer {...L.zonesFill} />}
+          {layers.zones && <Layer {...L.zonesLine} />}
+          {layers.zones && <Layer {...L.zonesLabel} />}
         </Source>
 
         {/* Tier 3: restriction zones + projects (under parcels) */}
         <Source id={L.SRC.restriction} type="vector" tiles={[L.tileUrl('restriction_zones')]} minzoom={10} maxzoom={18}>
-          {layers.restriction_zones && <Layer {...L.restrictionFill} beforeId="landstack-overlay-anchor" />}
-          {layers.restriction_zones && <Layer {...L.restrictionLine} beforeId="landstack-overlay-anchor" />}
+          {layers.restriction_zones && <Layer {...L.restrictionFill} />}
+          {layers.restriction_zones && <Layer {...L.restrictionLine} />}
         </Source>
         <Source id={L.SRC.projects} type="vector" tiles={[L.tileUrl('projects')]} minzoom={10} maxzoom={18}>
-          {layers.projects && <Layer {...L.projectsFill} beforeId="landstack-overlay-anchor" />}
-          {layers.projects && <Layer {...L.projectsLine} beforeId="landstack-overlay-anchor" />}
-          {layers.projects && <Layer {...L.projectsLabel} beforeId="landstack-overlay-anchor" />}
+          {layers.projects && <Layer {...L.projectsFill} />}
+          {layers.projects && <Layer {...L.projectsLine} />}
+          {layers.projects && <Layer {...L.projectsLabel} />}
         </Source>
 
         {/* Tier 1: parcels */}
         <Source id={L.SRC.parcels} type="vector" tiles={[L.tileUrl('parcels')]} promoteId="ulpin" minzoom={10} maxzoom={18}>
-          {layers.parcels && <Layer {...L.parcelFill(colourBy, imagery)} beforeId="landstack-overlay-anchor" />}
-          {layers.parcels && <Layer {...L.parcelDisputeHatch} beforeId="landstack-overlay-anchor" />}
-          {layers.parcels && <Layer {...L.parcelSelectedGlow} beforeId="landstack-overlay-anchor" />}
-          {layers.parcels && <Layer {...L.parcelOutline(imagery)} beforeId="landstack-overlay-anchor" />}
-          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertOutline} beforeId="landstack-overlay-anchor" />}
-          {layers.parcels && layers.survey_labels && <Layer {...L.surveyLabels(imagery)} beforeId="landstack-overlay-anchor" />}
-          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertIcon} beforeId="landstack-overlay-anchor" />}
+          {layers.parcels && <Layer {...L.parcelFill(colourBy, imagery)} />}
+          {layers.parcels && <Layer {...L.parcelDisputeHatch} />}
+          {layers.parcels && <Layer {...L.parcelSelectedGlow} />}
+          {layers.parcels && <Layer {...L.parcelOutline(imagery)} />}
+          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertOutline} />}
+          {layers.parcels && layers.survey_labels && <Layer {...L.surveyLabels(imagery)} />}
+          {layers.parcels && layers.change_alerts && <Layer {...L.changeAlertIcon} />}
         </Source>
-
 
         {/* Tier 3: lines on top */}
         <Source id={L.SRC.water} type="vector" tiles={[L.tileUrl('water_lines')]} minzoom={10} maxzoom={18}>
-          {layers.water_lines && <Layer {...L.waterLine} beforeId="landstack-overlay-anchor" />}
+          {layers.water_lines && <Layer {...L.waterLine} />}
         </Source>
         <Source id={L.SRC.roads} type="vector" tiles={[L.tileUrl('roads')]} minzoom={10} maxzoom={18}>
-          {layers.roads && <Layer {...L.roadsLine} beforeId="landstack-overlay-anchor" />}
-          {layers.roads && <Layer {...L.roadsLabel} beforeId="landstack-overlay-anchor" />}
+          {layers.roads && <Layer {...L.roadsLine} />}
+          {layers.roads && <Layer {...L.roadsLabel} />}
         </Source>
 
         {/* Tier 1: village boundary (GeoJSON) */}
         {village.data && (
           <Source id={L.SRC.village} type="geojson" data={village.data as unknown as FeatureCollection}>
-            {layers.village_boundary && <Layer {...L.villageCasing} beforeId="landstack-overlay-anchor" />}
-            {layers.village_boundary && <Layer {...L.villageLine} beforeId="landstack-overlay-anchor" />}
+            {layers.village_boundary && <Layer {...L.villageCasing} />}
+            {layers.village_boundary && <Layer {...L.villageLine} />}
           </Source>
         )}
 
         {/* 3D preview */}
         <Source id={L.SRC.units} type="vector" tiles={[L.tileUrl('units')]} minzoom={12} maxzoom={18}>
-          {show3D && <Layer {...L.unitsExtrusion} beforeId="landstack-overlay-anchor" />}
+          {show3D && <Layer {...L.unitsExtrusion} />}
         </Source>
       </Map>
 

@@ -122,7 +122,9 @@ services:
       api:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5173/"]
+      # 127.0.0.1, not localhost: alpine's musl resolves localhost to ::1 first,
+      # but Vite binds IPv4 (0.0.0.0) → probe refused → container shows UNHEALTHY.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5173/"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -144,7 +146,8 @@ services:
       api:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
+      # 127.0.0.1, not localhost (see web healthcheck): forces IPv4 to match the bind.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
       interval: 15s
       timeout: 5s
       retries: 5
