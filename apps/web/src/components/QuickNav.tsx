@@ -14,7 +14,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { roleAtLeast, useAuth } from '@/lib/auth';
 import type { Role } from '@/lib/cdm';
 
@@ -29,13 +29,11 @@ const PAGES: { to: string; label: string; hint: string; icon: typeof MapIcon; mi
   { to: '/login', label: 'Sign in', hint: 'Switch account', icon: LogIn },
 ];
 
-/** Global quick navigation: a slim handle on the left edge that slides out a
- *  panel of every page on hover (click-toggle for touch). Hidden by default,
- *  closable, and it won't hover-reopen until the pointer has left the zone. */
+/** Global quick navigation: a slim handle on the left edge that toggles a panel
+ *  of every page on CLICK (no hover-open — deliberate, it got in the way).
+ *  Esc, the X button, or navigating closes it. */
 export function QuickNav() {
   const [open, setOpen] = useState(false);
-  const suppressHover = useRef(false); // set by the X button until pointer leaves
-  const closeTimer = useRef<number | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
   const router = useRouter();
@@ -47,28 +45,15 @@ export function QuickNav() {
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
-      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
     };
   }, []);
 
-  const enter = () => {
-    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
-    if (!suppressHover.current) setOpen(true);
-  };
-  const leave = () => {
-    suppressHover.current = false;
-    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => setOpen(false), 260);
-  };
-  const closeNow = () => {
-    suppressHover.current = true; // don't reopen until the pointer leaves the zone
-    setOpen(false);
-  };
+  const closeNow = () => setOpen(false);
 
   const isCurrent = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
-    <div className="fixed left-0 top-1/2 z-[9990] -translate-y-1/2" onMouseEnter={enter} onMouseLeave={leave}>
+    <div className="fixed left-0 top-1/2 z-[9990] -translate-y-1/2">
       {/* Handle — the only thing visible by default */}
       <button
         type="button"

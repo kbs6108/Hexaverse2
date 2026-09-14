@@ -102,7 +102,7 @@ export function Shell() {
           </div>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <GovBadge className="mr-0.5" />
+          <GovBadge compact className="mr-0.5" />
           {!minimal && (
             <Link
               to="/help"

@@ -26,14 +26,33 @@ function TricolorMark() {
 /** Compact header signifier: tricolor accent + muted "Government of India", with the
  *  full ministry attribution in the tooltip. Text collapses to just the swatch on
  *  small screens so it never crowds the header. */
-export function GovBadge({ variant = 'token', className }: { variant?: 'token' | 'landing'; className?: string }) {
+export function GovBadge({
+  variant = 'token',
+  compact = false,
+  className,
+}: {
+  variant?: 'token' | 'landing';
+  /** Single-line form that fits inside the slim h-12 app header. */
+  compact?: boolean;
+  className?: string;
+}) {
   const strong = variant === 'landing' ? 'text-[#1d1d1f]' : 'text-ink-2';
   const faint = variant === 'landing' ? 'text-[#6e6e73]' : 'text-ink-3';
+  const title =
+    'Government of India · Ministry of Rural Development · Department of Land Resources · Built for Smart India Hackathon 2026 (SIH26014)';
+  if (compact) {
+    return (
+      <span title={title} className={clsx('inline-flex select-none items-center gap-1.5', className)}>
+        <TricolorMark />
+        <span className={clsx('hidden whitespace-nowrap text-[10.5px] font-medium leading-none md:inline', strong)}>
+          <span className={clsx('text-[8.5px] font-semibold uppercase tracking-[0.08em]', faint)}>Built for </span>
+          Govt. of India · MoRD
+        </span>
+      </span>
+    );
+  }
   return (
-    <span
-      title="Government of India · Ministry of Rural Development · Department of Land Resources · Built for Smart India Hackathon 2026 (SIH26014)"
-      className={clsx('inline-flex select-none items-center gap-2', className)}
-    >
+    <span title={title} className={clsx('inline-flex select-none items-center gap-2', className)}>
       <TricolorMark />
       <span className="hidden flex-col leading-tight sm:flex">
         <span className={clsx('text-[8px] font-semibold uppercase tracking-[0.1em]', faint)}>Built for</span>
