@@ -48,6 +48,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
   });
 
   const issues = p.consistency.issues;
+  const resurvey = p.status_flags?.resurvey;
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-3 gap-2" role="list" aria-label="Status summary">
@@ -61,6 +62,15 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           </div>
         ))}
       </div>
+
+      {resurvey && (
+        <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink-3">
+          <Badge tone={resurvey === 'completed' ? 'primary' : resurvey === 'in_progress' ? 'amber' : 'neutral'}>
+            {resurvey === 'completed' ? 'Resurvey completed' : resurvey === 'in_progress' ? 'Resurvey in progress' : 'Resurvey pending'}
+          </Badge>
+          <span>State land-settlement programme · see the “Settlement / resurvey” map layer</span>
+        </div>
+      )}
 
       {(!p.consistency.area_match || !p.consistency.owner_match || issues.length > 0) && (
         <Callout tone="amber" title={`Cross-department inconsistency${issues.length > 1 ? ' · ' + issues.length + ' fields' : ''}`}>

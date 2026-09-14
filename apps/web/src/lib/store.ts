@@ -18,7 +18,7 @@ export type Basemap = 'streets' | 'imagery';
 export const TIER_LAYERS = {
   base: ['parcels', 'survey_labels', 'village_boundary'] as const,
   essential: ['zones'] as const,
-  usecase: ['roads', 'water_lines', 'restriction_zones', 'projects', 'change_alerts'] as const,
+  usecase: ['roads', 'water_lines', 'restriction_zones', 'projects', 'settlement_schemes', 'change_alerts'] as const,
 };
 export type LayerId =
   | (typeof TIER_LAYERS.base)[number]
@@ -36,6 +36,7 @@ const defaultLayers: LayerToggles = {
   water_lines: false,
   restriction_zones: false,
   projects: false,
+  settlement_schemes: false,
   change_alerts: true,
 };
 

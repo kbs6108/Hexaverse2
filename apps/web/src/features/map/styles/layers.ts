@@ -19,6 +19,7 @@ export const SRC = {
   roads: 'roads',
   water: 'water_lines',
   projects: 'projects',
+  settlement: 'settlement_schemes',
   units: 'units',
   village: 'village_boundary',
 } as const;
@@ -227,6 +228,26 @@ export const restrictionLine: LineLayerSpecification = {
   source: SRC.restriction,
   'source-layer': 'restriction_zones',
   paint: { 'line-color': restrictionColour, 'line-width': 1.8, 'line-dasharray': [3, 2] },
+};
+
+const settlementColour: ExpressionSpecification = [
+  'match', str('phase'),
+  'completed', C.green, 'in_progress', C.amber, 'notified', C.slate,
+  C.slate,
+];
+export const settlementFill: FillLayerSpecification = {
+  id: 'settlement-fill',
+  type: 'fill',
+  source: SRC.settlement,
+  'source-layer': 'settlement_schemes',
+  paint: { 'fill-color': settlementColour, 'fill-opacity': 0.10 },
+};
+export const settlementLine: LineLayerSpecification = {
+  id: 'settlement-line',
+  type: 'line',
+  source: SRC.settlement,
+  'source-layer': 'settlement_schemes',
+  paint: { 'line-color': settlementColour, 'line-width': 1.6, 'line-dasharray': [1.5, 1.5] },
 };
 
 const roadClass = str('road_class');

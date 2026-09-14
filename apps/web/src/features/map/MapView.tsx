@@ -134,6 +134,10 @@ export function MapView() {
         </Source>
 
         {/* Tier 3: restriction zones + projects (under parcels) */}
+        <Source id={L.SRC.settlement} type="vector" tiles={[L.tileUrl('settlement_schemes')]} minzoom={8} maxzoom={18}>
+          {layers.settlement_schemes && <Layer {...L.settlementFill} />}
+          {layers.settlement_schemes && <Layer {...L.settlementLine} />}
+        </Source>
         <Source id={L.SRC.restriction} type="vector" tiles={[L.tileUrl('restriction_zones')]} minzoom={10} maxzoom={18}>
           {layers.restriction_zones && <Layer {...L.restrictionFill} />}
           {layers.restriction_zones && <Layer {...L.restrictionLine} />}

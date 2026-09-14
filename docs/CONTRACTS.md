@@ -46,8 +46,8 @@ apps/web/                 Vite 7 + React 19 + TypeScript
     features/admin/      AdminConsole (connectors, mappings, consistency, simulate deed)
     components/          small UI primitives (Button, Card, Badge, Tabs, Drawer, Field) with Tailwind v4
   index.html, vite.config.ts, tsconfig.json, package.json, Dockerfile (nginx) — Firebase Hosting serves dist/
-db/migrations/            001_extensions.sql, 002_landstack.sql, 003_departments.sql, 004_gis.sql, 005_views.sql
-                          plain SQL, idempotent (IF NOT EXISTS). Applied by tools/migrate.py in filename order.
+db/migrations/            001_extensions.sql, 002_landstack.sql, 003_departments.sql, 004_gis.sql, 005_views.sql,
+                          006_settlement.sql — plain SQL, idempotent (IF NOT EXISTS). Applied by tools/migrate.py in filename order.
 tools/                    migrate.py, seed.py, fetch_s2.py, set_claims.py, demo_reset.py
 data/                     village.geojson (AOI), s2/ (offline COGs, gitignored except README), samples/ (scans)
 infra/                    docker-compose.yml, cloudrun/ (deploy.sh, service.yaml), firebase.json, .firebaserc.example
@@ -127,8 +127,10 @@ Key tables (columns are authoritative in SQL; names here are what the API relies
 - dept_utilities.connections(ulpin PK, water bool, electricity bool, sewer bool, road_access_m, nearest_road_class)
 - gis.roads(id, name, road_class, width_m, geom LineString); gis.water_lines(id, geom LineString);
   gis.restriction_zones(id, kind, name, geom MultiPolygon); gis.projects(id, name, kind, status, geom);
-  gis.village_boundary(id, name, geom MultiPolygon); gis.s2_change(ulpin PK, date_a, date_b, ndvi_a, ndvi_b,
-  ndbi_a, ndbi_b, d_ndvi, d_ndbi, label, confidence)
+  gis.village_boundary(id, name, geom MultiPolygon); gis.settlement_schemes(id, state, scheme,
+  phase notified|in_progress|completed, survey_year, geom MultiPolygon — migration 006; parcels carry
+  the matching status_flags.resurvey = completed|in_progress|pending); gis.s2_change(ulpin PK, date_a,
+  date_b, ndvi_a, ndvi_b, ndbi_a, ndbi_b, d_ndvi, d_ndbi, label, confidence)
 Indexes: GiST on every geom; gin_trgm on parcels.survey_no and ror.owner_name (pg_trgm).
 View landstack.parcel_status(ulpin, has_dispute, has_mortgage, tax_arrears, pending_mutation, registered, permission_status, change_alert)
 used for map colouring and stats. Tiles read `landstack.parcel_tile_features` view (parcels ⋈ parcel_status ⋈ ror.owner_name).
@@ -154,7 +156,8 @@ used for map colouring and stats. Tiles read `landstack.parcel_tile_features` vi
   "provenance": {"revenue":{"ok":true,"ms":41,"as_of":"2026-09-13T08:12:00Z","source":"AP Meebhoomi (mock)"},
                  "fiscal":{"ok":false,"error":"timeout","cached_as_of":null}},
   "consistency": {"area_match":true,"owner_match":true,"issues":[{"field":"extent_sqm","revenue":2400,"registration":2800}]},
-  "status": {"registered":true,"has_dispute":false,"has_mortgage":false,"tax_arrears":0,"pending_mutation":false,"change_alert":false}
+  "status": {"registered":true,"has_dispute":false,"has_mortgage":false,"tax_arrears":0,"pending_mutation":false,"change_alert":false},
+  "status_flags": {"resurvey":"completed"}
 }
 ```
 Masking (citizen without consent): owner names → first letter + '***' per word; father_name removed; doc_no → last 4;
@@ -162,8 +165,8 @@ units.owner_name masked; `party.masked=true`.
 
 ## 6. Gateway API (prefix as shown; JSON; errors `{ "error": {"code","message","details"} }`)
 Public: `GET /healthz`, `GET /landstack/collections`, `GET /landstack/collections/{layer}/items?bbox=&limit=&offset=&land_use=&status=`
-(layers: parcels, zones, restriction_zones, roads, projects, village_boundary, buildings), `GET /landstack/collections/parcels/items/{ulpin}`,
-`GET /landstack/tiles/{layer}/{z}/{x}/{y}.pbf` (ST_AsMVT; layers: parcels, zones, restriction_zones, roads, water_lines, projects, units),
+(layers: parcels, zones, restriction_zones, roads, projects, village_boundary, buildings, settlement_schemes), `GET /landstack/collections/parcels/items/{ulpin}`,
+`GET /landstack/tiles/{layer}/{z}/{x}/{y}.pbf` (ST_AsMVT; layers: parcels, zones, restriction_zones, roads, water_lines, projects, settlement_schemes, units),
 `GET /landstack/search?q=` (ulpin/survey/khata always; owner name only for officer+), `GET /verify/{report_id}` (JSON), `GET /reports/{id}.pdf`.
 Any signed-in: `GET /landstack/parcels/{ulpin}` (CDM, masked per role/consent), `GET /landstack/me`,
 `POST /landstack/verify-ownership {ulpin, claimed_name}` → `{match: bool, score, compared: ["ror","latest_deed"]}`,
@@ -200,7 +203,7 @@ System-initiated mutation (from deed event where claimant != RoR owner): type=mu
 ## 9. Map layers (web) — three tiers exactly as PS names them
 Tier 1 Base: parcels (fill+line, hover/select by feature-state, id=ulpin), survey labels (z≥16), village_boundary, basemap switch.
 Tier 2 Essential: parcels restyled by `colour_by` ∈ land_use | ownership_type | registered | encumbrance | dispute | zone | permission; zones polygons.
-Tier 3 Use-case: tax arrears, guideline value, roads, water_lines, restriction_zones, projects, change alerts, (Bhuvan WMS behind flag).
+Tier 3 Use-case: tax arrears, guideline value, roads, water_lines, restriction_zones, projects, settlement_schemes (resurvey phase), change alerts, (Bhuvan WMS behind flag).
 3D preview: units extrusion (fill-extrusion, base_m/height_m), toggle off by default.
 
 ## 10. Demo regions & story parcels

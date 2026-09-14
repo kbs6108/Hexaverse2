@@ -205,6 +205,8 @@ export interface ParcelCDM {
   provenance: Partial<Record<SourceKey, Provenance>>;
   consistency: Consistency;
   status: ParcelStatus;
+  /** Raw parcel flags (seeded + system): story key, settlement resurvey phase, ... */
+  status_flags?: { story?: string; resurvey?: 'completed' | 'in_progress' | 'pending' } & Record<string, unknown>;
 }
 
 /* ---------- Other gateway shapes (§6) ---------- */

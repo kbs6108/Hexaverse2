@@ -109,7 +109,7 @@ ALL_TABLES = (
     "dept_planning.zones", "dept_fiscal.property_tax",
     "dept_fiscal.valuation", "dept_legal.disputes", "dept_utilities.connections",
     "gis.roads", "gis.water_lines", "gis.restriction_zones", "gis.projects", "gis.village_boundary",
-    "gis.s2_change",
+    "gis.settlement_schemes", "gis.s2_change",
 ) + DEMO_DEPT_TABLES + MUTABLE_TABLES
 
 # Story-parcel spec: survey_no → (key, land_use, subdivision group size, index of the story
@@ -164,6 +164,7 @@ class Region:
     restriction_names: tuple[str, str, str]     # flood, heritage, eco_sensitive
     project_names: tuple[tuple[str, str], ...]  # ((road name, 'road'), (corridor name, 'metro'))
     building_names: tuple[str, str, str, str]   # 2 commercial, 2 residential
+    settlement_scheme: str                      # resurvey / settlement programme name
     target_parcels: int                         # post-thinning cluster size
     khata_base: int
     deed_base: int
@@ -265,6 +266,7 @@ class Parcel:
     land_use: str = "agricultural"
     story: str | None = None             # key from the region's story spec
     story_survey: str | None = None
+    resurvey: str = "pending"            # completed | in_progress | pending (settlement scheme)
 
     def __post_init__(self) -> None:
         self.geom = to_wgs(self.geom_utm)
@@ -292,6 +294,7 @@ class Frame:
     restriction_zones: list[dict[str, Any]] = field(default_factory=list)
     projects: list[dict[str, Any]] = field(default_factory=list)
     water_lines: list[dict[str, Any]] = field(default_factory=list)
+    settlements: list[dict[str, Any]] = field(default_factory=list)
     ror: list[dict[str, Any]] = field(default_factory=list)
     deeds: list[dict[str, Any]] = field(default_factory=list)
     encumbrances: list[dict[str, Any]] = field(default_factory=list)
@@ -851,6 +854,27 @@ def make_reference_layers(frame: Frame, rng: random.Random) -> None:
         for part in explode_lines(off):
             frame.water_lines.append({"name": f"Supply main {i + 1} ({r.name})", "kind": "supply_main", "geom": to_wgs(part)})
 
+    # Land settlement / resurvey scheme areas (gis.settlement_schemes, migration 006):
+    # the western ~45 % of the AOI is resurveyed ('completed', 2024), a central-eastern
+    # patch is 'in_progress' (2026); parcels get status_flags.resurvey by centroid.
+    scheme = frame.region.settlement_scheme
+    completed_area = box(minx - 10, miny - 10, minx + 0.45 * W, maxy + 10).intersection(aoi)
+    progress_area = box(minx + 0.52 * W, miny + 0.18 * H, minx + 0.88 * W, miny + 0.82 * H).intersection(aoi)
+    frame.settlements = [
+        {"state": frame.region.code, "scheme": scheme, "phase": "completed", "survey_year": 2024,
+         "geom": to_wgs(as_multipolygon(completed_area)), "geom_utm": completed_area},
+        {"state": frame.region.code, "scheme": scheme, "phase": "in_progress", "survey_year": 2026,
+         "geom": to_wgs(as_multipolygon(progress_area)), "geom_utm": progress_area},
+    ]
+    for p in frame.parcels:
+        c = p.centroid_utm
+        if completed_area.contains(c):
+            p.resurvey = "completed"
+        elif progress_area.contains(c):
+            p.resurvey = "in_progress"
+        else:
+            p.resurvey = "pending"
+
 
 # ---------------------------------------------------------------------------
 # Department records
@@ -931,6 +955,7 @@ REGIONS: list[Region] = [
         project_names=(("Outer Ring Road link (proposed)", "road"),
                        ("Amaravati–Vijayawada metro corridor (indicative)", "metro")),
         building_names=("Sri Lakshmi Complex", "Padmavathi Towers", "Sai Residency", "Gokul Apartments"),
+        settlement_scheme="Saswata Bhu Hakku – Bhu Raksha resurvey",
         target_parcels=150, khata_base=0, deed_base=4000, permit_base=5600, case_base=10,
         building_base=0, rng_key=None,
     ),
@@ -948,6 +973,7 @@ REGIONS: list[Region] = [
         project_names=(("Chennai–Bengaluru Expressway link (proposed)", "road"),
                        ("Chennai suburban rail extension (indicative)", "metro")),
         building_names=("Murugan Complex", "Kaveri Towers", "Annai Illam", "Bharathi Flats"),
+        settlement_scheme="Natham / UDR resurvey",
         target_parcels=150, khata_base=2000, deed_base=14000, permit_base=6600, case_base=2010,
         building_base=100, rng_key="TN",
     ),
@@ -965,6 +991,7 @@ REGIONS: list[Region] = [
         project_names=(("Regional Ring Road link (proposed)", "road"),
                        ("Hyderabad Airport Metro corridor (indicative)", "metro")),
         building_names=("Charminar Trade Centre", "Golconda Heights", "Nizam Residency", "Deccan Enclave"),
+        settlement_scheme="Dharani record purification drive",
         target_parcels=150, khata_base=4000, deed_base=24000, permit_base=7600, case_base=4010,
         building_base=200, rng_key="TG",
     ),
@@ -1435,7 +1462,8 @@ def summary(frames: list[Frame]) -> str:
         ("dept_fiscal.valuation", total("valuation")), ("dept_legal.disputes", total("disputes")),
         ("dept_utilities.connections", total("connections")), ("gis.roads", total("roads")),
         ("gis.water_lines", total("water_lines")), ("gis.restriction_zones", total("restriction_zones")),
-        ("gis.projects", total("projects")), ("gis.village_boundary", len(frames)), ("gis.s2_change", total("s2_change")),
+        ("gis.projects", total("projects")), ("gis.village_boundary", len(frames)),
+        ("gis.settlement_schemes", total("settlements")), ("gis.s2_change", total("s2_change")),
     ]
     lines = ["", f"{'table':38} rows", "-" * 44]
     lines += [f"{name:38} {n:5d}" for name, n in counts]
@@ -1616,7 +1644,7 @@ def write_db(conn, frames: Frame | list[Frame], only_mutable: bool = False) -> d
             ["ulpin", "state", "district", "taluk", "village", "survey_no", "sub_division", "geom", "area_sqm", "land_use", "zone_code", "status_flags"],
             [(p.ulpin, f.region.code, f.region.district, f.region.taluk, f.region.village, p.survey_no, p.sub_division,
               _wkt(p.geom), p.area_sqm, p.land_use, p.zone_code,
-              _j({"story": p.story} if p.story else {})) for f in frames for p in f.parcels], {"geom": MULTI, "status_flags": JSONB})
+              _j(({"story": p.story} if p.story else {}) | {"resurvey": p.resurvey})) for f in frames for p in f.parcels], {"geom": MULTI, "status_flags": JSONB})
         buildings = [b for f in frames for b in f.buildings]
         n["landstack.buildings"] = _insert(cur, "landstack.buildings",
             ["id", "ulpin", "footprint", "floors", "height_m", "name"],
@@ -1653,6 +1681,8 @@ def write_db(conn, frames: Frame | list[Frame], only_mutable: bool = False) -> d
             [(p["name"], p["kind"], p["status"], _wkt(p["geom"])) for f in frames for p in f.projects], {"geom": GEOM})
         n["gis.village_boundary"] = _insert(cur, "gis.village_boundary", ["name", "geom"],
             [(f.region.aoi_name, _wkt(to_wgs(as_multipolygon(f.aoi_utm)))) for f in frames], {"geom": MULTI})
+        n["gis.settlement_schemes"] = _insert(cur, "gis.settlement_schemes", ["state", "scheme", "phase", "survey_year", "geom"],
+            [(t["state"], t["scheme"], t["phase"], t["survey_year"], _wkt(t["geom"])) for f in frames for t in f.settlements], {"geom": MULTI})
         n.update(write_department_demo_tables(cur, frames))
         n["gis.s2_change"] = _insert(cur, "gis.s2_change",
             ["ulpin", "date_a", "date_b", "ndvi_a", "ndvi_b", "ndbi_a", "ndbi_b", "d_ndvi", "d_ndbi", "label", "confidence"],

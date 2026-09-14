@@ -45,6 +45,15 @@ const TIERS: { key: string; title: string; layers: LayerDef[] }[] = [
         ],
       },
       { id: 'projects', label: 'Government projects', legend: [{ value: 'p', label: 'Project footprint', colour: C.violet }] },
+      {
+        id: 'settlement_schemes',
+        label: 'Settlement / resurvey',
+        hint: 'Dotted outline · per state',
+        legend: [
+          { value: 'completed', label: 'Resurvey completed', colour: C.green },
+          { value: 'in_progress', label: 'Resurvey in progress', colour: C.amber },
+        ],
+      },
       { id: 'change_alerts', label: 'Satellite change alerts', hint: 'Sentinel-2 · NDVI / NDBI', legend: LEGENDS.change_alert.entries.slice(0, 1) },
     ],
   },
