@@ -133,7 +133,7 @@ export function SearchBox() {
             >
               <span className="min-w-0">
                 <span className="font-medium">Sy. No. {h.survey_no}</span>
-                <span className="text-ink-3"> · {h.village ?? 'Mangalagiri'}</span>
+                <span className="text-ink-3"> · {h.village ?? ''}</span>
                 {h.owner_name && <span className="block truncate text-xs text-ink-3">{roleAtLeast(role, 'officer') ? h.owner_name : maskName(h.owner_name)}</span>}
               </span>
               <span className="shrink-0 font-mono text-[11px] text-ink-3">{h.khata_no ?? h.ulpin}</span>

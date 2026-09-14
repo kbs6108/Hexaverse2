@@ -4,17 +4,17 @@
 
 | Layer | Source | Notes |
 |---|---|---|
-| **AOI** (`village.geojson`, `gis.village_boundary`) | Real bounding box | Peri-urban fringe of Mangalagiri, Guntur district, Andhra Pradesh: 80.545–80.567 E, 16.434–16.452 N (≈2.3 × 2.0 km). The basemap and any Sentinel-2 imagery are the real place. |
-| **Parcels, survey numbers, ULPINs** | **Synthetic** (`tools/seed.py`, seed 42) | Carved from road-bounded blocks with recursive strip splitting: 60–400 m² urban plots in the south-west "town" corner and a small hamlet near the centre, 0.2–2 ha holdings elsewhere. Survey numbers are Indian-style (`123`, `123/4`, `45/2A`) but do **not** correspond to the real village map. ULPINs are ULPIN-*style* (geohash + geometry hash), not DILRMP-issued. |
+| **AOIs** (`village.geojson`, `gis.village_boundary`) | Real bounding boxes | Three peri-urban demo regions, one per state: Mangalagiri, Guntur, AP (80.545–80.567 E, 16.434–16.452 N — the original AOI); Sriperumbudur, Kancheepuram, TN (79.940–79.962 E, 12.945–12.963 N); Shamshabad, Ranga Reddy, TG (78.388–78.410 E, 17.240–17.258 N). Each ≈2.3 × 2.0 km. The basemaps and any Sentinel-2 imagery are the real places. |
+| **Parcels, survey numbers, ULPINs** | **Synthetic** (`tools/seed.py`, seed 42) | Per region: carved from road-bounded blocks with recursive strip splitting, then thinned to ~150 parcels of whole blocks (a staged-digitisation look — clear clusters with gaps). ~575 parcels across the three states. Survey numbers are Indian-style (`123`, `123/4`, `45/2A`) but do **not** correspond to real village maps. ULPINs are ULPIN-*style* (geohash + geometry hash), not DILRMP-issued; the AP story-parcel ULPINs are unchanged from the original single-region seed. |
 | **Roads** | Synthetic by default; OpenStreetMap with `--osm` | `python tools/seed.py --osm` fetches `highway=*` from Overpass and uses those centrelines when reachable (© OpenStreetMap contributors, ODbL). |
-| **Zones, restriction zones, projects, water lines** | Synthetic, *indicative* | Named after real features (Krishna floodplain, NH-16, metro corridor) to make the demo legible, but geometries are invented. |
-| **Department records** (RoR, deeds, encumbrances, permissions, tax, valuation, disputes, utilities) | Synthetic | Indian names (curated Telugu list + Faker `en_IN`), realistic distributions (patta 80 % / joint 15 % / govt 5 %, ~85 % registered, ~8 % mortgaged, ~4 % disputed, ~7 % tax arrears, ~6 % cross-department anomalies). |
+| **Zones, restriction zones, projects, water lines** | Synthetic, *indicative* | Named after real features per state (Krishna/Palar/Musi floodplains, ORR / Chennai–Bengaluru Expressway / Regional Ring Road, metro corridors) to make the demo legible, but geometries are invented. |
+| **Department records** (RoR, deeds, encumbrances, permissions, tax, valuation, disputes, utilities) | Synthetic | Indian names (curated Telugu/Tamil/Telangana lists per state + Faker `en_IN`), realistic distributions (patta 80 % / joint 15 % / govt 5 %, ~85 % registered, ~8 % mortgaged, ~4 % disputed, ~7 % tax arrears, ~6 % cross-department anomalies). |
 | **Sentinel-2 change** (`gis.s2_change`) | Synthetic baseline; real when `tools/fetch_s2.py --compute` is run | Seeded NDVI/NDBI values are plausible per land use; real imagery from Microsoft Planetary Computer (Sentinel-2 L2A, Copernicus) replaces them. |
 | **Users** | Demo accounts | `dev-ravi-kumar`, `dev-lakshmi-devi`, `dev-anitha`, `dev-suresh`, `dev-farida`, `dev-admin`. |
 
 ## Why synthetic?
 
-Andhra Pradesh cadastral maps (Bhu Naksha / Meebhoomi) and RoR/IGRS records are not available as
+State cadastral maps (Bhu Naksha / Meebhoomi / TN Patta Chitta / Dharani) and RoR/IGRS records are not available as
 open, redistributable datasets and contain personal information. A synthetic cadastre inside a
 real AOI gives a defensible demo: no real person's land is shown, every scenario the jury needs
 (clean title, unrecorded conversion, dispute, mortgage, arrears + area mismatch, pending mutation)
@@ -29,7 +29,7 @@ data/
   samples/
     parcels.geojson        seeded parcels with owner/status properties (inspection without a DB)
     roads.geojson, zones.geojson, village.geojson
-    story_parcels.json     ULPINs, centroids and bboxes of the six story parcels + demo users
+    story_parcels.json     ULPINs, centroids and bboxes of the eight story parcels (6 AP + TN 45/2 + TG 77), the three regions, + demo users
   s2/                      Sentinel-2 COGs + manifest.json (gitignored; created by tools/fetch_s2.py)
   storage/                 generated PDF reports when STORAGE_BACKEND=local (gitignored)
 ```

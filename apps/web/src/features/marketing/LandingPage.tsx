@@ -38,7 +38,7 @@ export function LandingPage() {
             SIH 2026 · SIH26014
           </Badge>
           <Badge tone="neutral" icon={<MapPin />}>
-            Mangalagiri AOI
+            AP · TN · TG demo regions
           </Badge>
         </div>
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">

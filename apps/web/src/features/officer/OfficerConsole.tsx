@@ -93,7 +93,7 @@ export function OfficerConsole() {
 
   return (
     <>
-      <PageTitle title="Officer console" subtitle={user?.department ? `${titleCase(user.department)} department · Mangalagiri` : 'All departments · Mangalagiri'} />
+      <PageTitle title="Officer console" subtitle={user?.department ? `${titleCase(user.department)} department · AP · TN · TG` : 'All departments · AP · TN · TG'} />
       {q.isLoading && <Loading label="Loading statistics…" />}
       {q.isError && <ErrorNote error={q.error} retry={() => void q.refetch()} />}
       {s && (

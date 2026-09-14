@@ -98,14 +98,18 @@ export interface StoryParcel {
   tone: Tone;
 }
 
-/** The six named demo parcels (CONTRACTS §10) — ULPINs from story_parcels.json. */
+/** The named demo parcels (CONTRACTS §10) — ULPINs from story_parcels.json.
+ *  Six in AP (Mangalagiri) plus one signature parcel each in TN and Telangana,
+ *  showing the same platform running across three states. */
 export const STORY_PARCELS: StoryParcel[] = [
-  { survey_no: '123/4', ulpin: 'TFCM91641E6C82', title: 'Clean residential', note: 'Owner Ravi Kumar — fully registered, no flags. The happy path.', tone: 'primary' },
-  { survey_no: '124', ulpin: 'TFCM91D3533DD2', title: 'Change alert', note: 'Agricultural parcel where Sentinel-2 flags unrecorded built-up.', tone: 'amber' },
-  { survey_no: '125/2', ulpin: 'TFCM9167B91686', title: 'Disputed', note: 'An open court case restricts what can happen here.', tone: 'brick' },
-  { survey_no: '126', ulpin: 'TFCM916196F0FE', title: 'Mortgaged', note: 'Carries an active bank encumbrance from registration.', tone: 'violet' },
-  { survey_no: '127/1', ulpin: 'TFCM91KDED50FD', title: 'Tax arrears + area mismatch', note: 'Fiscal arrears, and revenue vs. registration extent disagree.', tone: 'amber' },
-  { survey_no: '128', ulpin: 'TFCM914291996F', title: 'Pending mutation', note: 'An ownership transfer is mid-workflow in the officer queue.', tone: 'slate' },
+  { survey_no: '123/4', ulpin: 'TFCM91641E6C82', title: 'Clean residential', note: 'Owner Ravi Kumar — fully registered, no flags. The happy path. Mangalagiri, AP.', tone: 'primary' },
+  { survey_no: '124', ulpin: 'TFCM91D3533DD2', title: 'Change alert', note: 'Agricultural parcel where Sentinel-2 flags unrecorded built-up. Mangalagiri, AP.', tone: 'amber' },
+  { survey_no: '125/2', ulpin: 'TFCM9167B91686', title: 'Disputed', note: 'An open court case restricts what can happen here. Mangalagiri, AP.', tone: 'brick' },
+  { survey_no: '126', ulpin: 'TFCM916196F0FE', title: 'Mortgaged', note: 'Carries an active bank encumbrance from registration. Mangalagiri, AP.', tone: 'violet' },
+  { survey_no: '127/1', ulpin: 'TFCM91KDED50FD', title: 'Tax arrears + area mismatch', note: 'Fiscal arrears, and revenue vs. registration extent disagree. Mangalagiri, AP.', tone: 'amber' },
+  { survey_no: '128', ulpin: 'TFCM914291996F', title: 'Pending mutation', note: 'An ownership transfer is mid-workflow in the officer queue. Mangalagiri, AP.', tone: 'slate' },
+  { survey_no: '45/2', ulpin: 'TF2CEQ4ACED970', title: 'Disputed · Tamil Nadu', note: 'The same dispute workflow running on a Sriperumbudur parcel through the TN adapter.', tone: 'brick' },
+  { survey_no: '77', ulpin: 'TEPDPUQC13C0D7', title: 'Change alert · Telangana', note: 'Satellite change detection on a Shamshabad parcel — one platform, three states.', tone: 'amber' },
 ];
 
 export interface Term {

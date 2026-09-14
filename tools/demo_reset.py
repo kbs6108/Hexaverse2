@@ -24,18 +24,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from dburl import connect, resolve_database_url  # noqa: E402
-from seed import DEFAULT_SEED, build_frame, write_db  # noqa: E402
+from seed import DEFAULT_SEED, build_frames, write_db  # noqa: E402
 
 
 def reset(database_url: str | None = None, *, full: bool = False, seed: int = DEFAULT_SEED, verbose: bool = True) -> dict[str, int]:
-    """Rebuild the frame and reload the mutable tables (or everything with ``full=True``)."""
+    """Rebuild the regional frames and reload the mutable tables (or everything with ``full=True``)."""
     url = resolve_database_url(database_url)
     t0 = time.perf_counter()
-    frame = build_frame(seed=seed, verbose=False)
+    frames = build_frames(seed=seed, verbose=False)
     if verbose:
-        print(f"frame rebuilt in {time.perf_counter() - t0:.1f}s; resetting {'ALL' if full else 'mutable'} tables on {url.split('@')[-1]}")
+        print(f"frames rebuilt in {time.perf_counter() - t0:.1f}s; resetting {'ALL' if full else 'mutable'} tables on {url.split('@')[-1]}")
     with connect(url) as conn:
-        counts = write_db(conn, frame, only_mutable=not full)
+        counts = write_db(conn, frames, only_mutable=not full)
     if verbose:
         for table, n in counts.items():
             print(f"  {table:38} {n:5d}")

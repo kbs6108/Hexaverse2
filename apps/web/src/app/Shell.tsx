@@ -89,7 +89,7 @@ export function Shell() {
         <Link to="/" className="flex items-center gap-2 rounded-md pr-2 text-ink hover:opacity-90" aria-label="Land Stack home">
           <LogoMark />
           <span className="font-display text-[17px] font-semibold tracking-tight">Land Stack</span>
-          <span className="hidden rounded-sm border border-line px-1 font-mono text-[10px] uppercase text-ink-3 lg:inline">Mangalagiri AOI</span>
+          <span className="hidden rounded-sm border border-line px-1 font-mono text-[10px] uppercase text-ink-3 lg:inline">AP · TN · TG demo</span>
         </Link>
         {label && (
           <span className="hidden items-center gap-1.5 text-[12px] text-ink-3 sm:flex" aria-current="page">

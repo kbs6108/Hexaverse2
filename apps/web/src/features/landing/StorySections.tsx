@@ -148,7 +148,7 @@ function StatsStrip() {
           </motion.div>
         ))}
       </div>
-      <p className="mt-8 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-[#aeaeb2]">Demo cadastre · Mangalagiri AOI · synthetic data</p>
+      <p className="mt-8 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-[#aeaeb2]">Demo cadastre · Mangalagiri · Sriperumbudur · Shamshabad · synthetic data</p>
     </section>
   );
 }

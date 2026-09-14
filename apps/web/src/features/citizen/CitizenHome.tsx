@@ -34,7 +34,7 @@ export function CitizenHome() {
   const { user } = useAuth();
   return (
     <>
-      <PageTitle title={`Namaste${user ? `, ${user.name.split(' ')[0]}` : ''}`} subtitle="Citizen services for Mangalagiri revenue village" />
+      <PageTitle title={`Namaste${user ? `, ${user.name.split(' ')[0]}` : ''}`} subtitle="Citizen services across the demo regions (AP · TN · TG)" />
       <div className="grid gap-4 sm:grid-cols-2">
         {CARDS.map((c) => (
           <Link key={c.to} to={c.to} className="group rounded-lg focus-visible:outline-2">

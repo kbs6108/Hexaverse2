@@ -203,12 +203,25 @@ Tier 2 Essential: parcels restyled by `colour_by` ∈ land_use | ownership_type 
 Tier 3 Use-case: tax arrears, guideline value, roads, water_lines, restriction_zones, projects, change alerts, (Bhuvan WMS behind flag).
 3D preview: units extrusion (fill-extrusion, base_m/height_m), toggle off by default.
 
-## 10. Demo AOI & story parcels
-AOI: peri-urban fringe of Mangalagiri, Guntur district, Andhra Pradesh; bbox ≈ 80.545–80.567 E, 16.434–16.452 N.
-Seed produces 500–1200 parcels (≈1,000 by default), ≥3 buildings with units, and these named story parcels (stable survey numbers, deterministic seed=42):
-123/4 clean residential (owner Ravi Kumar) · 124 agricultural with change alert (built-up 2025) · 125/2 disputed ·
-126 mortgaged · 127/1 tax arrears + area mismatch · 128 pending mutation. Demo users (dev mode names): Ravi Kumar (citizen),
-Lakshmi Devi (citizen), Anitha (officer:revenue), Suresh (officer:registration), Farida (officer:planning), Admin.
+## 10. Demo regions & story parcels
+Three real bounding boxes, one per state, to demonstrate multi-state scaling (deterministic seed=42):
+- **AP** — Mangalagiri, Guntur district; bbox ≈ 80.545–80.567 E, 16.434–16.452 N (the original AOI).
+- **TN** — Sriperumbudur, Kancheepuram district; bbox ≈ 79.940–79.962 E, 12.945–12.963 N.
+- **TG** — Shamshabad, Ranga Reddy district; bbox ≈ 78.388–78.410 E, 17.240–17.258 N.
+Each region generates a dense cadastre then thins to ~150 parcels of whole blocks (staged-digitisation
+look: clear clusters with gaps). Per region: 6 master-plan zones, 3 restriction zones, 2 projects and a
+village boundary, all lightly localized (names, courts, projects per state); ≥3 buildings with units
+overall. `landstack.parcels.state` ∈ {AP, TN, TG}. Sequence bases per region keep khata/deed/permit/case
+ids collision-free (AP K-0001+, TN K-2001+, TG K-4001+, etc.).
+Story parcels (stable survey numbers; AP ULPINs unchanged from the single-region seed):
+AP: 123/4 clean residential (owner Ravi Kumar) · 124 agricultural with change alert (built-up 2025) ·
+125/2 disputed · 126 mortgaged · 127/1 tax arrears + area mismatch · 128 pending mutation.
+TN: 45/2 disputed. TG: 77 agricultural with change alert. The scripted demo state (queue, applications,
+audit) is seeded in AP only; TN/TG carry satellite alerts plus their story-driven department rows.
+`data/samples/story_parcels.json` lists every story parcel (with `state`) and a `regions` array
+(code, state, district, village, bbox, parcel_count) that the web map uses for region navigation.
+Demo users (dev mode names): Ravi Kumar (citizen), Lakshmi Devi (citizen), Anitha (officer:revenue),
+Suresh (officer:registration), Farida (officer:planning), Admin.
 
 ## 11. Conventions
 Python: ruff-clean, type hints, async everywhere, SQL via `text()` with bound params, no ORM models. Tests: pytest + pytest-asyncio + httpx.
