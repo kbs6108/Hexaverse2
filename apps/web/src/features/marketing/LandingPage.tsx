@@ -5,6 +5,7 @@ import { ArrowRight, MapPin } from 'lucide-react';
 import { LogoMark } from '@/app/Shell';
 import { Badge } from '@/components/Badge';
 import { FeatureCard, PitchStat } from './components';
+import { GovStrip } from './GovStrip';
 import { DEPARTMENTS, FEATURES, PITCH_FIGURES, PRINCIPLES, PROFILE_TABS, ROLES, STORY_PARCELS, TIERS, WORKFLOWS } from './pitch';
 
 const btnBase =
@@ -337,17 +338,9 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="mt-10 border-t border-line pt-6 text-center text-[12px] text-ink-3">
-        <p>
-          Land Stack · Smart India Hackathon 2026 · Problem SIH26014 (Ministry of Rural Development /
-          Department of Land Resources).
-        </p>
-        <p className="mt-1">
-          Demo area: peri-urban Mangalagiri, Guntur district, Andhra Pradesh — a real bounding box with
-          a <span className="font-medium text-ink-2">synthetic cadastre</span>. Not a source of genuine
-          land records.
-        </p>
-      </footer>
+      <div className="mt-10">
+        <GovStrip />
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { LogoMark } from '@/app/Shell';
 import { useAuth } from '@/lib/auth';
+import { GovStrip } from './GovStrip';
 import { FAQ, GLOSSARY, MAP_READING, PROFILE_TABS, QUICK_START, ROLES, STORY_PARCELS, WORKFLOWS } from './pitch';
 
 const btnBase =
@@ -278,9 +279,9 @@ export function HelpPage() {
         </div>
       </section>
 
-      <footer className="mt-12 border-t border-line pt-6 text-center text-[12px] text-ink-3">
-        Data is synthetic demo content over a real Mangalagiri bounding box · SIH26014.
-      </footer>
+      <div className="mt-12">
+        <GovStrip />
+      </div>
     </div>
   );
 }

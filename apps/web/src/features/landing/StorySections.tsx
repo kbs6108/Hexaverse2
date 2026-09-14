@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { DEPARTMENTS, PITCH_FIGURES, QUICK_START, ROLES, STORY_PARCELS, TIERS } from '@/features/marketing/pitch';
 import type { Tone } from '@/components/Badge';
+import { GovStrip } from '@/features/marketing/GovStrip';
 import { MapLaunch } from './MapLaunch';
 
 /** Scroll-story landing (light, emerald). Cinematic scenes alternate with
@@ -414,6 +415,8 @@ export function StorySections() {
           </div>
         </div>
       </section>
+
+      <GovStrip variant="landing" />
     </div>
   );
 }

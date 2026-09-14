@@ -7,6 +7,7 @@ import { roleAtLeast } from '@/lib/auth';
 import { SearchBox } from '@/features/map/SearchBox';
 import { UserMenu } from '@/features/auth/UserMenu';
 import { QuickNav } from '@/components/QuickNav';
+import { GovBadge } from '@/features/marketing/GovStrip';
 import type { Role } from '@/lib/cdm';
 
 export function LogoMark({ size = 26 }: { size?: number }) {
@@ -101,6 +102,7 @@ export function Shell() {
           </div>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <GovBadge className="mr-0.5" />
           {!minimal && (
             <Link
               to="/help"

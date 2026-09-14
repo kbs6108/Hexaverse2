@@ -3,6 +3,7 @@ import { ArrowDown, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ShaderAnimation } from './ShaderAnimation';
 import { MapLaunch } from './MapLaunch';
+import { GovBadge } from '@/features/marketing/GovStrip';
 import { createTopDockController } from './top-dock-controller';
 
 const DOCK_ITEM =
@@ -65,6 +66,7 @@ export function HeroSection() {
 
       <div id="top" className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1400px] items-center px-6 pb-16 pt-32 sm:px-10 lg:px-16">
         <div className="max-w-5xl">
+          <GovBadge variant="landing" className="mb-5" />
           <p className="mb-8 text-xs font-semibold uppercase tracking-[0.25em] text-[#6e6e73]">Land Stack / Digital land infrastructure</p>
           <h1 className="font-display text-[clamp(3.4rem,8vw,7.5rem)] font-semibold leading-[0.91] tracking-[-0.07em] text-[#1d1d1f]">
             Land, clearly
