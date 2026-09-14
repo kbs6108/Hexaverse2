@@ -15,10 +15,8 @@ const MAX_BOUNDS: [number, number, number, number] = [AOI_BBOX[0] - 0.15, AOI_BB
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
-  const [mapReady, setMapReady] = useState(false);
   const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, drawerOpen, select, setHover } = useUI();
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
-  const [mapTick, setMapTick] = useState(0);
   const imagery = basemap === 'imagery' && !!env.esriApiKey;
 
   const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey) : L.STREETS_STYLE), [imagery]);
@@ -29,78 +27,10 @@ export function MapView() {
     staleTime: Infinity,
     retry: false,
   });
-  // The API's GeoJSON collection is a reliable fallback for cadastral fills
-  // when a browser/network drops the MVT tile request. It uses the same live
-  // parcel data and keeps the vector-tile path available for larger overlays.
-  const parcelFallback = useQuery({
-    queryKey: ['map', 'parcel-fallback'],
-    queryFn: () => api.items('parcels', { bbox: AOI_BBOX.join(','), limit: 1000 }),
-    staleTime: Infinity,
-    retry: false,
-  });
-
-  useEffect(() => {
-    if (mapReady) return;
-    const fallbackTimer = window.setTimeout(() => setMapReady(true), 1200);
-    const timer = window.setInterval(() => {
-      const map = mapRef.current?.getMap();
-      if (map?.isStyleLoaded()) {
-        setMapReady(true);
-        window.clearInterval(timer);
-      }
-    }, 50);
-    return () => {
-      window.clearTimeout(fallbackTimer);
-      window.clearInterval(timer);
-    };
-  }, [mapReady]);
-
-  useEffect(() => {
-    const map = mapRef.current?.getMap();
-    const data = parcelFallback.data as unknown as FeatureCollection | undefined;
-    if (!map || !layers.parcels || !data) return;
-
-    const sourceId = 'parcels-runtime-fallback';
-    const source = map.getSource(sourceId) as { setData?: (value: FeatureCollection) => void } | undefined;
-    if (source?.setData) source.setData(data);
-    else if (!map.getSource(sourceId)) map.addSource(sourceId, { type: 'geojson', data });
-
-    if (!map.getLayer('parcels-runtime-fill')) {
-      map.addLayer({ id: 'parcels-runtime-fill', type: 'fill', source: sourceId, paint: { 'fill-color': L.fillColour(colourBy), 'fill-opacity': 0.72 } });
-    }
-    if (!map.getLayer('parcels-runtime-line')) {
-      map.addLayer({ id: 'parcels-runtime-line', type: 'line', source: sourceId, paint: { 'line-color': '#146B57', 'line-width': 1.5, 'line-opacity': 0.95 } });
-    }
-  }, [mapReady, parcelFallback.data, layers.parcels, colourBy]);
-
-  const parcelPaths = useMemo(() => {
-    const map = mapRef.current?.getMap();
-    const features = parcelFallback.data?.features ?? [];
-    if (!map || !mapReady || features.length === 0) return [];
-    return features.flatMap((feature) => {
-      const geometry = feature.geometry as { type?: string; coordinates?: unknown } | null;
-      const polygons = geometry?.type === 'Polygon' ? [geometry.coordinates] : geometry?.type === 'MultiPolygon' ? geometry.coordinates : [];
-      return (polygons as unknown[]).flatMap((polygon) => {
-        const rings = Array.isArray(polygon) ? polygon : [];
-        return rings.slice(0, 1).map((ring) => {
-          const points = Array.isArray(ring)
-            ? ring.map((position) => {
-                const [lng, lat] = position as [number, number];
-                const point = map.project([lng, lat]);
-                return `${point.x},${point.y}`;
-              })
-            : [];
-          return points.length > 2 ? `M ${points.join(' L ')} Z` : '';
-        });
-      });
-    }).filter(Boolean);
-  }, [mapReady, mapTick, parcelFallback.data]);
-
   /* ---- images survive basemap switches ---- */
   const onLoad = useCallback(() => {
     const m = mapRef.current?.getMap();
     if (!m) return;
-    setMapReady(true);
     ensureImages(m);
     m.on('styleimagemissing', () => ensureImages(m));
     m.on('style.load', () => ensureImages(m));
@@ -183,14 +113,14 @@ export function MapView() {
         minZoom={11}
         maxZoom={20}
         attributionControl={{ compact: true }}
-        interactiveLayerIds={layers.parcels ? ['parcels-fill', 'parcels-runtime-fill'] : []}
+        interactiveLayerIds={layers.parcels ? ['parcels-fill'] : []}
         cursor={hoverUlpin ? 'pointer' : 'grab'}
         onLoad={onLoad}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
-        onMove={() => setMapTick((tick) => tick + 1)}
         style={{ width: '100%', height: '100%' }}
+        reuseMaps
       >
         <NavigationControl position="bottom-right" visualizePitch />
         <ScaleControl position="bottom-left" maxWidth={120} />
@@ -247,14 +177,6 @@ export function MapView() {
           {show3D && <Layer {...L.unitsExtrusion} beforeId="landstack-overlay-anchor" />}
         </Source>
       </Map>
-
-      {layers.parcels && parcelPaths.length > 0 && (
-        <svg className="pointer-events-none absolute inset-0 z-[5] h-full w-full" aria-hidden="true">
-          {parcelPaths.map((path, index) => (
-            <path key={index} d={path} fill="rgba(20, 107, 87, 0.28)" stroke="#146B57" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
-          ))}
-        </svg>
-      )}
 
       {hoverInfo && !show3D && <HoverCard info={hoverInfo} />}
     </div>
