@@ -36,6 +36,7 @@ export function GovBadge({ variant = 'token', className }: { variant?: 'token' |
     >
       <TricolorMark />
       <span className="hidden flex-col leading-tight sm:flex">
+        <span className={clsx('text-[8px] font-semibold uppercase tracking-[0.1em]', faint)}>Built for</span>
         <span className={clsx('text-[11px] font-semibold tracking-tight', strong)}>Government of India</span>
         <span className={clsx('hidden text-[9.5px] leading-tight lg:block', faint)}>
           Ministry of Rural Development · Dept. of Land Resources
