@@ -238,7 +238,34 @@ export interface VerifyOwnershipResult {
   compared: string[];
 }
 
-export type ApplicationType = 'mutation' | 'building_permission' | 'ownership_verification' | 'field_review';
+export type ApplicationType = 'mutation' | 'building_permission' | 'ownership_verification' | 'field_review' | 'boundary_correction';
+
+/* ---------- Boundary correction (bounded parcel editing, CONTRACTS §6/§8) ---------- */
+
+export interface BoundaryCheck {
+  name: string;
+  ok: boolean;
+  detail: string;
+}
+
+export interface BoundaryValidation {
+  valid: boolean;
+  checks: BoundaryCheck[];
+  metrics: {
+    old_area_sqm: number;
+    new_area_sqm: number;
+    delta_pct: number;
+    overlaps: { ulpin: string; survey_no?: string | null; overlap_sqm: number }[];
+  };
+  suggestion?: { geometry: Record<string, unknown>; area_sqm: number; reason: string };
+}
+
+export interface BoundaryProposalResult {
+  accepted: boolean;
+  application?: Application;
+  validation: BoundaryValidation;
+  error?: string;
+}
 
 export interface HistoryEntry {
   ts: string;

@@ -51,6 +51,13 @@ export const DEV_USERS = [
 ] as const;
 export type DevUserId = (typeof DEV_USERS)[number]['id'];
 
+/** Active boundary-edit session (officer/admin): the parcel + its draggable outer ring. */
+export interface BoundaryEdit {
+  ulpin: string;
+  survey_no?: string;
+  ring: [number, number][]; // open ring (no closing duplicate)
+}
+
 /** Recently opened parcels — powers pickers so nobody retypes a 14-char ULPIN. */
 export interface RecentParcel {
   ulpin: string;
@@ -70,6 +77,7 @@ interface UIState {
   devUser: DevUserId;
   flyTo: { bbox: [number, number, number, number]; nonce: number } | null;
   recentParcels: RecentParcel[];
+  boundaryEdit: BoundaryEdit | null;
 
   select: (ulpin: string | null) => void;
   setHover: (ulpin: string | null) => void;
@@ -82,6 +90,10 @@ interface UIState {
   setDevUser: (u: DevUserId) => void;
   requestFlyTo: (bbox: [number, number, number, number]) => void;
   recordRecentParcel: (p: RecentParcel) => void;
+  startBoundaryEdit: (e: BoundaryEdit) => void;
+  moveBoundaryVertex: (index: number, pos: [number, number]) => void;
+  setBoundaryRing: (ring: [number, number][]) => void;
+  cancelBoundaryEdit: () => void;
 }
 
 export const useUI = create<UIState>()(
@@ -98,6 +110,7 @@ export const useUI = create<UIState>()(
       devUser: 'citizen::Ravi Kumar',
       flyTo: null,
       recentParcels: [],
+      boundaryEdit: null,
 
       select: (ulpin) => set({ selectedUlpin: ulpin, drawerOpen: ulpin !== null }),
       setHover: (ulpin) => set({ hoverUlpin: ulpin }),
@@ -111,6 +124,13 @@ export const useUI = create<UIState>()(
       requestFlyTo: (bbox) => set({ flyTo: { bbox, nonce: Date.now() } }),
       recordRecentParcel: (p) =>
         set((s) => ({ recentParcels: [p, ...s.recentParcels.filter((r) => r.ulpin !== p.ulpin)].slice(0, 6) })),
+      startBoundaryEdit: (e) => set({ boundaryEdit: e, drawerOpen: false }),
+      moveBoundaryVertex: (index, pos) =>
+        set((s) => s.boundaryEdit
+          ? { boundaryEdit: { ...s.boundaryEdit, ring: s.boundaryEdit.ring.map((v, i) => (i === index ? pos : v)) } }
+          : {}),
+      setBoundaryRing: (ring) => set((s) => (s.boundaryEdit ? { boundaryEdit: { ...s.boundaryEdit, ring } } : {})),
+      cancelBoundaryEdit: () => set({ boundaryEdit: null }),
     }),
     {
       name: 'landstack-ui',

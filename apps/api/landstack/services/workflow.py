@@ -21,18 +21,20 @@ from landstack.services.cache import TTLCache
 
 log = logging.getLogger("landstack.workflow")
 
-APPLICATION_TYPES = ("mutation", "building_permission", "ownership_verification", "field_review")
+APPLICATION_TYPES = ("mutation", "building_permission", "ownership_verification", "field_review", "boundary_correction")
 INITIAL_STATUS = {
     "mutation": "submitted",
     "building_permission": "submitted",
     "field_review": "open",
     "ownership_verification": "completed",
+    "boundary_correction": "submitted",
 }
 DEFAULT_DEPARTMENT = {
     "mutation": "revenue",
     "building_permission": "planning",
     "ownership_verification": "registration",
     "field_review": None,
+    "boundary_correction": "revenue",
 }
 
 _transitions_cache: TTLCache[list[dict[str, Any]]] = TTLCache(ttl_s=60.0)
@@ -281,6 +283,19 @@ async def transition(
                 + (f" ({row['allowed_department']})" if row.get("allowed_department") else "")
             )
         payload = dict(app.get("payload") or {})
+        if app["type"] == "boundary_correction" and row["to_status"] == "approved":
+            # Re-validate at approval time (neighbours may have changed since filing);
+            # a failing proposal cannot be approved — the transaction aborts here.
+            from landstack.services import boundary
+
+            geom = payload.get("proposed_geometry")
+            recheck = await boundary.validate(db, app["ulpin"], geom or {})
+            if not recheck["valid"]:
+                failed = [c["name"] for c in recheck["checks"] if not c["ok"]]
+                raise AppError(409, "boundary_invalid",
+                               f"proposal no longer passes validation: {', '.join(failed)}",
+                               {"checks": recheck["checks"]})
+            payload["validation_at_approval"] = {"checks": recheck["checks"], "metrics": recheck["metrics"]}
         payload.setdefault("history", []).append(
             {
                 "ts": _now(),
@@ -342,6 +357,20 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 db, principal, "revenue.mutation_recorded", "application", app["id"], app["ulpin"], None, res
             )
             return {"department": "revenue", "ok": True, "result": res}
+        if app["type"] == "boundary_correction":
+            from landstack.services import boundary
+
+            applied = await boundary.apply_geometry(db, app["ulpin"], payload.get("proposed_geometry") or {})
+            await audit.record(
+                db, principal, "parcel.boundary_applied", "parcel", app["ulpin"], app["ulpin"],
+                {"area_sqm": payload.get("area_before_sqm")}, applied,
+            )
+            sync = await client.post_json(
+                "/revenue/extent",
+                {"ulpin": app["ulpin"], "extent_sqm": applied["new_area"], "application_id": app["id"]},
+                timeout=5.0,
+            )
+            return {"department": "revenue", "ok": True, "result": {"applied": applied, "ror_sync": sync}}
         if app["type"] == "building_permission":
             body = {
                 "ulpin": app["ulpin"],

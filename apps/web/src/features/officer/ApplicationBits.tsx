@@ -41,6 +41,10 @@ export function fallbackActions(type: string, status: string): NextAction[] {
     if (status === 'open') return mk([['assigned', 'Assign']]);
     if (status === 'assigned') return mk([['resolved', 'Resolve']]);
   }
+  if (type === 'boundary_correction') {
+    if (status === 'submitted') return mk([['geometry_check', 'Start geometry check']]);
+    if (status === 'geometry_check') return mk([['approved', 'Approve & apply'], ['returned', 'Return to proposer'], ['rejected', 'Reject']]);
+  }
   return [];
 }
 

@@ -6,6 +6,8 @@ import { env } from './env';
 import { getAuthHeaders } from './auth';
 import type {
   AdapterMapping,
+  BoundaryProposalResult,
+  BoundaryValidation,
   Alert,
   Application,
   ApplicationType,
@@ -127,6 +129,10 @@ export const api = {
     request<Application[] | { items: Application[] }>('/landstack/applications', { query: { mine: 1 } }).then(unwrapList),
   application: (id: string) => request<Application>(`/landstack/applications/${encodeURIComponent(id)}`),
   issueReport: (ulpin: string) => request<ReportIssued>(`/landstack/reports/${encodeURIComponent(ulpin)}`, { method: 'POST' }),
+  validateBoundary: (ulpin: string, geometry: Record<string, unknown>) =>
+    request<BoundaryValidation>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary/validate`, { method: 'POST', body: { geometry } }),
+  proposeBoundary: (ulpin: string, geometry: Record<string, unknown>, reason: string) =>
+    request<BoundaryProposalResult>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary`, { method: 'POST', body: { geometry, reason } }),
   requestConsent: (ulpin: string) => request<{ ok: boolean }>('/landstack/consents/request', { method: 'POST', body: { ulpin } }),
 
   /* ---------- Officer+ ---------- */

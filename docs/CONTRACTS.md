@@ -46,8 +46,8 @@ apps/web/                 Vite 7 + React 19 + TypeScript
     features/admin/      AdminConsole (connectors, mappings, consistency, simulate deed)
     components/          small UI primitives (Button, Card, Badge, Tabs, Drawer, Field) with Tailwind v4
   index.html, vite.config.ts, tsconfig.json, package.json, Dockerfile (nginx) — Firebase Hosting serves dist/
-db/migrations/            001_extensions.sql, 002_landstack.sql, 003_departments.sql, 004_gis.sql, 005_views.sql,
-                          006_settlement.sql — plain SQL, idempotent (IF NOT EXISTS). Applied by tools/migrate.py in filename order.
+db/migrations/            001_extensions.sql … 009_application_types.sql (006 settlement, 007 ror state,
+                          008 boundary workflow, 009 type check) — plain SQL, idempotent. Applied by tools/migrate.py in filename order.
 tools/                    migrate.py, seed.py, fetch_s2.py, set_claims.py, demo_reset.py
 data/                     village.geojson (AOI), s2/ (offline COGs, gitignored except README), samples/ (scans)
 infra/                    docker-compose.yml, cloudrun/ (deploy.sh, service.yaml), firebase.json, .firebaserc.example
@@ -105,7 +105,7 @@ Key tables (columns are authoritative in SQL; names here are what the API relies
 - landstack.consents(id, ulpin, granted_to_uid, granted_by, expires_at)
 - landstack.applications(id text PK 'APP-2026-000123', ulpin, type, applicant_uid, applicant_name, status,
   payload jsonb, assigned_department, created_at, updated_at)
-  type ∈ mutation | building_permission | ownership_verification | field_review
+  type ∈ mutation | building_permission | ownership_verification | field_review | boundary_correction
 - landstack.transitions(type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
 - landstack.audit_log(id bigserial, ts, actor_uid, actor_name, actor_role, action, entity_type, entity_id,
   ulpin, before jsonb, after jsonb, source) — INSERT only for app role
@@ -172,6 +172,10 @@ Any signed-in: `GET /landstack/parcels/{ulpin}` (CDM, masked per role/consent), 
 `POST /landstack/verify-ownership {ulpin, claimed_name}` → `{match: bool, score, compared: ["ror","latest_deed"]}`,
 `POST /landstack/applications {ulpin, type, payload}`, `GET /landstack/applications?mine=1`, `GET /landstack/applications/{id}`,
 `POST /landstack/reports/{ulpin}` → `{id, url}`, `POST /landstack/consents/request {ulpin}`.
+Officer (revenue) / admin: `POST /landstack/parcels/{ulpin}/boundary/validate {geometry}` → bounded-edit checks
+(valid geometry · 4–200 vertices · |Δarea| ≤ 15% · no overlap > 1 m² · within village boundary) + metrics and an
+assistive `suggestion` (snap-to-neighbours + overlap subtraction); `POST /landstack/parcels/{ulpin}/boundary
+{geometry, reason}` → files a `boundary_correction` application (rejected up-front unless validation passes).
 Officer+: `GET /landstack/parcels/{ulpin}/timeline`, `GET /landstack/queue?department=`, `POST /landstack/applications/{id}/transition {action, remark}`,
 `GET /landstack/stats`, `GET /landstack/alerts?status=`, `POST /landstack/alerts/{id}/assign`, `POST /landstack/alerts/{id}/resolve`,
 `POST /landstack/ai/change-detection {ulpin | bbox, date_a?, date_b?}`, `POST /landstack/ai/extract-document (multipart)`.
@@ -183,6 +187,7 @@ Department sub-apps (mounted; each has its own OpenAPI at `/<dept>/docs`): see s
 
 ## 7. Department APIs (vocabulary is intentionally different per department)
 revenue:      GET /revenue/ror?ulpin= | GET /revenue/ror/{khata_no} | POST /revenue/mutations {ulpin,to_owner,reason,application_id}
+              POST /revenue/extent {ulpin,extent_sqm,application_id} — RoR extent sync after an approved boundary correction
               RoR rows carry `state` (migration 007) and are served in that state's dialect: AP Meebhoomi
               (khata_no/owner_name/extent_sqm), TN Patta Chitta (patta_no/pattadar_name/extent_hectares),
               TG Dharani (ppb_no/pattadar_name/extent_acres) — translated back by revenue_{ap,tn,tg}.yaml.
@@ -199,6 +204,9 @@ Every response: header `X-Source-System`, body includes `as_of` (ISO). Events: `
 mutation: submitted → document_check → field_verification → approved | returned | rejected (revenue officer); returned → submitted (citizen resubmits)
 building_permission: submitted → planning_check → site_inspection → approved | rejected (planning officer); auto planning_check result stored in payload
 field_review: open → assigned → resolved (admin assigns, revenue/planning officer resolves)
+boundary_correction: submitted → geometry_check → approved | returned | rejected (revenue officer; migration 008).
+  Approval RE-validates the proposal (409 boundary_invalid if it no longer passes), then applies the geometry to
+  landstack.parcels (area recomputed) and syncs the RoR extent via revenue POST /extent. Fully audited.
 ownership_verification: instant (no rows in transitions)
 On mutation approved: gateway calls revenue POST /mutations; on building_permission approved: planning POST /permissions.
 System-initiated mutation (from deed event where claimant != RoR owner): type=mutation, status=submitted, applicant_name=claimant, payload.system_initiated=true.

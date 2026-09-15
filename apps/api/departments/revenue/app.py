@@ -29,6 +29,12 @@ class MutationIn(BaseModel):
     application_id: str | None = None
 
 
+class ExtentIn(BaseModel):
+    ulpin: str
+    extent_sqm: float
+    application_id: str | None = None
+
+
 STATE_SOURCE = {"AP": "AP Meebhoomi (mock)", "TN": "TN Patta Chitta (mock)", "TG": "TG Dharani (mock)"}
 
 
@@ -92,6 +98,36 @@ async def ror_by_khata(khata_no: str, db: DBLike = Depends(get_db)) -> dict[str,
         await db.fetchrow("SELECT * FROM dept_revenue.ror WHERE khata_no = :k", k=khata_no), "khata", khata_no
     )
     return envelope(_source_for(row), item=_dialect(row))
+
+
+@app.post("/extent", status_code=200)
+async def sync_extent(body: ExtentIn, db: DBLike = Depends(get_db)) -> dict[str, Any]:
+    """Resurvey/boundary-correction hook: update the RoR extent after an approved
+    boundary correction, recording the change in mutation_history (CONTRACTS §7)."""
+    async with db.transaction():
+        ror = await db.fetchrow(
+            "SELECT * FROM dept_revenue.ror WHERE ulpin = :u ORDER BY updated_at DESC NULLS LAST LIMIT 1 FOR UPDATE",
+            u=body.ulpin,
+        )
+        if ror is None:
+            return envelope(SOURCE, updated=False, reason="no RoR for parcel")
+        history = list(ror.get("mutation_history") or [])
+        history.append(
+            {
+                "type": "extent_correction",
+                "from_extent_sqm": float(ror["extent_sqm"]),
+                "to_extent_sqm": round(body.extent_sqm, 2),
+                "application_id": body.application_id,
+            }
+        )
+        await db.execute(
+            "UPDATE dept_revenue.ror SET extent_sqm = :e, mutation_history = CAST(:h AS jsonb), updated_at = now() "
+            "WHERE khata_no = :k",
+            e=round(body.extent_sqm, 2),
+            h=json_dumps(history),
+            k=ror["khata_no"],
+        )
+    return envelope(_source_for(dict(ror)), updated=True, khata_no=ror["khata_no"], extent_sqm=round(body.extent_sqm, 2))
 
 
 @app.post("/mutations", status_code=201)

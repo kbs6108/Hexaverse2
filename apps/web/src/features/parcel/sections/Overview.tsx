@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
-import { AlertOctagon, BadgeCheck, Clock, Download, FileSearch, Landmark, ListChecks, Radar, Receipt, Satellite, Wand2 } from 'lucide-react';
+import { AlertOctagon, BadgeCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ParcelCDM } from '@/lib/cdm';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useUI } from '@/lib/store';
 import { fmtArea, fmtDate, fmtINR, titleCase } from '@/lib/format';
 import { Button } from '@/components/Button';
 import { Callout, KV, SectionTitle } from '@/components/Section';
@@ -21,7 +22,22 @@ interface Cell {
 }
 
 export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => void }) {
-  const { role } = useAuth();
+  const { role, department } = useAuth();
+  const startBoundaryEdit = useUI((s) => s.startBoundaryEdit);
+  const canEditBoundary = role === 'admin' || (role === 'officer' && department === 'revenue');
+  const beginBoundaryEdit = async () => {
+    try {
+      const feat = await api.parcelFeature(p.ulpin);
+      const geom = feat.geometry as { type?: string; coordinates?: number[][][] | number[][][][] };
+      const ring = (geom.type === 'MultiPolygon'
+        ? (geom.coordinates as number[][][][])[0]?.[0]
+        : (geom.coordinates as number[][][])[0]) as [number, number][] | undefined;
+      if (!ring || ring.length < 4) throw new Error('parcel geometry unavailable');
+      startBoundaryEdit({ ulpin: p.ulpin, survey_no: p.identifiers.survey_no ?? undefined, ring: ring.slice(0, -1) });
+    } catch (e) {
+      toast.error('Could not start boundary edit', e instanceof Error ? e.message : String(e));
+    }
+  };
   const s = p.status;
   const cells: Cell[] = [
     { label: 'Registered', value: s.registered ? 'Yes' : 'No', tone: s.registered ? 'ok' : 'muted', icon: BadgeCheck },
@@ -110,6 +126,11 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
       <div>
         <SectionTitle>Quick actions</SectionTitle>
         <div className="flex flex-wrap gap-2">
+          {canEditBoundary && (
+            <Button icon={<PenLine size={15} />} onClick={() => void beginBoundaryEdit()}>
+              Propose boundary fix
+            </Button>
+          )}
           {role === 'citizen' && (
             <>
               <Link to="/citizen/verify" search={{ ulpin: p.ulpin }}><Button icon={<FileSearch size={15} />}>Verify ownership</Button></Link>

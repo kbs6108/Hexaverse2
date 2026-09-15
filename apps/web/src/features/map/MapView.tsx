@@ -10,6 +10,7 @@ import { ensureImages } from './patterns';
 import * as L from './styles/layers';
 import { HoverCard, type HoverInfo } from './HoverCard';
 import { RegionMarkers } from './RegionMarkers';
+import { BoundaryEditLayers } from './BoundaryEditor';
 
 // The demo spans three state clusters (CONTRACTS §10), so the map allows a national
 // overview: bounds cover India + margin, and RegionMarkers guide users into a cluster.
@@ -128,6 +129,7 @@ export function MapView() {
         <NavigationControl position="bottom-right" visualizePitch />
         <ScaleControl position="bottom-left" maxWidth={120} />
         <RegionMarkers />
+        <BoundaryEditLayers />
 
         {/* Tier 2: zones (under parcels) */}
         <Source id={L.SRC.zones} type="vector" tiles={[L.tileUrl('zones')]} minzoom={10} maxzoom={18}>

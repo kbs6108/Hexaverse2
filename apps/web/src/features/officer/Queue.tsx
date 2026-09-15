@@ -17,7 +17,7 @@ import { ApplicationDetail } from './ApplicationDetail';
 import { fmtDate, relTime, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
 
-const TYPES = ['mutation', 'building_permission', 'field_review', 'ownership_verification'];
+const TYPES = ['mutation', 'building_permission', 'field_review', 'boundary_correction', 'ownership_verification'];
 const DEPTS = ['revenue', 'registration', 'planning'];
 
 export function QueuePage() {

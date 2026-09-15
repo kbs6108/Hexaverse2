@@ -8,10 +8,12 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from landstack.auth import Principal, require_officer, require_user
+from landstack.auth import Principal, require, require_officer, require_user
 from landstack.db import DBLike, get_db
-from landstack.services import aggregator, audit
+from landstack.services import aggregator, audit, boundary, workflow
 from landstack.services.consistency import OWNER_THRESHOLD, name_score
+
+require_revenue = require("officer", department="revenue")
 
 router = APIRouter(prefix="/landstack", tags=["parcels"])
 
@@ -25,6 +27,49 @@ async def parcel_cdm(
 
 def _iso(v: Any) -> Any:
     return v.isoformat() if isinstance(v, dt.datetime | dt.date) else v
+
+
+class BoundaryProposal(BaseModel):
+    geometry: dict[str, Any]
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class BoundaryGeometry(BaseModel):
+    geometry: dict[str, Any]
+
+
+@router.post("/parcels/{ulpin}/boundary/validate")
+async def boundary_validate(
+    ulpin: str, body: BoundaryGeometry, principal: Principal = Depends(require_revenue), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Bounded-edit validation: area cap, overlap, village containment + an assistive fix suggestion."""
+    return await boundary.validate(db, ulpin, body.geometry)
+
+
+@router.post("/parcels/{ulpin}/boundary", status_code=201)
+async def boundary_propose(
+    ulpin: str, body: BoundaryProposal, principal: Principal = Depends(require_revenue), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """File a boundary_correction application. The proposal must pass validation; approval
+    re-validates and only then applies the geometry and syncs the RoR extent (CONTRACTS §8)."""
+    result = await boundary.validate(db, ulpin, body.geometry)
+    if not result["valid"]:
+        failed = [c["name"] for c in result["checks"] if not c["ok"]]
+        return {"accepted": False, "validation": result, "error": f"validation failed: {', '.join(failed)}"}
+    app = await workflow.create_application(
+        db,
+        principal,
+        ulpin,
+        "boundary_correction",
+        {
+            "proposed_geometry": body.geometry,
+            "reason": body.reason,
+            "validation": {"checks": result["checks"], "metrics": result["metrics"]},
+            "area_before_sqm": result["metrics"]["old_area_sqm"],
+            "area_after_sqm": result["metrics"]["new_area_sqm"],
+        },
+    )
+    return {"accepted": True, "application": app, "validation": result}
 
 
 @router.get("/parcels/{ulpin}/timeline")
