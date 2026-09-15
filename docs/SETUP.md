@@ -176,19 +176,24 @@ list the exact permissions in their header comments.
 
 ---
 
-## (g) Optional keys
+## (g) API keys — what to get and what you get for free
 
-**Esri World Imagery basemap** — free ArcGIS Location Platform account: https://location.arcgis.com
-→ sign up → *API keys* → *Create API key* → tick the **Basemaps** privilege → paste into
-`apps/web/.env` as `VITE_ESRI_API_KEY`. Free tier: 2 M basemap tiles/month. Without a key the
-imagery toggle is hidden and the vector basemap is used.
+Everything runs WITHOUT any key (rule-engine AI, public imagery tiles, offline Sentinel-2).
+Keys upgrade specific capabilities:
 
-**Gemini (document extraction)** — https://aistudio.google.com → *Get API key* (free tier). Put it
-in `apps/api/.env` as `GEMINI_API_KEY` locally, or in `infra/cloudrun/secrets.env` and redeploy.
-Without it `POST /landstack/ai/extract-document` returns 503 and the UI hides the upload.
+| Key | Where to get it | Where it goes | What it unlocks |
+|---|---|---|---|
+| **NVIDIA Build** (recommended) | https://build.nvidia.com → sign in → any model page → *Get API Key* (free credits) | `apps/api/.env` → `NVIDIA_API_KEY` | LLM-written parcel risk briefs & officer advice (`meta/llama-3.3-70b-instruct`) and scanned-document extraction (`meta/llama-3.2-90b-vision-instruct`). Without it the same features run on the deterministic rule engine, clearly labelled. Override models with `NVIDIA_MODEL` / `NVIDIA_VISION_MODEL`. |
+| Esri ArcGIS Location Platform (optional) | https://location.arcgis.com → *API keys* → tick **Basemaps** | `apps/web/.env` → `VITE_ESRI_API_KEY` | The metered imagery basemap service (2M tiles/mo free). **Not required**: without it the Imagery toggle uses Esri's public World Imagery tile endpoint. |
+| Gemini (legacy, optional) | https://aistudio.google.com | `apps/api/.env` → `GEMINI_API_KEY` | Fallback document extraction when no NVIDIA key is set. |
 
-**Sentinel-2** — the demo ships with offline index values (`S2_OFFLINE=1`). Real imagery:
-`python tools/fetch_s2.py --compute` (see its docstring for the raster dependencies).
+**Free, key-less real data** already wired in:
+- **Basemap** — OpenFreeMap vector tiles (OSM data, no key, no limits).
+- **Satellite imagery basemap** — Esri public World Imagery tiles (attribution shown on the map).
+- **Real roads** — `python tools/seed.py --osm` pulls OpenStreetMap ways via Overpass for each region.
+- **Sentinel-2** — `python tools/fetch_s2.py --compute` downloads real imagery from Microsoft
+  Planetary Computer (no account needed) and recomputes `gis.s2_change`; the demo ships with
+  plausible offline index values (`S2_OFFLINE=1`).
 
 ---
 

@@ -7,6 +7,8 @@
 import type { ComponentType } from 'react';
 import {
   Landmark,
+  PenLine,
+  Sparkles,
   FileText,
   Building2,
   Receipt,
@@ -73,7 +75,9 @@ export const FEATURES: Feature[] = [
   { title: 'Admin & Integration', blurb: 'Connector health, adapter field-mappings, consistency findings and simulated upstream events.', icon: ShieldCheck, tone: 'amber' },
   { title: 'Satellite Change Detection', blurb: 'Sentinel-2 NDVI/NDBI flags likely unrecorded construction for officer review.', icon: Satellite, tone: 'brick' },
   { title: 'Open Interoperability', blurb: 'Adapter model with per-state field mappings, an event contract, consent-aware access and OGC-shaped APIs.', icon: Network, tone: 'slate' },
-  { title: '3D-ready', blurb: 'Buildings → floors → units with 3D-ULPIN suffixes, rendered as MapLibre extrusions.', icon: Boxes, tone: 'neutral' },
+  { title: 'Vertical property (3D)', blurb: 'Buildings → floors → units with 3D-ULPINs: click a unit for its floor area, elevation band and basement level.', icon: Boxes, tone: 'neutral' },
+  { title: 'AI risk briefs', blurb: 'Flagged parcels are auto-analysed — risk score, findings and recommended actions, with the engine labelled honestly.', icon: Sparkles, tone: 'violet' },
+  { title: 'Bounded boundary edits', blurb: 'Officers correct parcel geometry within norms (±15% area, no overlap) through a two-step approval that syncs the RoR.', icon: PenLine, tone: 'primary' },
 ];
 
 export interface RoleInfo {
@@ -149,6 +153,8 @@ export const FAQ: Faq[] = [
   { q: 'Is this real land data?', a: 'No. The cadastre is synthetic demo data generated over a real Mangalagiri bounding box, so nothing here is a genuine government record.' },
   { q: 'What do the parcel colours mean?', a: 'Status is never colour-only, but as a guide: amber = attention (pending mutation, tax arrears, change alert), brick = disputed, violet = mortgaged, green = clean.' },
   { q: 'How do six departments become one record?', a: 'A gateway calls each department through an adapter, maps its vocabulary into the Common Data Model, and returns the merged parcel with per-source provenance and consistency checks.' },
+  { q: 'Where does the AI run?', a: 'Risk briefs and officer advice run on NVIDIA Build (an OpenAI-compatible hosted model) when a key is configured; without one, a deterministic rule engine produces the same structure. Every insight is labelled with the engine that produced it.' },
+  { q: 'Can boundaries be edited?', a: 'Only through the bounded workflow: a revenue officer proposes, validation enforces the norms (±15% area, no overlaps, inside the village), and a second approval applies the change and syncs the Record of Rights. Nothing on the map changes silently.' },
 ];
 
 export interface PitchFigure {
@@ -159,9 +165,9 @@ export interface PitchFigure {
 /** Illustrative figures for the landing "at a glance" strip — from the demo seed,
  *  NOT a live count (the stats endpoint is officer-gated). Shown with a demo tag. */
 export const PITCH_FIGURES: PitchFigure[] = [
-  { value: '1,024', label: 'Parcels indexed' },
+  { value: '3', label: 'States · AP TN TG' },
+  { value: '575', label: 'Parcels indexed' },
   { value: '6', label: 'Departments unified' },
-  { value: '3', label: 'GIS layer tiers' },
   { value: '1 key', label: 'ULPIN per parcel' },
 ];
 
@@ -221,6 +227,17 @@ export const WORKFLOWS: Workflow[] = [
       'Read its status: registered? disputed? mortgaged? tax clear?',
       'Owner details stay masked unless you own it or hold consent.',
       'Download a signed report — anyone can verify it later via its QR code.',
+    ],
+  },
+  {
+    title: 'Resurvey → Boundary correction',
+    tagline: 'Geometry changes only through validation and a second officer.',
+    steps: [
+      'A Tahsildar proposes a corrected boundary by dragging the parcel’s vertices on the map.',
+      'Validation bounds the edit: ±15% area, no overlap with neighbours, inside the village limit.',
+      'An assistive fix can snap the shape to neighbouring boundaries and remove slivers.',
+      'The proposal enters the revenue queue; approval re-validates, applies the geometry and syncs the RoR extent.',
+      'Every step is audited — the map never changes silently.',
     ],
   },
 ];

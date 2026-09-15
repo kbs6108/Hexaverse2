@@ -84,6 +84,25 @@ Gateway surface (`apps/api/landstack/routers/`): **meta** `GET /healthz`, `GET /
 `limit/offset`; filters are query parameters; writes are POST with Pydantic-validated bodies;
 state changes are explicit `transition {action, remark}` calls governed by the `transitions` table.
 
+### 3.x AI assistance endpoints
+
+`POST /landstack/ai/parcel-brief` (any signed-in) and `POST /landstack/ai/application-advice`
+(officer+) provide risk briefs and next-action recommendations. Generation runs on NVIDIA Build
+(OpenAI-compatible chat completions; `NVIDIA_MODEL`, default `meta/llama-3.3-70b-instruct`) when
+`NVIDIA_API_KEY` is configured, and on a deterministic rule engine otherwise; every response carries
+an `engine` field and the UI labels the provenance. The model receives only a compact fact sheet
+derived from the caller's own (masked) CDM view. Document extraction
+(`POST /landstack/ai/extract-document`) prefers the NVIDIA vision model.
+
+### 3.y Bounded boundary correction
+
+`POST /landstack/parcels/{ulpin}/boundary/validate` and `POST .../boundary` implement bounded
+parcel-geometry editing: validity, 4–200 vertices, |Δarea| ≤ 15%, no overlap > 1 m², containment in
+the village boundary, plus an assistive snap/overlap-subtraction suggestion. Proposals flow through
+the `boundary_correction` workflow (submitted → geometry_check → approved/returned/rejected, revenue
+officer); approval re-validates, applies the geometry, recomputes the area and syncs the RoR extent
+(revenue `POST /extent`). All steps are audited.
+
 ## 4. Interoperability standards
 
 - **Identifiers**: ULPIN-style 14-character ids for parcels (DILRMP-compatible shape); 3D suffixes for
