@@ -63,7 +63,7 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   village containment, `services/boundary.py`) → `boundary_correction` workflow → approval re-validates,
   applies geometry, syncs RoR extent via revenue `POST /extent`. Migrations 008/009.
 - **AI assist**: `services/ai_assist.py` on NVIDIA Build (`NVIDIA_API_KEY`, OpenAI-compatible) with an
-  always-on deterministic rule engine; auto-running parcel risk briefs + officer application advice;
+  always-on deterministic rule engine; auto-running parcel risk briefs + officer application advice (models retire on NVIDIA Build — 410 Gone means pick a live id from /v1/models);
   document extraction prefers NVIDIA vision. Responses carry `engine` for honest labelling.
 - **3D** (accurate + usable): buildings carry width/depth/basements (migration 010), units carry
   floor area + elevation bands; 3D units are clickable with a data card; basements are floor 0

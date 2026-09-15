@@ -88,7 +88,7 @@ state changes are explicit `transition {action, remark}` calls governed by the `
 
 `POST /landstack/ai/parcel-brief` (any signed-in) and `POST /landstack/ai/application-advice`
 (officer+) provide risk briefs and next-action recommendations. Generation runs on NVIDIA Build
-(OpenAI-compatible chat completions; `NVIDIA_MODEL`, default `meta/llama-3.3-70b-instruct`) when
+(OpenAI-compatible chat completions; `NVIDIA_MODEL`, default `nvidia/nemotron-3-super-120b-a12b`) when
 `NVIDIA_API_KEY` is configured, and on a deterministic rule engine otherwise; every response carries
 an `engine` field and the UI labels the provenance. The model receives only a compact fact sheet
 derived from the caller's own (masked) CDM view. Document extraction

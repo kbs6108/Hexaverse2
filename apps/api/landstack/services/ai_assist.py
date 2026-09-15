@@ -29,7 +29,10 @@ CHAT_TIMEOUT_S = 18.0
 
 
 # ----------------------------------------------------------------------------- NVIDIA client
-async def chat(messages: list[dict[str, str]], *, max_tokens: int = 500, temperature: float = 0.2) -> str | None:
+async def chat(messages: list[dict[str, str]], *, max_tokens: int = 1600, temperature: float = 0.2) -> str | None:
+    # Generous budget: NVIDIA's reasoning models (e.g. nemotron-3) spend part of
+    # max_tokens on hidden reasoning before the JSON answer; too small a budget
+    # truncates the answer mid-string and the parse fails.
     """One chat completion against NVIDIA Build; None when unconfigured or failing (callers fall back)."""
     s = get_settings()
     if not s.nvidia_api_key:
@@ -159,9 +162,9 @@ async def parcel_brief(db: DBLike, ulpin: str, principal: Principal) -> dict[str
         ]
     )
     if text:
-        try:
-            import re
+        import re
 
+        try:
             m = re.search(r"\{.*\}", text, re.S)
             parsed = json.loads(m.group(0)) if m else {}
             narrative = str(parsed.get("narrative") or "").strip() or None
@@ -169,7 +172,13 @@ async def parcel_brief(db: DBLike, ulpin: str, principal: Principal) -> dict[str
             if isinstance(recs, list) and recs:
                 recommendations = [str(r) for r in recs][:3]
         except Exception:
-            narrative = text[:600]
+            narrative = None
+        if not narrative:
+            # Salvage a truncated JSON reply (reasoning models can run out of budget
+            # mid-object): pull the narrative string even without a closing brace.
+            m = re.search(r'"narrative"\s*:\s*"((?:[^"\\]|\\.)+)', text)
+            if m:
+                narrative = m.group(1).strip() or None
     if not narrative:
         heads = [f["text"] for f in findings if f["severity"] in ("high", "medium")]
         narrative = (
@@ -232,7 +241,7 @@ async def application_advice(db: DBLike, app_id: str, principal: Principal) -> d
                  "parcel_findings": [f["text"] for f in brief["findings"]],
              })},
         ],
-        max_tokens=250,
+        max_tokens=1200,
     )
     engine = "rules"
     if text:

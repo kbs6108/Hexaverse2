@@ -183,7 +183,7 @@ Keys upgrade specific capabilities:
 
 | Key | Where to get it | Where it goes | What it unlocks |
 |---|---|---|---|
-| **NVIDIA Build** (recommended) | https://build.nvidia.com → sign in → any model page → *Get API Key* (free credits) | `apps/api/.env` → `NVIDIA_API_KEY` | LLM-written parcel risk briefs & officer advice (`meta/llama-3.3-70b-instruct`) and scanned-document extraction (`meta/llama-3.2-90b-vision-instruct`). Without it the same features run on the deterministic rule engine, clearly labelled. Override models with `NVIDIA_MODEL` / `NVIDIA_VISION_MODEL`. |
+| **NVIDIA Build** (recommended) | https://build.nvidia.com → sign in → any model page → *Get API Key* (free credits) | `apps/api/.env` → `NVIDIA_API_KEY` | LLM-written parcel risk briefs & officer advice (default `nvidia/nemotron-3-super-120b-a12b`) and scanned-document extraction (`meta/llama-3.2-11b-vision-instruct`). Without it the same features run on the deterministic rule engine, clearly labelled. Override models with `NVIDIA_MODEL` / `NVIDIA_VISION_MODEL`. |
 | Esri ArcGIS Location Platform (optional) | https://location.arcgis.com → *API keys* → tick **Basemaps** | `apps/web/.env` → `VITE_ESRI_API_KEY` | The metered imagery basemap service (2M tiles/mo free). **Not required**: without it the Imagery toggle uses Esri's public World Imagery tile endpoint. |
 | Gemini (legacy, optional) | https://aistudio.google.com | `apps/api/.env` → `GEMINI_API_KEY` | Fallback document extraction when no NVIDIA key is set. |
 

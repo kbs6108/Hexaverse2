@@ -72,7 +72,7 @@ PUBLIC_WEB_URL=http://localhost:5173
 STORAGE_BACKEND=local | gcs ; STORAGE_LOCAL_DIR=./data/storage ; GCS_BUCKET=
 S2_OFFLINE=1 ; S2_DATA_DIR=./data/s2
 NVIDIA_API_KEY=                 # NVIDIA Build (build.nvidia.com): AI briefs, advice, doc extraction; empty → rule engine
-NVIDIA_MODEL=meta/llama-3.3-70b-instruct ; NVIDIA_VISION_MODEL=meta/llama-3.2-90b-vision-instruct
+NVIDIA_MODEL=nvidia/nemotron-3-super-120b-a12b ; NVIDIA_VISION_MODEL=meta/llama-3.2-11b-vision-instruct
 GEMINI_API_KEY=                 # optional legacy fallback for document extraction
 ```
 Web (apps/web/.env):
