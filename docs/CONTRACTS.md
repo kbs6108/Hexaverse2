@@ -71,7 +71,9 @@ REPORT_HMAC_SECRET=change-me
 PUBLIC_WEB_URL=http://localhost:5173
 STORAGE_BACKEND=local | gcs ; STORAGE_LOCAL_DIR=./data/storage ; GCS_BUCKET=
 S2_OFFLINE=1 ; S2_DATA_DIR=./data/s2
-GEMINI_API_KEY=                 # optional; extract endpoint returns 503 when missing
+NVIDIA_API_KEY=                 # NVIDIA Build (build.nvidia.com): AI briefs, advice, doc extraction; empty → rule engine
+NVIDIA_MODEL=meta/llama-3.3-70b-instruct ; NVIDIA_VISION_MODEL=meta/llama-3.2-90b-vision-instruct
+GEMINI_API_KEY=                 # optional legacy fallback for document extraction
 ```
 Web (apps/web/.env):
 ```
@@ -178,7 +180,11 @@ assistive `suggestion` (snap-to-neighbours + overlap subtraction); `POST /landst
 {geometry, reason}` → files a `boundary_correction` application (rejected up-front unless validation passes).
 Officer+: `GET /landstack/parcels/{ulpin}/timeline`, `GET /landstack/queue?department=`, `POST /landstack/applications/{id}/transition {action, remark}`,
 `GET /landstack/stats`, `GET /landstack/alerts?status=`, `POST /landstack/alerts/{id}/assign`, `POST /landstack/alerts/{id}/resolve`,
-`POST /landstack/ai/change-detection {ulpin | bbox, date_a?, date_b?}`, `POST /landstack/ai/extract-document (multipart)`.
+`POST /landstack/ai/change-detection {ulpin | bbox, date_a?, date_b?}`, `POST /landstack/ai/extract-document (multipart)`,
+`POST /landstack/ai/application-advice {id}` → suggested next workflow action + rationale grounded in parcel flags.
+Any signed-in: `POST /landstack/ai/parcel-brief {ulpin}` → risk score/level, findings, narrative, recommendations —
+NVIDIA Build model when NVIDIA_API_KEY is set, deterministic rule engine otherwise; response carries `engine`.
+The web auto-runs the brief on flagged parcels and the advice on any open application.
 Admin: `GET /landstack/consistency`, `GET /landstack/connectors`, `GET /landstack/adapters` (mappings from yaml),
 `POST /landstack/consents/grant {ulpin, uid, hours}`, `POST /landstack/admin/simulate/deed {ulpin, claimant}` (calls registration POST /deeds),
 `POST /landstack/admin/demo-reset`.
