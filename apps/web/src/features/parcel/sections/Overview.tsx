@@ -11,6 +11,7 @@ import { Button } from '@/components/Button';
 import { Callout, KV, SectionTitle } from '@/components/Section';
 import { toast } from '@/components/Toast';
 import { Badge } from '@/components/Badge';
+import { AIInsight, parcelNeedsAttention } from '@/components/AIInsight';
 import type { ParcelTab } from '../ParcelDrawer';
 
 interface Cell {
@@ -78,6 +79,8 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           </div>
         ))}
       </div>
+
+      <AIInsight p={p} auto={parcelNeedsAttention(p)} />
 
       {resurvey && (
         <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink-3">

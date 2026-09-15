@@ -260,6 +260,31 @@ export interface BoundaryValidation {
   suggestion?: { geometry: Record<string, unknown>; area_sqm: number; reason: string };
 }
 
+export interface AIFinding {
+  severity: 'high' | 'medium' | 'info' | 'ok' | string;
+  text: string;
+  action?: string | null;
+}
+
+export interface ParcelBrief {
+  ulpin: string;
+  engine: string; // 'nvidia:<model>' | 'rules'
+  risk_score: number;
+  risk_level: 'low' | 'elevated' | 'high' | string;
+  findings: AIFinding[];
+  narrative: string;
+  recommendations: string[];
+}
+
+export interface ApplicationAdvice {
+  application_id: string;
+  engine: string;
+  suggested_action: string | null;
+  rationale: string | null;
+  allowed_actions: string[];
+  parcel_risk: { score: number; level: string };
+}
+
 export interface BoundaryProposalResult {
   accepted: boolean;
   application?: Application;
