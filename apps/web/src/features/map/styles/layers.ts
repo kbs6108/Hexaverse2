@@ -31,17 +31,23 @@ export const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.p
 export const FONT = ['Noto Sans Regular'];
 export const FONT_BOLD = ['Noto Sans Bold'];
 
-export function imageryStyle(key: string): StyleSpecification {
+export function imageryStyle(key?: string): StyleSpecification {
+  // With an ArcGIS Location Platform key: the metered basemap service (2M tiles/mo free).
+  // Without one: Esri's public World Imagery tile endpoint — real satellite imagery,
+  // no key needed, attribution required. This is why the Imagery toggle always works.
+  const tiles = key
+    ? [`https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=${key}`]
+    : ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'];
   return {
     version: 8,
     glyphs: GLYPHS,
     sources: {
       esri: {
         type: 'raster',
-        tiles: [`https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=${key}`],
+        tiles,
         tileSize: 256,
         maxzoom: 19,
-        attribution: 'Esri, Maxar, Earthstar Geographics',
+        attribution: 'Esri, Maxar, Earthstar Geographics, and the GIS User Community',
       },
     },
     layers: [

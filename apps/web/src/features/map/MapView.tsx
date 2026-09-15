@@ -20,9 +20,9 @@ export function MapView() {
   const mapRef = useRef<MapRef>(null);
   const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, drawerOpen, select, setHover } = useUI();
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
-  const imagery = basemap === 'imagery' && !!env.esriApiKey;
+  const imagery = basemap === 'imagery';
 
-  const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey) : L.STREETS_STYLE), [imagery]);
+  const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey || undefined) : L.STREETS_STYLE), [imagery]);
 
   const village = useQuery({
     queryKey: qk.villageBoundary(),

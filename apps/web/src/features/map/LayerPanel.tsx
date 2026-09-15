@@ -61,7 +61,6 @@ const TIERS: { key: string; title: string; layers: LayerDef[] }[] = [
 
 export function LayerPanel() {
   const { layers, toggleLayer, colourBy, setColourBy, basemap, setBasemap, show3D, setShow3D, layerPanelOpen, setLayerPanelOpen } = useUI();
-  const hasImagery = !!env.esriApiKey;
 
   if (!layerPanelOpen) {
     return (
@@ -133,19 +132,16 @@ export function LayerPanel() {
           >
             Streets
           </button>
-          {hasImagery ? (
-            <button
-              type="button"
-              role="radio"
-              aria-checked={basemap === 'imagery'}
-              onClick={() => setBasemap('imagery')}
-              className={clsx('flex items-center justify-center gap-1 rounded px-2 py-1 text-xs font-medium', basemap === 'imagery' ? 'bg-panel shadow-sm' : 'text-ink-3 hover:text-ink')}
-            >
-              <Satellite size={12} /> Imagery
-            </button>
-          ) : (
-            <span className="px-2 py-1 text-center text-[11px] text-ink-3" title="Set VITE_ESRI_API_KEY to enable">Imagery · no key</span>
-          )}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={basemap === 'imagery'}
+            onClick={() => setBasemap('imagery')}
+            title={env.esriApiKey ? 'Esri World Imagery (keyed basemap service)' : 'Esri World Imagery (public tiles)'}
+            className={clsx('flex items-center justify-center gap-1 rounded px-2 py-1 text-xs font-medium', basemap === 'imagery' ? 'bg-panel shadow-sm' : 'text-ink-3 hover:text-ink')}
+          >
+            <Satellite size={12} /> Imagery
+          </button>
         </div>
         <Checkbox
           label={
