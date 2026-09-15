@@ -166,7 +166,8 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
             { k: 'Land use', v: titleCase(p.planning.land_use) },
             { k: 'Zone', v: p.planning.zone_code ? `${p.planning.zone_code} · ${p.planning.zone_name ?? ''}` : '—' },
             { k: 'Khata', v: p.identifiers.khata_no ?? '—', mono: true },
-            { k: 'Taluk / District', v: `${p.identifiers.taluk} · ${p.identifiers.district}` },
+            // AP and Telangana call the sub-district a mandal; Tamil Nadu a taluk.
+            { k: p.identifiers.state === 'TN' ? 'Taluk / District' : 'Mandal / District', v: `${p.identifiers.taluk} · ${p.identifiers.district}` },
             { k: 'Centroid', v: `${p.spatial.centroid[1].toFixed(5)}, ${p.spatial.centroid[0].toFixed(5)}`, mono: true },
             { k: 'Estimated value', v: fmtINR(p.fiscal.estimated_value) },
             { k: 'Registered on', v: fmtDate(p.rights.registration?.registered_on) },

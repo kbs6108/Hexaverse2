@@ -42,12 +42,12 @@ const defaultLayers: LayerToggles = {
 
 /** Dev-mode identities (CONTRACTS §10). Value is the exact X-Dev-User header string. */
 export const DEV_USERS = [
-  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', hint: 'Citizen' },
+  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', hint: 'Citizen · pattadar, Mangalagiri' },
   { id: 'citizen::Lakshmi Devi', label: 'Lakshmi Devi', role: 'citizen', hint: 'Citizen' },
-  { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', hint: 'Officer · Revenue' },
-  { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', hint: 'Officer · Registration' },
-  { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', hint: 'Officer · Planning' },
-  { id: 'admin::Admin', label: 'Admin', role: 'admin', hint: 'Administrator' },
+  { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', hint: 'Tahsildar · Mangalagiri Mandal' },
+  { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', hint: 'Sub-Registrar · SRO Mangalagiri' },
+  { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', hint: 'Town Planning Officer · MTMC' },
+  { id: 'admin::Admin', label: 'Admin', role: 'admin', hint: 'System Administrator · DoLR' },
 ] as const;
 export type DevUserId = (typeof DEV_USERS)[number]['id'];
 
