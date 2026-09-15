@@ -29,9 +29,9 @@ export function LoginPage() {
   );
 
   /** Confirm the sign-in with a quick toast, then continue — to the page that
-   *  sent us here (`next`, set by the role guard) or to the map by default. */
+   *  sent us here (`next`, set by the role guard) or to the platform gateway by default. */
   const done = (label?: string) => {
-    const to = next && next.startsWith('/') ? next : '/map';
+    const to = next && next.startsWith('/') ? next : '/citizen';
     setSignedInAs(label ?? 'Signed in');
     doneTimer.current = window.setTimeout(() => void navigate({ to }), 900);
   };
@@ -121,7 +121,7 @@ export function LoginPage() {
         </Link>
       </p>
 
-      {/* Quick signed-in confirmation, then off to the map */}
+      {/* Quick signed-in confirmation, then off to the platform */}
       {signedInAs && (
         <div
           role="status"
@@ -130,7 +130,7 @@ export function LoginPage() {
         >
           <CheckCircle2 size={18} className="text-primary" />
           <span className="text-sm font-medium text-ink">
-            {signedInAs} <span className="text-ink-3">· opening the map…</span>
+            {signedInAs} <span className="text-ink-3">· opening the platform…</span>
           </span>
         </div>
       )}
