@@ -11,6 +11,7 @@ import * as L from './styles/layers';
 import { HoverCard, type HoverInfo } from './HoverCard';
 import { RegionMarkers } from './RegionMarkers';
 import { BoundaryEditLayers } from './BoundaryEditor';
+import { UnitCard, type UnitInfo } from './UnitCard';
 
 // The demo spans three state clusters (CONTRACTS §10), so the map allows a national
 // overview: bounds cover India + margin, and RegionMarkers guide users into a cluster.
@@ -20,6 +21,7 @@ export function MapView() {
   const mapRef = useRef<MapRef>(null);
   const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, drawerOpen, select, setHover } = useUI();
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
+  const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
   const imagery = basemap === 'imagery';
 
   const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey || undefined) : L.STREETS_STYLE), [imagery]);
@@ -79,6 +81,7 @@ export function MapView() {
     const m = mapRef.current?.getMap();
     if (!m) return;
     m.easeTo({ pitch: show3D ? 55 : 0, bearing: show3D ? -12 : 0, duration: 700 });
+    if (!show3D) setUnitInfo(null);
   }, [show3D]);
 
   const onMouseMove = (e: MapLayerMouseEvent) => {
@@ -101,6 +104,12 @@ export function MapView() {
     const f = e.features?.[0];
     if (!f) {
       select(null);
+      setUnitInfo(null);
+      return;
+    }
+    // In 3D mode, unit extrusions take precedence: clicking one opens its data card.
+    if (f.layer?.id === 'units-3d') {
+      setUnitInfo(f.properties as UnitInfo);
       return;
     }
     const ulpin = String((f.properties as Record<string, unknown>).ulpin ?? f.id ?? '');
@@ -117,7 +126,7 @@ export function MapView() {
         minZoom={3.2}
         maxZoom={20}
         attributionControl={{ compact: true }}
-        interactiveLayerIds={layers.parcels ? ['parcels-fill'] : []}
+        interactiveLayerIds={[...(show3D ? ['units-3d'] : []), ...(layers.parcels ? ['parcels-fill'] : [])]}
         cursor={hoverUlpin ? 'pointer' : 'grab'}
         onLoad={onLoad}
         onMouseMove={onMouseMove}
@@ -188,6 +197,7 @@ export function MapView() {
       </Map>
 
       {hoverInfo && !show3D && <HoverCard info={hoverInfo} />}
+      {show3D && unitInfo && <UnitCard unit={unitInfo} onClose={() => setUnitInfo(null)} />}
     </div>
   );
 }

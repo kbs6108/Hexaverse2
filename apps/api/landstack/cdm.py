@@ -147,11 +147,12 @@ class Utilities(_Leaf):
 class Unit(_Leaf):
     id: int | None = None
     ulpin_3d: str | None = None
-    floor: int | None = None
+    floor: int | None = None  # 0 = basement level
     unit_no: str | None = None
     owner_name: str | None = None
     base_m: float | None = None
     height_m: float | None = None
+    area_sqm: float | None = None
 
 
 class Building(_Leaf):
@@ -159,6 +160,9 @@ class Building(_Leaf):
     name: str | None = None
     floors: int | None = None
     height_m: float | None = None
+    width_m: float | None = None
+    depth_m: float | None = None
+    basement_floors: int | None = None
     units: list[Unit] = Field(default_factory=list)
 
 

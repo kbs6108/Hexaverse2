@@ -46,8 +46,8 @@ apps/web/                 Vite 7 + React 19 + TypeScript
     features/admin/      AdminConsole (connectors, mappings, consistency, simulate deed)
     components/          small UI primitives (Button, Card, Badge, Tabs, Drawer, Field) with Tailwind v4
   index.html, vite.config.ts, tsconfig.json, package.json, Dockerfile (nginx) — Firebase Hosting serves dist/
-db/migrations/            001_extensions.sql … 009_application_types.sql (006 settlement, 007 ror state,
-                          008 boundary workflow, 009 type check) — plain SQL, idempotent. Applied by tools/migrate.py in filename order.
+db/migrations/            001_extensions.sql … 010_3d_dimensions.sql (006 settlement, 007 ror state, 008 boundary
+                          workflow, 009 type check, 010 3D dims) — plain SQL, idempotent. Applied by tools/migrate.py in filename order.
 tools/                    migrate.py, seed.py, fetch_s2.py, set_claims.py, demo_reset.py
 data/                     village.geojson (AOI), s2/ (offline COGs, gitignored except README), samples/ (scans)
 infra/                    docker-compose.yml, cloudrun/ (deploy.sh, service.yaml), firebase.json, .firebaserc.example
@@ -100,7 +100,9 @@ Schemas: `landstack`, `dept_revenue`, `dept_registration`, `dept_planning`, `dep
 Key tables (columns are authoritative in SQL; names here are what the API relies on):
 - landstack.parcels(ulpin PK text, state, district, taluk, village, survey_no, sub_division, geom MultiPolygon,
   area_sqm numeric, land_use text, zone_code text, status_flags jsonb default '{}', updated_at timestamptz)
-- landstack.buildings(id serial, ulpin FK, footprint MultiPolygon, floors int, height_m numeric, name)
+- landstack.buildings(id serial, ulpin FK, footprint MultiPolygon, floors int, height_m numeric, name,
+  width_m numeric, depth_m numeric, basement_floors int default 0 — migration 010; dims from the footprint's
+  minimum rotated rectangle)
 - landstack.units(id serial, building_id FK, ulpin_3d text unique  -- '<ULPIN>-F<floor:02>-U<unit:02>',
   floor int, unit_no text, geom Polygon, base_m numeric, height_m numeric, owner_name text)
 - landstack.users(uid PK text, email, name, role, department, created_at)
@@ -153,7 +155,8 @@ used for map colouring and stats. Tiles read `landstack.parcel_tile_features` vi
                "building_permission":{"status":"approved|pending|rejected|none","permit_no":"BP-5678","floors":2}},
   "fiscal": {"tax":{"assessment_no":"...","annual_demand":12500,"arrears":0,"paid_till":"2026-27"},"guideline_value_per_sqm":18000,"estimated_value":4014000},
   "utilities": {"water":true,"electricity":true,"sewer":false,"road_access_m":12,"nearest_road_class":"district"},
-  "buildings": [{"id":1,"floors":3,"height_m":9.5,"units":[{"ulpin_3d":"...-F01-U01","floor":1,"unit_no":"101","owner_name":"..."}]}],
+  "buildings": [{"id":1,"floors":3,"height_m":9.5,"width_m":18.4,"depth_m":12.1,"basement_floors":1,
+                 "units":[{"ulpin_3d":"...-F01-U01","floor":1,"unit_no":"101","owner_name":"...","base_m":0,"height_m":3.2,"area_sqm":98.5}]}],
   "alerts": [{"id":1,"kind":"change_detected","severity":"high","title":"...","status":"open"}],
   "provenance": {"revenue":{"ok":true,"ms":41,"as_of":"2026-09-13T08:12:00Z","source":"AP Meebhoomi (mock)"},
                  "fiscal":{"ok":false,"error":"timeout","cached_as_of":null}},
@@ -222,7 +225,11 @@ Tier 1 Base: parcels (fill+line, hover/select by feature-state, id=ulpin), surve
 National overview: below z8 the map shows one cluster marker per demo state (from story_parcels.json `regions`) plus a Regions panel; click flies into the cluster (parcel tiles render z≥10).
 Tier 2 Essential: parcels restyled by `colour_by` ∈ land_use | ownership_type | registered | encumbrance | dispute | zone | permission; zones polygons.
 Tier 3 Use-case: tax arrears, guideline value, roads, water_lines, restriction_zones, projects, settlement_schemes (resurvey phase), change alerts, (Bhuvan WMS behind flag).
-3D preview: units extrusion (fill-extrusion, base_m/height_m), toggle off by default.
+3D preview: units extrusion (fill-extrusion, base_m/height_m), toggle off by default. Floor 0 = basement
+(base_m negative in the data; rendered as a brick slab at grade since MapLibre has no underground camera).
+In 3D mode units are clickable: a data card shows the 3D-ULPIN, level, floor area (from the unit geometry),
+the true elevation band (e.g. −3.2 → 0 m for a basement) and the occupant of record. Unit tiles carry
+building_name and area_sqm (unit_tile_features, migration 010).
 
 ## 10. Demo regions & story parcels
 Three real bounding boxes, one per state, to demonstrate multi-state scaling (deterministic seed=42):

@@ -1183,6 +1183,15 @@ def make_department_records(frame: Frame, rng: random.Random, names: Names) -> N
 # ---------------------------------------------------------------------------
 # Buildings & units (3D readiness)
 # ---------------------------------------------------------------------------
+def _footprint_dims(fp: Polygon) -> tuple[float, float]:
+    """Width × depth (m) of the footprint's minimum rotated rectangle (UTM coords)."""
+    rect = fp.minimum_rotated_rectangle
+    xs = list(rect.exterior.coords)
+    a = Point(xs[0]).distance(Point(xs[1]))
+    b = Point(xs[1]).distance(Point(xs[2]))
+    return round(max(a, b), 1), round(min(a, b), 1)
+
+
 def make_buildings(frame: Frame, rng: random.Random, names: Names) -> None:
     ror_owner = {r["ulpin"]: r["owner_name"] for r in frame.ror}
     region = frame.region
@@ -1206,10 +1215,22 @@ def make_buildings(frame: Frame, rng: random.Random, names: Names) -> None:
         if fp.is_empty or fp.area < 40:
             fp = affinity.scale(p.geom_utm, 0.6, 0.6)
         fp = max(explode_polygons(fp), key=lambda g: g.area)
+        width_m, depth_m = _footprint_dims(fp)
+        # Commercial blocks (4+ floors) get one basement level: floor 0, below datum.
+        basements = 1 if floors >= 4 else 0
         frame.buildings.append({
             "id": bid, "ulpin": p.ulpin, "footprint": to_wgs(as_multipolygon(fp)), "floors": floors,
             "height_m": round(floors * FLOOR_HEIGHT_M, 2), "name": name,
+            "width_m": width_m, "depth_m": depth_m, "basement_floors": basements,
         })
+        if basements:
+            for unit_idx, ug in enumerate(split_into(fp, upf, rng), start=1):
+                frame.units.append({
+                    "building_id": bid, "ulpin": p.ulpin, "ulpin_3d": ulpin_3d(p.ulpin, 0, unit_idx),
+                    "floor": 0, "unit_no": f"B{unit_idx:02d}", "geom": to_wgs(ug),
+                    "base_m": round(-FLOOR_HEIGHT_M, 2), "height_m": 0.0,
+                    "owner_name": names.person(rng)[0],
+                })
         for floor in range(1, floors + 1):
             for unit_idx, ug in enumerate(split_into(fp, upf, rng), start=1):
                 owner = ror_owner[p.ulpin] if p is clean else names.person(rng)[0]
@@ -1647,8 +1668,9 @@ def write_db(conn, frames: Frame | list[Frame], only_mutable: bool = False) -> d
               _j(({"story": p.story} if p.story else {}) | {"resurvey": p.resurvey})) for f in frames for p in f.parcels], {"geom": MULTI, "status_flags": JSONB})
         buildings = [b for f in frames for b in f.buildings]
         n["landstack.buildings"] = _insert(cur, "landstack.buildings",
-            ["id", "ulpin", "footprint", "floors", "height_m", "name"],
-            [(b["id"], b["ulpin"], _wkt(b["footprint"]), b["floors"], b["height_m"], b["name"]) for b in buildings], {"footprint": MULTI})
+            ["id", "ulpin", "footprint", "floors", "height_m", "name", "width_m", "depth_m", "basement_floors"],
+            [(b["id"], b["ulpin"], _wkt(b["footprint"]), b["floors"], b["height_m"], b["name"],
+              b["width_m"], b["depth_m"], b["basement_floors"]) for b in buildings], {"footprint": MULTI})
         cur.execute("SELECT setval('landstack.buildings_id_seq', %s, true)", (max([b["id"] for b in buildings], default=1),))
         n["landstack.units"] = _insert(cur, "landstack.units",
             ["building_id", "ulpin", "ulpin_3d", "floor", "unit_no", "geom", "base_m", "height_m", "owner_name"],

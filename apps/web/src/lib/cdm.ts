@@ -126,9 +126,12 @@ export interface Utilities {
 
 export interface Unit {
   ulpin_3d: string;
-  floor: number;
+  floor: number; // 0 = basement level
   unit_no: string;
   owner_name?: string | null;
+  base_m?: number | null;
+  height_m?: number | null;
+  area_sqm?: number | null;
 }
 
 export interface Building {
@@ -136,6 +139,9 @@ export interface Building {
   floors: number;
   height_m?: number | null;
   name?: string | null;
+  width_m?: number | null;
+  depth_m?: number | null;
+  basement_floors?: number | null;
   units: Unit[];
 }
 

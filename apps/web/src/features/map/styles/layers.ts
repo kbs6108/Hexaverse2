@@ -349,12 +349,15 @@ export const unitsExtrusion: FillExtrusionLayerSpecification = {
   'source-layer': 'units',
   minzoom: 14,
   paint: {
-    'fill-extrusion-base': ['to-number', ['coalesce', ['get', 'base_m'], 0]],
-    'fill-extrusion-height': ['+', ['to-number', ['coalesce', ['get', 'base_m'], 0]], ['to-number', ['coalesce', ['get', 'height_m'], 3]]],
-    'fill-extrusion-color': [
-      'interpolate', ['linear'], ['to-number', ['coalesce', ['get', 'floor'], 0]],
-      0, '#CFE3DA', 2, '#5FB39A', 4, '#0E6B54', 8, '#2F5D9E',
-    ],
+    // Basements (floor 0) live below datum in the DATA (base_m −3.2 → 0 m); MapLibre has no
+    // underground camera, so render them as a thin brick slab at grade to stay visible.
+    'fill-extrusion-base': ['case', ['<=', ['to-number', ['coalesce', ['get', 'floor'], 1]], 0], 0,
+      ['to-number', ['coalesce', ['get', 'base_m'], 0]]],
+    'fill-extrusion-height': ['case', ['<=', ['to-number', ['coalesce', ['get', 'floor'], 1]], 0], 0.5,
+      ['to-number', ['coalesce', ['get', 'height_m'], 3]]],
+    'fill-extrusion-color': ['case', ['<=', ['to-number', ['coalesce', ['get', 'floor'], 1]], 0], '#A63A2B',
+      ['interpolate', ['linear'], ['to-number', ['coalesce', ['get', 'floor'], 0]],
+        1, '#CFE3DA', 2, '#5FB39A', 4, '#0E6B54', 8, '#2F5D9E']],
     'fill-extrusion-opacity': 0.85,
     'fill-extrusion-vertical-gradient': true,
   },
