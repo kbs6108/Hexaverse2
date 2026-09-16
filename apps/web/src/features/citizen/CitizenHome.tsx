@@ -1,8 +1,11 @@
-import { useNavigate, useRouterState, Outlet } from '@tanstack/react-router';
+import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { MapPinned, ShieldCheck, FileSearch, ListChecks, Home, ArrowUpRight } from 'lucide-react';
 import { clsx } from 'clsx';
-import { MapPinned, FileSearch, ShieldCheck, ListChecks, ArrowUpRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LiquidGlassCard } from '@/components/ui/liquid-weather-glass';
+import { FloatingDock } from '@/components/ui/floating-dock';
+
+type CinematicPhase = 'idle' | 'hold' | 'retract' | 'settle';
 
 export function CitizenLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -20,32 +23,88 @@ export function CitizenLayout() {
 }
 
 const ACTIONS = [
-  { id: 'search', to: '/map', label: 'Parcel Search & Quick Actions', desc: 'Find parcels and explore connected records instantly.', subtext: '1,024 parcels indexed in Guntur pilot', dockLabel: 'Search', icon: MapPinned },
-  { id: 'verify', to: '/citizen/verify', label: 'Verify Ownership', desc: 'Compare claimed names against authoritative records.', subtext: 'Instant match against RoR + registration records', dockLabel: 'Verify', icon: ShieldCheck },
-  { id: 'request', to: '/citizen/request', label: 'Request Service', desc: 'Apply for mutations or building permissions.', subtext: 'Mutation · Building permission', dockLabel: 'Service', icon: FileSearch },
-  { id: 'track', to: '/citizen/track', label: 'Track Application', desc: 'Follow your requests through each step.', subtext: 'Check status of submitted applications', dockLabel: 'Track', icon: ListChecks },
+  { id: 'search', to: '/map', label: 'Parcel Search & Quick Actions', desc: 'Find parcels and explore connected records instantly.', dockLabel: 'Search', icon: MapPinned },
+  { id: 'verify', to: '/citizen/verify', label: 'Verify Ownership', desc: 'Compare claimed names against authoritative records.', dockLabel: 'Verify', icon: ShieldCheck },
+  { id: 'request', to: '/citizen/request', label: 'Request Service', desc: 'Apply for mutations or building permissions.', dockLabel: 'Service', icon: FileSearch },
+  { id: 'track', to: '/citizen/track', label: 'Track Application', desc: 'Follow your requests through each step.', dockLabel: 'Track', icon: ListChecks },
 ];
 
 export function CitizenHome() {
   const [activeTask, setActiveTask] = useState<string | null>(null);
-  const [healthStatus, setHealthStatus] = useState<{ connected: number; total: number } | null>(null);
+  
+  // IMMEDIATELY mount the completely formed cinematic frame if in fullscreen
+  const [cinematicPhase, setCinematicPhase] = useState<CinematicPhase>(
+    document.fullscreenElement ? 'hold' : 'idle'
+  );
+  
+  const timeoutsRef = useRef<number[]>([]);
+  const navigate = useNavigate();
+
+  const clearTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  };
 
   useEffect(() => {
-    fetch('/landstack/connectors')
-      .then(res => res.json())
-      .then(data => {
-        if (data && Array.isArray(data.items)) {
-          const total = data.items.length;
-          const connected = data.items.filter((item: any) => item.ok).length;
-          setHealthStatus({ connected, total });
-        }
-      })
-      .catch(() => {
-        // Silently fail
-      });
+    if (document.fullscreenElement) {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!prefersReducedMotion) {
+        
+        // At T = ~700-1000ms, start the reveal
+        timeoutsRef.current.push(window.setTimeout(() => {
+          setCinematicPhase('retract');
+        }, 800));
+
+        // Existing transition duration is 2100ms. Settle after it finishes.
+        timeoutsRef.current.push(window.setTimeout(() => {
+          setCinematicPhase('settle');
+        }, 2900));
+      } else {
+        setCinematicPhase('idle');
+      }
+    }
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setCinematicPhase('idle');
+        clearTimeouts();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      clearTimeouts();
+    };
   }, []);
 
-  const navigate = useNavigate();
+  const getTopBarClasses = () => {
+    switch (cinematicPhase) {
+      case 'idle': 
+      case 'settle':
+        return "hidden";
+      case 'hold': 
+        return "h-[15vh] translate-y-0"; // Instantly ready, STATIC fully-formed frame. No transitions.
+      case 'retract': 
+        return "h-[15vh] -translate-y-full transition-transform duration-[2100ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
+      default: 
+        return "hidden";
+    }
+  };
+
+  const getBottomBarClasses = () => {
+    switch (cinematicPhase) {
+      case 'idle': 
+      case 'settle':
+        return "hidden";
+      case 'hold': 
+        return "h-[15vh] translate-y-0"; // Instantly ready, STATIC fully-formed frame. No transitions.
+      case 'retract': 
+        return "h-[15vh] translate-y-full transition-transform duration-[2100ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
+      default: 
+        return "hidden";
+    }
+  };
 
   const handleAction = (id: string, to: string) => {
     if (activeTask) return; 
@@ -56,9 +115,25 @@ export function CitizenHome() {
     }, 400);
   };
 
+  const dockItems = [
+    { id: 'home', label: 'Home', icon: Home },
+    ...ACTIONS.map(action => ({
+      id: action.id,
+      label: action.dockLabel,
+      icon: action.icon
+    }))
+  ];
+
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center overflow-x-hidden bg-ground text-ink">
-      <main className="relative z-10 container mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-screen">
+    <div className="relative z-10 flex min-h-screen w-full flex-col items-center overflow-y-auto p-6 md:p-8 scroll-smooth">
+      
+      {/* Cinematic Letterbox Overlay */}
+      {cinematicPhase !== 'idle' && cinematicPhase !== 'settle' && (
+         <div className="fixed inset-0 z-[9999] pointer-events-none flex flex-col justify-between overflow-hidden">
+            <div className={clsx("w-full bg-black origin-top", getTopBarClasses())} />
+            <div className={clsx("w-full bg-black origin-bottom", getBottomBarClasses())} />
+         </div>
+      )}
       
       {/* 1. Top Edge-to-Edge Bar */}
       <header className="w-full max-w-7xl flex items-center justify-between pb-8">
@@ -69,24 +144,40 @@ export function CitizenHome() {
             }
             navigate({ to: '/' });
           }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 backdrop-blur-md border border-white/80 shadow-sm text-slate-700 hover:text-slate-900 transition-all font-medium text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F4F1E7]/80 backdrop-blur-md border border-[#D5D2C7] shadow-sm text-[#18231F] hover:bg-[#E1E6DE] transition-all font-medium text-sm"
         >
-          &larr; Back to home
+          &larr; Back to Portal
         </button>
-        {healthStatus && (
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-900 text-xs font-semibold border border-emerald-200/60">
-            <span className={clsx("w-2 h-2 rounded-full animate-pulse", healthStatus.connected === healthStatus.total ? "bg-emerald-500" : "bg-amber-500")} />
-            {healthStatus.connected}/{healthStatus.total} departments connected
-          </span>
-        )}
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E1E6DE]/90 text-[#23483A] text-xs font-semibold border border-[#D5D2C7]">
+          <span className="w-2 h-2 rounded-full bg-[#176B52] animate-pulse" />
+          All Systems Live
+        </span>
       </header>
 
       <div className="relative z-10 flex w-full max-w-6xl flex-col items-center py-4 px-4 md:px-12">
         
         {/* 2. Header & Branding */}
-        <h1 className="uppercase font-extrabold text-2xl tracking-[0.25em] text-slate-900 mb-10 md:mb-14 drop-shadow-sm" data-grid-avoid>
-          TENREC
+        <h1 className="uppercase font-extrabold text-2xl tracking-[0.25em] text-[#18231F] mb-6 drop-shadow-sm">
+          TENRIC
         </h1>
+
+        {/* 3. Top Horizontal Dock */}
+        <div className="mb-10 md:mb-14 relative z-20">
+          <FloatingDock 
+            items={dockItems} 
+            activeId={activeTask || 'home'} 
+            onSelect={(id) => {
+              if (id === 'home') {
+                setActiveTask(null);
+              } else {
+                if (!activeTask) {
+                  const action = ACTIONS.find(a => a.id === id);
+                  if (action) handleAction(action.id, action.to);
+                }
+              }
+            }}
+          />
+        </div>
 
         {/* 4. The 2x2 Bento Glass Grid */}
         <div className={clsx(
@@ -100,49 +191,34 @@ export function CitizenHome() {
                 shadowIntensity="md"
                 glowIntensity="sm"
                 borderRadius="1.5rem"
-                className="w-full h-full min-h-[260px] flex flex-col justify-between bg-white/60 backdrop-blur-xl border border-white/80 shadow-lg shadow-slate-900/5 rounded-3xl p-6 transition-all duration-300 hover:bg-white/80 hover:shadow-xl hover:-translate-y-1"
+                className="w-full h-full min-h-[260px] flex flex-col justify-between p-6 rounded-3xl bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:bg-white/35 hover:border-white/60 hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all cursor-pointer"
               >
                 <button
                   onClick={() => handleAction(action.id, action.to)}
-                  className="absolute inset-0 w-full h-full text-left focus-visible:outline-2 focus-visible:outline-emerald-500 rounded-3xl z-40"
+                  className="absolute inset-0 w-full h-full text-left focus-visible:outline-2 focus-visible:outline-[#176B52] rounded-3xl z-40"
                   aria-label={action.label}
                 />
                 
-                {/* Dynamic Inner Glow */}
-                <div className="absolute -top-24 -right-24 w-56 h-56 bg-emerald-500/20 blur-[50px] rounded-full group-hover:bg-emerald-500/30 transition-colors duration-500 pointer-events-none z-0" />
-                
-                <div className="flex items-start justify-between w-full mb-8 relative z-10 pointer-events-none">
-                  <span className="flex items-center justify-center bg-white/90 border border-slate-200/80 shadow-sm p-3 rounded-2xl text-emerald-800 transition-colors duration-300">
-                    <action.icon size={26} strokeWidth={1.5} />
-                  </span>
-                  <span className="flex items-center justify-center p-2 rounded-full bg-slate-900/5 text-slate-700 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                    <ArrowUpRight size={24} strokeWidth={2} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-                  </span>
+                <div className="flex items-start justify-between w-full mb-4 relative z-10 pointer-events-none">
+                  <div className="p-3 rounded-2xl bg-white/30 border border-white/40">
+                    <action.icon className="w-6 h-6 text-[#18231F]" />
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-[#6F7768] group-hover:text-[#18231F] transition-colors" />
                 </div>
 
                 <div className="relative z-10 mt-auto pointer-events-none">
-                  <h3 className="text-slate-900 font-bold text-xl mb-2 tracking-tight" data-grid-avoid>
+                  <h3 className="text-[#18231F] font-bold text-xl mb-1 tracking-tight">
                     {action.label}
                   </h3>
-                  <p className="text-slate-600 text-sm leading-relaxed mt-1 opacity-100 font-sans" data-grid-avoid>
+                  <p className="text-[#6F7768] text-sm leading-relaxed mt-1 opacity-100 font-sans">
                     {action.desc}
                   </p>
-                  {action.subtext && (
-                    <p className="text-slate-500 text-xs font-medium mt-4 pt-4 border-t border-slate-200/50" data-grid-avoid>
-                      {action.subtext}
-                    </p>
-                  )}
                 </div>
               </LiquidGlassCard>
             </div>
           ))}
         </div>
       </div>
-      </main>
     </div>
   );
 }
-
-
-
-

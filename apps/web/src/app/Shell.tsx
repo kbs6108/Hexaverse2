@@ -7,6 +7,7 @@ import { roleAtLeast } from '@/lib/auth';
 import { SearchBox } from '@/features/map/SearchBox';
 import { UserMenu } from '@/features/auth/UserMenu';
 import { QuickNav } from '@/components/QuickNav';
+import { GradientBackground } from '@/components/ui/paper-shader-bg';
 import type { Role } from '@/lib/cdm';
 
 export function LogoMark({ size = 26 }: { size?: number }) {
@@ -56,26 +57,33 @@ export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
   const minimal = pathname.startsWith('/verify/') || pathname === '/login' || pathname === '/welcome' || pathname === '/help';
+  const hideSidebar = minimal || pathname.startsWith('/citizen');
   const isMap = pathname === '/map';
   const label = routeLabel(pathname);
   const mainRef = useRouteFade(pathname);
 
+  const isCitizenHome = pathname === '/citizen' || pathname === '/citizen/';
+
   // The cinematic landing at `/` renders full-bleed without app chrome.
   // scroll-smooth keeps dock anchor jumps gentle (scoped here so app-side
   // scrolling is untouched).
-  if (pathname === '/') {
+  if (pathname === '/' || pathname === '/login' || isCitizenHome) {
     return (
       <>
-        <main ref={mainRef} className="h-full overflow-y-auto scroll-smooth">
+        {pathname !== '/' && <GradientBackground />}
+        <main ref={mainRef} className="w-full min-h-screen flex-1 overflow-y-auto scroll-smooth">
           <Outlet />
+          {!isCitizenHome && <QuickNav />}
         </main>
-        <QuickNav />
       </>
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <>
+      {pathname !== '/' && <GradientBackground />}
+      <div className="flex h-full min-h-0 flex-col relative z-10 bg-white/40">
+
       <header className="z-30 flex h-12 shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
         <Link
           to="/"
@@ -115,8 +123,8 @@ export function Shell() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        {!minimal && (
+      <div className="flex min-h-0 flex-1 w-full">
+        {!hideSidebar && (
           <nav aria-label="Primary" className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-line bg-panel py-2">
             {NAV.filter((n) => roleAtLeast(role, n.min)).map((n) => {
               const active = pathname.startsWith(n.to);
@@ -137,11 +145,12 @@ export function Shell() {
             })}
           </nav>
         )}
-        <main ref={mainRef} className={clsx('relative min-w-0 flex-1', isMap ? 'overflow-hidden' : 'overflow-y-auto scroll-thin scroll-smooth')}>
+        <main ref={mainRef} className={clsx('relative w-full flex-1', isMap ? 'overflow-hidden' : 'overflow-y-auto scroll-thin scroll-smooth')}>
           <Outlet />
         </main>
       </div>
-      <QuickNav />
+      {!pathname.startsWith('/citizen') && <QuickNav />}
     </div>
+    </>
   );
 }
