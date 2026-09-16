@@ -272,7 +272,7 @@ export function LandingPage() {
       <section id="stories" className="mt-16 scroll-mt-20">
         <SectionHeading kicker="See it on real scenarios" title="Story parcels" />
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
-          Six hand-tuned parcels demonstrate the workflows end to end. Jump straight to one.
+          Eight hand-tuned parcels across three states demonstrate the workflows end to end. Jump straight to one.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {STORY_PARCELS.map((p) => (

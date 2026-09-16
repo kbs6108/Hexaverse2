@@ -129,6 +129,12 @@ export const GLOSSARY: Term[] = [
   { term: 'Provenance', def: 'For each field: which source system it came from, whether that system responded, and when.' },
   { term: 'CDM', def: 'Common Data Model — the unified parcel record the gateway assembles from all six departments.' },
   { term: 'Guideline value', def: 'The government reference price per sqm used for valuation and stamp duty.' },
+  { term: 'Patta', def: "Tamil Nadu's record of land ownership (with the chitta, its extent register) — the TN equivalent of the RoR." },
+  { term: 'Pattadar passbook', def: "Telangana's owner document under Dharani — the passbook number identifies the holding." },
+  { term: 'Meebhoomi', def: "Andhra Pradesh's online land-records portal; the AP revenue system in this demo speaks its vocabulary." },
+  { term: 'Patta Chitta', def: "Tamil Nadu's online land-records service; the TN dialect the demo's adapter translates." },
+  { term: 'Dharani', def: "Telangana's integrated land records and registration portal; the TG dialect in this demo." },
+  { term: 'Resurvey', def: 'A state programme re-measuring land with modern survey methods; parcels here carry a resurvey status of completed, in progress or pending.' },
 ];
 
 export interface QuickStep {
@@ -137,6 +143,7 @@ export interface QuickStep {
 }
 
 export const QUICK_START: QuickStep[] = [
+  { title: 'Pick a state', detail: 'The map opens on all of India — click a state card (AP · TN · TG) or use the Regions panel to fly into a cluster.' },
   { title: 'Pick an identity', detail: 'Use the role switcher (dev mode) or sign in. Each role sees a different slice of the app.' },
   { title: 'Click a parcel', detail: 'Any parcel on the map opens its profile. Try a story parcel from the chips or the list below.' },
   { title: 'Read the profile', detail: 'Each tab — ownership, registration, planning, fiscal, utilities, satellite — shows its source and provenance.' },
@@ -150,7 +157,7 @@ export interface Faq {
 
 export const FAQ: Faq[] = [
   { q: 'Why is an owner’s name masked?', a: 'Citizens see masked owner details on parcels they neither own nor have consent for. The owner and officers see full detail; consent can be granted for time-boxed access.' },
-  { q: 'Is this real land data?', a: 'No. The cadastre is synthetic demo data generated over a real Mangalagiri bounding box, so nothing here is a genuine government record.' },
+  { q: 'Is this real land data?', a: 'No. The cadastre is synthetic demo data generated over three real bounding boxes — Mangalagiri (AP), Sriperumbudur (TN) and Shamshabad (TG) — so the places are real but nothing here is a genuine government record.' },
   { q: 'What do the parcel colours mean?', a: 'Status is never colour-only, but as a guide: amber = attention (pending mutation, tax arrears, change alert), brick = disputed, violet = mortgaged, green = clean.' },
   { q: 'How do six departments become one record?', a: 'A gateway calls each department through an adapter, maps its vocabulary into the Common Data Model, and returns the merged parcel with per-source provenance and consistency checks.' },
   { q: 'Where does the AI run?', a: 'Risk briefs and officer advice run on NVIDIA Build (an OpenAI-compatible hosted model) when a key is configured; without one, a deterministic rule engine produces the same structure. Every insight is labelled with the engine that produced it.' },
@@ -268,5 +275,7 @@ export const MAP_READING: MapReading[] = [
   { cue: 'Red dashed box + marker', meaning: 'Satellite change alert — imagery suggests unrecorded construction or land-use change.' },
   { cue: 'Amber parcel', meaning: 'Needs attention: a pending mutation, tax arrears, or an open alert.' },
   { cue: 'Survey-number labels', meaning: 'Appear at zoom 16 and closer, from the Base layer tier.' },
-  { cue: '3D units · preview', meaning: 'Extrudes seeded buildings into floors and units (3D-ULPIN), tilting the camera.' },
+  { cue: '3D units · preview', meaning: 'Extrudes seeded buildings into floors and units (3D-ULPIN), tilting the camera. Units are clickable for their data card.' },
+  { cue: 'State cluster cards', meaning: 'At national zoom each state shows one card (name, district, parcel count) — click it to fly into that cluster.' },
+  { cue: 'Dotted green/amber areas', meaning: 'The Settlement / resurvey layer: green = resurvey completed, amber = in progress, per state programme.' },
 ];

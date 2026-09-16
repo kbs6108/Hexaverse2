@@ -60,7 +60,7 @@ export function LoginPage() {
         <LogoMark size={36} />
         <div>
           <h1 className="text-2xl font-semibold">Land Stack</h1>
-          <p className="text-sm text-ink-3">Parcel-centric land governance · Guntur pilot</p>
+          <p className="text-sm text-ink-3">Parcel-centric land governance · AP · TN · TG demo</p>
         </div>
       </div>
 

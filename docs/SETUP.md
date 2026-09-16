@@ -64,8 +64,16 @@ department docs http://localhost:8000/revenue/docs (also `/registration`, `/plan
 
 Try it with curl: `curl -H 'X-Dev-User: officer:revenue:Anitha' localhost:8000/landstack/queue`.
 
-Story parcels to click on the map (survey numbers): **123/4** clean · **124** change alert · **125/2**
-disputed · **126** mortgaged · **127/1** tax arrears + area mismatch · **128** pending mutation.
+### The entry flow
+
+`/` is the cinematic landing; "Open the live map" goes to `/map`, which opens on a **national
+overview of India**. Click a state cluster card (or use the Regions panel, top-right) to fly into
+Mangalagiri (AP), Sriperumbudur (TN) or Shamshabad (TG) — parcels render once you're inside a
+cluster. `/welcome` is the written overview, `/help` the guide.
+
+Story parcels to click on the map (survey numbers): AP — **123/4** clean · **124** change alert ·
+**125/2** disputed · **126** mortgaged · **127/1** tax arrears + area mismatch · **128** pending
+mutation; TN — **45/2** disputed (Patta Chitta dialect); TG — **77** change alert (Dharani dialect).
 
 Stop with `make down` (add `V=1` to delete the database volume). Without Docker for the app
 processes: keep `db` running (`docker compose -f infra/docker-compose.yml up -d db migrate`) and use
