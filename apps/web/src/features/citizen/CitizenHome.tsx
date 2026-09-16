@@ -45,8 +45,20 @@ export function CitizenHome() {
   return (
     <>
       <PageTitle title={`Namaste${user ? `, ${user.name.split(' ')[0]}` : ''}`} subtitle="Citizen services across the demo regions (AP · TN · TG)" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        {CARDS.map((c) => (
+          <Link key={c.to} to={c.to} className="group rounded-lg focus-visible:outline-2">
+            <Card className="h-full p-5 transition-colors group-hover:border-primary">
+              <div className="flex items-start gap-4">
+                <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"><c.icon size={22} /></span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="flex items-center gap-1 text-[17px] font-semibold">
+                    {c.label} <ArrowRight size={16} className="text-ink-3 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-2">{c.body}</p>
+                </div>
       {mine.data && mine.data.length > 0 && (
-        <Card className="mb-4 p-4">
+        <Card className="mt-4 p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold">Your applications</h2>
             <Link to="/citizen/track" className="text-xs font-medium text-primary underline-offset-2 hover:underline">View all</Link>
@@ -65,18 +77,6 @@ export function CitizenHome() {
           </ul>
         </Card>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {CARDS.map((c) => (
-          <Link key={c.to} to={c.to} className="group rounded-lg focus-visible:outline-2">
-            <Card className="h-full p-5 transition-colors group-hover:border-primary">
-              <div className="flex items-start gap-4">
-                <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"><c.icon size={22} /></span>
-                <div className="min-w-0 flex-1">
-                  <h2 className="flex items-center gap-1 text-[17px] font-semibold">
-                    {c.label} <ArrowRight size={16} className="text-ink-3 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                  </h2>
-                  <p className="mt-1 text-sm text-ink-2">{c.body}</p>
-                </div>
               </div>
             </Card>
           </Link>

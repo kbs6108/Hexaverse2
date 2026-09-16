@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { Box, ChevronDown, Layers, PanelLeftClose, PanelLeftOpen, Satellite, TriangleAlert } from 'lucide-react';
 import { env } from '@/lib/env';
 import { useUI, type ColourBy, type LayerId } from '@/lib/store';
+import { roleAtLeast, useAuth } from '@/lib/auth';
 import { Checkbox, Field, Select } from '@/components/Field';
 import { C, COLOUR_BY_OPTIONS, LEGENDS, type LegendEntry } from './legend';
 
@@ -60,7 +61,9 @@ const TIERS: { key: string; title: string; layers: LayerDef[] }[] = [
 ];
 
 export function LayerPanel() {
-  const { layers, toggleLayer, colourBy, setColourBy, basemap, setBasemap, show3D, setShow3D, layerPanelOpen, setLayerPanelOpen } = useUI();
+  const { layers, toggleLayer, colourBy, setColourBy, basemap, setBasemap, show3D, setShow3D, layerPanelOpen, setLayerPanelOpen, usecaseTierOpen, setUsecaseTierOpen } = useUI();
+  const { role } = useAuth();
+  const usecaseOpen = usecaseTierOpen ?? roleAtLeast(role, 'officer');
 
   if (!layerPanelOpen) {
     return (
@@ -109,7 +112,15 @@ export function LayerPanel() {
         </div>
 
         {TIERS.map((tier) => (
-          <Tier key={tier.key} title={tier.title} defaultOpen={tier.key !== 'usecase'}>
+          <Tier
+            key={tier.key}
+            title={tier.title}
+            defaultOpen={tier.key !== 'usecase'}
+            // Use-case: officers/admin get it expanded by default (their daily layers);
+            // citizens/first-timers get it folded. Either way the user's choice sticks.
+            open={tier.key === 'usecase' ? usecaseOpen : undefined}
+            onToggle={tier.key === 'usecase' ? setUsecaseTierOpen : undefined}
+          >
             {tier.layers.map((l) => (
               <div key={l.id} className="py-1">
                 <Checkbox label={l.label} hint={l.hint} checked={!!layers[l.id]} onChange={(e) => toggleLayer(l.id, e.target.checked)} />
@@ -158,14 +169,23 @@ export function LayerPanel() {
   );
 }
 
-function Tier({ title, defaultOpen, children }: { title: string; defaultOpen: boolean; children: ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen);
+function Tier({ title, defaultOpen, open: controlledOpen, onToggle, children }: {
+  title: string;
+  defaultOpen: boolean;
+  /** Controlled mode (used for the Use-case tier so the choice is remembered). */
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  const [localOpen, setLocalOpen] = useState(defaultOpen);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = (next: boolean) => (onToggle ? onToggle(next) : setLocalOpen(next));
   return (
     <section className="border-b border-line">
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between px-3 py-2 text-left text-[11.5px] font-semibold uppercase tracking-wide text-ink-2 hover:bg-ground-2"
       >
         {title}

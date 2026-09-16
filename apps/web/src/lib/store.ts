@@ -78,6 +78,10 @@ interface UIState {
   flyTo: { bbox: [number, number, number, number]; nonce: number } | null;
   recentParcels: RecentParcel[];
   boundaryEdit: BoundaryEdit | null;
+  /** Tier-3 "Use-case" section: null = role default (officers/admin open, citizens closed). */
+  usecaseTierOpen: boolean | null;
+  /** One-time "click a state to fly in" hint on the national overview. */
+  seenOverviewHint: boolean;
 
   select: (ulpin: string | null) => void;
   setHover: (ulpin: string | null) => void;
@@ -94,6 +98,8 @@ interface UIState {
   moveBoundaryVertex: (index: number, pos: [number, number]) => void;
   setBoundaryRing: (ring: [number, number][]) => void;
   cancelBoundaryEdit: () => void;
+  setUsecaseTierOpen: (open: boolean) => void;
+  dismissOverviewHint: () => void;
 }
 
 export const useUI = create<UIState>()(
@@ -111,6 +117,8 @@ export const useUI = create<UIState>()(
       flyTo: null,
       recentParcels: [],
       boundaryEdit: null,
+      usecaseTierOpen: null,
+      seenOverviewHint: false,
 
       select: (ulpin) => set({ selectedUlpin: ulpin, drawerOpen: ulpin !== null }),
       setHover: (ulpin) => set({ hoverUlpin: ulpin }),
@@ -131,6 +139,8 @@ export const useUI = create<UIState>()(
           : {}),
       setBoundaryRing: (ring) => set((s) => (s.boundaryEdit ? { boundaryEdit: { ...s.boundaryEdit, ring } } : {})),
       cancelBoundaryEdit: () => set({ boundaryEdit: null }),
+      setUsecaseTierOpen: (open) => set({ usecaseTierOpen: open }),
+      dismissOverviewHint: () => set({ seenOverviewHint: true }),
     }),
     {
       name: 'landstack-ui',
@@ -141,6 +151,8 @@ export const useUI = create<UIState>()(
         devUser: s.devUser,
         layerPanelOpen: s.layerPanelOpen,
         recentParcels: s.recentParcels,
+        usecaseTierOpen: s.usecaseTierOpen,
+        seenOverviewHint: s.seenOverviewHint,
       }),
       // Deep-merge persisted layers over the defaults: zustand's persist replaces the
       // whole `layers` object, so a browser that stored it before a new LayerId shipped
