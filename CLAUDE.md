@@ -26,9 +26,9 @@ service requests), open APIs + auth + RBAC + audit, and a Standard Technical Doc
 Differentiator vs the real DoLR pilot (Chandigarh/TN, Dec 2025): the *open interoperability layer*
 — adapter model with per-state field mappings, event contract, consent-aware access, OGC-shaped APIs.
 
-Owner: Rishith (rvulli@tenstorrent.com). Team is mixed Python + JS. Claude builds components;
-Rishith adds ideas/tools/components on top. Time is not the constraint — quality and seamlessness are.
-Everything external must be free. Hosting target: Rishith's Firebase project (Blaze plan) → Firebase
+Team is mixed Python + JS; agents build components, the team adds ideas/tools on top. Time is not
+the constraint — quality and seamlessness are.
+Everything external must be free. Hosting target: a Firebase project (Blaze plan) → Firebase
 Hosting (web) + Cloud Run (API) + Neon (PostGIS, free) + Firebase Auth. 2D first; data model and map
 stack are already 3D-ready (buildings → floors → units, `ulpin_3d = <ULPIN>-F01-U01`, MapLibre
 fill-extrusion behind the "3D units · preview" toggle). Future: 3D-ULPIN blocks / 3D map generation.
@@ -57,7 +57,7 @@ Makefile              up · down · migrate · seed · demo-reset · dev-api · 
 
 Running end-to-end on the local Docker stack and green in CI (real PostGIS: migrate + seed + 73
 tests; web tsc + build). Since the original hand-off the platform gained, in order:
-- Cinematic landing at `/` (Karthik's template, emerald), map at `/map`, marketing `/welcome` + `/help`,
+- Cinematic landing at `/` (teammate's template, emerald), map at `/map`, marketing `/welcome` + `/help`,
   QuickNav, government-identity header badge + footer (honest "Built for GoI/MoRD" framing).
 - **Three states** (Phase 2): Mangalagiri AP · Sriperumbudur TN · Shamshabad TG, ~150 scattered
   parcels each (575 total), per-state revenue dialects (Meebhoomi / Patta Chitta / Dharani) served
@@ -91,7 +91,7 @@ unverified.
 
 - 2026-09-16 `2621476` chore: dead-code cleanup (OverviewHint, ls_seen_welcome) + actions v5.
 - 2026-09-16 `d4eb974` perf: lazy landing/officer routes (−52% first load), memoized hot lists.
-- 2026-09-16 `9e11d4b` (Rishith) FaintTelemetry hero + landing typography restyle (+`9c493f7` type fix).
+- 2026-09-16 `9e11d4b` (team) FaintTelemetry hero + landing typography restyle (+`9c493f7` type fix).
 - 2026-09-16 `218c92c` refinement Phases 1–4: nav simplification, design unification, landing bento, docs currency.
 - 2026-09-15 `31fb0b6` NVIDIA models verified per key (nemotron-3-super + 11b vision, reasoning-safe budgets).
 - 2026-09-15 `69c9d17` upgrade phases A–E: AI assist (NVIDIA + rule engine, auto-triggering), keyless imagery,
