@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { Box, ChevronDown, Layers, PanelLeftClose, PanelLeftOpen, Satellite, TriangleAlert } from 'lucide-react';
 import { env } from '@/lib/env';
+import { useShallow } from 'zustand/react/shallow';
 import { useUI, type ColourBy, type LayerId } from '@/lib/store';
 import { roleAtLeast, useAuth } from '@/lib/auth';
 import { Checkbox, Field, Select } from '@/components/Field';
@@ -61,7 +62,24 @@ const TIERS: { key: string; title: string; layers: LayerDef[] }[] = [
 ];
 
 export function LayerPanel() {
-  const { layers, toggleLayer, colourBy, setColourBy, basemap, setBasemap, show3D, setShow3D, layerPanelOpen, setLayerPanelOpen, usecaseTierOpen, setUsecaseTierOpen } = useUI();
+  // useShallow: the panel must not re-render on every map hover/select (those live
+  // in the same store) — only on the slices it actually renders.
+  const { layers, toggleLayer, colourBy, setColourBy, basemap, setBasemap, show3D, setShow3D, layerPanelOpen, setLayerPanelOpen, usecaseTierOpen, setUsecaseTierOpen } = useUI(
+    useShallow((s) => ({
+      layers: s.layers,
+      toggleLayer: s.toggleLayer,
+      colourBy: s.colourBy,
+      setColourBy: s.setColourBy,
+      basemap: s.basemap,
+      setBasemap: s.setBasemap,
+      show3D: s.show3D,
+      setShow3D: s.setShow3D,
+      layerPanelOpen: s.layerPanelOpen,
+      setLayerPanelOpen: s.setLayerPanelOpen,
+      usecaseTierOpen: s.usecaseTierOpen,
+      setUsecaseTierOpen: s.setUsecaseTierOpen,
+    })),
+  );
   const { role } = useAuth();
   const usecaseOpen = usecaseTierOpen ?? roleAtLeast(role, 'officer');
 

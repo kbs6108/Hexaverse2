@@ -1,4 +1,4 @@
-import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent, redirect } from '@tanstack/react-router';
 import { Shell } from './Shell';
 import { awaitAuthReady, currentUser, roleAtLeast } from '@/lib/auth';
 import type { Role } from '@/lib/cdm';
@@ -7,7 +7,9 @@ import { CitizenLayout, CitizenHome } from '@/features/citizen/CitizenHome';
 import { VerifyOwnership } from '@/features/citizen/VerifyOwnership';
 import { TrackApplication } from '@/features/citizen/TrackApplication';
 import { ServiceRequest } from '@/features/citizen/ServiceRequest';
-import { OfficerLayout, OfficerConsole } from '@/features/officer/OfficerConsole';
+// Lazy: OfficerConsole drags the echarts chunk (~384 kB gz) — load it only when visited.
+const OfficerLayout = lazyRouteComponent(() => import('@/features/officer/OfficerConsole'), 'OfficerLayout');
+const OfficerConsole = lazyRouteComponent(() => import('@/features/officer/OfficerConsole'), 'OfficerConsole');
 import { QueuePage } from '@/features/officer/Queue';
 import { AlertsPage } from '@/features/officer/Alerts';
 import { AdminConsole } from '@/features/admin/AdminConsole';
@@ -15,7 +17,9 @@ import { VerifyPage } from '@/features/verify/VerifyPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { LandingPage } from '@/features/marketing/LandingPage';
 import { HelpPage } from '@/features/marketing/HelpPage';
-import { CinematicLanding } from '@/features/landing/LandingPage';
+// Lazy: the cinematic landing carries three.js + framer-motion — keep them out of the
+// first-load chunk for every app page; the landing shows the pending veil while it loads.
+const CinematicLanding = lazyRouteComponent(() => import('@/features/landing/LandingPage'), 'CinematicLanding');
 import { NotFound } from './NotFound';
 
 const rootRoute = createRootRoute({ component: Shell, notFoundComponent: NotFound });
@@ -112,7 +116,17 @@ const routeTree = rootRoute.addChildren([
   adminRoute,
 ]);
 
-export const router = createRouter({ routeTree, defaultPreload: 'intent', scrollRestoration: true });
+function PendingVeil() {
+  return <div className="h-full w-full bg-ground" aria-busy="true" />;
+}
+
+export const router = createRouter({
+  routeTree,
+  defaultPreload: 'intent',
+  scrollRestoration: true,
+  defaultPendingComponent: PendingVeil,
+  defaultPendingMs: 80,
+});
 
 declare module '@tanstack/react-router' {
   interface Register {

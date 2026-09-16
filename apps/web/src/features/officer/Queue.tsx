@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
@@ -19,6 +19,53 @@ import { PageTitle } from '@/features/citizen/CitizenHome';
 
 const TYPES = ['mutation', 'building_permission', 'field_review', 'boundary_correction', 'ownership_verification'];
 const DEPTS = ['revenue', 'registration', 'planning'];
+
+/** One queue row, memoized: the 20-second poll returns fresh objects for unchanged
+ *  applications, so equality is by the fields the row renders. */
+const QueueRow = memo(
+  function QueueRow({ a, selected, quickPending, onOpen, onQuick }: {
+    a: Application;
+    selected: boolean;
+    quickPending: boolean;
+    onOpen: (a: Application | null) => void;
+    onQuick: (a: Application, action: string) => void;
+  }) {
+    const next = quickAdvanceAction(a);
+    return (
+      <tr
+        tabIndex={0}
+        onClick={() => onOpen(a)}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen(a))}
+        className={clsx('cursor-pointer border-t border-line hover:bg-ground-2 focus-visible:bg-ground-2', selected && 'bg-primary-soft/50')}
+      >
+        <td className="px-3 py-2 font-mono text-[13px]">{a.id}</td>
+        <td className="px-3 py-2">{titleCase(a.type)}{(a.payload as { system_initiated?: boolean }).system_initiated && <span className="ml-1 rounded bg-violet-soft px-1 text-[10px] text-violet">system</span>}</td>
+        <td className="px-3 py-2">
+          <Link to="/map" search={{ ulpin: a.ulpin }} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{a.survey_no ? `Sy. ${a.survey_no}` : a.ulpin}</Link>
+        </td>
+        <td className="px-3 py-2">{a.applicant_name ?? '—'}</td>
+        <td className="px-3 py-2"><StatusBadge status={a.status} /></td>
+        <td className="px-3 py-2 text-ink-2">{titleCase(a.assigned_department)}</td>
+        <td className="px-3 py-2 text-ink-3" title={fmtDate(a.created_at, true)}>{relTime(a.created_at)}</td>
+        <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+          {next ? (
+            <Button size="sm" icon={<ChevronRight size={13} />} loading={quickPending} onClick={() => onQuick(a, next.action)}>
+              {next.label}
+            </Button>
+          ) : (
+            <span className="text-xs text-ink-3">open to decide</span>
+          )}
+        </td>
+      </tr>
+    );
+  },
+  (prev, next) =>
+    prev.a.id === next.a.id &&
+    prev.a.status === next.a.status &&
+    prev.a.updated_at === next.a.updated_at &&
+    prev.selected === next.selected &&
+    prev.quickPending === next.quickPending,
+);
 
 export function QueuePage() {
   const { user } = useAuth();
@@ -104,39 +151,14 @@ export function QueuePage() {
               </thead>
               <tbody>
                 {rows.map((a) => (
-                  <tr
+                  <QueueRow
                     key={a.id}
-                    tabIndex={0}
-                    onClick={() => openApp(a)}
-                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), openApp(a))}
-                    className={clsx('cursor-pointer border-t border-line hover:bg-ground-2 focus-visible:bg-ground-2', a.id === search.app && 'bg-primary-soft/50')}
-                  >
-                    <td className="px-3 py-2 font-mono text-[13px]">{a.id}</td>
-                    <td className="px-3 py-2">{titleCase(a.type)}{(a.payload as { system_initiated?: boolean }).system_initiated && <span className="ml-1 rounded bg-violet-soft px-1 text-[10px] text-violet">system</span>}</td>
-                    <td className="px-3 py-2">
-                      <Link to="/map" search={{ ulpin: a.ulpin }} onClick={(e) => e.stopPropagation()} className="text-primary underline-offset-2 hover:underline">{a.survey_no ? `Sy. ${a.survey_no}` : a.ulpin}</Link>
-                    </td>
-                    <td className="px-3 py-2">{a.applicant_name ?? '—'}</td>
-                    <td className="px-3 py-2"><StatusBadge status={a.status} /></td>
-                    <td className="px-3 py-2 text-ink-2">{titleCase(a.assigned_department)}</td>
-                    <td className="px-3 py-2 text-ink-3" title={fmtDate(a.created_at, true)}>{relTime(a.created_at)}</td>
-                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                      {(() => {
-                        const next = quickAdvanceAction(a);
-                        if (!next) return <span className="text-xs text-ink-3">open to decide</span>;
-                        return (
-                          <Button
-                            size="sm"
-                            icon={<ChevronRight size={13} />}
-                            loading={quick.isPending && quick.variables?.app.id === a.id}
-                            onClick={() => quick.mutate({ app: a, action: next.action })}
-                          >
-                            {next.label}
-                          </Button>
-                        );
-                      })()}
-                    </td>
-                  </tr>
+                    a={a}
+                    selected={a.id === search.app}
+                    quickPending={quick.isPending && quick.variables?.app.id === a.id}
+                    onOpen={openApp}
+                    onQuick={(app, action) => quick.mutate({ app, action })}
+                  />
                 ))}
               </tbody>
             </table>
