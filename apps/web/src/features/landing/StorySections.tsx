@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowDown, ArrowRight, Check, Search } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, EyeOff, PenLine, QrCode, Search, Sparkles } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { DEPARTMENTS, PITCH_FIGURES, QUICK_START, ROLES, STORY_PARCELS, TIERS } from '@/features/marketing/pitch';
@@ -119,7 +119,7 @@ function ParcelMap() {
         <div className="absolute left-[58%] top-[14%] h-36 w-48 rotate-6 border border-[#86EFAC]/35" />
         <div className="absolute left-[37%] top-[34%] h-3 w-3 rounded-full bg-[#86EFAC] shadow-[0_0_20px_7px_rgba(134,239,172,.45)]" />
         <motion.div initial={{ y: -35, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }} viewport={{ once: true }} className="absolute left-[36%] top-[25%] font-mono text-[10px] tracking-widest text-[#86EFAC]">
-          ULPIN-1403-PB-889
+          TFCM91641E6C82
         </motion.div>
       </motion.div>
     </div>
@@ -274,9 +274,9 @@ function StoriesSection() {
   return (
     <section id="stories" className="landing-section bg-ground px-6 py-28 sm:px-12">
       <InfoHeader
-        kicker="Six parcels / six stories"
+        kicker="Eight parcels / three states"
         title="See it on real records"
-        sub="The demo cadastre seeds six named parcels, each telling one land-governance story. Click any of them to open it on the live map."
+        sub="The demo cadastre seeds eight named parcels across Andhra Pradesh, Tamil Nadu and Telangana — each telling one land-governance story. Click any of them to open it on the live map."
       />
       <div className="mx-auto mt-14 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {STORY_PARCELS.map((p, i) => (
@@ -296,6 +296,86 @@ function StoriesSection() {
             </MapLaunch>
           </motion.div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function CapabilitiesBento() {
+  // The keep-list features that had no landing presence: mixed-size tiles, one
+  // sentence each, two quiet micro-animations (reduced-motion aware).
+  const tile = 'rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)]';
+  return (
+    <section id="capabilities" className="landing-section bg-white px-6 py-28 sm:px-12">
+      <InfoHeader
+        kicker="Beyond the record"
+        title="Built like infrastructure, not a viewer"
+        sub="The parts you only notice when you need them — analysis, controlled change, verification and privacy."
+      />
+      <div className="mx-auto mt-14 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* AI briefs — wide tile with a living risk meter */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6 }} className={`${tile} sm:col-span-2`}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-violet-soft"><Sparkles size={20} className="text-violet" /></span>
+            <h3 className="font-display text-lg font-semibold text-ink">AI risk briefs</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">Flagged parcels are analysed automatically — a risk score, the findings behind it and recommended actions, with the engine that produced them named on the card.</p>
+          <div className="mt-4 rounded-lg border border-violet/20 bg-violet-soft/40 p-3">
+            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-violet">
+              <span>Risk analysis</span><span>nvidia · nemotron</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70">
+              <div className="bento-meter h-full rounded-full bg-violet" />
+            </div>
+          </div>
+        </motion.div>
+        {/* Satellite alerts — scanline micro-animation */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.06 }} className={tile}>
+          <div className="relative h-20 overflow-hidden rounded-lg bg-[#0D1A13]">
+            <div className="absolute inset-0 [background-image:linear-gradient(rgba(134,239,172,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(134,239,172,.12)_1px,transparent_1px)] [background-size:18px_18px]" />
+            <div className="bento-scanline absolute left-0 right-0 h-px bg-[#86EFAC] shadow-[0_0_12px_2px_rgba(134,239,172,0.6)]" />
+            <span className="absolute bottom-1.5 right-2 font-mono text-[9px] uppercase tracking-widest text-[#86EFAC]/80">Sentinel-2</span>
+          </div>
+          <h3 className="mt-4 font-display text-base font-semibold text-ink">Satellite change alerts</h3>
+          <p className="mt-1.5 text-sm leading-6 text-ink-2">Unrecorded construction is flagged from orbit — and becomes a field review in one click.</p>
+        </motion.div>
+        {/* 3D units */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.12 }} className={tile}>
+          <div className="flex h-20 items-end justify-center gap-1.5 rounded-lg bg-ground p-3">
+            {[8, 14, 20, 11].map((h, i) => (
+              <div key={i} className="w-6 rounded-t-sm bg-primary/70" style={{ height: `${h * 3}px` }} />
+            ))}
+            <div className="w-6 rounded-sm border border-brick/60 bg-brick/20" style={{ height: '8px' }} title="basement" />
+          </div>
+          <h3 className="mt-4 font-display text-base font-semibold text-ink">Vertical property</h3>
+          <p className="mt-1.5 text-sm leading-6 text-ink-2">Click a unit in 3D for its 3D-ULPIN, floor area and elevation band — basements included.</p>
+        </motion.div>
+        {/* Boundary editing */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.18 }} className={tile}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary-soft"><PenLine size={20} className="text-primary" /></span>
+            <h3 className="font-display text-base font-semibold text-ink">Bounded boundary edits</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">Officers drag a parcel's corners; validation enforces the norms (±15% area, no overlaps) and a second approval applies it. Nothing changes silently.</p>
+        </motion.div>
+        {/* Reports + QR */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.24 }} className={tile}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-slate-soft"><QrCode size={20} className="text-slate" /></span>
+            <h3 className="font-display text-base font-semibold text-ink">Verifiable reports</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">Signed Land Information Reports with a QR code anyone can scan to verify — on a phone, in seconds.</p>
+        </motion.div>
+        {/* Consent / masking */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.3 }} className={`${tile} sm:col-span-2`}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-amber-soft"><EyeOff size={20} className="text-amber" /></span>
+            <h3 className="font-display text-lg font-semibold text-ink">Privacy by consent</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">
+            Owner details are masked for everyone except the owner and consented parties — <span className="font-mono text-[13px] text-ink">R*** K***</span> until consent turns it into <span className="font-mono text-[13px] text-ink">Ravi Kumar</span>. Time-boxed grants, fully audited.
+          </p>
+        </motion.div>
       </div>
     </section>
   );
@@ -342,7 +422,7 @@ export function StorySections() {
           <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="w-full max-w-xl rounded-xl border border-[#86EFAC]/40 bg-[#0D1A13]/95 p-3 shadow-[0_24px_60px_-24px_rgba(13,26,19,0.55)] backdrop-blur-xl">
             <div className="flex items-center gap-4 border-b border-[#86EFAC]/20 px-3 py-4">
               <Search size={18} className="text-[#86EFAC]" />
-              <span className="font-mono text-sm text-[#EFFFF7]">ULPIN-1403-PB-889</span>
+              <span className="font-mono text-sm text-[#EFFFF7]">TFCM91641E6C82</span>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 font-mono text-[10px] uppercase tracking-widest text-[#86EFAC]/70">
               <span>RoR / synced</span>
@@ -355,6 +435,8 @@ export function StorySections() {
 
       <HowItWorksSection />
 
+      <CapabilitiesBento />
+
       <LandScene
         chapter="04"
         statement={<>For a family, a dispute is not data. <em className="text-primary">It is a question of home.</em></>}
@@ -366,21 +448,39 @@ export function StorySections() {
         id="identity"
         chapter="05"
         title={<>Different states.<br /><span className="text-primary">Common language.</span></>}
-        caption="Every state keeps its own systems and vocabulary — khata in Andhra, patta in Tamil Nadu. An adapter maps each into one Common Land Model, so onboarding a state is a mapping file, not a migration."
+        caption="Every state keeps its own systems and vocabulary — khata in Andhra Pradesh, patta in Tamil Nadu, pattadar passbook in Telangana's Dharani. An adapter maps each into one Common Land Model, so onboarding a state is a mapping file, not a migration."
         points={[
-          { head: 'Per-state adapters', sub: 'field mappings translate local vocabulary into the shared model.' },
+          { head: 'Per-state adapters', sub: 'field mappings translate local vocabulary into the shared model — live for AP, TN and TG.' },
           { head: 'Event contract', sub: 'a registered deed automatically notifies the revenue mutation queue.' },
           { head: 'Open APIs', sub: 'OGC-shaped, consent-aware endpoints any state system can integrate.' },
         ]}
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 font-display text-sm uppercase tracking-[.18em] text-ink">
-          <motion.div initial={{ x: -100, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#EFFFF7]">Andhra Pradesh</motion.div>
-          <motion.div className="h-8 w-px bg-primary" />
-          <motion.div className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#86EFAC]">State Adapter</motion.div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 font-display text-[12px] uppercase tracking-[.16em] text-ink">
+          <div className="flex w-full max-w-md justify-center gap-2">
+            {[
+              ['Andhra Pradesh', 'khata (Meebhoomi)'],
+              ['Tamil Nadu', 'patta (Chitta)'],
+              ['Telangana', 'passbook (Dharani)'],
+            ].map(([state, vocab], i) => (
+              <motion.div
+                key={state}
+                initial={{ y: -40, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true, amount: 0.6 }}
+                transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                className="flex-1 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-2 py-3 text-center"
+              >
+                <span className="block text-[10.5px] text-[#EFFFF7]">{state}</span>
+                <span className="mt-1 block font-mono text-[9px] normal-case tracking-normal text-[#86EFAC]">{vocab}</span>
+              </motion.div>
+            ))}
+          </div>
           <ArrowDown size={14} className="text-primary" />
-          <motion.div className="w-64 rounded-lg border border-primary bg-primary/10 px-5 py-4 text-center text-primary">Common Land Model</motion.div>
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.4 }} className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-3 text-center text-[#86EFAC]">Per-state adapters</motion.div>
           <ArrowDown size={14} className="text-primary" />
-          <motion.div className="font-mono text-xs text-primary">ULPIN</motion.div>
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.55 }} className="w-64 rounded-lg border border-primary bg-primary/10 px-5 py-4 text-center text-primary">Common Land Model</motion.div>
+          <ArrowDown size={14} className="text-primary" />
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.7 }} className="font-mono text-xs text-primary">TFCM91641E6C82</motion.div>
         </div>
       </SystemScene>
 

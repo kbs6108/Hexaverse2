@@ -214,6 +214,24 @@ code, kbd, .mono { font-family: var(--font-mono); }
   --primary-soft: #dff0e9;
 }
 
+/* Landing bento micro-animations — tiny, contained, and off under reduced motion. */
+@keyframes bento-scan {
+  0% { top: 8%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { top: 88%; opacity: 0; }
+}
+.bento-scanline { animation: bento-scan 3.2s ease-in-out infinite; }
+@keyframes bento-meter {
+  0%, 100% { width: 22%; }
+  50% { width: 68%; }
+}
+.bento-meter { animation: bento-meter 3.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .bento-scanline, .bento-meter { animation: none; }
+  .bento-meter { width: 45%; }
+}
+
 /* Map-launch transition overlay: strong page blur + a small centred loader. */
 @keyframes launch-in { from { opacity: 0; } to { opacity: 1; } }
 .map-launch-overlay { animation: launch-in 220ms ease-out both; }
