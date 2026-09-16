@@ -37,7 +37,7 @@ jobs:
       REPORT_HMAC_SECRET: ${{ secrets.REPORT_HMAC_SECRET }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: google-github-actions/auth@v2
         with:

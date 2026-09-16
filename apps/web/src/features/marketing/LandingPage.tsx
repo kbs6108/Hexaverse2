@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import { ArrowRight, MapPin } from 'lucide-react';
@@ -15,15 +14,6 @@ const btnSecondary = 'bg-panel text-ink border-line hover:bg-panel-2 hover:borde
 const btnGhost = 'bg-transparent text-ink-2 border-transparent hover:bg-ground-2 hover:text-ink';
 
 export function LandingPage() {
-  // Mark the landing as seen so the first-visit redirect (router.tsx) doesn't loop.
-  useEffect(() => {
-    try {
-      localStorage.setItem('ls_seen_welcome', '1');
-    } catch {
-      /* storage unavailable — the gate simply won't fire again */
-    }
-  }, []);
-
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
       {/* Hero */}
