@@ -7,7 +7,7 @@ import { GovBadge } from '@/features/marketing/GovStrip';
 import { createTopDockController } from './top-dock-controller';
 
 const DOCK_ITEM =
-  'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-[#515154] will-change-transform hover:bg-black/5 hover:text-[#1d1d1f]';
+  'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-ink-2 will-change-transform hover:bg-black/5 hover:text-ink';
 
 /** Anchored sections the dock tracks, in page order. */
 const SPY_SECTIONS = ['top', 'departments', 'how', 'stories'] as const;
@@ -38,7 +38,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative isolate flex min-h-screen w-full overflow-hidden bg-[#f5f5f7]">
+    <section className="relative isolate flex min-h-screen w-full overflow-hidden bg-ground">
       <ShaderAnimation />
       {/* Light veil: the emerald shader reads as a faint aurora behind dark ink. */}
       <div className="pointer-events-none absolute inset-0 bg-white/80" />
@@ -46,9 +46,9 @@ export function HeroSection() {
       <div className="pointer-events-none fixed left-0 right-0 top-5 z-[9999] flex justify-center px-4">
         <header
           id="dock"
-          className="atd-modern__bar pointer-events-auto flex w-full max-w-4xl items-center justify-between rounded-full border border-black/[0.08] bg-white/[0.72] px-4 py-2 text-[#1d1d1f] shadow-[0_10px_30px_rgba(0,0,0,0.12)] backdrop-blur-[25px] backdrop-saturate-[180%]"
+          className="atd-modern__bar pointer-events-auto flex w-full max-w-4xl items-center justify-between rounded-full border border-black/[0.08] bg-white/[0.72] px-4 py-2 text-ink shadow-[0_10px_30px_rgba(0,0,0,0.12)] backdrop-blur-[25px] backdrop-saturate-[180%]"
         >
-          <a href="#top" className="brand-wordmark shrink-0 px-2 text-[#1d1d1f]">
+          <a href="#top" className="brand-wordmark shrink-0 px-2 text-ink">
             Land Stack
           </a>
           <nav ref={dockRef} className="atd-modern__dock hidden items-center gap-1 rounded-full border border-black/[0.05] bg-black/[0.04] p-1 md:flex" aria-label="Primary navigation">
@@ -58,7 +58,7 @@ export function HeroSection() {
             <a data-dock-item data-active={active === 'stories'} href="#stories" className={DOCK_ITEM}>Stories</a>
             <Link data-dock-item to="/help" className={DOCK_ITEM}>Guide</Link>
           </nav>
-          <MapLaunch className="cta-glow shrink-0 rounded-full bg-[#0e6b54] px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#0a5a46] active:scale-[0.98]">
+          <MapLaunch className="cta-glow shrink-0 rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-white transition hover:brightness-110 active:scale-[0.98]">
             Explore Platform
           </MapLaunch>
         </header>
@@ -67,26 +67,26 @@ export function HeroSection() {
       <div id="top" className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1400px] items-center px-6 pb-16 pt-32 sm:px-10 lg:px-16">
         <div className="max-w-5xl">
           <GovBadge variant="landing" className="mb-5" />
-          <p className="mb-8 text-xs font-semibold uppercase tracking-[0.25em] text-[#6e6e73]">Land Stack / Digital land infrastructure</p>
-          <h1 className="font-display text-[clamp(3.4rem,8vw,7.5rem)] font-semibold leading-[0.91] tracking-[-0.07em] text-[#1d1d1f]">
+          <p className="mb-8 text-xs font-semibold uppercase tracking-[0.25em] text-ink-3">Land Stack / Digital land infrastructure</p>
+          <h1 className="font-display text-[clamp(3.4rem,8vw,7.5rem)] font-semibold leading-[0.91] tracking-[-0.07em] text-ink">
             Land, clearly
             <br />
             defined.
           </h1>
-          <p className="mt-10 max-w-xl text-base leading-7 text-[#515154] sm:text-lg">
+          <p className="mt-10 max-w-xl text-base leading-7 text-ink-2 sm:text-lg">
             Click any parcel and see everything government knows about it — ownership, registration, zoning, tax, disputes and utilities — assembled live from six departments through one parcel key.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-4">
-            <MapLaunch className="cta-glow inline-flex items-center gap-2.5 rounded-full bg-[#0e6b54] px-7 py-3.5 text-[15px] font-semibold text-white transition hover:bg-[#0a5a46] active:scale-[0.98]">
+            <MapLaunch className="cta-glow inline-flex items-center gap-2.5 rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white transition hover:brightness-110 active:scale-[0.98]">
               Open the live map <ArrowRight size={17} />
             </MapLaunch>
-            <a href="#departments" className="inline-flex items-center gap-2.5 rounded-full border border-[#0e6b54]/35 px-6 py-3.5 text-[15px] font-semibold text-[#0e6b54] transition hover:border-[#0e6b54] hover:bg-[#0e6b54]/5">
+            <a href="#departments" className="inline-flex items-center gap-2.5 rounded-full border border-primary/35 px-6 py-3.5 text-[15px] font-semibold text-primary transition hover:border-primary hover:bg-primary/5">
               See how it works
             </a>
           </div>
         </div>
         <a href="#departments" className="absolute bottom-8 left-6 flex items-center gap-3 text-[10px] uppercase tracking-[0.28em] text-[#86868b] sm:left-10 lg:left-16">
-          <ArrowDown size={14} className="animate-bounce text-[#0e6b54]" /> Scroll to explore
+          <ArrowDown size={14} className="animate-bounce text-primary" /> Scroll to explore
         </a>
       </div>
     </section>

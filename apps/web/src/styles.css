@@ -195,6 +195,25 @@ code, kbd, .mono { font-family: var(--font-mono); }
 /* Anchored landing sections stop below the floating dock. */
 .landing-section { scroll-margin-top: 96px; }
 
+/* The cinematic landing is committed-light (the "poster"); the app is the "tool".
+   This scope pins the shared tokens to their light values so landing components can
+   use the same token vocabulary (text-ink, bg-panel, border-line, bg-primary…)
+   without picking up dark mode. One palette, two temperaments. */
+.landing-scope {
+  --ground: #f5f5f7;
+  --ground-2: #ececf0;
+  --panel: #ffffff;
+  --panel-2: #fbfbfd;
+  --line: #e5e5ea;
+  --line-strong: #c7c7cc;
+  --ink: #1d1d1f;
+  --ink-2: #515154;
+  --ink-3: #6e6e73;
+  --primary: #0e6b54;
+  --primary-ink: #ffffff;
+  --primary-soft: #dff0e9;
+}
+
 /* Map-launch transition overlay: strong page blur + a small centred loader. */
 @keyframes launch-in { from { opacity: 0; } to { opacity: 1; } }
 .map-launch-overlay { animation: launch-in 220ms ease-out both; }
