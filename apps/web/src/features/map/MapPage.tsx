@@ -3,6 +3,9 @@ import { useSearch } from '@tanstack/react-router';
 import { MapView } from './MapView';
 import { LayerPanel } from './LayerPanel';
 import { StoryChips } from './StoryChips';
+import { RegionsPanel } from './RegionsPanel';
+import { BoundaryPanel } from './BoundaryEditor';
+import { OverviewHint } from './OverviewHint';
 import { ParcelDrawer } from '@/features/parcel/ParcelDrawer';
 import { useUI } from '@/lib/store';
 import { useOpenParcel } from './SearchBox';
@@ -23,6 +26,9 @@ export function MapPage() {
       <MapView />
       <LayerPanel />
       <StoryChips />
+      <OverviewHint />
+      <RegionsPanel />
+      <BoundaryPanel />
       <ParcelDrawer onClose={() => select(null)} />
     </div>
   );

@@ -20,15 +20,13 @@ export interface LegendEntry {
   icon?: 'alert';
 }
 
+// Exactly the classes the cadastre carries (seed / RoR classification) — a legend
+// that lists classes the data never uses reads as noise, not thoroughness.
 export const LAND_USE: LegendEntry[] = [
   { value: 'residential', label: 'Residential', colour: '#D8A24A' },
   { value: 'commercial', label: 'Commercial', colour: '#C4574A' },
   { value: 'agricultural', label: 'Agricultural', colour: '#5E9E52' },
   { value: 'industrial', label: 'Industrial', colour: '#8C7DB0' },
-  { value: 'government', label: 'Government', colour: C.slate },
-  { value: 'open_space', label: 'Open space', colour: '#9CC27A' },
-  { value: 'water_body', label: 'Water body', colour: C.water },
-  { value: 'mixed', label: 'Mixed use', colour: '#C98A6B' },
   { value: 'vacant', label: 'Vacant', colour: '#B9B5A6' },
   { value: 'public', label: 'Public / semi-public', colour: C.slate },
 ];

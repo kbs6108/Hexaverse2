@@ -22,8 +22,7 @@ export function MapLaunch({ ulpin, className, children }: { ulpin?: string; clas
     if (launching) return;
     setLaunching(true);
     timer.current = window.setTimeout(() => {
-      const nextPath = ulpin ? `/citizen?ulpin=${ulpin}` : '/citizen';
-      void navigate({ to: '/login', search: { next: nextPath } });
+      void navigate({ to: '/map', search: ulpin ? { ulpin } : {} });
     }, 850);
   };
 
@@ -42,7 +41,7 @@ export function MapLaunch({ ulpin, className, children }: { ulpin?: string; clas
           <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-line bg-panel/85 px-6 py-4 shadow-panel">
             <div className="flex items-center gap-2.5">
               <Spinner size={16} className="text-primary" />
-              <span className="text-[13px] font-medium text-ink">Opening the platform…</span>
+              <span className="text-[13px] font-medium text-ink">Opening the live map…</span>
             </div>
             <div className="h-0.5 w-40 overflow-hidden rounded-full bg-line">
               <div className="h-full w-1/3 rounded-full bg-primary animate-[launch-bar_900ms_ease-in-out_infinite]" />

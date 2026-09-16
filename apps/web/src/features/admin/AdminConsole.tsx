@@ -7,6 +7,7 @@ import { api, qk } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Field, Input } from '@/components/Field';
+import { ParcelPicker } from '@/components/ParcelPicker';
 import { Loading } from '@/components/Spinner';
 import { EmptyState, ErrorNote } from '@/components/EmptyState';
 import { Badge } from '@/components/Badge';
@@ -102,9 +103,13 @@ function Adapters() {
       <CardBody className="flex flex-col gap-4">
         {q.isLoading && <Loading />}
         {q.isError && <ErrorNote error={q.error} retry={() => void q.refetch()} />}
-        {q.data?.map((a) => (
-          <div key={a.department}>
-            <div className="mb-1 flex items-center gap-2 text-sm font-semibold">{titleCase(a.department)} <span className="font-normal text-ink-3">← {a.source_system}{a.endpoint ? ` · ${a.endpoint}` : ''}</span></div>
+        {q.data?.map((a, i) => (
+          <div key={`${a.department}-${a.state ?? i}`}>
+            <div className="mb-1 flex items-center gap-2 text-sm font-semibold">
+              {titleCase(a.department)}
+              {a.state && <Badge tone="slate">{a.state}</Badge>}
+              <span className="font-normal text-ink-3">← {a.source_system}{a.endpoint ? ` · ${a.endpoint}` : ''}</span>
+            </div>
             <div className="overflow-x-auto rounded-md border border-line">
               <table className="w-full text-[13px]">
                 <thead className="bg-ground-2 text-left text-[11px] uppercase tracking-wide text-ink-3"><tr><th className="px-3 py-1.5 font-medium">CDM field</th><th className="px-3 py-1.5 font-medium">Source field</th><th className="px-3 py-1.5 font-medium">Transform</th></tr></thead>
@@ -142,7 +147,7 @@ function SimulateDeed({ initialUlpin }: { initialUlpin: string }) {
       <CardHeader title="Simulate upstream change" subtitle="Registers a sale deed in the Registration system for a new claimant; watch the event create a pending mutation and an owner-mismatch finding." />
       <CardBody>
         <form onSubmit={submit} className="flex flex-col gap-3">
-          <Field label="ULPIN" htmlFor="sim-ulpin"><Input id="sim-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} /></Field>
+          <Field label="ULPIN" htmlFor="sim-ulpin"><ParcelPicker id="sim-ulpin" value={ulpin} onChange={setUlpin} /></Field>
           <Field label="Claimant (new owner)" htmlFor="sim-claimant"><Input id="sim-claimant" required value={claimant} onChange={(e) => setClaimant(e.target.value)} placeholder="Lakshmi Devi" /></Field>
           {m.isError && <ErrorNote error={m.error} />}
           <Button type="submit" variant="primary" icon={<Wand2 size={15} />} loading={m.isPending} className="self-start">Register deed</Button>

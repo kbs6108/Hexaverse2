@@ -8,13 +8,38 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, model_validator
 
-from landstack.auth import Principal, require_officer
+from landstack.auth import Principal, require_officer, require_user
 from landstack.config import get_settings
 from landstack.db import DBLike, get_db
 from landstack.errors import AppError
-from landstack.services import audit
+from landstack.services import ai_assist, audit
 
 router = APIRouter(prefix="/landstack/ai", tags=["ai"])
+
+
+class ParcelBriefBody(BaseModel):
+    ulpin: str
+
+
+class AdviceBody(BaseModel):
+    id: str
+
+
+@router.post("/parcel-brief")
+async def parcel_brief(
+    body: ParcelBriefBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Risk brief for one parcel — NVIDIA-generated narrative when configured, rule engine otherwise.
+    Built from the CDM the caller is allowed to see (masking applies before the model)."""
+    return await ai_assist.parcel_brief(db, body.ulpin, principal)
+
+
+@router.post("/application-advice")
+async def application_advice(
+    body: AdviceBody, principal: Principal = Depends(require_officer), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Suggested next workflow action for an application, grounded in the parcel's risk flags."""
+    return await ai_assist.application_advice(db, body.id, principal)
 
 
 class ChangeDetectionBody(BaseModel):

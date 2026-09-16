@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Badge, type Tone } from '@/components/Badge';
-import type { Application, HistoryEntry } from '@/lib/cdm';
+import type { Application, HistoryEntry, NextAction } from '@/lib/cdm';
 import { api, qk } from '@/lib/api';
 import { roleAtLeast, useAuth } from '@/lib/auth';
 import { fmtDate, titleCase } from '@/lib/format';
@@ -21,6 +21,38 @@ const STATUS_TONE: Record<string, Tone> = {
 
 export function StatusBadge({ status }: { status: string }) {
   return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{titleCase(status)}</Badge>;
+}
+
+/** Fallback when the API does not include `next_actions` (CONTRACTS §8 transitions). */
+export function fallbackActions(type: string, status: string): NextAction[] {
+  const mk = (pairs: [string, string][]): NextAction[] =>
+    pairs.map(([to, label]) => ({ action: to, label, to_status: to, is_terminal: ['approved', 'rejected', 'resolved'].includes(to) }));
+  if (type === 'mutation') {
+    if (status === 'submitted') return mk([['document_check', 'Start document check']]);
+    if (status === 'document_check') return mk([['field_verification', 'Send for field verification'], ['returned', 'Return to applicant']]);
+    if (status === 'field_verification') return mk([['approved', 'Approve'], ['returned', 'Return'], ['rejected', 'Reject']]);
+  }
+  if (type === 'building_permission') {
+    if (status === 'submitted') return mk([['planning_check', 'Run planning check']]);
+    if (status === 'planning_check') return mk([['site_inspection', 'Schedule site inspection'], ['rejected', 'Reject']]);
+    if (status === 'site_inspection') return mk([['approved', 'Approve'], ['rejected', 'Reject']]);
+  }
+  if (type === 'field_review') {
+    if (status === 'open') return mk([['assigned', 'Assign']]);
+    if (status === 'assigned') return mk([['resolved', 'Resolve']]);
+  }
+  if (type === 'boundary_correction') {
+    if (status === 'submitted') return mk([['geometry_check', 'Start geometry check']]);
+    if (status === 'geometry_check') return mk([['approved', 'Approve & apply'], ['returned', 'Return to proposer'], ['rejected', 'Reject']]);
+  }
+  return [];
+}
+
+/** The one-click queue action: the next FORWARD, non-terminal step (terminal decisions —
+ *  approve/reject/return — deliberately require the detail drawer and a written remark). */
+export function quickAdvanceAction(app: Application): NextAction | null {
+  const forward = fallbackActions(app.type, app.status).filter((a) => !a.is_terminal && a.to_status !== 'returned');
+  return forward[0] ?? null;
 }
 
 /**

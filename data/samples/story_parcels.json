@@ -1,17 +1,59 @@
 {
   "seed": 42,
   "aoi_bbox": [
-    80.545,
-    16.434,
+    78.388,
+    12.945,
     80.567,
-    16.452
+    17.258
   ],
-  "village": "Mangalagiri (R)",
+  "regions": [
+    {
+      "code": "AP",
+      "state": "Andhra Pradesh",
+      "district": "Guntur",
+      "village": "Mangalagiri (R)",
+      "bbox": [
+        80.545,
+        16.434,
+        80.567,
+        16.452
+      ],
+      "parcel_count": 166
+    },
+    {
+      "code": "TN",
+      "state": "Tamil Nadu",
+      "district": "Kancheepuram",
+      "village": "Sriperumbudur (R)",
+      "bbox": [
+        79.94,
+        12.945,
+        79.962,
+        12.963
+      ],
+      "parcel_count": 238
+    },
+    {
+      "code": "TG",
+      "state": "Telangana",
+      "district": "Ranga Reddy",
+      "village": "Shamshabad (R)",
+      "bbox": [
+        78.388,
+        17.24,
+        78.41,
+        17.258
+      ],
+      "parcel_count": 171
+    }
+  ],
   "parcels": [
     {
       "survey_no": "123/4",
       "key": "clean_residential",
       "ulpin": "TFCM91641E6C82",
+      "state": "AP",
+      "village": "Mangalagiri (R)",
       "land_use": "residential",
       "zone_code": "R2",
       "area_sqm": 874.3,
@@ -32,11 +74,13 @@
       "survey_no": "124",
       "key": "change_alert",
       "ulpin": "TFCM91D3533DD2",
+      "state": "AP",
+      "village": "Mangalagiri (R)",
       "land_use": "agricultural",
       "zone_code": "AG",
       "area_sqm": 7121.75,
-      "owner_name": "Nageswara Rao Mannava",
-      "khata_no": "K-0704",
+      "owner_name": "Nageswara Rao Tenali",
+      "khata_no": "K-0061",
       "centroid": [
         80.555706,
         16.443939
@@ -52,11 +96,13 @@
       "survey_no": "125/2",
       "key": "disputed",
       "ulpin": "TFCM9167B91686",
+      "state": "AP",
+      "village": "Mangalagiri (R)",
       "land_use": "residential",
       "zone_code": "C1",
       "area_sqm": 706.81,
-      "owner_name": "Pardhasaradhi Mekala",
-      "khata_no": "K-0789",
+      "owner_name": "Leena Jayaraman",
+      "khata_no": "K-0146",
       "centroid": [
         80.555792,
         16.442495
@@ -72,11 +118,13 @@
       "survey_no": "126",
       "key": "mortgaged",
       "ulpin": "TFCM916196F0FE",
+      "state": "AP",
+      "village": "Mangalagiri (R)",
       "land_use": "residential",
       "zone_code": "R2",
       "area_sqm": 577.64,
-      "owner_name": "Koteswara Rao Bollineni",
-      "khata_no": "K-0785",
+      "owner_name": "Jatin Baral",
+      "khata_no": "K-0142",
       "centroid": [
         80.555512,
         16.442935
@@ -92,11 +140,13 @@
       "survey_no": "127/1",
       "key": "tax_arrears_area_mismatch",
       "ulpin": "TFCM91KDED50FD",
+      "state": "AP",
+      "village": "Mangalagiri (R)",
       "land_use": "agricultural",
       "zone_code": "AG",
       "area_sqm": 11761.92,
-      "owner_name": "Venkata Lakshmi Boppana",
-      "khata_no": "K-0695",
+      "owner_name": "Sambasiva Rao Mekala",
+      "khata_no": "K-0052",
       "centroid": [
         80.558065,
         16.443597
@@ -112,11 +162,13 @@
       "survey_no": "128",
       "key": "pending_mutation",
       "ulpin": "TFCM914291996F",
+      "state": "AP",
+      "village": "Mangalagiri (R)",
       "land_use": "residential",
       "zone_code": "C1",
       "area_sqm": 702.08,
       "owner_name": "Venkata Rao Kandula",
-      "khata_no": "K-0761",
+      "khata_no": "K-0118",
       "centroid": [
         80.555771,
         16.442175
@@ -126,6 +178,50 @@
         16.441994,
         80.555878,
         16.442354
+      ]
+    },
+    {
+      "survey_no": "45/2",
+      "key": "disputed",
+      "ulpin": "TF2CEQ4ACED970",
+      "state": "TN",
+      "village": "Sriperumbudur (R)",
+      "land_use": "residential",
+      "zone_code": "C1",
+      "area_sqm": 976.14,
+      "owner_name": "Robert Kuruvilla",
+      "khata_no": "K-2196",
+      "centroid": [
+        79.951045,
+        12.953393
+      ],
+      "bbox": [
+        79.950891,
+        12.953254,
+        79.951204,
+        12.95354
+      ]
+    },
+    {
+      "survey_no": "77",
+      "key": "change_alert",
+      "ulpin": "TEPDPUQC13C0D7",
+      "state": "TG",
+      "village": "Shamshabad (R)",
+      "land_use": "agricultural",
+      "zone_code": "AG",
+      "area_sqm": 8822.36,
+      "owner_name": "Pardhasaradhi Naik",
+      "khata_no": "K-4061",
+      "centroid": [
+        78.397004,
+        17.250247
+      ],
+      "bbox": [
+        78.396541,
+        17.24981,
+        78.397456,
+        17.250678
       ]
     }
   ],

@@ -14,28 +14,34 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { roleAtLeast, useAuth } from '@/lib/auth';
 import type { Role } from '@/lib/cdm';
 
-const PAGES: { to: string; label: string; hint: string; icon: typeof MapIcon; min?: Role }[] = [
+const PAGES: { to: string; label: string; hint: string; icon: typeof MapIcon; min?: Role; inRail?: boolean }[] = [
   { to: '/', label: 'Home', hint: 'Cinematic landing', icon: Home },
-  { to: '/map', label: 'Map Explorer', hint: 'The live parcel map', icon: MapIcon },
+  { to: '/map', label: 'Map Explorer', hint: 'The live parcel map', icon: MapIcon, inRail: true },
   { to: '/welcome', label: 'Overview', hint: 'What Land Stack is', icon: BookOpen },
   { to: '/help', label: 'Guide', hint: 'How to drive the demo', icon: HelpCircle },
-  { to: '/citizen', label: 'Citizen services', hint: 'Search · verify · track', icon: Users, min: 'citizen' },
-  { to: '/officer', label: 'Officer console', hint: 'Queue · alerts · KPIs', icon: Building2, min: 'officer' },
-  { to: '/admin', label: 'Admin console', hint: 'Connectors · adapters', icon: ShieldCheck, min: 'admin' },
+  { to: '/citizen', label: 'Citizen services', hint: 'Search · verify · track', icon: Users, min: 'citizen', inRail: true },
+  { to: '/officer', label: 'Officer console', hint: 'Queue · alerts · KPIs', icon: Building2, min: 'officer', inRail: true },
+  { to: '/admin', label: 'Admin console', hint: 'Connectors · adapters', icon: ShieldCheck, min: 'admin', inRail: true },
   { to: '/login', label: 'Sign in', hint: 'Switch account', icon: LogIn },
 ];
 
-/** Global quick navigation: a slim handle on the left edge that slides out a
- *  panel of every page on hover (click-toggle for touch). Hidden by default,
- *  closable, and it won't hover-reopen until the pointer has left the zone. */
+/** Pages where the Shell's left nav rail is visible (mirrors Shell's `minimal` logic). */
+function railVisible(pathname: string): boolean {
+  if (pathname === '/' || pathname === '/welcome' || pathname === '/help' || pathname === '/login') return false;
+  if (pathname.startsWith('/verify/')) return false;
+  return true;
+}
+
+/** Global quick navigation: a slim handle on the left edge that toggles a panel on
+ *  CLICK (no hover-open — deliberate, it got in the way). Esc, X, or navigating closes
+ *  it. Context-aware: on app pages the nav rail already lists Map/Citizen/Officer/Admin,
+ *  so those entries are hidden here and this stays a shortcut, not a second menu. */
 export function QuickNav() {
   const [open, setOpen] = useState(false);
-  const suppressHover = useRef(false); // set by the X button until pointer leaves
-  const closeTimer = useRef<number | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
   const router = useRouter();
@@ -47,28 +53,18 @@ export function QuickNav() {
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
-      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
     };
   }, []);
 
-  const enter = () => {
-    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
-    if (!suppressHover.current) setOpen(true);
-  };
-  const leave = () => {
-    suppressHover.current = false;
-    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => setOpen(false), 260);
-  };
-  const closeNow = () => {
-    suppressHover.current = true; // don't reopen until the pointer leaves the zone
-    setOpen(false);
-  };
+  const closeNow = () => setOpen(false);
 
   const isCurrent = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
-    <div className="fixed left-0 top-1/2 z-[9990] -translate-y-1/2" onMouseEnter={enter} onMouseLeave={leave}>
+    // pointer-events-none: the wrapper spans the closed panel's box (an invisible
+    // ~w-64 rectangle mid-left) and would otherwise swallow clicks meant for the
+    // UI beneath it — only the handle and the open panel accept the pointer.
+    <div className="pointer-events-none fixed left-0 top-1/2 z-[9990] -translate-y-1/2">
       {/* Handle — the only thing visible by default */}
       <button
         type="button"
@@ -77,8 +73,8 @@ export function QuickNav() {
         title="All pages"
         onClick={() => (open ? closeNow() : setOpen(true))}
         className={clsx(
-          'absolute left-0 top-1/2 flex h-16 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-line bg-panel text-ink-3 shadow-panel transition-all duration-200 hover:w-7 hover:text-primary',
-          open && 'pointer-events-none opacity-0',
+          'pointer-events-auto absolute left-0 top-1/2 flex h-16 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-line bg-panel text-ink-3 shadow-panel transition-all duration-200 hover:w-7 hover:text-primary',
+          open && '!pointer-events-none opacity-0',
         )}
       >
         <Compass size={15} />
@@ -91,7 +87,7 @@ export function QuickNav() {
         aria-hidden={!open}
         className={clsx(
           'w-64 rounded-r-xl border border-l-0 border-line bg-panel shadow-panel transition-transform duration-200 ease-out',
-          open ? 'translate-x-0' : 'pointer-events-none -translate-x-full',
+          open ? 'pointer-events-auto translate-x-0' : 'pointer-events-none -translate-x-full',
         )}
       >
         <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
@@ -127,24 +123,22 @@ export function QuickNav() {
           </div>
         </div>
         <ul className="flex flex-col gap-0.5 p-2">
-          {PAGES.filter((p) => !p.min || roleAtLeast(role, p.min)).map((p) => {
+          {PAGES.filter((p) => (!p.min || roleAtLeast(role, p.min)) && !(p.inRail && railVisible(pathname))).map((p) => {
             const current = isCurrent(p.to);
             return (
               <li key={p.to}>
                 <Link
                   to={p.to}
                   onClick={closeNow}
+                  title={p.hint}
                   aria-current={current ? 'page' : undefined}
                   className={clsx(
-                    'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                    'flex items-center gap-3 rounded-md px-3 py-1.5 transition-colors',
                     current ? 'bg-primary-soft text-primary' : 'text-ink-2 hover:bg-ground-2 hover:text-ink',
                   )}
                 >
-                  <p.icon size={17} strokeWidth={current ? 2.2 : 1.8} className="shrink-0" />
-                  <span className="min-w-0">
-                    <span className="block text-[13px] font-medium leading-tight">{p.label}</span>
-                    <span className={clsx('block text-[11px] leading-tight', current ? 'text-primary/70' : 'text-ink-3')}>{p.hint}</span>
-                  </span>
+                  <p.icon size={16} strokeWidth={current ? 2.2 : 1.8} className="shrink-0" />
+                  <span className="min-w-0 truncate text-[13px] font-medium leading-tight">{p.label}</span>
                   {current && <span aria-hidden className="ml-auto size-1.5 shrink-0 rounded-full bg-primary" />}
                 </Link>
               </li>

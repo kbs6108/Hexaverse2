@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ExternalLink } from 'lucide-react';
+import { clsx } from 'clsx';
+import { ExternalLink, Sparkles } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import type { NextAction } from '@/lib/cdm';
 import { Drawer } from '@/components/Drawer';
@@ -11,30 +12,10 @@ import { Loading } from '@/components/Spinner';
 import { ErrorNote } from '@/components/EmptyState';
 import { KV, SectionTitle } from '@/components/Section';
 import { toast } from '@/components/Toast';
-import { StatusBadge, StatusTimeline } from './ApplicationBits';
+import { fallbackActions, StatusBadge, StatusTimeline } from './ApplicationBits';
 import { fmtDate, titleCase } from '@/lib/format';
 import { statusChips } from '@/components/StatusChip';
 import { useAuth } from '@/lib/auth';
-
-/** Fallback when the API does not include `next_actions` (CONTRACTS §8 transitions). */
-function fallbackActions(type: string, status: string): NextAction[] {
-  const mk = (pairs: [string, string][]): NextAction[] => pairs.map(([to, label]) => ({ action: to, label, to_status: to, is_terminal: ['approved', 'rejected', 'resolved'].includes(to) }));
-  if (type === 'mutation') {
-    if (status === 'submitted') return mk([['document_check', 'Start document check']]);
-    if (status === 'document_check') return mk([['field_verification', 'Send for field verification'], ['returned', 'Return to applicant']]);
-    if (status === 'field_verification') return mk([['approved', 'Approve'], ['returned', 'Return'], ['rejected', 'Reject']]);
-  }
-  if (type === 'building_permission') {
-    if (status === 'submitted') return mk([['planning_check', 'Run planning check']]);
-    if (status === 'planning_check') return mk([['site_inspection', 'Schedule site inspection'], ['rejected', 'Reject']]);
-    if (status === 'site_inspection') return mk([['approved', 'Approve'], ['rejected', 'Reject']]);
-  }
-  if (type === 'field_review') {
-    if (status === 'open') return mk([['assigned', 'Assign']]);
-    if (status === 'assigned') return mk([['resolved', 'Resolve']]);
-  }
-  return [];
-}
 
 export function ApplicationDetail({ id, onClose }: { id: string | null; onClose: () => void }) {
   const qc = useQueryClient();
@@ -61,6 +42,14 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
   const app = q.data;
   const actions = app ? app.next_actions ?? fallbackActions(app.type, app.status) : [];
   const tone = (a: NextAction) => (a.to_status === 'rejected' ? 'danger' : a.to_status === 'approved' || a.to_status === 'resolved' ? 'primary' : 'secondary');
+  // Auto-run AI advice whenever the officer has a decision to make.
+  const advice = useQuery({
+    queryKey: qk.applicationAdvice(id ?? ''),
+    queryFn: () => api.applicationAdvice(id!),
+    enabled: !!id && !!app && actions.length > 0,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
 
   return (
     <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-12"
@@ -114,9 +103,28 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
             {actions.length > 0 && (
               <div className="rounded-lg border border-line bg-panel-2 p-3">
                 <SectionTitle>Next action</SectionTitle>
+                {advice.data?.suggested_action && (
+                  <div className="mb-2 flex items-start gap-2 rounded-md border border-violet/30 bg-violet-soft/40 px-2.5 py-2 text-[12.5px]">
+                    <Sparkles size={14} className="mt-0.5 shrink-0 text-violet" />
+                    <span className="text-ink-2">
+                      <span className="font-semibold text-ink">Suggests “{titleCase(advice.data.suggested_action)}”.</span>{' '}
+                      {advice.data.rationale}
+                      <span className="ml-1 font-mono text-[10px] text-ink-3">
+                        {advice.data.engine === 'rules' ? 'rule engine' : advice.data.engine}
+                      </span>
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   {actions.map((a) => (
-                    <Button key={a.action} variant={pending?.action === a.action ? tone(a) : 'secondary'} size="sm" onClick={() => setPending(a)} aria-pressed={pending?.action === a.action}>
+                    <Button
+                      key={a.action}
+                      variant={pending?.action === a.action ? tone(a) : 'secondary'}
+                      size="sm"
+                      onClick={() => setPending(a)}
+                      aria-pressed={pending?.action === a.action}
+                      className={clsx(advice.data?.suggested_action === a.action && 'ring-2 ring-violet/50')}
+                    >
                       {a.label}
                     </Button>
                   ))}

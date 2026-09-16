@@ -30,7 +30,7 @@ def test_root_and_health(client) -> None:
 def test_collections_listing(client) -> None:
     body = client.get("/landstack/collections").json()
     ids = {c["id"] for c in body["collections"]}
-    assert ids == {"parcels", "zones", "restriction_zones", "roads", "projects", "village_boundary", "buildings"}
+    assert ids == {"parcels", "zones", "restriction_zones", "roads", "projects", "village_boundary", "buildings", "settlement_schemes"}
     parcels = next(c for c in body["collections"] if c["id"] == "parcels")
     assert any(link["rel"] == "tiles" for link in parcels["links"])
     assert client.get("/landstack/collections/nope").json()["error"]["code"] == "not_found"

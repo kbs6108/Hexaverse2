@@ -6,13 +6,17 @@
 Land Stack (SIH 2026 prototype) gives every land parcel one ULPIN-style identity and stitches the
 records that six departments keep about it — revenue (RoR), registration (deeds, encumbrances),
 planning (zones, building permissions), fiscal (tax, guideline value), legal (disputes) and
-utilities — into a single **Common Data Model** with per-source provenance and consistency checks.
-On top sit a three-tier **Map Explorer** (MapLibre, PostGIS vector tiles, optional Esri imagery,
-3D unit extrusion), a **Citizen Portal** (search, verify ownership, track, request), an **Officer
-Console** (KPIs, queues, mutation / building-permission workflows) and an **Admin & Integration
-Console** (connectors, adapter mappings, consistency findings, simulated upstream events), plus
-Sentinel-2 change detection that flags unrecorded construction. Everything runs on free tiers:
-Firebase Hosting + Auth, Cloud Run, Neon PostGIS.
+utilities — into a single **Common Data Model** with per-source provenance and consistency checks,
+demonstrated across **three states** (Mangalagiri AP · Sriperumbudur TN · Shamshabad TG), each
+answering in its own vocabulary (Meebhoomi / Patta Chitta / Dharani) through per-state adapters.
+On top sit a national-overview **Map Explorer** (MapLibre, PostGIS vector tiles, satellite imagery
+with zero keys, clickable 3D units with floor areas and basements), a **Citizen Portal** (search,
+verify ownership, track, request), an **Officer Console** (queues with one-click actions, mutation /
+building-permission / **bounded boundary-correction** workflows), an **Admin & Integration Console**
+(connectors, adapter mappings, consistency findings, simulated upstream events), **AI risk briefs
+and officer advice** (NVIDIA Build, with an always-on rule-engine fallback), a settlement/resurvey
+layer, and Sentinel-2 change detection that flags unrecorded construction. Everything runs on free
+tiers: Firebase Hosting + Auth, Cloud Run, Neon PostGIS.
 
 ## Architecture
 
@@ -86,4 +90,4 @@ db/migrations plain SQL, idempotent, applied in order                     tools/
 infra/        docker-compose · cloudrun/ · firebase/                      docs/      CONTRACTS · SETUP · STD
 ```
 
-Demo area: peri-urban Mangalagiri, Guntur district, AP (real bbox, synthetic cadastre — see `data/README.md`).
+Demo regions: Mangalagiri (Guntur, AP) · Sriperumbudur (Kancheepuram, TN) · Shamshabad (Ranga Reddy, TG) — real bounding boxes, synthetic cadastre (see `data/README.md`).

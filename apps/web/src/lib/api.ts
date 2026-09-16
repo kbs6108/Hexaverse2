@@ -6,6 +6,9 @@ import { env } from './env';
 import { getAuthHeaders } from './auth';
 import type {
   AdapterMapping,
+  ApplicationAdvice,
+  BoundaryProposalResult,
+  BoundaryValidation,
   Alert,
   Application,
   ApplicationType,
@@ -16,6 +19,7 @@ import type {
   GeoJSONFeature,
   GeoJSONFeatureCollection,
   Me,
+  ParcelBrief,
   ParcelCDM,
   PlanningCheck,
   ReportIssued,
@@ -127,6 +131,10 @@ export const api = {
     request<Application[] | { items: Application[] }>('/landstack/applications', { query: { mine: 1 } }).then(unwrapList),
   application: (id: string) => request<Application>(`/landstack/applications/${encodeURIComponent(id)}`),
   issueReport: (ulpin: string) => request<ReportIssued>(`/landstack/reports/${encodeURIComponent(ulpin)}`, { method: 'POST' }),
+  validateBoundary: (ulpin: string, geometry: Record<string, unknown>) =>
+    request<BoundaryValidation>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary/validate`, { method: 'POST', body: { geometry } }),
+  proposeBoundary: (ulpin: string, geometry: Record<string, unknown>, reason: string) =>
+    request<BoundaryProposalResult>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary`, { method: 'POST', body: { geometry, reason } }),
   requestConsent: (ulpin: string) => request<{ ok: boolean }>('/landstack/consents/request', { method: 'POST', body: { ulpin } }),
 
   /* ---------- Officer+ ---------- */
@@ -147,6 +155,8 @@ export const api = {
   resolveAlert: (id: number) => request<Alert>(`/landstack/alerts/${id}/resolve`, { method: 'POST', body: {} }),
   changeDetection: (body: { ulpin?: string; bbox?: number[]; date_a?: string; date_b?: string }) =>
     request<ChangeDetectionResult>('/landstack/ai/change-detection', { method: 'POST', body }),
+  parcelBrief: (ulpin: string) => request<ParcelBrief>('/landstack/ai/parcel-brief', { method: 'POST', body: { ulpin } }),
+  applicationAdvice: (id: string) => request<ApplicationAdvice>('/landstack/ai/application-advice', { method: 'POST', body: { id } }),
   extractDocument: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);
@@ -197,6 +207,9 @@ export const qk = {
   consistency: () => ['consistency'] as const,
   villageBoundary: () => ['village_boundary'] as const,
   storyParcels: () => ['story_parcels'] as const,
+  demoRegions: () => ['demo_regions'] as const,
+  parcelBrief: (ulpin: string, identity: string) => ['ai_brief', ulpin, identity] as const,
+  applicationAdvice: (id: string) => ['ai_advice', id] as const,
   verifyReport: (id: string) => ['verify', id] as const,
   planningCheck: (ulpin: string, use: string, floors: number) => ['planning_check', ulpin, use, floors] as const,
 };

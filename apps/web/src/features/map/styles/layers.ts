@@ -19,6 +19,7 @@ export const SRC = {
   roads: 'roads',
   water: 'water_lines',
   projects: 'projects',
+  settlement: 'settlement_schemes',
   units: 'units',
   village: 'village_boundary',
 } as const;
@@ -30,17 +31,23 @@ export const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.p
 export const FONT = ['Noto Sans Regular'];
 export const FONT_BOLD = ['Noto Sans Bold'];
 
-export function imageryStyle(key: string): StyleSpecification {
+export function imageryStyle(key?: string): StyleSpecification {
+  // With an ArcGIS Location Platform key: the metered basemap service (2M tiles/mo free).
+  // Without one: Esri's public World Imagery tile endpoint — real satellite imagery,
+  // no key needed, attribution required. This is why the Imagery toggle always works.
+  const tiles = key
+    ? [`https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=${key}`]
+    : ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'];
   return {
     version: 8,
     glyphs: GLYPHS,
     sources: {
       esri: {
         type: 'raster',
-        tiles: [`https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=${key}`],
+        tiles,
         tileSize: 256,
         maxzoom: 19,
-        attribution: 'Esri, Maxar, Earthstar Geographics',
+        attribution: 'Esri, Maxar, Earthstar Geographics, and the GIS User Community',
       },
     },
     layers: [
@@ -117,7 +124,14 @@ export function parcelOutline(imagery: boolean): LineLayerSpecification {
     'source-layer': 'parcels',
     paint: {
       'line-color': ['case', selected, '#0E6B54', imagery ? '#FFFFFF' : '#3C4440'],
-      'line-width': ['case', selected, 3, hover, 2, ['interpolate', ['linear'], ['zoom'], 13, 0.3, 16, 0.8, 18, 1.4]],
+      // camera (zoom) expressions must be TOP-level interpolate/step in line-width;
+      // data expressions (case/feature-state) are legal inside the stop outputs.
+      'line-width': [
+        'interpolate', ['linear'], ['zoom'],
+        13, ['case', selected, 3, hover, 2, 0.3],
+        16, ['case', selected, 3, hover, 2, 0.8],
+        18, ['case', selected, 3.5, hover, 2.4, 1.4],
+      ],
       'line-opacity': imagery ? 0.85 : 0.7,
     },
   };
@@ -229,6 +243,26 @@ export const restrictionLine: LineLayerSpecification = {
   paint: { 'line-color': restrictionColour, 'line-width': 1.8, 'line-dasharray': [3, 2] },
 };
 
+const settlementColour: ExpressionSpecification = [
+  'match', str('phase'),
+  'completed', C.green, 'in_progress', C.amber, 'notified', C.slate,
+  C.slate,
+];
+export const settlementFill: FillLayerSpecification = {
+  id: 'settlement-fill',
+  type: 'fill',
+  source: SRC.settlement,
+  'source-layer': 'settlement_schemes',
+  paint: { 'fill-color': settlementColour, 'fill-opacity': 0.10 },
+};
+export const settlementLine: LineLayerSpecification = {
+  id: 'settlement-line',
+  type: 'line',
+  source: SRC.settlement,
+  'source-layer': 'settlement_schemes',
+  paint: { 'line-color': settlementColour, 'line-width': 1.6, 'line-dasharray': [1.5, 1.5] },
+};
+
 const roadClass = str('road_class');
 export const roadsLine: LineLayerSpecification = {
   id: 'roads-line',
@@ -238,10 +272,11 @@ export const roadsLine: LineLayerSpecification = {
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: {
     'line-color': ['match', roadClass, 'national', '#7A4E12', 'state', '#9A6B12', 'district', '#B08A3E', C.neutralDark],
+    // top-level interpolate over zoom (required), road-class factor inside the outputs
     'line-width': [
-      '*',
-      ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5],
-      ['interpolate', ['linear'], ['zoom'], 13, 0.5, 17, 1.4],
+      'interpolate', ['linear'], ['zoom'],
+      13, ['*', ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5], 0.5],
+      17, ['*', ['match', roadClass, 'national', 5, 'state', 4, 'district', 3, 'village', 2, 1.5], 1.4],
     ],
     'line-opacity': 0.85,
   },
@@ -314,12 +349,15 @@ export const unitsExtrusion: FillExtrusionLayerSpecification = {
   'source-layer': 'units',
   minzoom: 14,
   paint: {
-    'fill-extrusion-base': ['to-number', ['coalesce', ['get', 'base_m'], 0]],
-    'fill-extrusion-height': ['+', ['to-number', ['coalesce', ['get', 'base_m'], 0]], ['to-number', ['coalesce', ['get', 'height_m'], 3]]],
-    'fill-extrusion-color': [
-      'interpolate', ['linear'], ['to-number', ['coalesce', ['get', 'floor'], 0]],
-      0, '#CFE3DA', 2, '#5FB39A', 4, '#0E6B54', 8, '#2F5D9E',
-    ],
+    // Basements (floor 0) live below datum in the DATA (base_m −3.2 → 0 m); MapLibre has no
+    // underground camera, so render them as a thin brick slab at grade to stay visible.
+    'fill-extrusion-base': ['case', ['<=', ['to-number', ['coalesce', ['get', 'floor'], 1]], 0], 0,
+      ['to-number', ['coalesce', ['get', 'base_m'], 0]]],
+    'fill-extrusion-height': ['case', ['<=', ['to-number', ['coalesce', ['get', 'floor'], 1]], 0], 0.5,
+      ['to-number', ['coalesce', ['get', 'height_m'], 3]]],
+    'fill-extrusion-color': ['case', ['<=', ['to-number', ['coalesce', ['get', 'floor'], 1]], 0], '#A63A2B',
+      ['interpolate', ['linear'], ['to-number', ['coalesce', ['get', 'floor'], 0]],
+        1, '#CFE3DA', 2, '#5FB39A', 4, '#0E6B54', 8, '#2F5D9E']],
     'fill-extrusion-opacity': 0.85,
     'fill-extrusion-vertical-gradient': true,
   },

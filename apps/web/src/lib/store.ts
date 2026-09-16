@@ -18,7 +18,7 @@ export type Basemap = 'streets' | 'imagery';
 export const TIER_LAYERS = {
   base: ['parcels', 'survey_labels', 'village_boundary'] as const,
   essential: ['zones'] as const,
-  usecase: ['roads', 'water_lines', 'restriction_zones', 'projects', 'change_alerts'] as const,
+  usecase: ['roads', 'water_lines', 'restriction_zones', 'projects', 'settlement_schemes', 'change_alerts'] as const,
 };
 export type LayerId =
   | (typeof TIER_LAYERS.base)[number]
@@ -36,19 +36,34 @@ const defaultLayers: LayerToggles = {
   water_lines: false,
   restriction_zones: false,
   projects: false,
+  settlement_schemes: false,
   change_alerts: true,
 };
 
 /** Dev-mode identities (CONTRACTS §10). Value is the exact X-Dev-User header string. */
 export const DEV_USERS = [
-  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', hint: 'Citizen' },
+  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', hint: 'Citizen · pattadar, Mangalagiri' },
   { id: 'citizen::Lakshmi Devi', label: 'Lakshmi Devi', role: 'citizen', hint: 'Citizen' },
-  { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', hint: 'Officer · Revenue' },
-  { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', hint: 'Officer · Registration' },
-  { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', hint: 'Officer · Planning' },
-  { id: 'admin::Admin', label: 'Admin', role: 'admin', hint: 'Administrator' },
+  { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', hint: 'Tahsildar · Mangalagiri Mandal' },
+  { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', hint: 'Sub-Registrar · SRO Mangalagiri' },
+  { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', hint: 'Town Planning Officer · MTMC' },
+  { id: 'admin::Admin', label: 'Admin', role: 'admin', hint: 'System Administrator · DoLR' },
 ] as const;
 export type DevUserId = (typeof DEV_USERS)[number]['id'];
+
+/** Active boundary-edit session (officer/admin): the parcel + its draggable outer ring. */
+export interface BoundaryEdit {
+  ulpin: string;
+  survey_no?: string;
+  ring: [number, number][]; // open ring (no closing duplicate)
+}
+
+/** Recently opened parcels — powers pickers so nobody retypes a 14-char ULPIN. */
+export interface RecentParcel {
+  ulpin: string;
+  survey_no?: string;
+  village?: string;
+}
 
 interface UIState {
   selectedUlpin: string | null;
@@ -61,6 +76,12 @@ interface UIState {
   layerPanelOpen: boolean;
   devUser: DevUserId;
   flyTo: { bbox: [number, number, number, number]; nonce: number } | null;
+  recentParcels: RecentParcel[];
+  boundaryEdit: BoundaryEdit | null;
+  /** Tier-3 "Use-case" section: null = role default (officers/admin open, citizens closed). */
+  usecaseTierOpen: boolean | null;
+  /** One-time "click a state to fly in" hint on the national overview. */
+  seenOverviewHint: boolean;
 
   select: (ulpin: string | null) => void;
   setHover: (ulpin: string | null) => void;
@@ -72,6 +93,13 @@ interface UIState {
   setLayerPanelOpen: (open: boolean) => void;
   setDevUser: (u: DevUserId) => void;
   requestFlyTo: (bbox: [number, number, number, number]) => void;
+  recordRecentParcel: (p: RecentParcel) => void;
+  startBoundaryEdit: (e: BoundaryEdit) => void;
+  moveBoundaryVertex: (index: number, pos: [number, number]) => void;
+  setBoundaryRing: (ring: [number, number][]) => void;
+  cancelBoundaryEdit: () => void;
+  setUsecaseTierOpen: (open: boolean) => void;
+  dismissOverviewHint: () => void;
 }
 
 export const useUI = create<UIState>()(
@@ -87,6 +115,10 @@ export const useUI = create<UIState>()(
       layerPanelOpen: true,
       devUser: 'citizen::Ravi Kumar',
       flyTo: null,
+      recentParcels: [],
+      boundaryEdit: null,
+      usecaseTierOpen: null,
+      seenOverviewHint: false,
 
       select: (ulpin) => set({ selectedUlpin: ulpin, drawerOpen: ulpin !== null }),
       setHover: (ulpin) => set({ hoverUlpin: ulpin }),
@@ -98,6 +130,17 @@ export const useUI = create<UIState>()(
       setLayerPanelOpen: (layerPanelOpen) => set({ layerPanelOpen }),
       setDevUser: (devUser) => set({ devUser }),
       requestFlyTo: (bbox) => set({ flyTo: { bbox, nonce: Date.now() } }),
+      recordRecentParcel: (p) =>
+        set((s) => ({ recentParcels: [p, ...s.recentParcels.filter((r) => r.ulpin !== p.ulpin)].slice(0, 6) })),
+      startBoundaryEdit: (e) => set({ boundaryEdit: e, drawerOpen: false }),
+      moveBoundaryVertex: (index, pos) =>
+        set((s) => s.boundaryEdit
+          ? { boundaryEdit: { ...s.boundaryEdit, ring: s.boundaryEdit.ring.map((v, i) => (i === index ? pos : v)) } }
+          : {}),
+      setBoundaryRing: (ring) => set((s) => (s.boundaryEdit ? { boundaryEdit: { ...s.boundaryEdit, ring } } : {})),
+      cancelBoundaryEdit: () => set({ boundaryEdit: null }),
+      setUsecaseTierOpen: (open) => set({ usecaseTierOpen: open }),
+      dismissOverviewHint: () => set({ seenOverviewHint: true }),
     }),
     {
       name: 'landstack-ui',
@@ -107,7 +150,18 @@ export const useUI = create<UIState>()(
         basemap: s.basemap,
         devUser: s.devUser,
         layerPanelOpen: s.layerPanelOpen,
+        recentParcels: s.recentParcels,
+        usecaseTierOpen: s.usecaseTierOpen,
+        seenOverviewHint: s.seenOverviewHint,
       }),
+      // Deep-merge persisted layers over the defaults: zustand's persist replaces the
+      // whole `layers` object, so a browser that stored it before a new LayerId shipped
+      // would otherwise get `undefined` for that key — a dead checkbox and a layer that
+      // can never render (this bit settlement_schemes when it was added).
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<UIState>;
+        return { ...current, ...p, layers: { ...defaultLayers, ...(p.layers ?? {}) } };
+      },
     },
   ),
 );

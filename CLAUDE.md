@@ -46,30 +46,35 @@ infra/                docker-compose.yml (db, migrate, api, web; profiles prod/t
 Makefile              up · down · migrate · seed · demo-reset · dev-api · dev-web · test · lint · deploy-api · deploy-web
 ```
 
-## Current state (as of the hand-off commit)
+## Current state (updated after the multi-phase build sessions)
 
-Verified in the build sandbox (which had **no Postgres and no browser**):
-- `apps/api`: `pytest -q` → 73 passed; `ruff check` + `ruff format --check` clean.
-- `apps/web`: `tsc --noEmit` clean; `vite build` OK (~1.1 MB maplibre chunk, ~1.1 MB echarts chunk, gzip ≈ 850 KB total).
-- All five migrations parse (pglast). `tools/seed.py --dry-run` → 1,024 non-overlapping parcels,
-  six story parcels present (123/4 Ravi Kumar clean; 124 agricultural with satellite change alert;
-  125/2 disputed; 126 mortgaged; 127/1 tax arrears + area mismatch; 128 pending mutation).
-- A cross-lane contract audit fixed 17 mismatches between SQL ↔ API ↔ web (see git log message and
-  `docs/CONTRACTS.md` §3 for the dev-uid rule `dev-<slug(name)>`).
-
-**Never yet executed:** the SQL against a real PostGIS, and the web app in a real browser.
-The first `make up` (or the first CI run on push) is the moment of truth. Expected first-run issues,
-in order of likelihood:
-1. asyncpg bind-parameter typing in a few queries (`substring(id from :n)`, `ST_AsMVT(f.*, :name …)`,
-   `make_interval(hours => :hours)`, `None` params rendering untyped) → add explicit `::type` casts.
-2. `landstack.parcel_tile_features` view performance at low zoom (correlated subqueries per parcel)
-   → materialise or pre-join; add `ST_Simplify` below z14.
-3. `ST_AsMVT` with `numeric` columns → cast to `double precision`/`int` in the view.
-4. The `landstack_app` role DO-block in 002 on Neon (no superuser) → guard or skip.
-5. WeasyPrint system deps in the API image (fonts, pango) for `/reports/{id}.pdf`.
-6. In-process `httpx.ASGITransport` round-trip `POST /registration/deeds` → `POST /landstack/events`.
-7. Frontend: MapLibre `feature-state` with promoted string ids, OpenFreeMap glyphs, CORS on tile fetches
-   (`CORS_ORIGINS` must include the web origin), hover-card `queryRenderedFeatures` layer ids.
+Running end-to-end on the local Docker stack and green in CI (real PostGIS: migrate + seed + 73
+tests; web tsc + build). Since the original hand-off the platform gained, in order:
+- Cinematic landing at `/` (Karthik's template, emerald), map at `/map`, marketing `/welcome` + `/help`,
+  QuickNav, government-identity header badge + footer (honest "Built for GoI/MoRD" framing).
+- **Three states** (Phase 2): Mangalagiri AP · Sriperumbudur TN · Shamshabad TG, ~150 scattered
+  parcels each (575 total), per-state revenue dialects (Meebhoomi / Patta Chitta / Dharani) served
+  by the revenue mock and translated by `revenue_{ap,tn,tg}.yaml`; settlement/resurvey layer
+  (`gis.settlement_schemes` + `status_flags.resurvey`); national India overview with cluster markers
+  and a Regions panel. AP story-parcel ULPINs unchanged from the single-region seed.
+- **Workflow/UX** (Phase 3): ParcelPicker (recents + story parcels) on every ULPIN field, citizen
+  "your applications", officer one-click queue advance, alert → field-review filing.
+- **Bounded boundary editing** (Phase 4): on-map vertex editor → validation (±15% area, no overlap,
+  village containment, `services/boundary.py`) → `boundary_correction` workflow → approval re-validates,
+  applies geometry, syncs RoR extent via revenue `POST /extent`. Migrations 008/009.
+- **AI assist**: `services/ai_assist.py` on NVIDIA Build (`NVIDIA_API_KEY`, OpenAI-compatible) with an
+  always-on deterministic rule engine; auto-running parcel risk briefs + officer application advice (models retire on NVIDIA Build — 410 Gone means pick a live id from /v1/models);
+  document extraction prefers NVIDIA vision. Responses carry `engine` for honest labelling.
+- **3D** (accurate + usable): buildings carry width/depth/basements (migration 010), units carry
+  floor area + elevation bands; 3D units are clickable with a data card; basements are floor 0
+  (true base −3.2 m, rendered as a slab at grade).
+- Imagery basemap works with zero keys (public Esri World Imagery tiles; keyed service if
+  `VITE_ESRI_API_KEY` is set).
+Notable fixed first-run issues: asyncpg `substring(id from :n)` typing (predicted #1), the MapLibre
+nested-zoom-expression style errors, the Vite dep-optimizer maplibre worker, the persisted-layers
+merge bug, and the web container healthcheck (localhost→127.0.0.1). Still open from the original
+list: low-zoom tile view could use ST_Simplify/materialisation; WeasyPrint deps on Cloud Run
+unverified; Neon/Firebase/Cloud Run deployment not yet exercised.
 
 ## How to work in this repo
 
@@ -93,21 +98,18 @@ in order of likelihood:
   `make test` runs both lanes. Keep them green before every commit.
 - Commit on `sampath`. Never commit `.env`, `data/s2/*.tif`, `serviceAccount*.json`.
 
-## First tasks for the next session (suggested order)
+## Suggested next tasks
 
-1. `cp apps/api/.env.example apps/api/.env && cp apps/web/.env.example apps/web/.env && make up`.
-   Fix whatever the migrate/seed container and the API log throw (list above). Then open
-   http://localhost:5173, pick "Anitha" in the role switcher, click parcel 123/4, and walk every tab.
-2. Run the demo script end to end (docs/plan/landstack-plan.html §15): simulate deed on 123/4 as
-   Admin → parcel turns amber → mutation in Anitha's queue → approve → RoR updates; Satellite tab on
-   124; fail the fiscal service with `?fail=1` and confirm the profile degrades per block.
-3. Push; make CI green (`.github/workflows/ci.yml` runs against a real PostGIS).
-4. Cloud: Neon project → `make neon-migrate`; Firebase Auth providers (Google + email) →
+1. Cloud: Neon project → `make neon-migrate`; Firebase Auth providers (Google + email) →
    `tools/set_claims.py`; `make deploy-api` (Cloud Run, asia-south1); `make deploy-web` (Hosting).
-5. Then the roadmap: real OSM roads via `tools/seed.py --osm`, Sentinel-2 online path via
-   `tools/fetch_s2.py`, Gemini OCR (`GEMINI_API_KEY`), Bhuvan WMS overlay flag, second state adapter,
-   and the 3D work (buildings/units already seeded; extrusion layer exists; next is per-unit
-   selection + 3D-ULPIN profile, then deck.gl overlay / glTF export if wanted).
+   Watch for: the `landstack_app` DO-block on Neon, WeasyPrint deps in the API image.
+2. Performance: ST_Simplify / materialise `parcel_tile_features` below z14; lazy-load the landing's
+   three.js chunk (index bundle ~1.2 MB); bump GitHub Actions v4 → v5 (Node 20 deprecation).
+3. Real data: `tools/seed.py --osm` per region; `tools/fetch_s2.py --compute` for real Sentinel-2;
+   Bhuvan WMS overlay behind a flag if reachable.
+4. AI: with NVIDIA_API_KEY set, tune the brief/advice prompts against real outputs; consider an
+   officer "daily digest" and consistency-finding triage on the same service.
+5. 3D next steps: deck.gl overlay or glTF export; per-unit consent/ownership flows on 3D-ULPINs.
 
 ## Sources the plan relies on (for the pitch and the STD)
 

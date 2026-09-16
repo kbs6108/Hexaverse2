@@ -37,6 +37,34 @@ export function FeatureCard({
   );
 }
 
+/** Shared section heading: kicker (eyebrow) + title + optional sub — the one heading
+ *  language used by the cinematic landing, /welcome and /help. `align` varies per page. */
+export function SectionHeading({
+  kicker,
+  title,
+  sub,
+  align = 'left',
+  size = 'md',
+  className,
+}: {
+  kicker?: string;
+  title: ReactNode;
+  sub?: ReactNode;
+  align?: 'left' | 'center';
+  size?: 'md' | 'lg';
+  className?: string;
+}) {
+  return (
+    <div className={clsx(align === 'center' && 'mx-auto max-w-2xl text-center', className)}>
+      {kicker && <p className="font-display text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">{kicker}</p>}
+      <h2 className={clsx('font-display font-semibold tracking-tight text-ink', kicker && 'mt-2', size === 'lg' ? 'text-4xl sm:text-5xl' : 'text-[26px]')}>
+        {title}
+      </h2>
+      {sub && <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-2">{sub}</p>}
+    </div>
+  );
+}
+
 /** Single label/value stat for the landing "at a glance" strip. */
 export function PitchStat({ value, label }: { value: ReactNode; label: ReactNode }) {
   return (

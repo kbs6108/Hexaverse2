@@ -1,15 +1,17 @@
-﻿import { Link } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
-import { AlertOctagon, BadgeCheck, Clock, Download, FileSearch, Landmark, ListChecks, Radar, Receipt, Satellite, Wand2 } from 'lucide-react';
+import { AlertOctagon, BadgeCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ParcelCDM } from '@/lib/cdm';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useUI } from '@/lib/store';
 import { fmtArea, fmtDate, fmtINR, titleCase } from '@/lib/format';
 import { Button } from '@/components/Button';
 import { Callout, KV, SectionTitle } from '@/components/Section';
 import { toast } from '@/components/Toast';
 import { Badge } from '@/components/Badge';
+import { AIInsight, parcelNeedsAttention } from '@/components/AIInsight';
 import type { ParcelTab } from '../ParcelDrawer';
 
 interface Cell {
@@ -21,7 +23,22 @@ interface Cell {
 }
 
 export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => void }) {
-  const { role } = useAuth();
+  const { role, department } = useAuth();
+  const startBoundaryEdit = useUI((s) => s.startBoundaryEdit);
+  const canEditBoundary = role === 'admin' || (role === 'officer' && department === 'revenue');
+  const beginBoundaryEdit = async () => {
+    try {
+      const feat = await api.parcelFeature(p.ulpin);
+      const geom = feat.geometry as { type?: string; coordinates?: number[][][] | number[][][][] };
+      const ring = (geom.type === 'MultiPolygon'
+        ? (geom.coordinates as number[][][][])[0]?.[0]
+        : (geom.coordinates as number[][][])[0]) as [number, number][] | undefined;
+      if (!ring || ring.length < 4) throw new Error('parcel geometry unavailable');
+      startBoundaryEdit({ ulpin: p.ulpin, survey_no: p.identifiers.survey_no ?? undefined, ring: ring.slice(0, -1) });
+    } catch (e) {
+      toast.error('Could not start boundary edit', e instanceof Error ? e.message : String(e));
+    }
+  };
   const s = p.status;
   const cells: Cell[] = [
     { label: 'Registered', value: s.registered ? 'Yes' : 'No', tone: s.registered ? 'ok' : 'muted', icon: BadgeCheck },
@@ -48,77 +65,75 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
   });
 
   const issues = p.consistency.issues;
+  const resurvey = p.status_flags?.resurvey;
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <SectionTitle>Parcel identity</SectionTitle>
-        <KV
-          items={[
-            { k: 'Area', v: fmtArea(p.spatial.area_sqm) },
-            { k: 'Land use', v: titleCase(p.planning.land_use) },
-            { k: 'Zone', v: p.planning.zone_code ? `${p.planning.zone_code} · ${p.planning.zone_name ?? ''}` : '—' },
-            { k: 'Khata', v: p.identifiers.khata_no ?? '—', mono: true },
-            { k: 'Taluk / District', v: `${p.identifiers.taluk} · ${p.identifiers.district}` },
-            { k: 'Centroid', v: `${p.spatial.centroid[1].toFixed(5)}, ${p.spatial.centroid[0].toFixed(5)}`, mono: true },
-            { k: 'Estimated value', v: fmtINR(p.fiscal.estimated_value) },
-            { k: 'Registered on', v: fmtDate(p.rights.registration?.registered_on) },
-          ]}
-        />
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <SectionTitle>Current status</SectionTitle>
-        <div className="grid grid-cols-3 gap-2" role="list" aria-label="Status summary">
-          {cells.map((c) => (
-            <div key={c.label} role="listitem" className={clsx('relative overflow-hidden rounded-md border px-2.5 py-2', tones[c.tone])}>
-              {c.hatch && <span aria-hidden className="absolute inset-0 opacity-10 hatch-brick" />}
-              <div className="relative flex items-center gap-1 text-[11px] uppercase tracking-wide opacity-80">
-                <c.icon size={12} /> {c.label}
-              </div>
-              <p className="relative mt-0.5 text-sm font-semibold">{c.value}</p>
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-3 gap-2" role="list" aria-label="Status summary">
+        {cells.map((c) => (
+          <div key={c.label} role="listitem" className={clsx('relative overflow-hidden rounded-md border px-2.5 py-2', tones[c.tone])}>
+            {c.hatch && <span aria-hidden className="absolute inset-0 opacity-10 hatch-brick" />}
+            <div className="relative flex items-center gap-1 text-[11px] uppercase tracking-wide opacity-80">
+              <c.icon size={12} /> {c.label}
             </div>
-          ))}
-        </div>
-
-        {(!p.consistency.area_match || !p.consistency.owner_match || issues.length > 0) && (
-          <Callout tone="amber" title={`Cross-department inconsistency${issues.length > 1 ? ' · ' + issues.length + ' fields' : ''}`}>
-            <ul className="list-disc pl-4">
-              {!p.consistency.area_match && !issues.some((i) => i.field === 'extent_sqm') && <li>Area differs between revenue and registration records.</li>}
-              {!p.consistency.owner_match && !issues.some((i) => i.field === 'owner_name') && <li>Owner name differs between RoR and latest deed.</li>}
-              {issues.map((i, k) => (
-                <li key={k}>
-                  <span className="font-medium">{titleCase(i.field)}</span>:{' '}
-                  {Object.entries(i)
-                    .filter(([key]) => key !== 'field')
-                    .map(([src, v]) => `${titleCase(src)} ${String(v)}`)
-                    .join(' vs ')}
-                </li>
-              ))}
-            </ul>
-          </Callout>
-        )}
-
-        {p.alerts.filter((a) => a.status !== 'resolved').length > 0 && (
-          <div className="mt-2">
-            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-3">Open alerts</h4>
-            <ul className="flex flex-col gap-1">
-              {p.alerts.filter((a) => a.status !== 'resolved').map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-2 rounded-md border border-line px-2.5 py-1.5 text-sm">
-                  <span className="flex items-center gap-2">
-                    <Badge tone={a.severity === 'high' ? 'brick' : 'amber'}>{titleCase(a.kind)}</Badge>
-                    {a.title}
-                  </span>
-                  <span className="text-xs text-ink-3">{a.status}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="relative mt-0.5 text-sm font-semibold">{c.value}</p>
           </div>
-        )}
+        ))}
       </div>
 
-      <div className="rounded-md border border-line bg-ground-2/50 p-3">
-        <h3 className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-3">Quick actions</h3>
+      <AIInsight p={p} auto={parcelNeedsAttention(p)} />
+
+      {resurvey && (
+        <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink-3">
+          <Badge tone={resurvey === 'completed' ? 'primary' : resurvey === 'in_progress' ? 'amber' : 'neutral'}>
+            {resurvey === 'completed' ? 'Resurvey completed' : resurvey === 'in_progress' ? 'Resurvey in progress' : 'Resurvey pending'}
+          </Badge>
+          <span>State land-settlement programme · see the “Settlement / resurvey” map layer</span>
+        </div>
+      )}
+
+      {(!p.consistency.area_match || !p.consistency.owner_match || issues.length > 0) && (
+        <Callout tone="amber" title={`Cross-department inconsistency${issues.length > 1 ? ' · ' + issues.length + ' fields' : ''}`}>
+          <ul className="list-disc pl-4">
+            {!p.consistency.area_match && !issues.some((i) => i.field === 'extent_sqm') && <li>Area differs between revenue and registration records.</li>}
+            {!p.consistency.owner_match && !issues.some((i) => i.field === 'owner_name') && <li>Owner name differs between RoR and latest deed.</li>}
+            {issues.map((i, k) => (
+              <li key={k}>
+                <span className="font-medium">{titleCase(i.field)}</span>:{' '}
+                {Object.entries(i)
+                  .filter(([key]) => key !== 'field')
+                  .map(([src, v]) => `${titleCase(src)} ${String(v)}`)
+                  .join(' vs ')}
+              </li>
+            ))}
+          </ul>
+        </Callout>
+      )}
+
+      {p.alerts.filter((a) => a.status !== 'resolved').length > 0 && (
+        <div>
+          <SectionTitle>Open alerts</SectionTitle>
+          <ul className="flex flex-col gap-1">
+            {p.alerts.filter((a) => a.status !== 'resolved').map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-2 rounded-md border border-line px-2.5 py-1.5 text-sm">
+                <span className="flex items-center gap-2">
+                  <Badge tone={a.severity === 'high' ? 'brick' : 'amber'}>{titleCase(a.kind)}</Badge>
+                  {a.title}
+                </span>
+                <span className="text-xs text-ink-3">{a.status}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div>
+        <SectionTitle>Quick actions</SectionTitle>
         <div className="flex flex-wrap gap-2">
+          {canEditBoundary && (
+            <Button icon={<PenLine size={15} />} onClick={() => void beginBoundaryEdit()}>
+              Propose boundary fix
+            </Button>
+          )}
           {role === 'citizen' && (
             <>
               <Link to="/citizen/verify" search={{ ulpin: p.ulpin }}><Button icon={<FileSearch size={15} />}>Verify ownership</Button></Link>
@@ -128,7 +143,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           )}
           {role === 'officer' && (
             <>
-              <Link to="/officer/queue" search={{ q: p.ulpin }}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
+              <Link to="/officer/queue" search={{}}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
               <Button variant="primary" icon={<Satellite size={15} />} onClick={() => goTo('satellite')}>Run change detection</Button>
               <Button icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>Report</Button>
             </>
@@ -136,7 +151,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           {role === 'admin' && (
             <>
               <Link to="/admin" search={{ ulpin: p.ulpin }}><Button variant="primary" icon={<Wand2 size={15} />}>Simulate deed</Button></Link>
-              <Link to="/officer/queue" search={{ q: p.ulpin }}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
+              <Link to="/officer/queue" search={{}}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
               <Button icon={<Satellite size={15} />} onClick={() => goTo('satellite')}>Run change detection</Button>
             </>
           )}
@@ -144,17 +159,20 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
       </div>
 
       <div>
-        <SectionTitle>Department sources (live)</SectionTitle>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {Object.entries(p.provenance).map(([source, prov]) => (
-            <div key={source} className="flex items-center justify-between rounded border border-line bg-panel-2 px-2.5 py-1.5 text-xs">
-              <span className="font-medium text-ink-2">{titleCase(source)}</span>
-              <span className={clsx('font-mono text-[11px]', prov.ok ? 'text-primary' : 'text-brick')}>
-                {prov.ok ? `${prov.ms ?? 0}ms` : 'offline'}
-              </span>
-            </div>
-          ))}
-        </div>
+        <SectionTitle>Parcel</SectionTitle>
+        <KV
+          items={[
+            { k: 'Area', v: fmtArea(p.spatial.area_sqm) },
+            { k: 'Land use', v: titleCase(p.planning.land_use) },
+            { k: 'Zone', v: p.planning.zone_code ? `${p.planning.zone_code} · ${p.planning.zone_name ?? ''}` : '—' },
+            { k: 'Khata', v: p.identifiers.khata_no ?? '—', mono: true },
+            // AP and Telangana call the sub-district a mandal; Tamil Nadu a taluk.
+            { k: p.identifiers.state === 'TN' ? 'Taluk / District' : 'Mandal / District', v: `${p.identifiers.taluk} · ${p.identifiers.district}` },
+            { k: 'Centroid', v: `${p.spatial.centroid[1].toFixed(5)}, ${p.spatial.centroid[0].toFixed(5)}`, mono: true },
+            { k: 'Estimated value', v: fmtINR(p.fiscal.estimated_value) },
+            { k: 'Registered on', v: fmtDate(p.rights.registration?.registered_on) },
+          ]}
+        />
       </div>
     </div>
   );

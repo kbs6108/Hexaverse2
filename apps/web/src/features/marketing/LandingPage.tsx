@@ -1,10 +1,11 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { ArrowLeft, ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
 import { LogoMark } from '@/app/Shell';
 import { Badge } from '@/components/Badge';
-import { FeatureCard, PitchStat } from './components';
+import { FeatureCard, PitchStat, SectionHeading } from './components';
+import { GovStrip } from './GovStrip';
 import { DEPARTMENTS, FEATURES, PITCH_FIGURES, PRINCIPLES, PROFILE_TABS, ROLES, STORY_PARCELS, TIERS, WORKFLOWS } from './pitch';
 
 const btnBase =
@@ -12,10 +13,6 @@ const btnBase =
 const btnPrimary = 'bg-primary text-primary-ink border-transparent hover:brightness-110 active:brightness-95';
 const btnSecondary = 'bg-panel text-ink border-line hover:bg-panel-2 hover:border-line-strong';
 const btnGhost = 'bg-transparent text-ink-2 border-transparent hover:bg-ground-2 hover:text-ink';
-
-function Eyebrow({ children }: { children: ReactNode }) {
-  return <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-primary">{children}</p>;
-}
 
 export function LandingPage() {
   // Mark the landing as seen so the first-visit redirect (router.tsx) doesn't loop.
@@ -29,9 +26,6 @@ export function LandingPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
-      <Link to="/" className="mb-6 inline-flex items-center gap-1 text-xs font-medium text-ink-3 hover:text-ink">
-        <ArrowLeft size={14} /> Back to home
-      </Link>
       {/* Hero */}
       <section className="fade-up flex flex-col items-center text-center">
         <LogoMark size={52} />
@@ -40,7 +34,7 @@ export function LandingPage() {
             SIH 2026 · SIH26014
           </Badge>
           <Badge tone="neutral" icon={<MapPin />}>
-            Mangalagiri AOI
+            AP · TN · TG demo regions
           </Badge>
         </div>
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
@@ -100,8 +94,7 @@ export function LandingPage() {
       {/* Problem → Solution */}
       <section className="mt-16 grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-line bg-panel-2 p-5">
-          <Eyebrow>The problem</Eyebrow>
-          <h2 className="text-xl font-semibold">Land records live in silos.</h2>
+          <SectionHeading kicker="The problem" title="Land records live in silos." />
           <p className="mt-2 text-sm text-ink-2">
             Ownership sits with revenue, deeds with registration, zoning with planning, dues with the
             tax office, cases with the courts, connections with utilities. Each speaks its own
@@ -110,8 +103,7 @@ export function LandingPage() {
           </p>
         </div>
         <div className="rounded-lg border border-primary/30 bg-primary-soft/50 p-5">
-          <Eyebrow>The approach</Eyebrow>
-          <h2 className="text-xl font-semibold">One parcel key, one live record.</h2>
+          <SectionHeading kicker="The approach" title="One parcel key, one live record." />
           <p className="mt-2 text-sm text-ink-2">
             A gateway calls each department through an adapter, maps its fields into a Common Data
             Model, and returns the merged parcel — complete with which source answered, how fast, and
@@ -122,8 +114,7 @@ export function LandingPage() {
 
       {/* How a click becomes a record */}
       <section id="how" className="mt-16 scroll-mt-20 rounded-xl border border-line bg-panel p-6 shadow-panel sm:p-8">
-        <Eyebrow>How it works</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">How a click becomes a record</h2>
+        <SectionHeading kicker="How it works" title="How a click becomes a record" />
         <ol className="mt-6 grid gap-4 md:grid-cols-5">
           {[
             { head: 'You click a parcel', sub: 'on the map, or search a survey no / ULPIN / khata.' },
@@ -146,8 +137,7 @@ export function LandingPage() {
 
       {/* Departments */}
       <section id="departments" className="mt-16 scroll-mt-20">
-        <Eyebrow>Six systems, one interface</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">The departments Land Stack unifies</h2>
+        <SectionHeading kicker="Six systems, one interface" title="The departments Land Stack unifies" />
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           Each keeps its own data in its own words. The open interoperability layer is what turns them
           into a single answer.
@@ -163,8 +153,7 @@ export function LandingPage() {
 
       {/* Three tiers */}
       <section id="tiers" className="mt-16 scroll-mt-20">
-        <Eyebrow>GIS, in three tiers</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">Layers named the way the mandate names them</h2>
+        <SectionHeading kicker="GIS, in three tiers" title="Layers named the way the mandate names them" />
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {TIERS.map((t) => (
             <div key={t.n} className="rounded-lg border border-line bg-panel p-5 shadow-panel">
@@ -190,8 +179,7 @@ export function LandingPage() {
 
       {/* Feature highlights */}
       <section id="features" className="mt-16 scroll-mt-20">
-        <Eyebrow>What you can do</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">From a map click to a decision</h2>
+        <SectionHeading kicker="What you can do" title="From a map click to a decision" />
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((f) => (
             <FeatureCard key={f.title} icon={f.icon} title={f.title} tone={f.tone}>
@@ -203,8 +191,7 @@ export function LandingPage() {
 
       {/* Reading a parcel profile */}
       <section id="profile" className="mt-16 scroll-mt-20">
-        <Eyebrow>Reading a parcel profile</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">Eight tabs, one parcel</h2>
+        <SectionHeading kicker="Reading a parcel profile" title="Nine tabs, one parcel" />
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           Open any parcel and its profile is organised into tabs — each one answered by a different
           system, and each one saying so.
@@ -224,8 +211,7 @@ export function LandingPage() {
 
       {/* Workflows */}
       <section id="workflows" className="mt-16 scroll-mt-20">
-        <Eyebrow>Interoperable by design</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">Workflows that cross department walls</h2>
+        <SectionHeading kicker="Interoperable by design" title="Workflows that cross department walls" />
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
           The point of one key is that changes flow. These three run end to end in the demo.
         </p>
@@ -249,8 +235,7 @@ export function LandingPage() {
 
       {/* Roles */}
       <section id="roles" className="mt-16 scroll-mt-20">
-        <Eyebrow>Built for three audiences</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">Who it’s for</h2>
+        <SectionHeading kicker="Built for three audiences" title="Who it’s for" />
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {ROLES.map((r) => (
             <div key={r.role} className="rounded-lg border border-line bg-panel p-5 shadow-panel">
@@ -267,8 +252,7 @@ export function LandingPage() {
 
       {/* Differentiator */}
       <section className="mt-16 rounded-xl border border-slate/30 bg-slate-soft/40 p-6 sm:p-8">
-        <Eyebrow>The differentiator</Eyebrow>
-        <h2 className="max-w-3xl font-display text-[26px] font-semibold tracking-tight">An open interoperability layer, not another silo</h2>
+        <SectionHeading kicker="The differentiator" title="An open interoperability layer, not another silo" />
         <p className="mt-2 max-w-3xl text-sm text-ink-2">
           The hard part isn’t the map — it’s making independent systems agree. Land Stack ships an
           adapter model with per-state field mappings, an event contract so an upstream deed can flow
@@ -286,10 +270,9 @@ export function LandingPage() {
 
       {/* Story parcels */}
       <section id="stories" className="mt-16 scroll-mt-20">
-        <Eyebrow>See it on real scenarios</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">Story parcels</h2>
+        <SectionHeading kicker="See it on real scenarios" title="Story parcels" />
         <p className="mt-1 max-w-2xl text-sm text-ink-2">
-          Six hand-tuned parcels demonstrate the workflows end to end. Jump straight to one.
+          Eight hand-tuned parcels across three states demonstrate the workflows end to end. Jump straight to one.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {STORY_PARCELS.map((p) => (
@@ -314,8 +297,7 @@ export function LandingPage() {
 
       {/* Principles */}
       <section id="principles" className="mt-16 scroll-mt-20 rounded-xl border border-primary/25 bg-primary-soft/40 p-6 sm:p-8">
-        <Eyebrow>Why you can trust it</Eyebrow>
-        <h2 className="font-display text-[26px] font-semibold tracking-tight">Five rules the platform never breaks</h2>
+        <SectionHeading kicker="Why you can trust it" title="Five rules the platform never breaks" />
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {PRINCIPLES.map((p, i) => (
             <div key={p.title}>
@@ -340,17 +322,9 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="mt-10 border-t border-line pt-6 text-center text-[12px] text-ink-3">
-        <p>
-          Land Stack · Smart India Hackathon 2026 · Problem SIH26014 (Ministry of Rural Development /
-          Department of Land Resources).
-        </p>
-        <p className="mt-1">
-          Demo area: peri-urban Mangalagiri, Guntur district, Andhra Pradesh — a real bounding box with
-          a <span className="font-medium text-ink-2">synthetic cadastre</span>. Not a source of genuine
-          land records.
-        </p>
-      </footer>
+      <div className="mt-10">
+        <GovStrip />
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { LogoMark } from '@/app/Shell';
 import { useAuth } from '@/lib/auth';
+import { GovStrip } from './GovStrip';
 import { FAQ, GLOSSARY, MAP_READING, PROFILE_TABS, QUICK_START, ROLES, STORY_PARCELS, WORKFLOWS } from './pitch';
 
 const btnBase =
@@ -95,7 +96,7 @@ export function HelpPage() {
         <H2>Roles &amp; what each can do</H2>
         <div className="overflow-x-auto scroll-thin rounded-lg border border-line">
           <table className="w-full min-w-[560px] border-collapse text-left text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-panel-2 text-[12px] uppercase tracking-wide text-ink-3">
                 <th className="px-4 py-2 font-medium">Role</th>
                 <th className="px-4 py-2 font-medium">Who</th>
@@ -125,7 +126,7 @@ export function HelpPage() {
         <p className="mb-3 text-sm text-ink-2">Every visual cue on the map means something specific — and none of them relies on colour alone.</p>
         <div className="overflow-x-auto scroll-thin rounded-lg border border-line">
           <table className="w-full min-w-[560px] border-collapse text-left text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-panel-2 text-[12px] uppercase tracking-wide text-ink-3">
                 <th className="px-4 py-2 font-medium">You see</th>
                 <th className="px-4 py-2 font-medium">It means</th>
@@ -153,7 +154,7 @@ export function HelpPage() {
         </p>
         <div className="overflow-x-auto scroll-thin rounded-lg border border-line">
           <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-panel-2 text-[12px] uppercase tracking-wide text-ink-3">
                 <th className="px-4 py-2 font-medium">Tab</th>
                 <th className="px-4 py-2 font-medium">What you see</th>
@@ -278,9 +279,9 @@ export function HelpPage() {
         </div>
       </section>
 
-      <footer className="mt-12 border-t border-line pt-6 text-center text-[12px] text-ink-3">
-        Data is synthetic demo content over a real Mangalagiri bounding box · SIH26014.
-      </footer>
+      <div className="mt-12">
+        <GovStrip />
+      </div>
     </div>
   );
 }

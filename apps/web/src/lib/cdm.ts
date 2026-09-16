@@ -126,9 +126,12 @@ export interface Utilities {
 
 export interface Unit {
   ulpin_3d: string;
-  floor: number;
+  floor: number; // 0 = basement level
   unit_no: string;
   owner_name?: string | null;
+  base_m?: number | null;
+  height_m?: number | null;
+  area_sqm?: number | null;
 }
 
 export interface Building {
@@ -136,6 +139,9 @@ export interface Building {
   floors: number;
   height_m?: number | null;
   name?: string | null;
+  width_m?: number | null;
+  depth_m?: number | null;
+  basement_floors?: number | null;
   units: Unit[];
 }
 
@@ -205,6 +211,8 @@ export interface ParcelCDM {
   provenance: Partial<Record<SourceKey, Provenance>>;
   consistency: Consistency;
   status: ParcelStatus;
+  /** Raw parcel flags (seeded + system): story key, settlement resurvey phase, ... */
+  status_flags?: { story?: string; resurvey?: 'completed' | 'in_progress' | 'pending' } & Record<string, unknown>;
 }
 
 /* ---------- Other gateway shapes (§6) ---------- */
@@ -236,7 +244,59 @@ export interface VerifyOwnershipResult {
   compared: string[];
 }
 
-export type ApplicationType = 'mutation' | 'building_permission' | 'ownership_verification' | 'field_review';
+export type ApplicationType = 'mutation' | 'building_permission' | 'ownership_verification' | 'field_review' | 'boundary_correction';
+
+/* ---------- Boundary correction (bounded parcel editing, CONTRACTS §6/§8) ---------- */
+
+export interface BoundaryCheck {
+  name: string;
+  ok: boolean;
+  detail: string;
+}
+
+export interface BoundaryValidation {
+  valid: boolean;
+  checks: BoundaryCheck[];
+  metrics: {
+    old_area_sqm: number;
+    new_area_sqm: number;
+    delta_pct: number;
+    overlaps: { ulpin: string; survey_no?: string | null; overlap_sqm: number }[];
+  };
+  suggestion?: { geometry: Record<string, unknown>; area_sqm: number; reason: string };
+}
+
+export interface AIFinding {
+  severity: 'high' | 'medium' | 'info' | 'ok' | string;
+  text: string;
+  action?: string | null;
+}
+
+export interface ParcelBrief {
+  ulpin: string;
+  engine: string; // 'nvidia:<model>' | 'rules'
+  risk_score: number;
+  risk_level: 'low' | 'elevated' | 'high' | string;
+  findings: AIFinding[];
+  narrative: string;
+  recommendations: string[];
+}
+
+export interface ApplicationAdvice {
+  application_id: string;
+  engine: string;
+  suggested_action: string | null;
+  rationale: string | null;
+  allowed_actions: string[];
+  parcel_risk: { score: number; level: string };
+}
+
+export interface BoundaryProposalResult {
+  accepted: boolean;
+  application?: Application;
+  validation: BoundaryValidation;
+  error?: string;
+}
 
 export interface HistoryEntry {
   ts: string;
@@ -353,6 +413,8 @@ export interface AdapterFieldMapping {
 
 export interface AdapterMapping {
   department: string;
+  /** Which state's vocabulary this mapping translates (AP/TN/TG); one department can have several. */
+  state?: string | null;
   source_system: string;
   endpoint?: string | null;
   fields: AdapterFieldMapping[];

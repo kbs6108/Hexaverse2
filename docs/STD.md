@@ -31,6 +31,12 @@ See the Mermaid diagram in the root `README.md`.
 
 ## 2. Data schemas
 
+**Three-state data model.** `landstack.parcels.state` ∈ {AP, TN, TG}; `dept_revenue.ror.state`
+(migration 007) selects the dialect each RoR row is served in; `gis.settlement_schemes`
+(migration 006) holds each state's resurvey-programme areas (phase: notified/in_progress/completed)
+and parcels carry the matching `status_flags.resurvey`. Buildings carry footprint width/depth and
+`basement_floors` (migration 010).
+
 The database is split into eight schemas applied by idempotent SQL migrations
 (`db/migrations/001_extensions.sql` … `005_views.sql`, run by `tools/migrate.py` in filename order and
 recorded in `landstack.schema_migrations`):
@@ -84,6 +90,29 @@ Gateway surface (`apps/api/landstack/routers/`): **meta** `GET /healthz`, `GET /
 `limit/offset`; filters are query parameters; writes are POST with Pydantic-validated bodies;
 state changes are explicit `transition {action, remark}` calls governed by the `transitions` table.
 
+### 3.x AI assistance endpoints
+
+`POST /landstack/ai/parcel-brief` (any signed-in) and `POST /landstack/ai/application-advice`
+(officer+) provide risk briefs and next-action recommendations. Generation runs on NVIDIA Build
+(OpenAI-compatible chat completions; `NVIDIA_MODEL`, default `nvidia/nemotron-3-super-120b-a12b`) when
+`NVIDIA_API_KEY` is configured, and on a deterministic rule engine otherwise; every response carries
+an `engine` field and the UI labels the provenance. The model receives only a compact fact sheet
+derived from the caller's own (masked) CDM view. Document extraction
+(`POST /landstack/ai/extract-document`) prefers the NVIDIA vision model.
+
+### 3.y Bounded boundary correction
+
+`POST /landstack/parcels/{ulpin}/boundary/validate` and `POST .../boundary` implement bounded
+parcel-geometry editing: validity, 4–200 vertices, |Δarea| ≤ 15%, no overlap > 1 m², containment in
+the village boundary, plus an assistive snap/overlap-subtraction suggestion. Proposals flow through
+the `boundary_correction` workflow (submitted → geometry_check → approved/returned/rejected, revenue
+officer); approval re-validates, applies the geometry, recomputes the area and syncs the RoR extent
+(revenue `POST /extent`). All steps are audited.
+
+**GIS overview (three regions).** The demo spans three real bounding boxes — Mangalagiri (AP),
+Sriperumbudur (TN), Shamshabad (TG) — ~150 thinned parcels each; the map serves a national
+overview (cluster markers below z8, parcel tiles z10+) and per-region village boundaries.
+
 ## 4. Interoperability standards
 
 - **Identifiers**: ULPIN-style 14-character ids for parcels (DILRMP-compatible shape); 3D suffixes for
@@ -103,6 +132,15 @@ state changes are explicit `transition {action, remark}` calls governed by the `
   National Data Sharing and Accessibility Policy. Bhuvan WMS can be layered behind a flag.
 - **Documents**: verification reports are PDF/A-style with a QR code that resolves to a public
   `GET /verify/{id}` JSON endpoint, so third parties verify without an account.
+
+### 4.x The per-state adapters are the interoperability proof
+
+The claim "onboarding a state is a mapping file, not a migration" is backed by code:
+`adapters/mappings/revenue_ap.yaml` (Meebhoomi vocabulary: khata_no/owner_name/extent_sqm),
+`revenue_tn.yaml` (Patta Chitta: patta_no/pattadar_name/extent_hectares) and `revenue_tg.yaml`
+(Dharani: ppb_no/pattadar_name/extent_acres) translate three live dialects into the same CDM,
+with unit conversion (hectare/acre → sqm) declared in the mapping. The registry selects the
+mapping per parcel state at request time; unmapped departments fall back to the AP mapping.
 
 ## 5. GIS standards
 

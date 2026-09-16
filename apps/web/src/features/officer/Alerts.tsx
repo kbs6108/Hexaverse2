@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { Radar, Scale, Clock, UserCheck, CheckCheck } from 'lucide-react';
+import { Radar, Scale, Clock, UserCheck, CheckCheck, ClipboardCheck } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import type { Alert } from '@/lib/cdm';
 import { Card } from '@/components/Card';
@@ -26,6 +26,26 @@ export function AlertsPage() {
     void qc.invalidateQueries({ queryKey: qk.stats() });
   };
   const assign = useMutation({ mutationFn: (a: Alert) => api.assignAlert(a.id), onSuccess: () => { toast.success('Alert assigned to you'); invalidate(); }, onError: (e: Error) => toast.error('Assign failed', e.message) });
+  // Close the loop on satellite alerts: one click files a field_review application
+  // (pre-filled from the alert) and assigns the alert, so it lands in the queue.
+  const review = useMutation({
+    mutationFn: async (a: Alert) => {
+      const app = await api.createApplication(a.ulpin!, 'field_review', {
+        trigger: a.kind,
+        alert_id: a.id,
+        label: typeof a.detail?.label === 'string' ? a.detail.label : undefined,
+        note: `Filed from alert #${a.id}: ${a.title}`,
+      });
+      if (a.status === 'open') await api.assignAlert(a.id).catch(() => undefined);
+      return app;
+    },
+    onSuccess: (app) => {
+      toast.success('Field review filed', app.id);
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ['queue'] });
+    },
+    onError: (e: Error) => toast.error('Could not file field review', e.message),
+  });
   const resolve = useMutation({ mutationFn: (a: Alert) => api.resolveAlert(a.id), onSuccess: () => { toast.success('Alert resolved'); invalidate(); }, onError: (e: Error) => toast.error('Resolve failed', e.message) });
 
   return (
@@ -61,6 +81,11 @@ export function AlertsPage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  {a.kind === 'change_detected' && a.status !== 'resolved' && a.ulpin && (
+                    <Button size="sm" icon={<ClipboardCheck size={14} />} loading={review.isPending && review.variables?.id === a.id} onClick={() => review.mutate(a)}>
+                      Field review
+                    </Button>
+                  )}
                   {a.status === 'open' && <Button size="sm" icon={<UserCheck size={14} />} loading={assign.isPending && assign.variables?.id === a.id} onClick={() => assign.mutate(a)}>Assign to me</Button>}
                   {a.status !== 'resolved' && <Button size="sm" variant="primary" icon={<CheckCheck size={14} />} loading={resolve.isPending && resolve.variables?.id === a.id} onClick={() => resolve.mutate(a)}>Resolve</Button>}
                   {a.status === 'resolved' && <Badge tone="primary">Resolved</Badge>}

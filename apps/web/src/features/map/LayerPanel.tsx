@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { Box, ChevronDown, Layers, PanelLeftClose, PanelLeftOpen, Satellite, TriangleAlert } from 'lucide-react';
 import { env } from '@/lib/env';
 import { useUI, type ColourBy, type LayerId } from '@/lib/store';
+import { roleAtLeast, useAuth } from '@/lib/auth';
 import { Checkbox, Field, Select } from '@/components/Field';
 import { C, COLOUR_BY_OPTIONS, LEGENDS, type LegendEntry } from './legend';
 
@@ -45,14 +46,24 @@ const TIERS: { key: string; title: string; layers: LayerDef[] }[] = [
         ],
       },
       { id: 'projects', label: 'Government projects', legend: [{ value: 'p', label: 'Project footprint', colour: C.violet }] },
+      {
+        id: 'settlement_schemes',
+        label: 'Settlement / resurvey',
+        hint: 'Dotted outline · per state',
+        legend: [
+          { value: 'completed', label: 'Resurvey completed', colour: C.green },
+          { value: 'in_progress', label: 'Resurvey in progress', colour: C.amber },
+        ],
+      },
       { id: 'change_alerts', label: 'Satellite change alerts', hint: 'Sentinel-2 · NDVI / NDBI', legend: LEGENDS.change_alert.entries.slice(0, 1) },
     ],
   },
 ];
 
 export function LayerPanel() {
-  const { layers, toggleLayer, colourBy, setColourBy, basemap, setBasemap, show3D, setShow3D, layerPanelOpen, setLayerPanelOpen } = useUI();
-  const hasImagery = !!env.esriApiKey;
+  const { layers, toggleLayer, colourBy, setColourBy, basemap, setBasemap, show3D, setShow3D, layerPanelOpen, setLayerPanelOpen, usecaseTierOpen, setUsecaseTierOpen } = useUI();
+  const { role } = useAuth();
+  const usecaseOpen = usecaseTierOpen ?? roleAtLeast(role, 'officer');
 
   if (!layerPanelOpen) {
     return (
@@ -101,10 +112,18 @@ export function LayerPanel() {
         </div>
 
         {TIERS.map((tier) => (
-          <Tier key={tier.key} title={tier.title} defaultOpen={tier.key !== 'usecase'}>
+          <Tier
+            key={tier.key}
+            title={tier.title}
+            defaultOpen={tier.key !== 'usecase'}
+            // Use-case: officers/admin get it expanded by default (their daily layers);
+            // citizens/first-timers get it folded. Either way the user's choice sticks.
+            open={tier.key === 'usecase' ? usecaseOpen : undefined}
+            onToggle={tier.key === 'usecase' ? setUsecaseTierOpen : undefined}
+          >
             {tier.layers.map((l) => (
               <div key={l.id} className="py-1">
-                <Checkbox label={l.label} hint={l.hint} checked={layers[l.id]} onChange={(e) => toggleLayer(l.id, e.target.checked)} />
+                <Checkbox label={l.label} hint={l.hint} checked={!!layers[l.id]} onChange={(e) => toggleLayer(l.id, e.target.checked)} />
                 {l.legend && layers[l.id] && <Legend entries={l.legend} className="ml-6 mt-1" />}
               </div>
             ))}
@@ -124,19 +143,16 @@ export function LayerPanel() {
           >
             Streets
           </button>
-          {hasImagery ? (
-            <button
-              type="button"
-              role="radio"
-              aria-checked={basemap === 'imagery'}
-              onClick={() => setBasemap('imagery')}
-              className={clsx('flex items-center justify-center gap-1 rounded px-2 py-1 text-xs font-medium', basemap === 'imagery' ? 'bg-panel shadow-sm' : 'text-ink-3 hover:text-ink')}
-            >
-              <Satellite size={12} /> Imagery
-            </button>
-          ) : (
-            <span className="px-2 py-1 text-center text-[11px] text-ink-3" title="Set VITE_ESRI_API_KEY to enable">Imagery · no key</span>
-          )}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={basemap === 'imagery'}
+            onClick={() => setBasemap('imagery')}
+            title={env.esriApiKey ? 'Esri World Imagery (keyed basemap service)' : 'Esri World Imagery (public tiles)'}
+            className={clsx('flex items-center justify-center gap-1 rounded px-2 py-1 text-xs font-medium', basemap === 'imagery' ? 'bg-panel shadow-sm' : 'text-ink-3 hover:text-ink')}
+          >
+            <Satellite size={12} /> Imagery
+          </button>
         </div>
         <Checkbox
           label={
@@ -153,14 +169,23 @@ export function LayerPanel() {
   );
 }
 
-function Tier({ title, defaultOpen, children }: { title: string; defaultOpen: boolean; children: ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen);
+function Tier({ title, defaultOpen, open: controlledOpen, onToggle, children }: {
+  title: string;
+  defaultOpen: boolean;
+  /** Controlled mode (used for the Use-case tier so the choice is remembered). */
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  const [localOpen, setLocalOpen] = useState(defaultOpen);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = (next: boolean) => (onToggle ? onToggle(next) : setLocalOpen(next));
   return (
     <section className="border-b border-line">
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between px-3 py-2 text-left text-[11.5px] font-semibold uppercase tracking-wide text-ink-2 hover:bg-ground-2"
       >
         {title}

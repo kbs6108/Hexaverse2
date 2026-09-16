@@ -41,6 +41,7 @@ LAYERS: dict[str, Layer] = {
     "water_lines": Layer("water_lines", "gis.water_lines", title="Water lines", collections=False),
     "projects": Layer("projects", "gis.projects", title="Government projects"),
     "village_boundary": Layer("village_boundary", "gis.village_boundary", title="Village boundary", tiles=False),
+    "settlement_schemes": Layer("settlement_schemes", "gis.settlement_schemes", title="Land settlement / resurvey schemes"),
     "buildings": Layer("buildings", "landstack.buildings", geom_col="footprint", title="Buildings", tiles=False),
     "units": Layer(
         "units", "landstack.unit_tile_features", "landstack.units", title="3D units", collections=False, min_zoom=14

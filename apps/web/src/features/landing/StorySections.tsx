@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowDown, ArrowRight, Check, Search } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, EyeOff, PenLine, QrCode, Search, Sparkles } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { DEPARTMENTS, PITCH_FIGURES, QUICK_START, ROLES, STORY_PARCELS, TIERS } from '@/features/marketing/pitch';
 import type { Tone } from '@/components/Badge';
+import { GovStrip } from '@/features/marketing/GovStrip';
+import { SectionHeading } from '@/features/marketing/components';
 import { MapLaunch } from './MapLaunch';
 
 /** Scroll-story landing (light, emerald). Cinematic scenes alternate with
@@ -55,7 +57,7 @@ function SystemScene({
   id?: string;
 }) {
   return (
-    <section id={id} className="landing-section relative flex min-h-screen items-center overflow-hidden bg-[#f5f5f7] py-24 text-[#1d1d1f]">
+    <section id={id} className="landing-section relative flex min-h-screen items-center overflow-hidden bg-ground py-24 text-ink">
       <div className="mx-auto grid w-full max-w-[1400px] items-center gap-12 px-6 sm:px-12 lg:grid-cols-[.9fr_1.1fr] lg:px-20">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -64,18 +66,18 @@ function SystemScene({
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-10 max-w-xl"
         >
-          <p className="mb-6 font-display text-[11px] uppercase tracking-[0.3em] text-[#0e6b54]">{chapter} / The System</p>
+          <p className="mb-6 font-display text-[11px] uppercase tracking-[0.3em] text-primary">{chapter} / The System</p>
           <h2 className="font-display text-5xl font-semibold leading-[.92] tracking-[-0.06em] sm:text-6xl">{title}</h2>
-          <p className="mt-6 max-w-md text-[15px] leading-7 text-[#515154]">{caption}</p>
+          <p className="mt-6 max-w-md text-[15px] leading-7 text-ink-2">{caption}</p>
           {points && (
             <ul className="mt-7 space-y-3">
               {points.map((p) => (
                 <li key={p.head} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#0e6b54]/10">
-                    <Check size={12} className="text-[#0e6b54]" />
+                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Check size={12} className="text-primary" />
                   </span>
-                  <p className="text-sm leading-6 text-[#515154]">
-                    <span className="font-semibold text-[#1d1d1f]">{p.head}</span> — {p.sub}
+                  <p className="text-sm leading-6 text-ink-2">
+                    <span className="font-semibold text-ink">{p.head}</span> — {p.sub}
                   </p>
                 </li>
               ))}
@@ -98,11 +100,11 @@ function SystemScene({
 
 function LandScene({ chapter, statement, detail, className = '', id }: { chapter: string; statement: React.ReactNode; detail?: string; className?: string; id?: string }) {
   return (
-    <section id={id} className={`landing-section relative flex min-h-[85vh] items-center overflow-hidden bg-white px-6 py-24 text-[#1d1d1f] sm:px-12 lg:px-24 ${className}`}>
+    <section id={id} className={`landing-section relative flex min-h-[85vh] items-center overflow-hidden bg-white px-6 py-24 text-ink sm:px-12 lg:px-24 ${className}`}>
       <motion.div initial={{ opacity: 0, y: 55 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }} viewport={{ once: true, amount: 0.45 }} className="mx-auto w-full max-w-6xl">
         <p className="mb-10 font-display text-[11px] uppercase tracking-[0.3em] text-[#7a7a7a]">{chapter} / The Land</p>
         <h2 className="max-w-5xl font-serif text-5xl leading-[.96] tracking-[-0.055em] sm:text-7xl lg:text-[6.2rem]">{statement}</h2>
-        {detail && <p className="mt-12 max-w-md border-l border-[#0e6b54]/40 pl-5 font-sans text-sm leading-7 text-[#0e6b54]">{detail}</p>}
+        {detail && <p className="mt-12 max-w-md border-l border-primary/40 pl-5 font-sans text-sm leading-7 text-primary">{detail}</p>}
       </motion.div>
     </section>
   );
@@ -110,14 +112,14 @@ function LandScene({ chapter, statement, detail, className = '', id }: { chapter
 
 function ParcelMap() {
   return (
-    <div className="absolute inset-0 overflow-hidden rounded-2xl border border-[#0e6b54]/20 bg-[#0D1A13] shadow-[0_24px_60px_-24px_rgba(13,26,19,0.55)] [background-image:linear-gradient(rgba(134,239,172,.11)_1px,transparent_1px),linear-gradient(90deg,rgba(134,239,172,.11)_1px,transparent_1px)] [background-size:52px_52px]">
+    <div className="absolute inset-0 overflow-hidden rounded-2xl border border-primary/20 bg-[#0D1A13] shadow-[0_24px_60px_-24px_rgba(13,26,19,0.55)] [background-image:linear-gradient(rgba(134,239,172,.11)_1px,transparent_1px),linear-gradient(90deg,rgba(134,239,172,.11)_1px,transparent_1px)] [background-size:52px_52px]">
       <motion.div initial={{ scale: 0.7, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ duration: 1.2 }} viewport={{ once: true }} className="absolute inset-0">
         <div className="absolute left-[19%] top-[22%] h-48 w-72 -rotate-12 border border-[#86EFAC] bg-[#86EFAC]/10 shadow-[0_0_80px_rgba(134,239,172,.18)]" />
         <div className="absolute left-[48%] top-[48%] h-56 w-72 rotate-12 border border-[#86EFAC]/50 bg-[#86EFAC]/5" />
         <div className="absolute left-[58%] top-[14%] h-36 w-48 rotate-6 border border-[#86EFAC]/35" />
         <div className="absolute left-[37%] top-[34%] h-3 w-3 rounded-full bg-[#86EFAC] shadow-[0_0_20px_7px_rgba(134,239,172,.45)]" />
         <motion.div initial={{ y: -35, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }} viewport={{ once: true }} className="absolute left-[36%] top-[25%] font-mono text-[10px] tracking-widest text-[#86EFAC]">
-          ULPIN-1403-PB-889
+          TFCM91641E6C82
         </motion.div>
       </motion.div>
     </div>
@@ -127,13 +129,7 @@ function ParcelMap() {
 /* ---------- info sections (content from marketing/pitch.ts) ---------- */
 
 function InfoHeader({ kicker, title, sub }: { kicker: string; title: string; sub?: string }) {
-  return (
-    <div className="mx-auto max-w-2xl text-center">
-      <p className="font-display text-[11px] uppercase tracking-[0.3em] text-[#0e6b54]">{kicker}</p>
-      <h2 className="mt-4 font-display text-4xl font-semibold tracking-[-0.04em] text-[#1d1d1f] sm:text-5xl">{title}</h2>
-      {sub && <p className="mt-5 text-base leading-7 text-[#515154]">{sub}</p>}
-    </div>
-  );
+  return <SectionHeading kicker={kicker} title={title} sub={sub} align="center" size="lg" />;
 }
 
 function StatsStrip() {
@@ -142,12 +138,12 @@ function StatsStrip() {
       <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 sm:grid-cols-4">
         {PITCH_FIGURES.map((f) => (
           <motion.div key={f.label} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 0.7 }} className="text-center">
-            <p className="font-display text-4xl font-semibold tracking-[-0.04em] text-[#0e6b54] sm:text-5xl">{f.value}</p>
-            <p className="mt-2 text-[13px] text-[#6e6e73]">{f.label}</p>
+            <p className="font-display text-4xl font-semibold tracking-[-0.04em] text-primary sm:text-5xl">{f.value}</p>
+            <p className="mt-2 text-[13px] text-ink-3">{f.label}</p>
           </motion.div>
         ))}
       </div>
-      <p className="mt-8 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-[#aeaeb2]">Demo cadastre · Mangalagiri AOI · synthetic data</p>
+      <p className="mt-8 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-[#aeaeb2]">Demo cadastre · Mangalagiri · Sriperumbudur · Shamshabad · synthetic data</p>
     </section>
   );
 }
@@ -159,11 +155,11 @@ function DepartmentCard({ d, index }: { d: (typeof DEPARTMENTS)[number]; index: 
         <span className={`inline-flex size-10 items-center justify-center rounded-xl ${TONE_SOFT[d.tone]}`}>
           <d.icon size={20} className={TONE_TEXT[d.tone]} />
         </span>
-        <span className="font-display text-3xl font-semibold text-[#0e6b54]/15">{String(index + 1).padStart(2, '0')}</span>
+        <span className="font-display text-3xl font-semibold text-primary/15">{String(index + 1).padStart(2, '0')}</span>
       </div>
-      <h3 className="mt-4 font-display text-lg font-semibold text-[#1d1d1f]">{d.name}</h3>
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#0e6b54]">{d.vocab}</p>
-      <p className="mt-2 text-sm leading-6 text-[#515154]">{d.blurb}</p>
+      <h3 className="mt-4 font-display text-lg font-semibold text-ink">{d.name}</h3>
+      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">{d.vocab}</p>
+      <p className="mt-2 text-sm leading-6 text-ink-2">{d.blurb}</p>
     </div>
   );
 }
@@ -186,7 +182,7 @@ function DepartmentsSection() {
   return (
     <>
       {/* Desktop: pinned horizontal strip */}
-      <section ref={trackRef} id="departments" className="landing-section relative hidden h-[280vh] bg-[#f5f5f7] lg:block">
+      <section ref={trackRef} id="departments" className="landing-section relative hidden h-[280vh] bg-ground lg:block">
         <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden py-12">
           <div className="px-12">{header}</div>
           <motion.div style={{ x }} className="mt-12 flex w-max gap-5 pl-[8vw]">
@@ -198,7 +194,7 @@ function DepartmentsSection() {
             <div className="flex w-[300px] shrink-0 items-center">
               <p className="text-sm leading-7 text-[#86868b]">
                 …and every one of them keeps its own vocabulary.
-                <span className="mt-2 block font-semibold text-[#0e6b54]">One ULPIN key ties them together.</span>
+                <span className="mt-2 block font-semibold text-primary">One ULPIN key ties them together.</span>
               </p>
             </div>
           </motion.div>
@@ -207,7 +203,7 @@ function DepartmentsSection() {
       </section>
 
       {/* Mobile / tablet: plain grid */}
-      <section id="departments-grid" className="landing-section bg-[#f5f5f7] px-6 py-24 sm:px-12 lg:hidden">
+      <section id="departments-grid" className="landing-section bg-ground px-6 py-24 sm:px-12 lg:hidden">
         {header}
         <div className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-2">
           {DEPARTMENTS.map((d, i) => (
@@ -235,17 +231,17 @@ function HowItWorksSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, delay: i * 0.08 }}
-            className="rounded-2xl border border-black/[0.06] bg-[#f5f5f7] p-6"
+            className="rounded-2xl border border-black/[0.06] bg-ground p-6"
           >
-            <span className="font-display text-3xl font-semibold text-[#0e6b54]/30">{String(i + 1).padStart(2, '0')}</span>
-            <h3 className="mt-3 font-display text-base font-semibold text-[#1d1d1f]">{s.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-[#515154]">{s.detail}</p>
+            <span className="font-display text-3xl font-semibold text-primary/30">{String(i + 1).padStart(2, '0')}</span>
+            <h3 className="mt-3 font-display text-base font-semibold text-ink">{s.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-ink-2">{s.detail}</p>
           </motion.div>
         ))}
       </div>
 
       <div className="mx-auto mt-20 max-w-6xl">
-        <p className="text-center font-display text-[11px] uppercase tracking-[0.3em] text-[#0e6b54]">One platform / three roles</p>
+        <p className="text-center font-display text-[11px] uppercase tracking-[0.3em] text-primary">One platform / three roles</p>
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
           {ROLES.map((r, i) => (
             <motion.div
@@ -261,11 +257,11 @@ function HowItWorksSection() {
                   <r.icon size={20} className={TONE_TEXT[r.tone]} />
                 </span>
                 <div>
-                  <h3 className="font-display text-base font-semibold text-[#1d1d1f]">{r.role}</h3>
+                  <h3 className="font-display text-base font-semibold text-ink">{r.role}</h3>
                   <p className="text-[12px] text-[#86868b]">{r.who}</p>
                 </div>
               </div>
-              <p className="mt-4 text-sm leading-6 text-[#515154]">{r.can}</p>
+              <p className="mt-4 text-sm leading-6 text-ink-2">{r.can}</p>
             </motion.div>
           ))}
         </div>
@@ -276,25 +272,25 @@ function HowItWorksSection() {
 
 function StoriesSection() {
   return (
-    <section id="stories" className="landing-section bg-[#f5f5f7] px-6 py-28 sm:px-12">
+    <section id="stories" className="landing-section bg-ground px-6 py-28 sm:px-12">
       <InfoHeader
-        kicker="Six parcels / six stories"
+        kicker="Eight parcels / three states"
         title="See it on real records"
-        sub="The demo cadastre seeds six named parcels, each telling one land-governance story. Click any of them to open it on the live map."
+        sub="The demo cadastre seeds eight named parcels across Andhra Pradesh, Tamil Nadu and Telangana — each telling one land-governance story. Click any of them to open it on the live map."
       />
       <div className="mx-auto mt-14 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {STORY_PARCELS.map((p, i) => (
           <motion.div key={p.ulpin} initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: i * 0.06 }}>
             <MapLaunch
               ulpin={p.ulpin}
-              className="group flex h-full w-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 text-left shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:border-[#0e6b54]/40 hover:shadow-[0_18px_44px_-18px_rgba(14,107,84,0.35)]"
+              className="group flex h-full w-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 text-left shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_18px_44px_-18px_rgba(14,107,84,0.35)]"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-sm font-semibold text-[#1d1d1f]">Sy. {p.survey_no}</span>
+                <span className="font-mono text-sm font-semibold text-ink">Sy. {p.survey_no}</span>
                 <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${TONE_SOFT[p.tone]} ${TONE_TEXT[p.tone]}`}>{p.title}</span>
               </div>
-              <p className="mt-3 flex-1 text-sm leading-6 text-[#515154]">{p.note}</p>
-              <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#0e6b54] transition group-hover:gap-2.5">
+              <p className="mt-3 flex-1 text-sm leading-6 text-ink-2">{p.note}</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition group-hover:gap-2.5">
                 Open on the map <ArrowRight size={14} />
               </span>
             </MapLaunch>
@@ -305,17 +301,97 @@ function StoriesSection() {
   );
 }
 
+function CapabilitiesBento() {
+  // The keep-list features that had no landing presence: mixed-size tiles, one
+  // sentence each, two quiet micro-animations (reduced-motion aware).
+  const tile = 'rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)]';
+  return (
+    <section id="capabilities" className="landing-section bg-white px-6 py-28 sm:px-12">
+      <InfoHeader
+        kicker="Beyond the record"
+        title="Built like infrastructure, not a viewer"
+        sub="The parts you only notice when you need them — analysis, controlled change, verification and privacy."
+      />
+      <div className="mx-auto mt-14 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* AI briefs — wide tile with a living risk meter */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6 }} className={`${tile} sm:col-span-2`}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-violet-soft"><Sparkles size={20} className="text-violet" /></span>
+            <h3 className="font-display text-lg font-semibold text-ink">AI risk briefs</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">Flagged parcels are analysed automatically — a risk score, the findings behind it and recommended actions, with the engine that produced them named on the card.</p>
+          <div className="mt-4 rounded-lg border border-violet/20 bg-violet-soft/40 p-3">
+            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-violet">
+              <span>Risk analysis</span><span>nvidia · nemotron</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70">
+              <div className="bento-meter h-full rounded-full bg-violet" />
+            </div>
+          </div>
+        </motion.div>
+        {/* Satellite alerts — scanline micro-animation */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.06 }} className={tile}>
+          <div className="relative h-20 overflow-hidden rounded-lg bg-[#0D1A13]">
+            <div className="absolute inset-0 [background-image:linear-gradient(rgba(134,239,172,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(134,239,172,.12)_1px,transparent_1px)] [background-size:18px_18px]" />
+            <div className="bento-scanline absolute left-0 right-0 h-px bg-[#86EFAC] shadow-[0_0_12px_2px_rgba(134,239,172,0.6)]" />
+            <span className="absolute bottom-1.5 right-2 font-mono text-[9px] uppercase tracking-widest text-[#86EFAC]/80">Sentinel-2</span>
+          </div>
+          <h3 className="mt-4 font-display text-base font-semibold text-ink">Satellite change alerts</h3>
+          <p className="mt-1.5 text-sm leading-6 text-ink-2">Unrecorded construction is flagged from orbit — and becomes a field review in one click.</p>
+        </motion.div>
+        {/* 3D units */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.12 }} className={tile}>
+          <div className="flex h-20 items-end justify-center gap-1.5 rounded-lg bg-ground p-3">
+            {[8, 14, 20, 11].map((h, i) => (
+              <div key={i} className="w-6 rounded-t-sm bg-primary/70" style={{ height: `${h * 3}px` }} />
+            ))}
+            <div className="w-6 rounded-sm border border-brick/60 bg-brick/20" style={{ height: '8px' }} title="basement" />
+          </div>
+          <h3 className="mt-4 font-display text-base font-semibold text-ink">Vertical property</h3>
+          <p className="mt-1.5 text-sm leading-6 text-ink-2">Click a unit in 3D for its 3D-ULPIN, floor area and elevation band — basements included.</p>
+        </motion.div>
+        {/* Boundary editing */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.18 }} className={tile}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary-soft"><PenLine size={20} className="text-primary" /></span>
+            <h3 className="font-display text-base font-semibold text-ink">Bounded boundary edits</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">Officers drag a parcel's corners; validation enforces the norms (±15% area, no overlaps) and a second approval applies it. Nothing changes silently.</p>
+        </motion.div>
+        {/* Reports + QR */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.24 }} className={tile}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-slate-soft"><QrCode size={20} className="text-slate" /></span>
+            <h3 className="font-display text-base font-semibold text-ink">Verifiable reports</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">Signed Land Information Reports with a QR code anyone can scan to verify — on a phone, in seconds.</p>
+        </motion.div>
+        {/* Consent / masking */}
+        <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.3 }} className={`${tile} sm:col-span-2`}>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-amber-soft"><EyeOff size={20} className="text-amber" /></span>
+            <h3 className="font-display text-lg font-semibold text-ink">Privacy by consent</h3>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-ink-2">
+            Owner details are masked for everyone except the owner and consented parties — <span className="font-mono text-[13px] text-ink">R*** K***</span> until consent turns it into <span className="font-mono text-[13px] text-ink">Ravi Kumar</span>. Time-boxed grants, fully audited.
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------- assembled page ---------- */
 
 export function StorySections() {
   return (
-    <div className="bg-[#f5f5f7]">
+    <div className="bg-ground">
       <StatsStrip />
 
       <SystemScene
         id="system-map"
         chapter="01"
-        title={<>Land, <span className="text-[#0e6b54]">located.</span></>}
+        title={<>Land, <span className="text-primary">located.</span></>}
         caption="A fast vector-tile map of the whole cadastre, organised in the three GIS tiers the problem statement asks for. Click any parcel and its full record opens."
         points={TIERS.map((t) => ({ head: t.name, sub: t.blurb }))}
       >
@@ -326,7 +402,7 @@ export function StorySections() {
       <LandScene
         id="fragmentation"
         chapter="02"
-        statement={<>For a farmer, a boundary is not a line. <em className="text-[#0e6b54]">It is a livelihood.</em></>}
+        statement={<>For a farmer, a boundary is not a line. <em className="text-primary">It is a livelihood.</em></>}
         detail="The mutation that takes weeks. The record that lives in three offices. Land Stack brings the answer closer to the people waiting for it."
       />
 
@@ -334,7 +410,7 @@ export function StorySections() {
 
       <SystemScene
         chapter="03"
-        title={<>Every record.<br /><span className="text-[#0e6b54]">One search.</span></>}
+        title={<>Every record.<br /><span className="text-primary">One search.</span></>}
         caption="Search a survey number, ULPIN or khata and get the assembled record in under a second — with every field traceable to the system it came from."
         points={[
           { head: 'Per-source provenance', sub: 'each block names its department, timestamp and health.' },
@@ -346,7 +422,7 @@ export function StorySections() {
           <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="w-full max-w-xl rounded-xl border border-[#86EFAC]/40 bg-[#0D1A13]/95 p-3 shadow-[0_24px_60px_-24px_rgba(13,26,19,0.55)] backdrop-blur-xl">
             <div className="flex items-center gap-4 border-b border-[#86EFAC]/20 px-3 py-4">
               <Search size={18} className="text-[#86EFAC]" />
-              <span className="font-mono text-sm text-[#EFFFF7]">ULPIN-1403-PB-889</span>
+              <span className="font-mono text-sm text-[#EFFFF7]">TFCM91641E6C82</span>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 font-mono text-[10px] uppercase tracking-widest text-[#86EFAC]/70">
               <span>RoR / synced</span>
@@ -359,32 +435,52 @@ export function StorySections() {
 
       <HowItWorksSection />
 
+      <CapabilitiesBento />
+
       <LandScene
         chapter="04"
-        statement={<>For a family, a dispute is not data. <em className="text-[#0e6b54]">It is a question of home.</em></>}
+        statement={<>For a family, a dispute is not data. <em className="text-primary">It is a question of home.</em></>}
         detail="A connected record turns a maze of departments into a clear next step."
-        className="bg-[#f5f5f7]"
+        className="bg-ground"
       />
 
       <SystemScene
         id="identity"
         chapter="05"
-        title={<>Different states.<br /><span className="text-[#0e6b54]">Common language.</span></>}
-        caption="Every state keeps its own systems and vocabulary — khata in Andhra, patta in Tamil Nadu. An adapter maps each into one Common Land Model, so onboarding a state is a mapping file, not a migration."
+        title={<>Different states.<br /><span className="text-primary">Common language.</span></>}
+        caption="Every state keeps its own systems and vocabulary — khata in Andhra Pradesh, patta in Tamil Nadu, pattadar passbook in Telangana's Dharani. An adapter maps each into one Common Land Model, so onboarding a state is a mapping file, not a migration."
         points={[
-          { head: 'Per-state adapters', sub: 'field mappings translate local vocabulary into the shared model.' },
+          { head: 'Per-state adapters', sub: 'field mappings translate local vocabulary into the shared model — live for AP, TN and TG.' },
           { head: 'Event contract', sub: 'a registered deed automatically notifies the revenue mutation queue.' },
           { head: 'Open APIs', sub: 'OGC-shaped, consent-aware endpoints any state system can integrate.' },
         ]}
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 font-display text-sm uppercase tracking-[.18em] text-[#1d1d1f]">
-          <motion.div initial={{ x: -100, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#EFFFF7]">Andhra Pradesh</motion.div>
-          <motion.div className="h-8 w-px bg-[#0e6b54]" />
-          <motion.div className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-4 text-center text-[#86EFAC]">State Adapter</motion.div>
-          <ArrowDown size={14} className="text-[#0e6b54]" />
-          <motion.div className="w-64 rounded-lg border border-[#0e6b54] bg-[#0e6b54]/10 px-5 py-4 text-center text-[#0e6b54]">Common Land Model</motion.div>
-          <ArrowDown size={14} className="text-[#0e6b54]" />
-          <motion.div className="font-mono text-xs text-[#0e6b54]">ULPIN</motion.div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 font-display text-[12px] uppercase tracking-[.16em] text-ink">
+          <div className="flex w-full max-w-md justify-center gap-2">
+            {[
+              ['Andhra Pradesh', 'khata (Meebhoomi)'],
+              ['Tamil Nadu', 'patta (Chitta)'],
+              ['Telangana', 'passbook (Dharani)'],
+            ].map(([state, vocab], i) => (
+              <motion.div
+                key={state}
+                initial={{ y: -40, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true, amount: 0.6 }}
+                transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                className="flex-1 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-2 py-3 text-center"
+              >
+                <span className="block text-[10.5px] text-[#EFFFF7]">{state}</span>
+                <span className="mt-1 block font-mono text-[9px] normal-case tracking-normal text-[#86EFAC]">{vocab}</span>
+              </motion.div>
+            ))}
+          </div>
+          <ArrowDown size={14} className="text-primary" />
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.4 }} className="w-56 rounded-lg border border-[#86EFAC]/40 bg-[#0D1A13] px-5 py-3 text-center text-[#86EFAC]">Per-state adapters</motion.div>
+          <ArrowDown size={14} className="text-primary" />
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.55 }} className="w-64 rounded-lg border border-primary bg-primary/10 px-5 py-4 text-center text-primary">Common Land Model</motion.div>
+          <ArrowDown size={14} className="text-primary" />
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.7 }} className="font-mono text-xs text-primary">TFCM91641E6C82</motion.div>
         </div>
       </SystemScene>
 
@@ -392,17 +488,17 @@ export function StorySections() {
 
       <LandScene
         chapter="06"
-        statement={<>One parcel.<br /><em className="text-[#0e6b54]">A connected India.</em></>}
+        statement={<>One parcel.<br /><em className="text-primary">A connected India.</em></>}
         detail="Land Stack is the quiet layer underneath: making every record, boundary, and decision part of the same story."
         className="min-h-[70vh] bg-white"
       />
 
-      <section className="flex min-h-[70vh] items-center justify-center bg-[#0e6b54] px-6 py-24 text-center text-white">
+      <section className="flex min-h-[70vh] items-center justify-center bg-primary px-6 py-24 text-center text-white">
         <div>
           <p className="mb-6 font-display text-[11px] uppercase tracking-[0.3em] text-white/75">The next layer</p>
           <h2 className="font-display text-5xl font-semibold tracking-[-.06em] sm:text-8xl">Explore Land Stack.</h2>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <MapLaunch className="cta-glow inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0e6b54] transition hover:bg-[#f5f5f7] active:scale-95">
+            <MapLaunch className="cta-glow inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-primary transition hover:bg-ground active:scale-95">
               Explore Platform <ArrowRight size={16} />
             </MapLaunch>
             <Link to="/welcome" className="inline-flex items-center gap-3 rounded-full border border-white/40 px-6 py-3.5 text-sm text-white transition hover:bg-white/10 active:scale-95">
@@ -414,6 +510,8 @@ export function StorySections() {
           </div>
         </div>
       </section>
+
+      <GovStrip variant="landing" />
     </div>
   );
 }

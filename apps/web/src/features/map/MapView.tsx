@@ -9,17 +9,22 @@ import { useUI } from '@/lib/store';
 import { ensureImages } from './patterns';
 import * as L from './styles/layers';
 import { HoverCard, type HoverInfo } from './HoverCard';
+import { RegionMarkers } from './RegionMarkers';
+import { BoundaryEditLayers } from './BoundaryEditor';
+import { UnitCard, type UnitInfo } from './UnitCard';
 
-const AOI_BBOX: [number, number, number, number] = [80.545, 16.434, 80.567, 16.452];
-const MAX_BOUNDS: [number, number, number, number] = [AOI_BBOX[0] - 0.15, AOI_BBOX[1] - 0.15, AOI_BBOX[2] + 0.15, AOI_BBOX[3] + 0.15];
+// The demo spans three state clusters (CONTRACTS §10), so the map allows a national
+// overview: bounds cover India + margin, and RegionMarkers guide users into a cluster.
+const MAX_BOUNDS: [number, number, number, number] = [55.0, 0.0, 110.0, 40.0];
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
   const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, drawerOpen, select, setHover } = useUI();
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
-  const imagery = basemap === 'imagery' && !!env.esriApiKey;
+  const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
+  const imagery = basemap === 'imagery';
 
-  const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey) : L.STREETS_STYLE), [imagery]);
+  const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey || undefined) : L.STREETS_STYLE), [imagery]);
 
   const village = useQuery({
     queryKey: qk.villageBoundary(),
@@ -76,6 +81,7 @@ export function MapView() {
     const m = mapRef.current?.getMap();
     if (!m) return;
     m.easeTo({ pitch: show3D ? 55 : 0, bearing: show3D ? -12 : 0, duration: 700 });
+    if (!show3D) setUnitInfo(null);
   }, [show3D]);
 
   const onMouseMove = (e: MapLayerMouseEvent) => {
@@ -98,6 +104,12 @@ export function MapView() {
     const f = e.features?.[0];
     if (!f) {
       select(null);
+      setUnitInfo(null);
+      return;
+    }
+    // In 3D mode, unit extrusions take precedence: clicking one opens its data card.
+    if (f.layer?.id === 'units-3d') {
+      setUnitInfo(f.properties as UnitInfo);
       return;
     }
     const ulpin = String((f.properties as Record<string, unknown>).ulpin ?? f.id ?? '');
@@ -111,10 +123,10 @@ export function MapView() {
         initialViewState={{ longitude: env.defaultCenter[0], latitude: env.defaultCenter[1], zoom: env.defaultZoom }}
         mapStyle={mapStyle}
         maxBounds={MAX_BOUNDS}
-        minZoom={11}
+        minZoom={3.2}
         maxZoom={20}
         attributionControl={{ compact: true }}
-        interactiveLayerIds={layers.parcels ? ['parcels-fill'] : []}
+        interactiveLayerIds={[...(show3D ? ['units-3d'] : []), ...(layers.parcels ? ['parcels-fill'] : [])]}
         cursor={hoverUlpin ? 'pointer' : 'grab'}
         onLoad={onLoad}
         onMouseMove={onMouseMove}
@@ -125,6 +137,8 @@ export function MapView() {
       >
         <NavigationControl position="bottom-right" visualizePitch />
         <ScaleControl position="bottom-left" maxWidth={120} />
+        <RegionMarkers />
+        <BoundaryEditLayers />
 
         {/* Tier 2: zones (under parcels) */}
         <Source id={L.SRC.zones} type="vector" tiles={[L.tileUrl('zones')]} minzoom={10} maxzoom={18}>
@@ -134,6 +148,10 @@ export function MapView() {
         </Source>
 
         {/* Tier 3: restriction zones + projects (under parcels) */}
+        <Source id={L.SRC.settlement} type="vector" tiles={[L.tileUrl('settlement_schemes')]} minzoom={8} maxzoom={18}>
+          {layers.settlement_schemes && <Layer {...L.settlementFill} />}
+          {layers.settlement_schemes && <Layer {...L.settlementLine} />}
+        </Source>
         <Source id={L.SRC.restriction} type="vector" tiles={[L.tileUrl('restriction_zones')]} minzoom={10} maxzoom={18}>
           {layers.restriction_zones && <Layer {...L.restrictionFill} />}
           {layers.restriction_zones && <Layer {...L.restrictionLine} />}
@@ -179,6 +197,7 @@ export function MapView() {
       </Map>
 
       {hoverInfo && !show3D && <HoverCard info={hoverInfo} />}
+      {show3D && unitInfo && <UnitCard unit={unitInfo} onClose={() => setUnitInfo(null)} />}
     </div>
   );
 }

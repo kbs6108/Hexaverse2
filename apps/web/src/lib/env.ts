@@ -11,8 +11,8 @@ export const env = {
     appId: (e.VITE_FIREBASE_APP_ID as string | undefined) ?? '',
   },
   esriApiKey: (e.VITE_ESRI_API_KEY as string | undefined) ?? '',
-  defaultCenter: parseCenter((e.VITE_DEFAULT_CENTER as string | undefined) ?? '80.5560,16.4420'),
-  defaultZoom: Number((e.VITE_DEFAULT_ZOOM as string | undefined) ?? '15') || 15,
+  defaultCenter: parseCenter((e.VITE_DEFAULT_CENTER as string | undefined) ?? '78.90,21.00'),
+  defaultZoom: Number((e.VITE_DEFAULT_ZOOM as string | undefined) ?? '4.4') || 4.4,
 } as const;
 
 function parseCenter(s: string): [number, number] {

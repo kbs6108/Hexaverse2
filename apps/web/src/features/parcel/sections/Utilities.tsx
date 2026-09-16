@@ -42,16 +42,25 @@ export function UtilitiesSection({ p }: { p: ParcelCDM }) {
           <ul className="flex flex-col gap-2">
             {p.buildings.map((b) => (
               <li key={b.id} className="rounded-md border border-line">
-                <div className="flex items-center gap-2 border-b border-line px-3 py-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2 text-sm">
                   <Building2 size={15} className="text-slate" />
                   <span className="font-medium">{b.name ?? `Building ${b.id}`}</span>
-                  <span className="text-ink-3">· {b.floors} floors{b.height_m ? ` · ${b.height_m} m` : ''}</span>
+                  <span className="text-ink-3">
+                    · {b.floors} floors{b.basement_floors ? ` + ${b.basement_floors} basement` : ''}
+                    {b.height_m ? ` · ${b.height_m} m tall` : ''}
+                    {b.width_m && b.depth_m ? ` · ${b.width_m} × ${b.depth_m} m footprint` : ''}
+                  </span>
                 </div>
                 <ul className="max-h-48 overflow-y-auto scroll-thin">
                   {b.units.map((un) => (
-                    <li key={un.ulpin_3d} className="flex items-center justify-between px-3 py-1 text-xs odd:bg-ground-2/60">
+                    <li key={un.ulpin_3d} className="flex items-center justify-between gap-2 px-3 py-1 text-xs odd:bg-ground-2/60">
                       <span className="font-mono">{un.ulpin_3d}</span>
-                      <span className="text-ink-2">F{un.floor} · {un.unit_no}{un.owner_name ? ` · ${un.owner_name}` : ''}</span>
+                      <span className="text-right text-ink-2">
+                        {un.floor === 0 ? 'Basement' : `F${un.floor}`} · {un.unit_no}
+                        {un.area_sqm ? ` · ${un.area_sqm} m²` : ''}
+                        {un.base_m != null && un.height_m != null ? ` · ${un.base_m}→${un.height_m} m` : ''}
+                        {un.owner_name ? ` · ${un.owner_name}` : ''}
+                      </span>
                     </li>
                   ))}
                 </ul>

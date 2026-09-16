@@ -7,6 +7,8 @@
 import type { ComponentType } from 'react';
 import {
   Landmark,
+  PenLine,
+  Sparkles,
   FileText,
   Building2,
   Receipt,
@@ -73,7 +75,9 @@ export const FEATURES: Feature[] = [
   { title: 'Admin & Integration', blurb: 'Connector health, adapter field-mappings, consistency findings and simulated upstream events.', icon: ShieldCheck, tone: 'amber' },
   { title: 'Satellite Change Detection', blurb: 'Sentinel-2 NDVI/NDBI flags likely unrecorded construction for officer review.', icon: Satellite, tone: 'brick' },
   { title: 'Open Interoperability', blurb: 'Adapter model with per-state field mappings, an event contract, consent-aware access and OGC-shaped APIs.', icon: Network, tone: 'slate' },
-  { title: '3D-ready', blurb: 'Buildings → floors → units with 3D-ULPIN suffixes, rendered as MapLibre extrusions.', icon: Boxes, tone: 'neutral' },
+  { title: 'Vertical property (3D)', blurb: 'Buildings → floors → units with 3D-ULPINs: click a unit for its floor area, elevation band and basement level.', icon: Boxes, tone: 'neutral' },
+  { title: 'AI risk briefs', blurb: 'Flagged parcels are auto-analysed — risk score, findings and recommended actions, with the engine labelled honestly.', icon: Sparkles, tone: 'violet' },
+  { title: 'Bounded boundary edits', blurb: 'Officers correct parcel geometry within norms (±15% area, no overlap) through a two-step approval that syncs the RoR.', icon: PenLine, tone: 'primary' },
 ];
 
 export interface RoleInfo {
@@ -98,14 +102,18 @@ export interface StoryParcel {
   tone: Tone;
 }
 
-/** The six named demo parcels (CONTRACTS §10) — ULPINs from story_parcels.json. */
+/** The named demo parcels (CONTRACTS §10) — ULPINs from story_parcels.json.
+ *  Six in AP (Mangalagiri) plus one signature parcel each in TN and Telangana,
+ *  showing the same platform running across three states. */
 export const STORY_PARCELS: StoryParcel[] = [
-  { survey_no: '123/4', ulpin: 'TFCM91641E6C82', title: 'Clean residential', note: 'Owner Ravi Kumar — fully registered, no flags. The happy path.', tone: 'primary' },
-  { survey_no: '124', ulpin: 'TFCM91D3533DD2', title: 'Change alert', note: 'Agricultural parcel where Sentinel-2 flags unrecorded built-up.', tone: 'amber' },
-  { survey_no: '125/2', ulpin: 'TFCM9167B91686', title: 'Disputed', note: 'An open court case restricts what can happen here.', tone: 'brick' },
-  { survey_no: '126', ulpin: 'TFCM916196F0FE', title: 'Mortgaged', note: 'Carries an active bank encumbrance from registration.', tone: 'violet' },
-  { survey_no: '127/1', ulpin: 'TFCM91KDED50FD', title: 'Tax arrears + area mismatch', note: 'Fiscal arrears, and revenue vs. registration extent disagree.', tone: 'amber' },
-  { survey_no: '128', ulpin: 'TFCM914291996F', title: 'Pending mutation', note: 'An ownership transfer is mid-workflow in the officer queue.', tone: 'slate' },
+  { survey_no: '123/4', ulpin: 'TFCM91641E6C82', title: 'Clean residential', note: 'Owner Ravi Kumar — fully registered, no flags. The happy path. Mangalagiri, AP.', tone: 'primary' },
+  { survey_no: '124', ulpin: 'TFCM91D3533DD2', title: 'Change alert', note: 'Agricultural parcel where Sentinel-2 flags unrecorded built-up. Mangalagiri, AP.', tone: 'amber' },
+  { survey_no: '125/2', ulpin: 'TFCM9167B91686', title: 'Disputed', note: 'An open court case restricts what can happen here. Mangalagiri, AP.', tone: 'brick' },
+  { survey_no: '126', ulpin: 'TFCM916196F0FE', title: 'Mortgaged', note: 'Carries an active bank encumbrance from registration. Mangalagiri, AP.', tone: 'violet' },
+  { survey_no: '127/1', ulpin: 'TFCM91KDED50FD', title: 'Tax arrears + area mismatch', note: 'Fiscal arrears, and revenue vs. registration extent disagree. Mangalagiri, AP.', tone: 'amber' },
+  { survey_no: '128', ulpin: 'TFCM914291996F', title: 'Pending mutation', note: 'An ownership transfer is mid-workflow in the officer queue. Mangalagiri, AP.', tone: 'slate' },
+  { survey_no: '45/2', ulpin: 'TF2CEQ4ACED970', title: 'Disputed · Tamil Nadu', note: 'The same dispute workflow running on a Sriperumbudur parcel through the TN adapter.', tone: 'brick' },
+  { survey_no: '77', ulpin: 'TEPDPUQC13C0D7', title: 'Change alert · Telangana', note: 'Satellite change detection on a Shamshabad parcel — one platform, three states.', tone: 'amber' },
 ];
 
 export interface Term {
@@ -121,6 +129,12 @@ export const GLOSSARY: Term[] = [
   { term: 'Provenance', def: 'For each field: which source system it came from, whether that system responded, and when.' },
   { term: 'CDM', def: 'Common Data Model — the unified parcel record the gateway assembles from all six departments.' },
   { term: 'Guideline value', def: 'The government reference price per sqm used for valuation and stamp duty.' },
+  { term: 'Patta', def: "Tamil Nadu's record of land ownership (with the chitta, its extent register) — the TN equivalent of the RoR." },
+  { term: 'Pattadar passbook', def: "Telangana's owner document under Dharani — the passbook number identifies the holding." },
+  { term: 'Meebhoomi', def: "Andhra Pradesh's online land-records portal; the AP revenue system in this demo speaks its vocabulary." },
+  { term: 'Patta Chitta', def: "Tamil Nadu's online land-records service; the TN dialect the demo's adapter translates." },
+  { term: 'Dharani', def: "Telangana's integrated land records and registration portal; the TG dialect in this demo." },
+  { term: 'Resurvey', def: 'A state programme re-measuring land with modern survey methods; parcels here carry a resurvey status of completed, in progress or pending.' },
 ];
 
 export interface QuickStep {
@@ -129,6 +143,7 @@ export interface QuickStep {
 }
 
 export const QUICK_START: QuickStep[] = [
+  { title: 'Pick a state', detail: 'The map opens on all of India — click a state card (AP · TN · TG) or use the Regions panel to fly into a cluster.' },
   { title: 'Pick an identity', detail: 'Use the role switcher (dev mode) or sign in. Each role sees a different slice of the app.' },
   { title: 'Click a parcel', detail: 'Any parcel on the map opens its profile. Try a story parcel from the chips or the list below.' },
   { title: 'Read the profile', detail: 'Each tab — ownership, registration, planning, fiscal, utilities, satellite — shows its source and provenance.' },
@@ -142,9 +157,11 @@ export interface Faq {
 
 export const FAQ: Faq[] = [
   { q: 'Why is an owner’s name masked?', a: 'Citizens see masked owner details on parcels they neither own nor have consent for. The owner and officers see full detail; consent can be granted for time-boxed access.' },
-  { q: 'Is this real land data?', a: 'No. The cadastre is synthetic demo data generated over a real Mangalagiri bounding box, so nothing here is a genuine government record.' },
+  { q: 'Is this real land data?', a: 'No. The cadastre is synthetic demo data generated over three real bounding boxes — Mangalagiri (AP), Sriperumbudur (TN) and Shamshabad (TG) — so the places are real but nothing here is a genuine government record.' },
   { q: 'What do the parcel colours mean?', a: 'Status is never colour-only, but as a guide: amber = attention (pending mutation, tax arrears, change alert), brick = disputed, violet = mortgaged, green = clean.' },
   { q: 'How do six departments become one record?', a: 'A gateway calls each department through an adapter, maps its vocabulary into the Common Data Model, and returns the merged parcel with per-source provenance and consistency checks.' },
+  { q: 'Where does the AI run?', a: 'Risk briefs and officer advice run on NVIDIA Build (an OpenAI-compatible hosted model) when a key is configured; without one, a deterministic rule engine produces the same structure. Every insight is labelled with the engine that produced it.' },
+  { q: 'Can boundaries be edited?', a: 'Only through the bounded workflow: a revenue officer proposes, validation enforces the norms (±15% area, no overlaps, inside the village), and a second approval applies the change and syncs the Record of Rights. Nothing on the map changes silently.' },
 ];
 
 export interface PitchFigure {
@@ -155,9 +172,9 @@ export interface PitchFigure {
 /** Illustrative figures for the landing "at a glance" strip — from the demo seed,
  *  NOT a live count (the stats endpoint is officer-gated). Shown with a demo tag. */
 export const PITCH_FIGURES: PitchFigure[] = [
-  { value: '1,024', label: 'Parcels indexed' },
+  { value: '3', label: 'States · AP TN TG' },
+  { value: '575', label: 'Parcels indexed' },
   { value: '6', label: 'Departments unified' },
-  { value: '3', label: 'GIS layer tiers' },
   { value: '1 key', label: 'ULPIN per parcel' },
 ];
 
@@ -219,6 +236,17 @@ export const WORKFLOWS: Workflow[] = [
       'Download a signed report — anyone can verify it later via its QR code.',
     ],
   },
+  {
+    title: 'Resurvey → Boundary correction',
+    tagline: 'Geometry changes only through validation and a second officer.',
+    steps: [
+      'A Tahsildar proposes a corrected boundary by dragging the parcel’s vertices on the map.',
+      'Validation bounds the edit: ±15% area, no overlap with neighbours, inside the village limit.',
+      'An assistive fix can snap the shape to neighbouring boundaries and remove slivers.',
+      'The proposal enters the revenue queue; approval re-validates, applies the geometry and syncs the RoR extent.',
+      'Every step is audited — the map never changes silently.',
+    ],
+  },
 ];
 
 export interface Principle {
@@ -247,5 +275,7 @@ export const MAP_READING: MapReading[] = [
   { cue: 'Red dashed box + marker', meaning: 'Satellite change alert — imagery suggests unrecorded construction or land-use change.' },
   { cue: 'Amber parcel', meaning: 'Needs attention: a pending mutation, tax arrears, or an open alert.' },
   { cue: 'Survey-number labels', meaning: 'Appear at zoom 16 and closer, from the Base layer tier.' },
-  { cue: '3D units · preview', meaning: 'Extrudes seeded buildings into floors and units (3D-ULPIN), tilting the camera.' },
+  { cue: '3D units · preview', meaning: 'Extrudes seeded buildings into floors and units (3D-ULPIN), tilting the camera. Units are clickable for their data card.' },
+  { cue: 'State cluster cards', meaning: 'At national zoom each state shows one card (name, district, parcel count) — click it to fly into that cluster.' },
+  { cue: 'Dotted green/amber areas', meaning: 'The Settlement / resurvey layer: green = resurvey completed, amber = in progress, per state programme.' },
 ];

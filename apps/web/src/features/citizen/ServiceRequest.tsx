@@ -7,6 +7,7 @@ import { api, qk } from '@/lib/api';
 import type { Application } from '@/lib/cdm';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Field, Input, Select } from '@/components/Field';
+import { ParcelPicker } from '@/components/ParcelPicker';
 import { Button } from '@/components/Button';
 import { ErrorNote } from '@/components/EmptyState';
 import { Callout } from '@/components/Section';
@@ -64,8 +65,8 @@ export function ServiceRequest() {
 
 function UlpinField({ ulpin, setUlpin }: { ulpin: string; setUlpin: (v: string) => void }) {
   return (
-    <Field label="ULPIN" htmlFor="sr-ulpin" hint="Select a parcel on the map and choose “Request service” to prefill.">
-      <Input id="sr-ulpin" mono required value={ulpin} onChange={(e) => setUlpin(e.target.value.toUpperCase())} placeholder="TDR1K3M9A2F7C1" />
+    <Field label="ULPIN" htmlFor="sr-ulpin" hint="Pick a recently opened parcel, or select one on the map and choose “Request service”.">
+      <ParcelPicker id="sr-ulpin" value={ulpin} onChange={setUlpin} />
     </Field>
   );
 }

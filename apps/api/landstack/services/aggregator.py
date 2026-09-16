@@ -97,8 +97,9 @@ async def _base(db: DBLike, ulpin: str) -> dict[str, Any]:
 async def _buildings(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
     rows = await db.fetch(
         """
-        SELECT b.id, b.name, b.floors, b.height_m,
-               u.id AS unit_id, u.ulpin_3d, u.floor, u.unit_no, u.owner_name, u.base_m, u.height_m AS unit_height_m
+        SELECT b.id, b.name, b.floors, b.height_m, b.width_m, b.depth_m, b.basement_floors,
+               u.id AS unit_id, u.ulpin_3d, u.floor, u.unit_no, u.owner_name, u.base_m, u.height_m AS unit_height_m,
+               round(ST_Area(u.geom::geography)::numeric, 1) AS unit_area_sqm
         FROM landstack.buildings b
         LEFT JOIN landstack.units u ON u.building_id = b.id
         WHERE b.ulpin = :ulpin
@@ -115,6 +116,9 @@ async def _buildings(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
                 "name": r.get("name"),
                 "floors": r.get("floors"),
                 "height_m": r.get("height_m"),
+                "width_m": r.get("width_m"),
+                "depth_m": r.get("depth_m"),
+                "basement_floors": r.get("basement_floors"),
                 "units": [],
             },
         )
@@ -128,6 +132,7 @@ async def _buildings(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
                     "owner_name": r.get("owner_name"),
                     "base_m": r.get("base_m"),
                     "height_m": r.get("unit_height_m"),
+                    "area_sqm": r.get("unit_area_sqm"),
                 }
             )
     return list(out.values())
