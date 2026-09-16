@@ -1,7 +1,14 @@
 # CLAUDE.md — Land Stack (Hexaverse2, branch `sampath`)
 
-This file is the hand-off from the session that built this repo. Read it first, then
-`docs/CONTRACTS.md` (the binding spec every component was written against), then `docs/SETUP.md`.
+**The living context file for this repo** — read by Claude Code, Cursor and any other agent/IDE
+(AGENTS.md symlinks here). Read this first, then `docs/CONTRACTS.md` (the binding spec every
+component is written against), then `docs/SETUP.md`.
+
+**How to keep it updated** (humans and agents): after any meaningful change, edit ONLY the
+"Current state" and "Status log" sections below — append a dated one-liner to the Status log and
+adjust Current state if a capability was added/removed. Never rewrite the stable sections
+(project description, repo map, how-to-work rules) unless they became untrue. Agents: update this
+file in the same commit as the change it describes.
 
 ## What this project is
 
@@ -70,11 +77,31 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   (true base −3.2 m, rendered as a slab at grade).
 - Imagery basemap works with zero keys (public Esri World Imagery tiles; keyed service if
   `VITE_ESRI_API_KEY` is set).
-Notable fixed first-run issues: asyncpg `substring(id from :n)` typing (predicted #1), the MapLibre
-nested-zoom-expression style errors, the Vite dep-optimizer maplibre worker, the persisted-layers
-merge bug, and the web container healthcheck (localhost→127.0.0.1). Still open from the original
-list: low-zoom tile view could use ST_Simplify/materialisation; WeasyPrint deps on Cloud Run
-unverified; Neon/Firebase/Cloud Run deployment not yet exercised.
+- **Refinement pass** (Phases 0–5, Sep 2026): browsing simplified (context-aware QuickNav,
+  role-aware layer tiers), one design family ("poster" landing / "tool" app on shared emerald
+  tokens via `.landing-scope`), landing bento grid + FaintTelemetry hero, docs/help made current
+  (8 parcels · 3 states everywhere), performance (landing + OfficerConsole lazy routes: index
+  chunk 343→164 kB gz, echarts out of first load; LayerPanel useShallow; queue rows memoized).
+Notable fixed first-run issues: asyncpg `substring(id from :n)` typing, MapLibre nested-zoom
+expressions, Vite dep-optimizer maplibre worker, persisted-layers merge bug, web healthcheck.
+Still open: Neon/Firebase/Cloud Run deployment not yet exercised; WeasyPrint deps on Cloud Run
+unverified.
+
+## Status log (append-only, newest first — one line per meaningful change)
+
+- 2026-09-16 `2621476` chore: dead-code cleanup (OverviewHint, ls_seen_welcome) + actions v5.
+- 2026-09-16 `d4eb974` perf: lazy landing/officer routes (−52% first load), memoized hot lists.
+- 2026-09-16 `9e11d4b` (Rishith) FaintTelemetry hero + landing typography restyle (+`9c493f7` type fix).
+- 2026-09-16 `218c92c` refinement Phases 1–4: nav simplification, design unification, landing bento, docs currency.
+- 2026-09-15 `31fb0b6` NVIDIA models verified per key (nemotron-3-super + 11b vision, reasoning-safe budgets).
+- 2026-09-15 `69c9d17` upgrade phases A–E: AI assist (NVIDIA + rule engine, auto-triggering), keyless imagery,
+  accurate 3D (dims/basements/clickable units), ground-reality names, docs refreshed.
+- 2026-09-14 `e19796a` bounded boundary editing (validate → propose → approve → RoR sync), migrations 008–009.
+- 2026-09-14 `063d212` ParcelPicker, citizen home apps, officer quick actions, alert→field review.
+- 2026-09-14 `bea8604` per-state revenue dialects (Meebhoomi/Patta Chitta/Dharani) + revenue_tg adapter.
+- 2026-09-14 `7e25a54` national India overview (cluster markers + Regions panel).
+- 2026-09-14 `8c5ee06` settlement/resurvey layer (migration 006) + resurvey badges.
+- 2026-09-13 `5159df8` three states (AP·TN·TG, 575 parcels), AP ULPINs preserved.
 
 ## How to work in this repo
 
