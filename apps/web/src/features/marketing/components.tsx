@@ -3,21 +3,11 @@ import type { ReactNode } from 'react';
 import type { Tone } from '@/components/Badge';
 import type { IconType } from './pitch';
 
-const iconTone: Record<Tone, string> = {
-  neutral: 'bg-ground-2 text-ink-2',
-  primary: 'bg-primary-soft text-primary',
-  amber: 'bg-amber-soft text-amber',
-  brick: 'bg-brick-soft text-brick',
-  violet: 'bg-violet-soft text-violet',
-  slate: 'bg-slate-soft text-slate',
-};
-
 /** Icon + title + blurb card, used across the landing highlights and department grid. */
 export function FeatureCard({
   icon: Icon,
   title,
   children,
-  tone = 'neutral',
   className,
 }: {
   icon: IconType;
