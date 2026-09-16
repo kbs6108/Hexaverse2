@@ -5,6 +5,7 @@ import { ShaderAnimation } from './ShaderAnimation';
 import { MapLaunch } from './MapLaunch';
 import { GovBadge } from '@/features/marketing/GovStrip';
 import { createTopDockController } from './top-dock-controller';
+import { FaintTelemetry } from './FaintTelemetry';
 
 const DOCK_ITEM =
   'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-ink-2 will-change-transform hover:bg-black/5 hover:text-ink';
@@ -42,6 +43,8 @@ export function HeroSection() {
       <ShaderAnimation />
       {/* Light veil: the emerald shader reads as a faint aurora behind dark ink. */}
       <div className="pointer-events-none absolute inset-0 bg-white/80" />
+      {/* Faint, borderless coordinates & places that randomly appear and fade */}
+      <FaintTelemetry />
 
       <div className="pointer-events-none fixed left-0 right-0 top-5 z-[9999] flex justify-center px-4">
         <header

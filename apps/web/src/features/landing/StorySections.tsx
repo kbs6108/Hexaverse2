@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { clsx } from 'clsx';
 import { ArrowDown, ArrowRight, Check, EyeOff, PenLine, QrCode, Search, Sparkles } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useLayoutEffect, useRef, type RefObject } from 'react';
@@ -22,21 +23,13 @@ function useLandingScroll(target: RefObject<HTMLElement | null>, offset: ['start
   return useScroll({ target: target as RefObject<HTMLElement>, container: container as RefObject<HTMLElement>, offset });
 }
 
-const TONE_TEXT: Record<Tone, string> = {
-  primary: 'text-primary',
-  amber: 'text-amber',
-  brick: 'text-brick',
-  violet: 'text-violet',
-  slate: 'text-slate',
-  neutral: 'text-ink-3',
-};
-const TONE_SOFT: Record<Tone, string> = {
-  primary: 'bg-primary-soft',
-  amber: 'bg-amber-soft',
-  brick: 'bg-brick-soft',
-  violet: 'bg-violet-soft',
-  slate: 'bg-slate-soft',
-  neutral: 'bg-ground-2',
+const STATUS_DOT: Record<Tone, string> = {
+  primary: 'bg-emerald-600',
+  amber: 'bg-amber-600',
+  brick: 'bg-rose-600',
+  violet: 'bg-indigo-600',
+  slate: 'bg-slate-500',
+  neutral: 'bg-zinc-400',
 };
 
 /* ---------- cinematic scenes ---------- */
@@ -66,15 +59,15 @@ function SystemScene({
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-10 max-w-xl"
         >
-          <p className="mb-6 font-display text-[11px] uppercase tracking-[0.3em] text-primary">{chapter} / The System</p>
+          <p className="mb-6 font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-ink-3">{chapter} / The System</p>
           <h2 className="font-display text-5xl font-semibold leading-[.92] tracking-[-0.06em] sm:text-6xl">{title}</h2>
           <p className="mt-6 max-w-md text-[15px] leading-7 text-ink-2">{caption}</p>
           {points && (
             <ul className="mt-7 space-y-3">
               {points.map((p) => (
                 <li key={p.head} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <Check size={12} className="text-primary" />
+                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink">
+                    <Check size={12} strokeWidth={2.2} />
                   </span>
                   <p className="text-sm leading-6 text-ink-2">
                     <span className="font-semibold text-ink">{p.head}</span> — {p.sub}
@@ -102,7 +95,7 @@ function LandScene({ chapter, statement, detail, className = '', id }: { chapter
   return (
     <section id={id} className={`landing-section relative flex min-h-[85vh] items-center overflow-hidden bg-white px-6 py-24 text-ink sm:px-12 lg:px-24 ${className}`}>
       <motion.div initial={{ opacity: 0, y: 55 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }} viewport={{ once: true, amount: 0.45 }} className="mx-auto w-full max-w-6xl">
-        <p className="mb-10 font-display text-[11px] uppercase tracking-[0.3em] text-[#7a7a7a]">{chapter} / The Land</p>
+        <p className="mb-10 font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-ink-3">{chapter} / The Land</p>
         <h2 className="max-w-5xl font-serif text-5xl leading-[.96] tracking-[-0.055em] sm:text-7xl lg:text-[6.2rem]">{statement}</h2>
         {detail && <p className="mt-12 max-w-md border-l border-primary/40 pl-5 font-sans text-sm leading-7 text-primary">{detail}</p>}
       </motion.div>
@@ -150,16 +143,16 @@ function StatsStrip() {
 
 function DepartmentCard({ d, index }: { d: (typeof DEPARTMENTS)[number]; index: number }) {
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)]">
+    <div className="flex h-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.08)] transition-all hover:border-black/15">
       <div className="flex items-center justify-between">
-        <span className={`inline-flex size-10 items-center justify-center rounded-xl ${TONE_SOFT[d.tone]}`}>
-          <d.icon size={20} className={TONE_TEXT[d.tone]} />
+        <span className="inline-flex size-9 items-center justify-center rounded-lg border border-black/[0.07] bg-black/[0.02] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <d.icon size={18} strokeWidth={1.75} />
         </span>
-        <span className="font-display text-3xl font-semibold text-primary/15">{String(index + 1).padStart(2, '0')}</span>
+        <span className="font-mono text-2xl font-light tracking-tight text-ink-3/30">{String(index + 1).padStart(2, '0')}</span>
       </div>
       <h3 className="mt-4 font-display text-lg font-semibold text-ink">{d.name}</h3>
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">{d.vocab}</p>
-      <p className="mt-2 text-sm leading-6 text-ink-2">{d.blurb}</p>
+      <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">{d.vocab}</p>
+      <p className="mt-2.5 text-sm leading-6 text-ink-2">{d.blurb}</p>
     </div>
   );
 }
@@ -194,7 +187,7 @@ function DepartmentsSection() {
             <div className="flex w-[300px] shrink-0 items-center">
               <p className="text-sm leading-7 text-[#86868b]">
                 …and every one of them keeps its own vocabulary.
-                <span className="mt-2 block font-semibold text-primary">One ULPIN key ties them together.</span>
+                <span className="mt-2 block font-semibold text-ink">One ULPIN key ties them together.</span>
               </p>
             </div>
           </motion.div>
@@ -233,7 +226,7 @@ function HowItWorksSection() {
             transition={{ duration: 0.6, delay: i * 0.08 }}
             className="rounded-2xl border border-black/[0.06] bg-ground p-6"
           >
-            <span className="font-display text-3xl font-semibold text-primary/30">{String(i + 1).padStart(2, '0')}</span>
+            <span className="font-mono text-2xl font-light tracking-tight text-ink-3/30">{String(i + 1).padStart(2, '0')}</span>
             <h3 className="mt-3 font-display text-base font-semibold text-ink">{s.title}</h3>
             <p className="mt-2 text-sm leading-6 text-ink-2">{s.detail}</p>
           </motion.div>
@@ -241,7 +234,7 @@ function HowItWorksSection() {
       </div>
 
       <div className="mx-auto mt-20 max-w-6xl">
-        <p className="text-center font-display text-[11px] uppercase tracking-[0.3em] text-primary">One platform / three roles</p>
+        <p className="text-center font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-ink-3">One platform / three roles</p>
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
           {ROLES.map((r, i) => (
             <motion.div
@@ -250,15 +243,15 @@ function HowItWorksSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: 0.6, delay: i * 0.08 }}
-              className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)]"
+              className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.08)] transition-all hover:border-black/15"
             >
               <div className="flex items-center gap-3">
-                <span className={`inline-flex size-10 items-center justify-center rounded-xl ${TONE_SOFT[r.tone]}`}>
-                  <r.icon size={20} className={TONE_TEXT[r.tone]} />
+                <span className="inline-flex size-9 items-center justify-center rounded-lg border border-black/[0.07] bg-black/[0.02] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                  <r.icon size={18} strokeWidth={1.75} />
                 </span>
                 <div>
                   <h3 className="font-display text-base font-semibold text-ink">{r.role}</h3>
-                  <p className="text-[12px] text-[#86868b]">{r.who}</p>
+                  <p className="font-mono text-[11px] text-ink-3">{r.who}</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-6 text-ink-2">{r.can}</p>
@@ -283,14 +276,17 @@ function StoriesSection() {
           <motion.div key={p.ulpin} initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: i * 0.06 }}>
             <MapLaunch
               ulpin={p.ulpin}
-              className="group flex h-full w-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 text-left shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_18px_44px_-18px_rgba(14,107,84,0.35)]"
+              className="group flex h-full w-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 text-left shadow-[0_12px_32px_-16px_rgba(0,0,0,0.08)] transition hover:-translate-y-0.5 hover:border-black/20 hover:shadow-[0_16px_36px_-16px_rgba(0,0,0,0.12)]"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="font-mono text-sm font-semibold text-ink">Sy. {p.survey_no}</span>
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${TONE_SOFT[p.tone]} ${TONE_TEXT[p.tone]}`}>{p.title}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-black/[0.02] px-2.5 py-0.5 font-mono text-[11px] font-medium text-ink-2">
+                  <span className={clsx('size-1.5 rounded-full', STATUS_DOT[p.tone])} />
+                  {p.title}
+                </span>
               </div>
               <p className="mt-3 flex-1 text-sm leading-6 text-ink-2">{p.note}</p>
-              <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition group-hover:gap-2.5">
+              <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-2 transition group-hover:gap-2.5 group-hover:text-ink">
                 Open on the map <ArrowRight size={14} />
               </span>
             </MapLaunch>
@@ -304,7 +300,7 @@ function StoriesSection() {
 function CapabilitiesBento() {
   // The keep-list features that had no landing presence: mixed-size tiles, one
   // sentence each, two quiet micro-animations (reduced-motion aware).
-  const tile = 'rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)]';
+  const tile = 'rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.08)] transition-all hover:border-black/15';
   return (
     <section id="capabilities" className="landing-section bg-white px-6 py-28 sm:px-12">
       <InfoHeader
@@ -316,16 +312,19 @@ function CapabilitiesBento() {
         {/* AI briefs — wide tile with a living risk meter */}
         <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6 }} className={`${tile} sm:col-span-2`}>
           <div className="flex items-center gap-3">
-            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-violet-soft"><Sparkles size={20} className="text-violet" /></span>
+            <span className="inline-flex size-9 items-center justify-center rounded-lg border border-black/[0.07] bg-black/[0.02] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              <Sparkles size={18} strokeWidth={1.75} />
+            </span>
             <h3 className="font-display text-lg font-semibold text-ink">AI risk briefs</h3>
           </div>
           <p className="mt-3 text-sm leading-6 text-ink-2">Flagged parcels are analysed automatically — a risk score, the findings behind it and recommended actions, with the engine that produced them named on the card.</p>
-          <div className="mt-4 rounded-lg border border-violet/20 bg-violet-soft/40 p-3">
-            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-violet">
-              <span>Risk analysis</span><span>nvidia · nemotron</span>
+          <div className="mt-4 rounded-lg border border-black/[0.06] bg-black/[0.02] p-3">
+            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-ink-3">
+              <span>Risk analysis</span>
+              <span className="font-medium text-ink-2">nvidia · nemotron</span>
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70">
-              <div className="bento-meter h-full rounded-full bg-violet" />
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
+              <div className="bento-meter h-full rounded-full bg-ink" />
             </div>
           </div>
         </motion.div>
@@ -343,9 +342,9 @@ function CapabilitiesBento() {
         <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.12 }} className={tile}>
           <div className="flex h-20 items-end justify-center gap-1.5 rounded-lg bg-ground p-3">
             {[8, 14, 20, 11].map((h, i) => (
-              <div key={i} className="w-6 rounded-t-sm bg-primary/70" style={{ height: `${h * 3}px` }} />
+              <div key={i} className="w-6 rounded-t-sm bg-neutral-800" style={{ height: `${h * 3}px` }} />
             ))}
-            <div className="w-6 rounded-sm border border-brick/60 bg-brick/20" style={{ height: '8px' }} title="basement" />
+            <div className="w-6 rounded-sm border border-neutral-400 bg-neutral-300" style={{ height: '8px' }} title="basement" />
           </div>
           <h3 className="mt-4 font-display text-base font-semibold text-ink">Vertical property</h3>
           <p className="mt-1.5 text-sm leading-6 text-ink-2">Click a unit in 3D for its 3D-ULPIN, floor area and elevation band — basements included.</p>
@@ -353,7 +352,9 @@ function CapabilitiesBento() {
         {/* Boundary editing */}
         <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.18 }} className={tile}>
           <div className="flex items-center gap-3">
-            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary-soft"><PenLine size={20} className="text-primary" /></span>
+            <span className="inline-flex size-9 items-center justify-center rounded-lg border border-black/[0.07] bg-black/[0.02] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              <PenLine size={18} strokeWidth={1.75} />
+            </span>
             <h3 className="font-display text-base font-semibold text-ink">Bounded boundary edits</h3>
           </div>
           <p className="mt-3 text-sm leading-6 text-ink-2">Officers drag a parcel's corners; validation enforces the norms (±15% area, no overlaps) and a second approval applies it. Nothing changes silently.</p>
@@ -361,7 +362,9 @@ function CapabilitiesBento() {
         {/* Reports + QR */}
         <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.24 }} className={tile}>
           <div className="flex items-center gap-3">
-            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-slate-soft"><QrCode size={20} className="text-slate" /></span>
+            <span className="inline-flex size-9 items-center justify-center rounded-lg border border-black/[0.07] bg-black/[0.02] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              <QrCode size={18} strokeWidth={1.75} />
+            </span>
             <h3 className="font-display text-base font-semibold text-ink">Verifiable reports</h3>
           </div>
           <p className="mt-3 text-sm leading-6 text-ink-2">Signed Land Information Reports with a QR code anyone can scan to verify — on a phone, in seconds.</p>
@@ -369,7 +372,9 @@ function CapabilitiesBento() {
         {/* Consent / masking */}
         <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: 0.3 }} className={`${tile} sm:col-span-2`}>
           <div className="flex items-center gap-3">
-            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-amber-soft"><EyeOff size={20} className="text-amber" /></span>
+            <span className="inline-flex size-9 items-center justify-center rounded-lg border border-black/[0.07] bg-black/[0.02] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              <EyeOff size={18} strokeWidth={1.75} />
+            </span>
             <h3 className="font-display text-lg font-semibold text-ink">Privacy by consent</h3>
           </div>
           <p className="mt-3 text-sm leading-6 text-ink-2">
@@ -495,7 +500,7 @@ export function StorySections() {
 
       <section className="flex min-h-[70vh] items-center justify-center bg-primary px-6 py-24 text-center text-white">
         <div>
-          <p className="mb-6 font-display text-[11px] uppercase tracking-[0.3em] text-white/75">The next layer</p>
+          <p className="mb-6 font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-white/75">The next layer</p>
           <h2 className="font-display text-5xl font-semibold tracking-[-.06em] sm:text-8xl">Explore Land Stack.</h2>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <MapLaunch className="cta-glow inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-primary transition hover:bg-ground active:scale-95">

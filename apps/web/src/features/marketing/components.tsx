@@ -17,7 +17,7 @@ export function FeatureCard({
   icon: Icon,
   title,
   children,
-  tone = 'primary',
+  tone = 'neutral',
   className,
 }: {
   icon: IconType;
@@ -28,10 +28,10 @@ export function FeatureCard({
 }) {
   return (
     <div className={clsx('flex flex-col gap-2 rounded-lg border border-line bg-panel p-4 shadow-panel', className)}>
-      <span className={clsx('inline-flex size-9 items-center justify-center rounded-md', iconTone[tone])}>
-        <Icon size={18} strokeWidth={1.9} />
+      <span className="inline-flex size-8 items-center justify-center rounded-md border border-black/[0.06] bg-black/[0.02] text-ink">
+        <Icon size={16} strokeWidth={1.75} />
       </span>
-      <h3 className="text-[15px] font-semibold leading-tight">{title}</h3>
+      <h3 className="text-[15px] font-semibold leading-tight text-ink">{title}</h3>
       {children && <p className="text-[13px] leading-snug text-ink-2">{children}</p>}
     </div>
   );
@@ -56,7 +56,11 @@ export function SectionHeading({
 }) {
   return (
     <div className={clsx(align === 'center' && 'mx-auto max-w-2xl text-center', className)}>
-      {kicker && <p className="font-display text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">{kicker}</p>}
+      {kicker && (
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-ink-3">
+          {kicker}
+        </p>
+      )}
       <h2 className={clsx('font-display font-semibold tracking-tight text-ink', kicker && 'mt-2', size === 'lg' ? 'text-4xl sm:text-5xl' : 'text-[26px]')}>
         {title}
       </h2>
