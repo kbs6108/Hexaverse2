@@ -1,108 +1,148 @@
-import { Link, Outlet } from '@tanstack/react-router';
-import { ArrowRight, FileSearch, ListChecks, MapPinned, ShieldCheck, Map as MapIcon } from 'lucide-react';
-import { Card } from '@/components/Card';
-import { useAuth } from '@/lib/auth';
+import { useNavigate, useRouterState, Outlet } from '@tanstack/react-router';
+import { clsx } from 'clsx';
+import { MapPinned, FileSearch, ShieldCheck, ListChecks, ArrowUpRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { LiquidGlassCard } from '@/components/ui/liquid-weather-glass';
 
 export function CitizenLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isHome = pathname === '/citizen' || pathname === '/citizen/';
+  
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-8">
+    <div className={clsx(
+      isHome 
+        ? "relative isolate min-h-screen w-full flex flex-col items-center" 
+        : "mx-auto w-full max-w-5xl px-6 py-12 md:py-20 flex flex-col items-center"
+    )}>
       <Outlet />
     </div>
   );
 }
 
-const SECONDARY_ACTIONS = [
-  { to: '/citizen/verify', label: 'Verify ownership', body: 'Check whether a name matches the record of rights and latest registered deed.', icon: ShieldCheck },
-  { to: '/citizen/request', label: 'Land services', body: 'Apply for a mutation or a building permission with an instant planning pre-check.', icon: FileSearch },
-  { to: '/citizen/track', label: 'Track application', body: 'Follow requests through each department step.', icon: ListChecks },
-] as const;
+const ACTIONS = [
+  { id: 'search', to: '/map', label: 'Parcel Search & Quick Actions', desc: 'Find parcels and explore connected records instantly.', subtext: '1,024 parcels indexed in Guntur pilot', dockLabel: 'Search', icon: MapPinned },
+  { id: 'verify', to: '/citizen/verify', label: 'Verify Ownership', desc: 'Compare claimed names against authoritative records.', subtext: 'Instant match against RoR + registration records', dockLabel: 'Verify', icon: ShieldCheck },
+  { id: 'request', to: '/citizen/request', label: 'Request Service', desc: 'Apply for mutations or building permissions.', subtext: 'Mutation · Building permission', dockLabel: 'Service', icon: FileSearch },
+  { id: 'track', to: '/citizen/track', label: 'Track Application', desc: 'Follow your requests through each step.', subtext: 'Check status of submitted applications', dockLabel: 'Track', icon: ListChecks },
+];
 
 export function CitizenHome() {
-  const { user } = useAuth();
+  const [activeTask, setActiveTask] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<{ connected: number; total: number } | null>(null);
+
+  useEffect(() => {
+    fetch('/landstack/connectors')
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.items)) {
+          const total = data.items.length;
+          const connected = data.items.filter((item: any) => item.ok).length;
+          setHealthStatus({ connected, total });
+        }
+      })
+      .catch(() => {
+        // Silently fail
+      });
+  }, []);
+
+  const navigate = useNavigate();
+
+  const handleAction = (id: string, to: string) => {
+    if (activeTask) return; 
+    setActiveTask(id);
+    // Smooth transition away
+    setTimeout(() => {
+      navigate({ to });
+    }, 400);
+  };
+
   return (
-    <div className="flex flex-col gap-8 max-w-3xl mx-auto">
+    <div className="relative min-h-screen w-full flex flex-col items-center overflow-x-hidden bg-ground text-ink">
+      <main className="relative z-10 container mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-screen">
       
-      {/* TENREC / Platform context & "What do you want to do?" */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight text-ink">
-          {user ? `Namaste, ${user.name.split(' ')[0]}` : 'TENREC Platform'}
+      {/* 1. Top Edge-to-Edge Bar */}
+      <header className="w-full max-w-7xl flex items-center justify-between pb-8">
+        <button 
+          onClick={() => {
+            if (document.fullscreenElement) {
+              document.exitFullscreen().catch(err => console.warn("Could not exit fullscreen", err));
+            }
+            navigate({ to: '/' });
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 backdrop-blur-md border border-white/80 shadow-sm text-slate-700 hover:text-slate-900 transition-all font-medium text-sm"
+        >
+          &larr; Back to home
+        </button>
+        {healthStatus && (
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-900 text-xs font-semibold border border-emerald-200/60">
+            <span className={clsx("w-2 h-2 rounded-full animate-pulse", healthStatus.connected === healthStatus.total ? "bg-emerald-500" : "bg-amber-500")} />
+            {healthStatus.connected}/{healthStatus.total} departments connected
+          </span>
+        )}
+      </header>
+
+      <div className="relative z-10 flex w-full max-w-6xl flex-col items-center py-4 px-4 md:px-12">
+        
+        {/* 2. Header & Branding */}
+        <h1 className="uppercase font-extrabold text-2xl tracking-[0.25em] text-slate-900 mb-10 md:mb-14 drop-shadow-sm" data-grid-avoid>
+          TENREC
         </h1>
-        <p className="text-[17px] text-ink-2">What do you want to do with land?</p>
-      </div>
 
-      {/* Primary Action: FIND LAND */}
-      <section aria-labelledby="primary-action-heading">
-        <h2 id="primary-action-heading" className="sr-only">Primary Action</h2>
-        <Link to="/map" className="group block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-          <Card className="relative overflow-hidden border-2 border-primary/20 bg-primary-soft/10 p-6 sm:p-8 transition-colors group-hover:border-primary/40 group-hover:bg-primary-soft/20">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-4">
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary text-primary-ink shadow-md">
-                  <MapPinned size={24} />
-                </span>
-                <div className="min-w-0">
-                  <h3 className="text-xl font-bold text-ink">Find Land</h3>
-                  <p className="mt-1 text-[15px] text-ink-2">Search and explore a land parcel by survey number, ULPIN, or khata.</p>
+        {/* 4. The 2x2 Bento Glass Grid */}
+        <div className={clsx(
+          "grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 w-full transition-all duration-[400ms] ease-out",
+          activeTask ? "opacity-0 scale-95 blur-md pointer-events-none" : "opacity-100 scale-100 blur-0"
+        )}>
+          {ACTIONS.map((action) => (
+            <div key={action.id} className="relative group">
+              <LiquidGlassCard
+                blurIntensity="xl"
+                shadowIntensity="md"
+                glowIntensity="sm"
+                borderRadius="1.5rem"
+                className="w-full h-full min-h-[260px] flex flex-col justify-between bg-white/60 backdrop-blur-xl border border-white/80 shadow-lg shadow-slate-900/5 rounded-3xl p-6 transition-all duration-300 hover:bg-white/80 hover:shadow-xl hover:-translate-y-1"
+              >
+                <button
+                  onClick={() => handleAction(action.id, action.to)}
+                  className="absolute inset-0 w-full h-full text-left focus-visible:outline-2 focus-visible:outline-emerald-500 rounded-3xl z-40"
+                  aria-label={action.label}
+                />
+                
+                {/* Dynamic Inner Glow */}
+                <div className="absolute -top-24 -right-24 w-56 h-56 bg-emerald-500/20 blur-[50px] rounded-full group-hover:bg-emerald-500/30 transition-colors duration-500 pointer-events-none z-0" />
+                
+                <div className="flex items-start justify-between w-full mb-8 relative z-10 pointer-events-none">
+                  <span className="flex items-center justify-center bg-white/90 border border-slate-200/80 shadow-sm p-3 rounded-2xl text-emerald-800 transition-colors duration-300">
+                    <action.icon size={26} strokeWidth={1.5} />
+                  </span>
+                  <span className="flex items-center justify-center p-2 rounded-full bg-slate-900/5 text-slate-700 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    <ArrowUpRight size={24} strokeWidth={2} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
+                  </span>
                 </div>
-              </div>
-              <div className="shrink-0">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-ink shadow-sm transition-transform group-hover:scale-105">
-                  Open Map <ArrowRight size={16} />
-                </span>
-              </div>
-            </div>
-          </Card>
-        </Link>
-      </section>
 
-      {/* Secondary Actions */}
-      <section aria-labelledby="secondary-actions-heading">
-        <h2 id="secondary-actions-heading" className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-3">
-          Other Services
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {SECONDARY_ACTIONS.map((c) => (
-            <Link key={c.to} to={c.to} className="group rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-              <Card className="flex h-full flex-col p-5 transition-colors group-hover:border-primary/50">
-                <span className="mb-3 grid size-10 shrink-0 place-items-center rounded-lg bg-ground-2 text-ink-2 transition-colors group-hover:bg-primary-soft group-hover:text-primary">
-                  <c.icon size={20} />
-                </span>
-                <h3 className="flex items-center justify-between text-base font-semibold text-ink">
-                  {c.label}
-                  <ArrowRight size={14} className="text-ink-3 opacity-0 transition-all group-hover:translate-x-1 group-hover:text-primary group-hover:opacity-100" />
-                </h3>
-                <p className="mt-1.5 text-[13px] text-ink-2">{c.body}</p>
-              </Card>
-            </Link>
+                <div className="relative z-10 mt-auto pointer-events-none">
+                  <h3 className="text-slate-900 font-bold text-xl mb-2 tracking-tight" data-grid-avoid>
+                    {action.label}
+                  </h3>
+                  <p className="text-slate-600 text-sm leading-relaxed mt-1 opacity-100 font-sans" data-grid-avoid>
+                    {action.desc}
+                  </p>
+                  {action.subtext && (
+                    <p className="text-slate-500 text-xs font-medium mt-4 pt-4 border-t border-slate-200/50" data-grid-avoid>
+                      {action.subtext}
+                    </p>
+                  )}
+                </div>
+              </LiquidGlassCard>
+            </div>
           ))}
         </div>
-      </section>
-
-      {/* Small Product Context */}
-      <section aria-labelledby="context-heading" className="mt-4 flex flex-col gap-4 rounded-xl border border-line bg-panel-2 p-6 sm:flex-row sm:items-start sm:gap-6">
-        <div className="shrink-0 text-primary">
-          <MapIcon size={32} strokeWidth={1.5} />
-        </div>
-        <div>
-          <h2 id="context-heading" className="text-base font-semibold text-ink">One parcel. One identity. Connected records.</h2>
-          <p className="mt-1.5 text-sm text-ink-2 leading-relaxed">
-            TENREC connects relevant land records through a unified parcel-centric experience. Every profile section shows which department it came from and when, ensuring provenance is always preserved.
-          </p>
-        </div>
-      </section>
-
-      {/* State Context */}
-      <section aria-labelledby="state-context-heading" className="border-t border-line pt-6">
-        <h2 id="state-context-heading" className="sr-only">State Context</h2>
-        <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="flex size-2 rounded-full bg-primary" aria-hidden />
-            <span className="font-medium text-ink">Mangalagiri, Andhra Pradesh</span>
-          </div>
-          <span className="text-ink-3">Currently viewing pilot region</span>
-        </div>
-      </section>
-
+      </div>
+      </main>
     </div>
   );
 }
+
+
+
+
