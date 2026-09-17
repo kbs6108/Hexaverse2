@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { useMutation } from '@tanstack/react-query';
-import { AlertOctagon, BadgeCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2 } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { AlertOctagon, AlertTriangle, BadgeCheck, CheckCircle2, ClipboardCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2, XCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ParcelCDM } from '@/lib/cdm';
-import { api } from '@/lib/api';
+import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useUI } from '@/lib/store';
 import { fmtArea, fmtDate, fmtINR, titleCase } from '@/lib/format';
@@ -13,6 +14,67 @@ import { toast } from '@/components/Toast';
 import { Badge } from '@/components/Badge';
 import { AIInsight, parcelNeedsAttention } from '@/components/AIInsight';
 import type { ParcelTab } from '../ParcelDrawer';
+
+const DD_ICON = {
+  pass: { icon: CheckCircle2, cls: 'text-primary' },
+  caution: { icon: AlertTriangle, cls: 'text-amber' },
+  fail: { icon: XCircle, cls: 'text-brick' },
+} as const;
+
+const DD_VERDICT = {
+  clear: { label: 'Clear to proceed', cls: 'bg-primary text-primary-ink' },
+  caution: { label: 'Proceed with caution', cls: 'bg-amber text-white' },
+  high_risk: { label: 'High risk', cls: 'bg-brick text-white' },
+} as const;
+
+/** Buyer due-diligence: a 9-point checklist over the same aggregated record (on demand —
+ *  most viewers are not buying). Deterministic; the signed report PDF stays the artefact. */
+function BuyerCheck({ ulpin }: { ulpin: string }) {
+  const { user } = useAuth();
+  const [run, setRun] = useState(false);
+  const q = useQuery({
+    queryKey: qk.dueDiligence(ulpin, user?.uid ?? 'anon'),
+    queryFn: () => api.dueDiligence(ulpin),
+    enabled: run,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const d = q.data;
+  const verdict = d ? DD_VERDICT[d.verdict as keyof typeof DD_VERDICT] : undefined;
+  return (
+    <section aria-label="Buyer due-diligence" className="rounded-lg border border-line bg-panel-2 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <ClipboardCheck size={15} className="text-ink-3" />
+        <h3 className="text-sm font-semibold">Thinking of buying?</h3>
+        {verdict && <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold', verdict.cls)}>{verdict.label}</span>}
+        {d && <span className="ml-auto font-mono text-[10px] text-ink-3">{d.engine === 'rules' ? 'rule engine' : d.engine}</span>}
+        {!run && <Button size="sm" className="ml-auto" onClick={() => setRun(true)}>Run 9-point check</Button>}
+      </div>
+      {!run && <p className="mt-1 text-xs text-ink-3">One click checks the deed, court cases, mortgages, tax, pending transfers, record consistency, construction alerts, restriction zones and resurvey status.</p>}
+      {q.isLoading && run && <p className="mt-2 text-[13px] text-ink-2">Checking all six departments…</p>}
+      {q.isError && <p className="mt-2 text-[13px] text-brick">The check could not run — open the parcel again or retry.</p>}
+      {d && (
+        <>
+          <ul className="mt-2 flex flex-col gap-1">
+            {d.checks.map((c) => {
+              const ic = DD_ICON[c.status as keyof typeof DD_ICON] ?? DD_ICON.caution;
+              return (
+                <li key={c.name} className="flex items-start gap-1.5 text-[12.5px] text-ink-2">
+                  <ic.icon size={13} className={clsx('mt-0.5 shrink-0', ic.cls)} />
+                  <span><span className="font-medium text-ink">{c.name}:</span> {c.text}</span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 border-t border-line pt-2 text-[11px] text-ink-3">
+            {d.estimated_value ? `Indicative value ${fmtINR(d.estimated_value)} at the guideline rate. ` : ''}
+            A record summary, not legal advice — download the signed Land Information Report for the formal document.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
 
 interface Cell {
   label: string;
@@ -81,6 +143,8 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
       </div>
 
       <AIInsight p={p} auto={parcelNeedsAttention(p)} />
+
+      <BuyerCheck ulpin={p.ulpin} />
 
       {resurvey && (
         <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink-3">

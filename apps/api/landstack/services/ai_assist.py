@@ -191,6 +191,94 @@ async def pre_check(db: DBLike, ulpin: str, app_type: str, principal: Principal)
     return {"ulpin": ulpin, **triage(cdm, app_type)}
 
 
+def due_diligence(cdm: dict[str, Any]) -> dict[str, Any]:
+    """Buyer due-diligence checklist — pure and deterministic, from the (masked) CDM.
+    Every check is pass | caution | fail; the verdict is the worst check. This is a
+    record summary, not legal advice — the report PDF remains the signed artefact."""
+    st = cdm.get("status") or {}
+    cons = cdm.get("consistency") or {}
+    restr = cdm.get("restrictions") or {}
+    reg = (cdm.get("rights") or {}).get("registration") or {}
+    flags = cdm.get("status_flags") or {}
+    checks: list[dict[str, Any]] = []
+
+    def add(name: str, status: str, text: str) -> None:
+        checks.append({"name": name, "status": status, "text": text})
+
+    if reg.get("status") == "registered":
+        add("Registered deed", "pass",
+            f"Registered {reg.get('deed_type') or 'deed'}"
+            + (f" {reg['doc_no']}" if reg.get("doc_no") else "")
+            + (f" on {reg['registered_on']}" if reg.get("registered_on") else "") + ".")
+    else:
+        add("Registered deed", "caution", "No registered deed on record — ownership rests on the RoR alone.")
+
+    disputes = restr.get("disputes") or []
+    if st.get("has_dispute"):
+        cases = ", ".join(d.get("case_no", "?") for d in disputes[:3]) or "on record"
+        add("Court disputes", "fail", f"Active litigation: {cases}. A purchase now inherits the case.")
+    else:
+        add("Court disputes", "pass", "No court case recorded on this parcel.")
+
+    enc = [e for e in restr.get("encumbrances") or [] if e.get("active")]
+    if enc:
+        holder = enc[0].get("holder")
+        add("Encumbrances", "caution",
+            f"Active {enc[0].get('kind', 'encumbrance')}" + (f" held by {holder}" if holder else "")
+            + " — needs discharge or lender consent before transfer.")
+    else:
+        add("Encumbrances", "pass", "No active mortgage or charge.")
+
+    arrears = float(st.get("tax_arrears") or 0)
+    tax = (cdm.get("fiscal") or {}).get("tax") or {}
+    if arrears > 0:
+        add("Property tax", "caution", f"Arrears of ₹{arrears:,.0f} — usually settled by the seller before sale.")
+    else:
+        add("Property tax", "pass", "Paid up" + (f" till {tax['paid_till']}" if tax.get("paid_till") else "") + ".")
+
+    if st.get("pending_mutation"):
+        add("Pending transfer", "caution", "An ownership transfer is already pending — the seller may not be the final owner.")
+    else:
+        add("Pending transfer", "pass", "No transfer pending in the revenue queue.")
+
+    if cons.get("area_match") is False or cons.get("owner_match") is False:
+        parts = []
+        if cons.get("area_match") is False:
+            parts.append("extent")
+        if cons.get("owner_match") is False:
+            parts.append("owner name")
+        add("Records agree", "caution", f"The {' and '.join(parts)} differ(s) between the revenue and registration records.")
+    else:
+        add("Records agree", "pass", "Revenue and registration records are consistent.")
+
+    if st.get("change_alert"):
+        add("Unrecorded construction", "caution", "Satellite change detection flags possible construction not in the permission record.")
+    else:
+        add("Unrecorded construction", "pass", "No satellite change alert.")
+
+    zones = restr.get("restriction_zones") or []
+    if zones:
+        add("Restriction zones", "caution", "Inside " + ", ".join(f"{z.get('name')} ({z.get('kind')})" for z in zones[:3]) + " — use may be limited.")
+    else:
+        add("Restriction zones", "pass", "Not inside any restriction zone.")
+
+    if flags.get("resurvey") == "in_progress":
+        add("Resurvey", "caution", "The area is under active resurvey — boundaries and extents may be revised.")
+    elif flags.get("resurvey") == "pending":
+        add("Resurvey", "caution", "Survey data predates the modern resurvey programme.")
+    else:
+        add("Resurvey", "pass", "Survey data is current.")
+
+    statuses = {c["status"] for c in checks}
+    verdict = "high_risk" if "fail" in statuses else "caution" if "caution" in statuses else "clear"
+    return {
+        "engine": "rules",
+        "verdict": verdict,
+        "checks": checks,
+        "estimated_value": (cdm.get("fiscal") or {}).get("estimated_value"),
+    }
+
+
 def _fact_sheet(cdm: dict[str, Any], findings: list[dict[str, Any]]) -> str:
     ids = cdm.get("identifiers") or {}
     keep = {

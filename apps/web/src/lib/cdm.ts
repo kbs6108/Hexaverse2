@@ -306,6 +306,20 @@ export interface PreCheck {
   ok_to_submit: boolean;
 }
 
+export interface DueDiligenceCheck {
+  name: string;
+  status: 'pass' | 'caution' | 'fail' | string;
+  text: string;
+}
+
+export interface DueDiligence {
+  ulpin: string;
+  engine: string;
+  verdict: 'clear' | 'caution' | 'high_risk' | string;
+  checks: DueDiligenceCheck[];
+  estimated_value?: number | null;
+}
+
 export interface ApplicationAdvice {
   application_id: string;
   engine: string;

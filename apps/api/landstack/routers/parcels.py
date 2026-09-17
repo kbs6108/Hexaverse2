@@ -72,6 +72,18 @@ async def boundary_propose(
     return {"accepted": True, "application": app, "validation": result}
 
 
+@router.get("/parcels/{ulpin}/due-diligence")
+async def due_diligence(
+    ulpin: str, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Buyer due-diligence checklist over the CDM the caller may see (masking applies first).
+    Deterministic; a record summary, not legal advice — the signed report PDF is the artefact."""
+    from landstack.services import ai_assist
+
+    cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
+    return {"ulpin": ulpin, **ai_assist.due_diligence(cdm)}
+
+
 @router.get("/parcels/{ulpin}/timeline")
 async def timeline(
     ulpin: str, principal: Principal = Depends(require_officer), db: DBLike = Depends(get_db)

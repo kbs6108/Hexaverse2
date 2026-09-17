@@ -176,7 +176,10 @@ Public: `GET /healthz`, `GET /landstack/collections`, `GET /landstack/collection
 Any signed-in: `GET /landstack/parcels/{ulpin}` (CDM, masked per role/consent), `GET /landstack/me`,
 `POST /landstack/verify-ownership {ulpin, claimed_name}` → `{match: bool, score, compared: ["ror","latest_deed"]}`,
 `POST /landstack/applications {ulpin, type, payload}`, `GET /landstack/applications?mine=1`, `GET /landstack/applications/{id}`,
-`POST /landstack/reports/{ulpin}` → `{id, url}`, `POST /landstack/consents/request {ulpin}`.
+`POST /landstack/reports/{ulpin}` → `{id, url}`, `POST /landstack/consents/request {ulpin}`,
+`GET /landstack/parcels/{ulpin}/due-diligence` → buyer checklist over the (masked) CDM:
+`{ulpin, engine:"rules", verdict: clear|caution|high_risk, checks: [{name, status: pass|caution|fail, text}] ×9,
+estimated_value}` — deterministic; a record summary, not legal advice (the signed report PDF is the artefact).
 Officer (revenue) / admin: `POST /landstack/parcels/{ulpin}/boundary/validate {geometry}` → bounded-edit checks
 (valid geometry · 4–200 vertices · |Δarea| ≤ 15% · no overlap > 1 m² · within village boundary) + metrics and an
 assistive `suggestion` (snap-to-neighbours + overlap subtraction); `POST /landstack/parcels/{ulpin}/boundary
