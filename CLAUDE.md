@@ -94,7 +94,8 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
-- 2026-09-17 officer decision view: auto-assembled per-source evidence panel + readable zoning-check line in the application drawer.
+- 2026-09-17 citizen tracking: approval side effects (payload.side_effect) shown as a one-line cross-department note in every timeline.
+- 2026-09-17 `717e37f` officer decision view: auto-assembled per-source evidence panel + readable zoning-check line in the application drawer.
 - 2026-09-17 `c850129` citizen Apply wizard: intent cards + AI pre-check endpoint; new types record_correction & land_complaint (migration 011, 6 triage tests).
 - 2026-09-17 `30b59e5` web: nav cleanup — un-nested citizen apps panel, dropped redundant back buttons.
 - 2026-09-16 `2621476` chore: dead-code cleanup (OverviewHint, ls_seen_welcome) + actions v5.

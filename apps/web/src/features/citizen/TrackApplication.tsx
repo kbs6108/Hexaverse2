@@ -20,14 +20,14 @@ export function TrackApplication() {
 
   return (
     <>
-      <PageTitle title="Track application" subtitle="Your mutation, building-permission and verification requests" action={<Link to="/citizen/request"><Button variant="primary">New request</Button></Link>} />
+      <PageTitle title="Track application" subtitle="Every request you filed, from submission to decision — including what changed in other departments" action={<Link to="/citizen/request"><Button variant="primary">New request</Button></Link>} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <Card>
           <CardHeader title="My applications" subtitle={list.data ? `${list.data.length} total` : undefined} />
           <CardBody className="px-2">
             {list.isLoading && <Loading />}
             {list.isError && <ErrorNote error={list.error} retry={() => void list.refetch()} />}
-            {list.data && list.data.length === 0 && <EmptyState title="No applications yet" body="Request a mutation or building permission to see it here." />}
+            {list.data && list.data.length === 0 && <EmptyState title="No applications yet" body="Apply for a transfer, correction, building permission or complaint to see it here." />}
             <ul className="flex flex-col">
               {list.data?.map((a) => (
                 <li key={a.id}>

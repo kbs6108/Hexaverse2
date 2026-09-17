@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { Badge, type Tone } from '@/components/Badge';
 import type { Application, HistoryEntry, NextAction } from '@/lib/cdm';
 import { api, qk } from '@/lib/api';
@@ -86,6 +87,7 @@ export function StatusTimeline({ app }: { app: Application }) {
   }
 
   return (
+    <>
     <ol className="relative ml-1.5 border-l border-line pl-5" aria-label="Status history">
       {entries.map((h, i) => {
         const last = i === entries.length - 1;
@@ -102,5 +104,37 @@ export function StatusTimeline({ app }: { app: Application }) {
         );
       })}
     </ol>
+    <SideEffectNote app={app} />
+    </>
+  );
+}
+
+/** Cross-department consequence of an approval (payload.side_effect, written by the workflow
+ *  engine after run_side_effects). Shown to citizen and officer alike — the interoperability
+ *  story, visible in one line. */
+function SideEffectNote({ app }: { app: Application }) {
+  const side = app.payload?.side_effect as { department?: string; ok?: boolean; error?: string } | undefined;
+  if (!side || typeof side !== 'object') return null;
+  if (side.ok === false) {
+    return (
+      <p className="mt-2 flex items-start gap-1.5 rounded-md border border-amber/40 bg-amber-soft/40 px-2.5 py-2 text-[12.5px] text-ink-2">
+        <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber" />
+        The follow-up update in the other department did not go through{side.error ? ` (${side.error})` : ''}. An officer will retry it.
+      </p>
+    );
+  }
+  const text =
+    app.type === 'mutation'
+      ? 'Approval automatically transferred the Record of Rights in the Revenue department.'
+      : app.type === 'boundary_correction'
+        ? 'Approval applied the new boundary to the map and synced the extent with the Revenue department.'
+        : app.type === 'building_permission'
+          ? 'Approval issued the permit in the Planning department’s system.'
+          : `Approval automatically updated the ${titleCase(side.department ?? 'other')} department’s records.`;
+  return (
+    <p className="mt-2 flex items-start gap-1.5 rounded-md border border-primary/30 bg-primary-soft/40 px-2.5 py-2 text-[12.5px] text-ink-2">
+      <ArrowRightLeft size={13} className="mt-0.5 shrink-0 text-primary" />
+      {text}
+    </p>
   );
 }
