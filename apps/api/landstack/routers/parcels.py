@@ -77,11 +77,11 @@ async def due_diligence(
     ulpin: str, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
 ) -> dict[str, Any]:
     """Buyer due-diligence checklist over the CDM the caller may see (masking applies first).
-    Deterministic; a record summary, not legal advice — the signed report PDF is the artefact."""
+    Deterministic 9-point checks enhanced with AI executive summary when configured."""
     from landstack.services import ai_assist
 
     cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
-    return {"ulpin": ulpin, **ai_assist.due_diligence(cdm)}
+    return {"ulpin": ulpin, **(await ai_assist.due_diligence_report(cdm))}
 
 
 @router.get("/parcels/{ulpin}/timeline")

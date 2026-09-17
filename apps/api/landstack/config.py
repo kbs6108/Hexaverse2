@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     s2_offline: bool = True
     s2_data_dir: str = "./data/s2"
     gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
     # NVIDIA Build (build.nvidia.com) — OpenAI-compatible; powers parcel briefs,
     # application advice and document extraction. Empty key → deterministic rule engine.
     # NVIDIA retires models over time (410 Gone): pick a live one from GET /v1/models.

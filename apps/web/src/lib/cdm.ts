@@ -327,6 +327,7 @@ export interface DueDiligence {
   verdict: 'clear' | 'caution' | 'high_risk' | string;
   checks: DueDiligenceCheck[];
   estimated_value?: number | null;
+  summary?: string | null;
 }
 
 export interface AssistantSource {

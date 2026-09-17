@@ -146,8 +146,11 @@ export const api = {
     request<{ ok: boolean; objection_count: number }>(`/landstack/applications/${encodeURIComponent(id)}/objections`, { method: 'POST', body: { reason } }),
   dueDiligence: (ulpin: string) =>
     request<DueDiligence>(`/landstack/parcels/${encodeURIComponent(ulpin)}/due-diligence`),
-  assistant: (message: string, ulpin?: string | null) =>
-    request<AssistantReply>('/landstack/ai/assistant', { method: 'POST', body: { message, ulpin: ulpin || undefined } }),
+  assistant: (message: string, ulpin?: string | null, history?: { role: string; content: string }[]) =>
+    request<AssistantReply>('/landstack/ai/assistant', {
+      method: 'POST',
+      body: { message, ulpin: ulpin || undefined, history: history || [] },
+    }),
   preCheck: (ulpin: string, type: ApplicationType) =>
     request<PreCheck>('/landstack/ai/pre-check', { method: 'POST', body: { ulpin, type } }),
 

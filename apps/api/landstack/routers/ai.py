@@ -30,9 +30,15 @@ class PreCheckBody(BaseModel):
     type: str
 
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
 class AssistantBody(BaseModel):
     message: str
     ulpin: str | None = None
+    history: list[ChatMessage] = []
 
     @model_validator(mode="after")
     def _sane(self) -> AssistantBody:
@@ -70,8 +76,9 @@ async def assistant(
     body: AssistantBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
 ) -> dict[str, Any]:
     """Bhu-Sahayak chatbot: deterministic intent routing grounded on the caller's own view of
-    the records (masked CDM, own applications); the LLM only rephrases the templated answer."""
-    return await ai_assist.assistant(db, body.message, body.ulpin, principal)
+    the records (masked CDM, own applications); the LLM rephrases and answers dynamically with multi-turn context."""
+    hist = [{"role": h.role, "content": h.content} for h in body.history]
+    return await ai_assist.assistant(db, body.message, body.ulpin, principal, history=hist)
 
 
 @router.post("/application-advice")

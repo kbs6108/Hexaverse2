@@ -29,37 +29,59 @@ log = logging.getLogger("landstack.ai")
 CHAT_TIMEOUT_S = 18.0
 
 
-# ----------------------------------------------------------------------------- NVIDIA client
-async def chat(messages: list[dict[str, str]], *, max_tokens: int = 1600, temperature: float = 0.2) -> str | None:
-    # Generous budget: NVIDIA's reasoning models (e.g. nemotron-3) spend part of
-    # max_tokens on hidden reasoning before the JSON answer; too small a budget
-    # truncates the answer mid-string and the parse fails.
-    """One chat completion against NVIDIA Build; None when unconfigured or failing (callers fall back)."""
+# ----------------------------------------------------------------------------- LLM client (Gemini / NVIDIA / rules)
+async def chat(messages: list[dict[str, str]], *, max_tokens: int = 3000, temperature: float = 0.2) -> str | None:
+    """One chat completion against Gemini or NVIDIA Build; None when unconfigured or failing (callers fall back)."""
     s = get_settings()
-    if not s.nvidia_api_key:
-        return None
-    try:
-        async with httpx.AsyncClient(timeout=CHAT_TIMEOUT_S) as client:
-            r = await client.post(
-                f"{s.nvidia_base_url.rstrip('/')}/chat/completions",
-                headers={"Authorization": f"Bearer {s.nvidia_api_key}"},
-                json={
-                    "model": s.nvidia_model,
-                    "messages": messages,
-                    "max_tokens": max_tokens,
-                    "temperature": temperature,
-                },
-            )
-            r.raise_for_status()
-            return str(r.json()["choices"][0]["message"]["content"]).strip()
-    except Exception as exc:  # network, quota, model errors — degrade, never break the page
-        log.warning("nvidia chat failed: %s", str(exc)[:200])
-        return None
+    if s.gemini_api_key:
+        try:
+            async with httpx.AsyncClient(timeout=CHAT_TIMEOUT_S) as client:
+                r = await client.post(
+                    "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+                    headers={"Authorization": f"Bearer {s.gemini_api_key}"},
+                    json={
+                        "model": s.gemini_model,
+                        "messages": messages,
+                        "max_tokens": max_tokens,
+                        "temperature": temperature,
+                    },
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    return str(data["choices"][0]["message"]["content"]).strip()
+                log.warning("gemini chat error (%d): %s", r.status_code, r.text[:200])
+        except Exception as exc:
+            log.warning("gemini chat failed: %s", str(exc)[:200])
+
+    if s.nvidia_api_key:
+        try:
+            async with httpx.AsyncClient(timeout=CHAT_TIMEOUT_S) as client:
+                r = await client.post(
+                    f"{s.nvidia_base_url.rstrip('/')}/chat/completions",
+                    headers={"Authorization": f"Bearer {s.nvidia_api_key}"},
+                    json={
+                        "model": s.nvidia_model,
+                        "messages": messages,
+                        "max_tokens": max_tokens,
+                        "temperature": temperature,
+                    },
+                )
+                if r.status_code == 200:
+                    return str(r.json()["choices"][0]["message"]["content"]).strip()
+                log.warning("nvidia chat error (%d): %s", r.status_code, r.text[:200])
+        except Exception as exc:
+            log.warning("nvidia chat failed: %s", str(exc)[:200])
+
+    return None
 
 
 def engine_name() -> str:
     s = get_settings()
-    return f"nvidia:{s.nvidia_model}" if s.nvidia_api_key else "rules"
+    if s.gemini_api_key:
+        return f"gemini:{s.gemini_model}"
+    if s.nvidia_api_key:
+        return f"nvidia:{s.nvidia_model}"
+    return "rules"
 
 
 # ----------------------------------------------------------------------------- rule engine
@@ -290,6 +312,33 @@ def due_diligence(cdm: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+async def due_diligence_report(cdm: dict[str, Any]) -> dict[str, Any]:
+    """Buyer due-diligence report: runs deterministic 9-point checks, then when configured,
+    synthesizes a crisp AI buyer verdict summary with Gemini / NVIDIA."""
+    res = due_diligence(cdm)
+    s = get_settings()
+    if s.gemini_api_key or s.nvidia_api_key:
+        lines = [f"• {c['name']}: {c['text']} ({c['status']})" for c in res["checks"]]
+        sys_prompt = (
+            "You are an expert AI land records analyst on Land Stack.\n"
+            "Given the 9-point due diligence checklist below for an Indian land parcel, "
+            "write a crisp 1 to 2 sentence executive buyer summary highlighting the main clearance or risk. "
+            "Be direct, neutral, and concise. Do not write filler greetings or introductions."
+        )
+        user_content = f"Overall Verdict: {res['verdict']}\n\n9-Point Checks:\n" + "\n".join(lines)
+        ai_summary = await chat(
+            [{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_content}],
+            max_tokens=600,
+            temperature=0.2,
+        )
+        if ai_summary:
+            clean_summary = ai_summary.strip().strip('"').strip("'")
+            res["summary"] = clean_summary
+            res["engine"] = engine_name()
+
+    return res
+
+
 # ----------------------------------------------------------------------------- Bhu-Sahayak assistant
 _APP_ID_RE = re.compile(r"\bAPP-\d{4}-\d{1,8}\b", re.I)
 _ULPIN_RE = re.compile(r"\b[0-9A-Z]{14}\b")
@@ -350,54 +399,79 @@ def _worst(items: list[dict[str, Any]], n: int = 2) -> str:
 
 
 async def assistant(
-    db: DBLike, message: str, ulpin: str | None, principal: Principal
+    db: DBLike,
+    message: str,
+    ulpin: str | None,
+    principal: Principal,
+    history: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
-    """Grounded chatbot reply: route the intent, fetch only the app's own records
-    (masked CDM / the caller's applications), compose a templated answer, then let the
-    LLM rephrase it when configured. Facts never come from the model."""
+    """Grounded chatbot reply: route the intent, fetch the app's verified records
+    (masked CDM / caller's applications), resolve conversational context from prior chat history,
+    and generate a warm, flexible, context-aware answer powered by Gemini/NVIDIA."""
     from landstack.services import aggregator, workflow
 
     routed = route_intent(message)
     intent = routed["intent"]
     target_ulpin = routed["ulpin"] or (ulpin.strip() if ulpin else None) or None
+    target_survey = routed["survey_no"]
+    target_app_id = routed["app_id"]
+
+    # Multi-turn context resolution: recover parcel, survey number, or application from prior messages
+    if history:
+        for prev in reversed(history):
+            text = prev.get("content") or ""
+            prev_routed = route_intent(text)
+            if not target_ulpin and prev_routed.get("ulpin"):
+                target_ulpin = prev_routed["ulpin"]
+            if not target_ulpin and not target_survey and prev_routed.get("survey_no"):
+                target_survey = prev_routed["survey_no"]
+            if not target_app_id and prev_routed.get("app_id"):
+                target_app_id = prev_routed["app_id"]
+            if intent == "help" and prev_routed.get("intent") and prev_routed["intent"] != "help":
+                intent = prev_routed["intent"]
+            if (target_ulpin or target_survey) and target_app_id:
+                break
+
     sources: list[dict[str, Any]] = []
     suggestions: list[str] = []
     reply: str
 
-    # Survey number → ULPIN, when the message names one and no ULPIN is in play.
-    if not target_ulpin and routed["survey_no"]:
+    # Survey number → ULPIN, when a survey number is in context and no ULPIN is specified yet
+    if not target_ulpin and target_survey:
         rows = await db.fetch(
             "SELECT ulpin, village FROM landstack.parcels WHERE survey_no = :s ORDER BY ulpin LIMIT 3",
-            s=routed["survey_no"],
+            s=target_survey,
         )
         if len(rows) == 1:
             target_ulpin = rows[0]["ulpin"]
         elif len(rows) > 1:
             opts = ", ".join(f"{r['ulpin']} ({r['village']})" for r in rows)
             return {
-                "reply": f"Survey number {routed['survey_no']} matches more than one parcel: {opts}. "
-                         "Tell me the ULPIN (or pick the parcel on the map) and ask again.",
+                "reply": f"Survey number {target_survey} matches more than one parcel: {opts}. "
+                         "Please tell me the ULPIN (or select the parcel on the map) to continue.",
                 "engine": "rules", "intent": intent, "sources": [], "suggestions": [],
             }
 
     cdm: dict[str, Any] | None = None
-    if target_ulpin and intent not in ("status", "notice", "report", "help"):
+    if target_ulpin and intent not in ("notice", "report", "help"):
         try:
             cdm = await aggregator.get_parcel_cdm(db, target_ulpin, principal)
             sources.append({"kind": "parcel", "id": target_ulpin})
         except Exception:
-            reply = (f"I could not find a parcel with id {target_ulpin}. Check the ULPIN, or search "
-                     "by survey number on the map and open the parcel first.")
-            return {"reply": reply, "engine": "rules", "intent": intent, "sources": [], "suggestions": ["How do I find my parcel?"]}
+            if not history:
+                reply = (f"I could not find a parcel with id {target_ulpin}. Check the ULPIN, or search "
+                         "by survey number on the map and open the parcel first.")
+                return {"reply": reply, "engine": "rules", "intent": intent, "sources": [], "suggestions": ["How do I find my parcel?"]}
 
+    # Baseline deterministic rule reply (fallback & grounding reference)
     if intent == "status":
-        if routed["app_id"]:
+        if target_app_id:
             try:
-                app = await workflow.get_application(db, routed["app_id"])
+                app = await workflow.get_application(db, target_app_id)
             except Exception:
                 app = None
             if app is None or (principal.role == "citizen" and app.get("applicant_uid") != principal.uid):
-                reply = (f"I can't show {routed['app_id']} — it either doesn't exist or was filed by someone else. "
+                reply = (f"I can't show {target_app_id} — it either doesn't exist or was filed by someone else. "
                          "You can see all of your own applications under Citizen services → Track application.")
             else:
                 sources.append({"kind": "application", "id": app["id"]})
@@ -469,6 +543,7 @@ async def assistant(
             reply = "Property tax on this parcel is paid up" + (f" till {tax['paid_till']}" if tax.get("paid_till") else "") + "."
         if (cdm.get("fiscal") or {}).get("estimated_value"):
             reply += f" Indicative value: ₹{float(cdm['fiscal']['estimated_value']):,.0f} at the guideline rate."
+        suggestions = ["Is it safe to buy?", "How do I pay tax dues?"]
 
     elif intent == "dispute" and cdm is not None:
         disputes = (cdm.get("restrictions") or {}).get("disputes") or []
@@ -478,54 +553,117 @@ async def assistant(
                 for d in disputes[:3])
             reply = f"Yes — active litigation is recorded on this parcel: {cases}. Transfers are normally held until disposal."
         else:
-            reply = "No court case is recorded on this parcel."
+            reply = "No court case or litigation is recorded on this parcel."
+        suggestions = ["Check buyer due diligence", "Who is the owner?"]
 
     elif intent == "owner" and cdm is not None:
         ror = (cdm.get("rights") or {}).get("ror") or {}
         owner = ror.get("owner_name") or "not on record"
-        reply = (f"The record of rights lists the owner as {owner}"
+        reply = (f"The record of rights lists the owner as **{owner}**"
                  + (f" (khata {ror['khata_no']})" if ror.get("khata_no") else "") + "."
-                 " Names are masked unless you are the owner or hold consent — to confirm a specific person, "
-                 "use Citizen services → Verify ownership, which answers yes/no without exposing the name.")
-        suggestions = ["Verify a name against this parcel", "Is it safe to buy?"]
+                 " Names are masked by default to protect citizen privacy — to confirm a specific person, "
+                 "use Citizen services → Verify ownership, which answers yes/no without exposing personal data.")
+        suggestions = ["Verify ownership against a name", "Is it safe to buy?"]
 
     elif intent == "notice":
         reply = ("Pending transfers of rights (mutation, succession, boundary corrections) are published on the "
-                 "public notice board on the citizen home page for 15 days. Anyone may object during the window — "
+                 "public notice board on the citizen home page for 15 days. Anyone may object during this statutory window — "
                  "the objection is recorded with your name and shown to the deciding officer.")
-        suggestions = ["Show my application status"]
+        suggestions = ["How do I file an objection?", "Show my application status"]
 
     elif intent == "report":
-        reply = ("A certified parcel report (PDF with a QR verification link) can be issued from the parcel page — "
-                 "open the parcel and choose the report option. Anyone can verify an issued report at /verify.")
+        reply = ("A certified parcel report (signed PDF with a QR verification code) can be generated directly from the parcel page. "
+                 "Anyone can verify an issued report at /verify.")
+        suggestions = ["How to download report?", "Buyer due diligence"]
 
     elif intent in _INTENT_APP_TYPE or intent in ("buy", "tax", "dispute", "owner"):
-        # A parcel intent with no parcel in context.
-        reply = ("Tell me which parcel — share its 14-character ULPIN or say the survey number "
-                 "(e.g. \"survey no 123/4\"), or open a parcel on the map and ask again.")
-        suggestions = ["Survey no 123/4"]
+        reply = ("Tell me which parcel you'd like to check — share its survey number (e.g. \"survey no 123/4\") "
+                 "or 14-character ULPIN, or click any parcel on the map.")
+        suggestions = ["Survey no 123/4", "Survey no 125/2", "Survey no 126"]
 
     else:
-        reply = ("I'm Bhu-Sahayak. I can check a parcel before you buy, explain how to transfer ownership, "
-                 "fix a record mistake, get building permission, file a complaint or start a succession, and "
-                 "track your applications. Try: \"is survey no 123/4 safe to buy?\" or \"status of APP-2026-000001\".")
+        reply = ("I'm Bhu-Sahayak, your land records guide. I can check a parcel before you buy, verify ownership, "
+                 "explain procedures (mutation, succession, building permission, boundary correction), check court disputes, "
+                 "or track your applications. What would you like to know?")
         suggestions = ["Is survey no 123/4 safe to buy?", "How do I transfer ownership?", "Show my application status"]
 
-    # Optional LLM polish: rephrase only — the facts stay the templated ones.
+    # Build rich ground-truth facts for the LLM
+    fact_lines: list[str] = []
+    if cdm is not None:
+        ids = cdm.get("identifiers") or {}
+        st = cdm.get("status") or {}
+        rights = cdm.get("rights") or {}
+        ror = rights.get("ror") or {}
+        reg = rights.get("registration") or {}
+        planning = cdm.get("planning") or {}
+        fiscal = cdm.get("fiscal") or {}
+        restr = cdm.get("restrictions") or {}
+        flags = cdm.get("status_flags") or {}
+        dd = due_diligence(cdm)
+
+        fact_lines.append(f"Parcel ULPIN: {target_ulpin}, Survey No: {ids.get('survey_no')}, Village: {ids.get('village')}, State: {ids.get('state')}")
+        fact_lines.append(f"Planning Land Use: {planning.get('land_use')}, Zone: {planning.get('zone_code')}, Permissible: {planning.get('permissible_uses')}, Building permission status: {planning.get('building_permission_status')}")
+        fact_lines.append(f"Revenue RoR: Owner: {ror.get('owner_name')}, Khata No: {ror.get('khata_no')}, Extent: {ror.get('extent')} {ror.get('extent_unit')}, Classification: {ror.get('classification')}")
+        if ror.get("nominees"):
+            nom_str = ", ".join(f"{n.get('name')} ({n.get('relation')}, share {n.get('share')})" for n in ror["nominees"])
+            fact_lines.append(f"Recorded Nominees/Heirs: {nom_str}")
+        fact_lines.append(f"Registration Status: {reg.get('status')}, Deed No: {reg.get('deed_no')}, Has Active Mortgage: {st.get('has_mortgage')}")
+        if restr.get("encumbrances"):
+            enc_str = "; ".join(f"{e.get('type')} by {e.get('holder')} (amount: ₹{e.get('amount')}, active: {e.get('active')})" for e in restr["encumbrances"])
+            fact_lines.append(f"Encumbrances: {enc_str}")
+        fact_lines.append(f"Property Tax Arrears: ₹{float(st.get('tax_arrears') or 0):,.0f}, Paid till: {(fiscal.get('tax') or {}).get('paid_till')}, Guideline Value: ₹{float(fiscal.get('estimated_value') or 0):,.0f}")
+        disputes = restr.get("disputes") or []
+        fact_lines.append(f"Court Disputes / Litigation: {len(disputes)} case(s)" + (f" ({'; '.join(d.get('case_no','') for d in disputes)})" if disputes else " None"))
+        fact_lines.append(f"Buyer Due Diligence Verdict: {dd.get('verdict')} (checks passed: {sum(1 for c in dd.get('checks',[]) if c['status']=='pass')}/9)")
+        fact_lines.append(f"Resurvey Status: {flags.get('resurvey')}, Change Alert: {st.get('change_alert')}, Pending Mutation: {st.get('pending_mutation')}")
+
+    if target_app_id:
+        try:
+            app = await workflow.get_application(db, target_app_id)
+            if app:
+                fact_lines.append(f"Application {app['id']}: Type: {app['type']}, Status: {app['status']}, Assigned Dept: {app.get('assigned_department')}")
+        except Exception:
+            pass
+
+    # Conversational LLM generation (Gemini / NVIDIA)
+    s = get_settings()
     engine = "rules"
-    polished = await chat(
-        [
-            {"role": "system",
-             "content": "You are Bhu-Sahayak, a land-records helper on an Indian land-governance portal. "
-                        "Rewrite the drafted answer to be warm and clear in 1-3 sentences. Keep every fact, "
-                        "number and id exactly as drafted; add nothing new. Output only the rewritten text."},
-            {"role": "user", "content": f"Question: {message}\nDrafted answer: {reply}"},
-        ],
-        max_tokens=600,
-    ) if cdm is not None or intent == "status" else None
-    if polished and len(polished) < 1200:
-        reply = polished
-        engine = engine_name()
+    if s.gemini_api_key or s.nvidia_api_key:
+        sys_prompt = (
+            "You are Bhu-Sahayak, a clear, crisp, and direct land records assistant on Land Stack.\n\n"
+            "CRITICAL INSTRUCTIONS ON LENGTH & STYLE:\n"
+            "1. CLEAR DOUBTS IN SHORT: Adapt response length strictly to what was asked. Avoid unnecessary verbosity.\n"
+            "   - Simple / factual questions ('Who owns this?', 'Any court dispute?', 'What is the tax status?'): Answer directly in 1 to 2 clear sentences.\n"
+            "   - Due-diligence / safety questions ('Is survey X safe to buy?'): Give a direct verdict (Safe / Caution / High Risk) followed by 2 to 3 short bullet points covering only the critical facts. Do not write generic essays or repetitive advice.\n"
+            "   - Procedural questions ('How does notice board work?'): Give 2 to 3 short, punchy bullet points.\n"
+            "2. NO FLUFF: Skip repetitive greetings ('Namaste! As Bhu-Sahayak...'), conversational filler, and essay introductions. Start immediately with the direct answer.\n"
+            "3. Ground all factual assertions (ownership, court disputes, tax arrears, mortgages, zoning) strictly in the verified platform records below. Never invent fake parcel numbers, owners, or cases.\n"
+            "4. Conversational context: When the user asks follow-up questions ('what about disputes?', 'who is the owner?'), answer directly regarding the previously established parcel or entity without re-explaining the entire history.\n"
+            "5. If an owner's name is masked (e.g. R*** K***), briefly mention that privacy masking is active to protect identity and advise using 'Verify ownership' if they want to confirm a specific name.\n"
+            "6. Use **bold** for key survey numbers, statuses, and values so the citizen can scan the answer in seconds."
+        )
+
+        llm_messages: list[dict[str, str]] = [{"role": "system", "content": sys_prompt}]
+
+        # Include prior conversation history for multi-turn awareness
+        if history:
+            for h in history[-6:]:
+                role = "assistant" if h.get("role") in ("assistant", "bot") else "user"
+                content = (h.get("content") or "").strip()
+                if content:
+                    llm_messages.append({"role": role, "content": content})
+
+        user_content = f"User Question: {message}\n\n"
+        if fact_lines:
+            user_content += "[VERIFIED LAND RECORDS FOR CONTEXT]\n" + "\n".join(f"• {line}" for line in fact_lines) + "\n\n"
+        user_content += f"[BASELINE SYSTEM FINDINGS]\n{reply}"
+
+        llm_messages.append({"role": "user", "content": user_content})
+
+        llm_reply = await chat(llm_messages, max_tokens=3000, temperature=0.2)
+        if llm_reply:
+            reply = llm_reply
+            engine = engine_name()
 
     return {"reply": reply, "engine": engine, "intent": intent, "sources": sources, "suggestions": suggestions[:3]}
 
