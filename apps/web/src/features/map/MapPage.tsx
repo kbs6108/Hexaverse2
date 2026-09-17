@@ -2,13 +2,11 @@ import { useEffect } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { MapView } from './MapView';
 import { LayerPanel } from './LayerPanel';
-import { StoryChips } from './StoryChips';
-import { RegionsPanel } from './RegionsPanel';
 import { BoundaryPanel } from './BoundaryEditor';
 import { OverviewHint } from './OverviewHint';
 import { ParcelDrawer } from '@/features/parcel/ParcelDrawer';
 import { useUI } from '@/lib/store';
-import { useOpenParcel } from './SearchBox';
+import { SearchBox, useOpenParcel } from './SearchBox';
 
 export function MapPage() {
   const { ulpin } = useSearch({ from: '/map' });
@@ -22,12 +20,20 @@ export function MapPage() {
   }, [ulpin]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full overflow-hidden">
       <MapView />
+
+      {/* Ambient Earth Warmth Overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none z-[5] bg-[#F4F1E7]/10 mix-blend-multiply" 
+      />
+
       <LayerPanel />
-      <StoryChips />
+
+      {/* Contextual Parcel Search directly on Map canvas */}
+      <SearchBox />
+
       <OverviewHint />
-      <RegionsPanel />
       <BoundaryPanel />
       <ParcelDrawer onClose={() => select(null)} />
     </div>

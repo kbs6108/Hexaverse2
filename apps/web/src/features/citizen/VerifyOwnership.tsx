@@ -44,23 +44,23 @@ export function VerifyOwnership() {
         <div>
           {m.isError && <ErrorNote error={m.error} />}
           {m.data && (
-            <Card className={m.data.match ? 'border-primary/40' : 'border-brick/40'}>
+            <Card className={m.data.match ? 'border-[#176B52]/40' : 'border-brick/40'}>
               <CardBody className="pt-5">
                 <div className="flex items-start gap-3">
-                  {m.data.match ? <CheckCircle2 size={36} className="text-primary" /> : <XCircle size={36} className="text-brick" />}
+                  {m.data.match ? <CheckCircle2 size={36} className="text-[#176B52]" /> : <XCircle size={36} className="text-brick" />}
                   <div>
-                    <p className="text-lg font-semibold">{m.data.match ? 'Name matches the record' : 'Name does not match'}</p>
-                    <p className="text-sm text-ink-2">Similarity score {Math.round(m.data.score * 100)}%</p>
+                    <p className="text-lg font-black text-[#18231F]">{m.data.match ? 'Name matches the record' : 'Name does not match'}</p>
+                    <p className="text-sm font-medium text-[#4B5345]">Similarity score {Math.round(m.data.score * 100)}%</p>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-ground-2" role="meter" aria-valuenow={Math.round(m.data.score * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Similarity">
-                    <div className={`h-full ${m.data.match ? 'bg-primary' : 'bg-brick'}`} style={{ width: `${Math.round(m.data.score * 100)}%` }} />
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-[#E9E5D8]" role="meter" aria-valuenow={Math.round(m.data.score * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Similarity">
+                    <div className={`h-full ${m.data.match ? 'bg-[#176B52]' : 'bg-brick'}`} style={{ width: `${Math.round(m.data.score * 100)}%` }} />
                   </div>
                 </div>
-                <p className="mt-4 text-xs text-ink-3">Compared against: {m.data.compared.map(titleCase).join(', ')}. The registered owner’s name is not disclosed by this service.</p>
+                <p className="mt-4 text-xs font-medium text-[#4B5345]">Compared against: {m.data.compared.map(titleCase).join(', ')}. The registered owner’s name is not disclosed by this service.</p>
                 {m.data.match && ulpin && (
-                  <div className="mt-5 border-t border-line pt-4">
+                  <div className="mt-5 border-t border-[#D5D2C7] pt-4">
                     <Link to="/citizen/request" search={{ ulpin: ulpin.trim() }}>
                       <Button variant="primary" icon={<ArrowRight size={15} />}>
                         Request service for this parcel
@@ -72,7 +72,7 @@ export function VerifyOwnership() {
             </Card>
           )}
           {!m.data && !m.isError && (
-            <div className="rounded-lg border border-dashed border-line p-6 text-sm text-ink-3">
+            <div className="rounded-2xl border border-dashed border-[#176B52]/20 bg-[#F4F1E7]/45 backdrop-blur-xl p-6 text-sm font-medium text-[#4B5345]">
               Result appears here. A match does not by itself prove title; use it together with the Land Information Report.
             </div>
           )}

@@ -17,13 +17,15 @@ import { FiscalSection } from './sections/Fiscal';
 import { UtilitiesSection } from './sections/Utilities';
 import { Timeline } from './sections/Timeline';
 import { SatelliteSection } from './sections/Satellite';
+import { DocumentVault } from './sections/DocumentVault';
 
-export type ParcelTab = 'overview' | 'ownership' | 'registration' | 'planning' | 'fiscal' | 'utilities' | 'timeline' | 'satellite';
+export type ParcelTab = 'overview' | 'ownership' | 'registration' | 'dossier' | 'planning' | 'fiscal' | 'utilities' | 'timeline' | 'satellite';
 
 const TABS: { id: ParcelTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'ownership', label: 'Ownership & RoR' },
   { id: 'registration', label: 'Registration & Encumbrance' },
+  { id: 'dossier', label: 'Document Vault' },
   { id: 'planning', label: 'Planning & Permissions' },
   { id: 'fiscal', label: 'Fiscal' },
   { id: 'utilities', label: 'Utilities' },
@@ -54,6 +56,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
       open={drawerOpen && !!selectedUlpin}
       onClose={onClose}
       ariaLabel="Parcel profile"
+      width="w-[540px] max-w-[94vw]"
       header={
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-wide text-ink-3">Parcel profile</p>
@@ -74,11 +77,12 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
       )}
       {p && (
         <>
-          <Tabs ariaLabel="Parcel profile sections" items={TABS} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-panel px-2" />
+          <Tabs ariaLabel="Parcel profile sections" items={TABS} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-[#F4F1E7]/50 backdrop-blur-xl border-b border-[#D5D2C7]/50 px-2" />
           <div className="p-4">
             <TabPanel id="overview" active={tab === 'overview'}><Overview p={p} goTo={setTab} /></TabPanel>
             <TabPanel id="ownership" active={tab === 'ownership'}><Ownership p={p} /></TabPanel>
             <TabPanel id="registration" active={tab === 'registration'}><Registration p={p} /></TabPanel>
+            <TabPanel id="dossier" active={tab === 'dossier'}><DocumentVault p={p} /></TabPanel>
             <TabPanel id="planning" active={tab === 'planning'}><PlanningSection p={p} /></TabPanel>
             <TabPanel id="fiscal" active={tab === 'fiscal'}><FiscalSection p={p} /></TabPanel>
             <TabPanel id="utilities" active={tab === 'utilities'}><UtilitiesSection p={p} /></TabPanel>

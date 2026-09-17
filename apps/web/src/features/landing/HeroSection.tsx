@@ -2,17 +2,16 @@ import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ShaderAnimation } from './ShaderAnimation';
-import { MapLaunch } from './MapLaunch';
 import { GovBadge } from '@/features/marketing/GovStrip';
 import { createTopDockController } from './top-dock-controller';
 
 const DOCK_ITEM =
-  'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-ink-2 will-change-transform hover:bg-black/5 hover:text-ink';
+  'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-ink-2 will-change-transform hover:bg-black/5 hover:text-ink cursor-pointer';
 
 /** Anchored sections the dock tracks, in page order. */
 const SPY_SECTIONS = ['top', 'departments', 'how', 'stories'] as const;
 
-export function HeroSection() {
+export function HeroSection({ onOpenAuth }: { onOpenAuth?: (mode?: 'signin' | 'signup') => void }) {
   const dockRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState<string>('top');
 
@@ -57,10 +56,22 @@ export function HeroSection() {
             <a data-dock-item data-active={active === 'how'} href="#how" className={DOCK_ITEM}>How it works</a>
             <a data-dock-item data-active={active === 'stories'} href="#stories" className={DOCK_ITEM}>Stories</a>
             <Link data-dock-item to="/help" className={DOCK_ITEM}>Guide</Link>
+            <button
+              type="button"
+              data-dock-item
+              onClick={() => onOpenAuth?.('signin')}
+              className={DOCK_ITEM}
+            >
+              Sign In
+            </button>
           </nav>
-          <MapLaunch className="cta-glow shrink-0 rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-white transition hover:brightness-110 active:scale-[0.98]">
+          <button
+            type="button"
+            onClick={() => onOpenAuth?.('signin')}
+            className="cta-glow shrink-0 rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-white transition hover:brightness-110 active:scale-[0.98] cursor-pointer"
+          >
             Explore Platform
-          </MapLaunch>
+          </button>
         </header>
       </div>
 
@@ -77,9 +88,13 @@ export function HeroSection() {
             Click any parcel and see everything government knows about it — ownership, registration, zoning, tax, disputes and utilities — assembled live from six departments through one parcel key.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-4">
-            <MapLaunch className="cta-glow inline-flex items-center gap-2.5 rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white transition hover:brightness-110 active:scale-[0.98]">
+            <button
+              type="button"
+              onClick={() => onOpenAuth?.('signin')}
+              className="cta-glow inline-flex items-center gap-2.5 rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white transition hover:brightness-110 active:scale-[0.98] cursor-pointer"
+            >
               Open the live map <ArrowRight size={17} />
-            </MapLaunch>
+            </button>
             <a href="#departments" className="inline-flex items-center gap-2.5 rounded-full border border-primary/35 px-6 py-3.5 text-[15px] font-semibold text-primary transition hover:border-primary hover:bg-primary/5">
               See how it works
             </a>

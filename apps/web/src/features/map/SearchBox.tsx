@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Search, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { GripVertical, Search, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { api, qk } from '@/lib/api';
 import { useUI } from '@/lib/store';
@@ -52,7 +53,11 @@ export function bboxOf(geom: { type: string; coordinates: unknown } | null): [nu
   return Number.isFinite(w) ? [w, s, e, n] : null;
 }
 
-export function SearchBox() {
+export interface SearchBoxProps {
+  className?: string;
+}
+
+export function SearchBox({ className }: SearchBoxProps = {}) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -86,40 +91,61 @@ export function SearchBox() {
   };
 
   return (
-    <div ref={ref} className="relative">
-      <div className="flex h-8 items-center gap-2 rounded-md border border-line bg-ground px-2 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
-        <Search size={15} className="shrink-0 text-ink-3" />
-        <input
-          role="combobox"
-          aria-expanded={open && hits.length > 0}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-activedescendant={open && hits[active] ? `${listId}-${active}` : undefined}
-          placeholder={roleAtLeast(role, 'officer') ? 'Search survey no, ULPIN, khata or owner…' : 'Search survey no, ULPIN or khata…'}
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(a + 1, hits.length - 1)); }
-            else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-            else if (e.key === 'Enter') { const h = hits[active]; if (h) pick(h); }
-            else if (e.key === 'Escape') setOpen(false);
-          }}
-          className="h-full w-full bg-transparent text-sm outline-none placeholder:text-ink-3"
-        />
-        {results.isFetching ? <Spinner size={14} /> : q && (
-          <button type="button" aria-label="Clear search" onClick={() => setQ('')} className="text-ink-3 hover:text-ink">
-            <X size={14} />
-          </button>
-        )}
-      </div>
+    <motion.div
+      ref={ref}
+      drag
+      dragMomentum={false}
+      dragElastic={0.08}
+      whileDrag={{ scale: 1.02, boxShadow: '0 16px 40px rgba(24,35,31,0.18)' }}
+      className={clsx(
+        'absolute top-24 right-4 z-40 bg-[#F4F1E7]/95 backdrop-blur-xl border border-[#D5D2C7] shadow-[0_8px_30px_rgba(24,35,31,0.1)] rounded-full pl-3 pr-4 py-2.5 flex items-center gap-2 w-80 max-w-[calc(100vw-2rem)] focus-within:border-[#176B52] focus-within:ring-2 focus-within:ring-[#176B52]/20 transition-colors pointer-events-auto cursor-grab active:cursor-grabbing select-none',
+        className,
+      )}
+    >
+      <GripVertical className="text-[#6F7768]/60 hover:text-[#18231F] w-3.5 h-3.5 shrink-0" />
+      <Search className="text-[#176B52] w-4 h-4 shrink-0" />
+      <input
+        role="combobox"
+        aria-expanded={open && hits.length > 0}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={open && hits[active] ? `${listId}-${active}` : undefined}
+        placeholder={roleAtLeast(role, 'officer') ? 'Search survey no, ULPIN, khata or owner…' : 'Search survey no, ULPIN or khata…'}
+        value={q}
+        onPointerDown={(e) => e.stopPropagation()}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(a + 1, hits.length - 1)); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+          else if (e.key === 'Enter') { const h = hits[active]; if (h) pick(h); }
+          else if (e.key === 'Escape') setOpen(false);
+        }}
+        className="w-full bg-transparent text-xs font-semibold text-[#18231F] placeholder-[#6F7768] outline-none cursor-text select-text"
+      />
+      {results.isFetching ? <Spinner size={14} /> : q && (
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label="Clear search"
+          onClick={() => setQ('')}
+          className="text-[#6F7768] hover:text-[#18231F] cursor-pointer shrink-0"
+        >
+          <X size={14} />
+        </button>
+      )}
       {open && dq.length >= 2 && (
-        <ul id={listId} role="listbox" className="fade-up absolute left-0 right-0 z-40 mt-1 max-h-80 overflow-y-auto rounded-lg border border-line bg-panel p-1 shadow-panel scroll-thin">
+        <ul
+          id={listId}
+          role="listbox"
+          onPointerDown={(e) => e.stopPropagation()}
+          className="fade-up absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-[#D5D2C7] bg-[#F4F1E7]/95 backdrop-blur-2xl p-1.5 shadow-xl scroll-thin cursor-default select-text"
+        >
           {results.isError && <li className="px-2 py-2 text-xs text-brick">Search unavailable</li>}
-          {!results.isError && hits.length === 0 && !results.isFetching && <li className="px-2 py-2 text-xs text-ink-3">No parcels match “{dq}”</li>}
+          {!results.isError && hits.length === 0 && !results.isFetching && <li className="px-2 py-2 text-xs text-[#6F7768]">No parcels match “{dq}”</li>}
           {hits.map((h, i) => (
             <li
               key={h.ulpin}
@@ -129,18 +155,27 @@ export function SearchBox() {
               onMouseEnter={() => setActive(i)}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => pick(h)}
-              className={clsx('flex cursor-pointer items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm', i === active && 'bg-primary-soft')}
+              className={clsx(
+                'flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors',
+                i === active ? 'bg-[#23483A] text-[#F4F1E7]' : 'text-[#18231F] hover:bg-[#E9E5D8]/70',
+              )}
             >
               <span className="min-w-0">
                 <span className="font-medium">Sy. No. {h.survey_no}</span>
-                <span className="text-ink-3"> · {h.village ?? ''}</span>
-                {h.owner_name && <span className="block truncate text-xs text-ink-3">{roleAtLeast(role, 'officer') ? h.owner_name : maskName(h.owner_name)}</span>}
+                <span className={clsx(i === active ? 'text-[#F4F1E7]/70' : 'text-[#6F7768]')}> · {h.village ?? ''}</span>
+                {h.owner_name && (
+                  <span className={clsx('block truncate text-xs', i === active ? 'text-[#F4F1E7]/80' : 'text-[#6F7768]')}>
+                    {roleAtLeast(role, 'officer') ? h.owner_name : maskName(h.owner_name)}
+                  </span>
+                )}
               </span>
-              <span className="shrink-0 font-mono text-[11px] text-ink-3">{h.khata_no ?? h.ulpin}</span>
+              <span className={clsx('shrink-0 font-mono text-[11px]', i === active ? 'text-[#F4F1E7]/70' : 'text-[#6F7768]')}>
+                {h.khata_no ?? h.ulpin}
+              </span>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </motion.div>
   );
 }

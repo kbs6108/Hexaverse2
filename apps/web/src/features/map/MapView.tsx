@@ -24,7 +24,7 @@ export function MapView() {
   const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
   const imagery = basemap === 'imagery';
 
-  const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey || undefined) : L.STREETS_STYLE), [imagery]);
+  const mapStyle = useMemo(() => (imagery ? L.imageryStyle(env.esriApiKey || '') : L.STREETS_STYLE), [imagery]);
 
   const village = useQuery({
     queryKey: qk.villageBoundary(),

@@ -13,14 +13,14 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-primary text-primary-ink border-transparent hover:brightness-110 active:brightness-95',
-  secondary: 'bg-panel text-ink border-line hover:bg-panel-2 hover:border-line-strong',
-  ghost: 'bg-transparent text-ink-2 border-transparent hover:bg-ground-2 hover:text-ink',
-  danger: 'bg-brick text-white border-transparent hover:brightness-110',
+  primary: 'bg-[#176B52] text-[#F4F1E7] hover:bg-[#23483A] font-bold border-transparent shadow-sm transition-all',
+  secondary: 'bg-[#F4F1E7]/80 backdrop-blur-md text-[#18231F] border border-[#D5D2C7] hover:bg-[#E9E5D8] hover:border-[#176B52]/50 font-semibold shadow-xs transition-all',
+  ghost: 'bg-transparent text-[#23483A] border-transparent hover:bg-[#E9E5D8]/70 hover:text-[#18231F] font-semibold transition-all',
+  danger: 'bg-brick text-white border-transparent hover:brightness-110 font-bold shadow-sm',
 };
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-2.5 text-[13px] gap-1.5',
-  md: 'h-9 px-3.5 text-sm gap-2',
+  sm: 'h-8 px-3 text-[13px] gap-1.5 rounded-xl',
+  md: 'h-10 px-4 text-sm gap-2 rounded-xl py-2.5',
 };
 
 export function Button({ variant = 'secondary', size = 'md', loading, icon, className, children, disabled, ...rest }: ButtonProps) {
@@ -30,7 +30,7 @@ export function Button({ variant = 'secondary', size = 'md', loading, icon, clas
       {...rest}
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex items-center justify-center rounded-md border font-medium whitespace-nowrap transition-[background,filter,border-color] disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center border font-semibold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed',
         variants[variant],
         sizes[size],
         className,

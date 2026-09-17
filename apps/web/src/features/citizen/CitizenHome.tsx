@@ -1,9 +1,8 @@
-import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
-import { MapPinned, ShieldCheck, FileSearch, ListChecks, Home, ArrowUpRight } from 'lucide-react';
+import { Outlet, useNavigate, useRouterState, Link } from '@tanstack/react-router';
+import { MapPinned, ShieldCheck, Folder, FileSearch, ListChecks, ArrowUpRight, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useRef } from 'react';
-import { LiquidGlassCard } from '@/components/ui/liquid-weather-glass';
-import { FloatingDock } from '@/components/ui/floating-dock';
+import { consumeCitizenCinematic } from '@/lib/cinematic';
 
 type CinematicPhase = 'idle' | 'hold' | 'retract' | 'settle';
 
@@ -22,20 +21,24 @@ export function CitizenLayout() {
   );
 }
 
-const ACTIONS = [
-  { id: 'search', to: '/map', label: 'Parcel Search & Quick Actions', desc: 'Find parcels and explore connected records instantly.', dockLabel: 'Search', icon: MapPinned },
-  { id: 'verify', to: '/citizen/verify', label: 'Verify Ownership', desc: 'Compare claimed names against authoritative records.', dockLabel: 'Verify', icon: ShieldCheck },
-  { id: 'request', to: '/citizen/request', label: 'Request Service', desc: 'Apply for mutations or building permissions.', dockLabel: 'Service', icon: FileSearch },
-  { id: 'track', to: '/citizen/track', label: 'Track Application', desc: 'Follow your requests through each step.', dockLabel: 'Track', icon: ListChecks },
+const SECONDARY_ACTIONS = [
+  { id: 'verify', to: '/citizen/verify', label: 'Verify Ownership', desc: 'Compare claimed names against authoritative records.', icon: ShieldCheck },
+  { id: 'vault', to: '/citizen/vault', label: 'Document Vault', desc: 'Inspect physical folder-card archives of deeds, survey sketches, and cadastral assets.', icon: Folder },
+  { id: 'request', to: '/citizen/request', label: 'Request Service', desc: 'Apply for mutations or building permissions.', icon: FileSearch },
+  { id: 'track', to: '/citizen/track', label: 'Track Application', desc: 'Follow your requests through each step.', icon: ListChecks },
 ];
 
 export function CitizenHome() {
   const [activeTask, setActiveTask] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // IMMEDIATELY mount the completely formed cinematic frame if in fullscreen
-  const [cinematicPhase, setCinematicPhase] = useState<CinematicPhase>(
-    document.fullscreenElement ? 'hold' : 'idle'
-  );
+  // Consume one-time flag strictly on fresh authentication entry
+  const [isCinematicEntry] = useState(() => consumeCitizenCinematic());
+  
+  // IMMEDIATELY mount the completely formed cinematic frame ONLY if fresh auth entry in fullscreen
+  const [cinematicPhase, setCinematicPhase] = useState<CinematicPhase>(() => {
+    return isCinematicEntry && !!document.fullscreenElement ? 'hold' : 'idle';
+  });
   
   const timeoutsRef = useRef<number[]>([]);
   const navigate = useNavigate();
@@ -46,10 +49,11 @@ export function CitizenHome() {
   };
 
   useEffect(() => {
+    if (!isCinematicEntry) return;
+
     if (document.fullscreenElement) {
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!prefersReducedMotion) {
-        
         // At T = ~700-1000ms, start the reveal
         timeoutsRef.current.push(window.setTimeout(() => {
           setCinematicPhase('retract');
@@ -76,7 +80,7 @@ export function CitizenHome() {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       clearTimeouts();
     };
-  }, []);
+  }, [isCinematicEntry]);
 
   const getTopBarClasses = () => {
     switch (cinematicPhase) {
@@ -109,24 +113,13 @@ export function CitizenHome() {
   const handleAction = (id: string, to: string) => {
     if (activeTask) return; 
     setActiveTask(id);
-    // Smooth transition away
     setTimeout(() => {
       navigate({ to });
-    }, 400);
+    }, 300);
   };
-
-  const dockItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    ...ACTIONS.map(action => ({
-      id: action.id,
-      label: action.dockLabel,
-      icon: action.icon
-    }))
-  ];
 
   return (
     <div className="relative z-10 flex min-h-screen w-full flex-col items-center overflow-y-auto p-6 md:p-8 scroll-smooth">
-      
       {/* Cinematic Letterbox Overlay */}
       {cinematicPhase !== 'idle' && cinematicPhase !== 'settle' && (
          <div className="fixed inset-0 z-[9999] pointer-events-none flex flex-col justify-between overflow-hidden">
@@ -135,8 +128,9 @@ export function CitizenHome() {
          </div>
       )}
       
-      {/* 1. Top Edge-to-Edge Bar */}
-      <header className="w-full max-w-7xl flex items-center justify-between pb-8">
+      {/* 1. Top Utility Bar */}
+      <header className="w-full max-w-7xl flex items-center justify-between pb-4">
+        {/* Left: Back to Portal */}
         <button 
           onClick={() => {
             if (document.fullscreenElement) {
@@ -144,78 +138,139 @@ export function CitizenHome() {
             }
             navigate({ to: '/' });
           }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F4F1E7]/80 backdrop-blur-md border border-[#D5D2C7] shadow-sm text-[#18231F] hover:bg-[#E1E6DE] transition-all font-medium text-sm"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F4F1E7]/80 backdrop-blur-md border border-[#D5D2C7] shadow-sm text-[#18231F] hover:bg-[#E1E6DE] transition-all text-xs font-semibold"
         >
           &larr; Back to Portal
         </button>
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E1E6DE]/90 text-[#23483A] text-xs font-semibold border border-[#D5D2C7]">
+
+        {/* Center: Clean branding TENREC */}
+        <span className="text-2xl font-black tracking-widest text-[#18231F] select-none">
+          TENREC
+        </span>
+
+        {/* Right: Status badge */}
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4F1E7]/80 border border-[#D5D2C7] text-[#176B52] text-xs font-semibold shadow-sm">
           <span className="w-2 h-2 rounded-full bg-[#176B52] animate-pulse" />
           All Systems Live
         </span>
       </header>
 
-      <div className="relative z-10 flex w-full max-w-6xl flex-col items-center py-4 px-4 md:px-12">
-        
-        {/* 2. Header & Branding */}
-        <h1 className="uppercase font-extrabold text-2xl tracking-[0.25em] text-[#18231F] mb-6 drop-shadow-sm">
-          TENRIC
-        </h1>
-
-        {/* 3. Top Horizontal Dock */}
-        <div className="mb-10 md:mb-14 relative z-20">
-          <FloatingDock 
-            items={dockItems} 
-            activeId={activeTask || 'home'} 
-            onSelect={(id) => {
-              if (id === 'home') {
-                setActiveTask(null);
-              } else {
-                if (!activeTask) {
-                  const action = ACTIONS.find(a => a.id === id);
-                  if (action) handleAction(action.id, action.to);
-                }
-              }
-            }}
-          />
-        </div>
-
-        {/* 4. The 2x2 Bento Glass Grid */}
+      {/* 2. Asymmetric Bento Grid Layout Container */}
+      <div className="max-w-7xl mx-auto px-8 py-12 min-h-[80vh] flex flex-col justify-center w-full">
         <div className={clsx(
-          "grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 w-full transition-all duration-[400ms] ease-out",
+          "grid grid-cols-1 lg:grid-cols-3 gap-7 items-stretch transition-all duration-300 ease-out",
           activeTask ? "opacity-0 scale-95 blur-md pointer-events-none" : "opacity-100 scale-100 blur-0"
         )}>
-          {ACTIONS.map((action) => (
-            <div key={action.id} className="relative group">
-              <LiquidGlassCard
-                blurIntensity="xl"
-                shadowIntensity="md"
-                glowIntensity="sm"
-                borderRadius="1.5rem"
-                className="w-full h-full min-h-[260px] flex flex-col justify-between p-6 rounded-3xl bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:bg-white/35 hover:border-white/60 hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all cursor-pointer"
-              >
-                <button
-                  onClick={() => handleAction(action.id, action.to)}
-                  className="absolute inset-0 w-full h-full text-left focus-visible:outline-2 focus-visible:outline-[#176B52] rounded-3xl z-40"
-                  aria-label={action.label}
-                />
-                
-                <div className="flex items-start justify-between w-full mb-4 relative z-10 pointer-events-none">
-                  <div className="p-3 rounded-2xl bg-white/30 border border-white/40">
-                    <action.icon className="w-6 h-6 text-[#18231F]" />
-                  </div>
-                  <ArrowUpRight className="w-5 h-5 text-[#6F7768] group-hover:text-[#18231F] transition-colors" />
+          {/* Card 1: Featured Hero Card (Parcel Search & Quick Actions) */}
+          <div
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('form') || target.closest('button')) {
+                return;
+              }
+              handleAction('search', '/map');
+            }}
+            role="button"
+            className="lg:col-span-1 lg:row-span-2 p-8 min-h-[440px] flex flex-col justify-between group relative bg-[#F4F1E7]/60 backdrop-blur-2xl border border-[#176B52]/20 shadow-[0_10px_30px_rgba(24,35,31,0.05)] rounded-3xl transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.015] hover:bg-[#F4F1E7]/85 hover:border-[#176B52]/50 hover:shadow-[0_24px_60px_rgba(23,107,82,0.14)] select-none cursor-pointer"
+          >
+            <div>
+              {/* Top Row: Icon Badge & Arrow */}
+              <div className="flex items-start justify-between w-full">
+                <div className="w-12 h-12 rounded-2xl bg-[#E9E5D8] border border-[#D5D2C7] flex items-center justify-center text-[#176B52] shadow-xs transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-[#176B52] group-hover:text-[#F4F1E7]">
+                  <MapPinned size={22} />
                 </div>
+                <span
+                  className="p-1.5 rounded-full text-[#6F7768] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#176B52]"
+                  aria-label="Open Parcel Explorer"
+                >
+                  <ArrowUpRight className="w-5 h-5" />
+                </span>
+              </div>
 
-                <div className="relative z-10 mt-auto pointer-events-none">
-                  <h3 className="text-[#18231F] font-bold text-xl mb-1 tracking-tight">
-                    {action.label}
-                  </h3>
-                  <p className="text-[#6F7768] text-sm leading-relaxed mt-1 opacity-100 font-sans">
-                    {action.desc}
-                  </p>
-                </div>
-              </LiquidGlassCard>
+              {/* Header & Description */}
+              <div className="mt-6">
+                <h3 className="text-[#18231F] text-2xl font-black tracking-tight">
+                  Parcel Search & Quick Actions
+                </h3>
+                <p className="text-[#4B5345] text-xs font-medium mt-1.5 leading-relaxed">
+                  Find parcels and explore connected records instantly.
+                </p>
+              </div>
+
+              {/* Interactive Search Input inside card */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchQuery.trim()) {
+                    navigate({ to: '/map', search: { ulpin: searchQuery.trim() } });
+                  } else {
+                    handleAction('search', '/map');
+                  }
+                }}
+                className="mt-6 flex items-center gap-2 bg-[#E9E5D8]/80 border border-[#D5D2C7] rounded-2xl px-4 py-3 focus-within:ring-2 focus-within:ring-[#176B52]/60 focus-within:border-transparent transition-all shadow-inner"
+              >
+                <Search className="w-4 h-4 text-[#176B52] shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Enter Survey #, ULPIN, or Khata..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent text-xs text-[#18231F] placeholder-[#6F7768] outline-none w-full font-medium"
+                />
+              </form>
             </div>
+
+            {/* Quick Action Pill Buttons below search */}
+            <div className="mt-6 pt-5 border-t border-[#D5D2C7]/60 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleAction('verify', '/citizen/verify')}
+                className="px-4 py-2 rounded-full bg-[#E9E5D8]/90 hover:bg-[#176B52] hover:text-[#F4F1E7] border border-[#D5D2C7] text-xs font-semibold text-[#18231F] transition-all shadow-xs cursor-pointer active:scale-95"
+              >
+                Quick Verify
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAction('search', '/map')}
+                className="px-4 py-2 rounded-full bg-[#E9E5D8]/90 hover:bg-[#176B52] hover:text-[#F4F1E7] border border-[#D5D2C7] text-xs font-semibold text-[#18231F] transition-all shadow-xs cursor-pointer active:scale-95"
+              >
+                Locate Boundary
+              </button>
+            </div>
+          </div>
+
+          {/* Cards 2, 3, 4, 5 (Verify, Vault, Request, Track) */}
+          {SECONDARY_ACTIONS.map((action) => (
+            <Link
+              key={action.id}
+              to={action.to}
+              onClick={(e) => {
+                e.preventDefault();
+                handleAction(action.id, action.to);
+              }}
+              role="button"
+              className="lg:col-span-1 group relative block w-full h-full min-h-[210px] p-8 flex flex-col justify-between bg-[#F4F1E7]/60 backdrop-blur-2xl border border-[#176B52]/20 shadow-[0_10px_30px_rgba(24,35,31,0.05)] rounded-3xl transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.015] hover:bg-[#F4F1E7]/85 hover:border-[#176B52]/50 hover:shadow-[0_24px_60px_rgba(23,107,82,0.14)] cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#176B52]"
+            >
+              {/* Top Row: Icon Badge & Top-Right Arrow */}
+              <div className="flex items-start justify-between w-full">
+                <div className="w-12 h-12 rounded-2xl bg-[#E9E5D8] border border-[#D5D2C7] flex items-center justify-center text-[#176B52] shadow-xs transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-[#176B52] group-hover:text-[#F4F1E7]">
+                  <action.icon size={22} />
+                </div>
+                <span className="text-[#6F7768] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#176B52]">
+                  <ArrowUpRight className="w-5 h-5" />
+                </span>
+              </div>
+
+              {/* Bottom Content: Headings & Descriptions */}
+              <div className="mt-4">
+                <h3 className="text-[#18231F] text-lg font-bold tracking-tight">
+                  {action.label}
+                </h3>
+                <p className="text-[#4B5345] text-xs font-medium mt-1 leading-relaxed">
+                  {action.desc}
+                </p>
+              </div>
+            </Link>
           ))}
         </div>
       </div>

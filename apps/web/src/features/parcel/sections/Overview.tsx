@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
-import { AlertOctagon, BadgeCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2 } from 'lucide-react';
+import { AlertOctagon, Archive, BadgeCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ParcelCDM } from '@/lib/cdm';
 import { api } from '@/lib/api';
@@ -136,6 +136,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           )}
           {role === 'citizen' && (
             <>
+              <Button icon={<Archive size={15} />} onClick={() => goTo('dossier')}>Document Vault</Button>
               <Link to="/citizen/verify" search={{ ulpin: p.ulpin }}><Button icon={<FileSearch size={15} />}>Verify ownership</Button></Link>
               <Link to="/citizen/request" search={{ ulpin: p.ulpin }}><Button icon={<ListChecks size={15} />}>Request service</Button></Link>
               <Button variant="primary" icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>Download report</Button>
@@ -143,6 +144,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           )}
           {role === 'officer' && (
             <>
+              <Button icon={<Archive size={15} />} onClick={() => goTo('dossier')}>Document Vault</Button>
               <Link to="/officer/queue" search={{}}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
               <Button variant="primary" icon={<Satellite size={15} />} onClick={() => goTo('satellite')}>Run change detection</Button>
               <Button icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>Report</Button>

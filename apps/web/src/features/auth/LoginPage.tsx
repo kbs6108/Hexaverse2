@@ -3,7 +3,8 @@ import { useAuth } from '@/lib/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { AuthComponent } from '@/components/ui/sign-up';
 import { LogoMark } from '@/app/Shell';
-import { Maximize } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
+import { triggerCitizenCinematic } from '@/lib/cinematic';
 
 export function LoginPage() {
   const { setDevUser } = useAuth();
@@ -29,7 +30,7 @@ export function LoginPage() {
     } catch (err) {
       console.warn("Fullscreen request failed or was denied:", err);
     }
-    // Instantly navigate. The cinematic animation now belongs to the Citizen Workspace.
+    triggerCitizenCinematic();
     completeSignIn();
   };
 
@@ -46,13 +47,14 @@ export function LoginPage() {
       />
 
       {/* Optional Fullscreen CTA */}
-      <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 flex justify-center z-50 pointer-events-auto">
+      <div className="absolute bottom-8 sm:bottom-12 left-0 right-0 flex justify-center z-50 pointer-events-auto px-4">
         <button
+          type="button"
           onClick={handleFullscreenSignIn}
-          className="flex items-center gap-2 px-5 py-2.5 bg-slate-900/60 hover:bg-slate-900/80 backdrop-blur-md border border-white/10 text-white/90 text-[13px] font-medium rounded-full transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95"
+          className="py-2.5 px-4 text-xs font-semibold text-[#4B5345] hover:text-[#18231F] bg-[#F4F1E7]/80 backdrop-blur-md border border-[#D5D2C7] rounded-full flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer hover:bg-[#E1E6DE]"
         >
-          <Maximize size={15} className="opacity-80" />
-          Continue in fullscreen
+          <Maximize2 className="w-3.5 h-3.5 text-[#176B52]" />
+          <span>Continue in fullscreen</span>
         </button>
       </div>
     </div>

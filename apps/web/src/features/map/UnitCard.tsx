@@ -23,22 +23,22 @@ export function UnitCard({ unit, onClose }: { unit: UnitInfo; onClose: () => voi
     ['Occupant (record)', unit.owner_name || '—'],
   ];
   return (
-    <div className="absolute right-3 top-3 z-20 w-72 rounded-lg border border-slate/40 bg-panel/95 shadow-panel backdrop-blur">
-      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
-        <Boxes size={15} className="text-slate" />
+    <div className="absolute right-3 top-24 z-20 w-72 rounded-2xl border border-[#D5D2C7]/50 bg-[#F4F1E7]/40 text-[#18231F] shadow-[0_8px_32px_rgba(24,35,31,0.08)] backdrop-blur-xl">
+      <div className="flex items-center gap-2 border-b border-[#D5D2C7]/50 px-3 py-2.5">
+        <Boxes size={15} className="text-[#176B52]" />
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wide text-ink-3">3D unit{unit.building_name ? ` · ${unit.building_name}` : ''}</p>
-          <p className="truncate font-mono text-[12px] font-semibold">{unit.ulpin_3d ?? '—'}</p>
+          <p className="text-[10px] uppercase tracking-wide text-[#6F7768]">3D unit{unit.building_name ? ` · ${unit.building_name}` : ''}</p>
+          <p className="truncate font-mono text-[12px] font-semibold text-[#18231F]">{unit.ulpin_3d ?? '—'}</p>
         </div>
-        <button type="button" aria-label="Close unit card" onClick={onClose} className="ml-auto rounded p-1 text-ink-3 hover:bg-ground-2 hover:text-ink">
+        <button type="button" aria-label="Close unit card" onClick={onClose} className="ml-auto rounded-lg p-1 text-[#6F7768] hover:bg-[#E9E5D8]/60 hover:text-[#18231F] transition-colors">
           <X size={14} />
         </button>
       </div>
       <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 px-3 py-2.5">
         {rows.map(([k, v]) => (
           <div key={k} className={k === 'Occupant (record)' ? 'col-span-2' : ''}>
-            <dt className="text-[10px] uppercase tracking-wide text-ink-3">{k}</dt>
-            <dd className="text-[12.5px] text-ink">{v}</dd>
+            <dt className="text-[10px] uppercase tracking-wide text-[#6F7768]">{k}</dt>
+            <dd className="text-[12.5px] text-[#18231F] font-medium">{v}</dd>
           </div>
         ))}
       </dl>

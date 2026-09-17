@@ -9,7 +9,7 @@ export function StoryChips() {
   const q = useQuery({
     queryKey: qk.storyParcels(),
     queryFn: async (): Promise<StoryParcel[]> => {
-      const r = await fetch('/data/story_parcels.json');
+      const r = await fetch(`/data/story_parcels.json?v=${Date.now()}`);
       if (!r.ok) return [];
       const j: unknown = await r.json();
       const arr = Array.isArray(j) ? j : (j as { parcels?: unknown }).parcels;

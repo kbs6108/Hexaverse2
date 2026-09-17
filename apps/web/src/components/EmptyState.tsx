@@ -31,7 +31,7 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
   const msg = error instanceof ApiError ? `${error.message} (${error.code})` : error instanceof Error ? error.message : 'Something went wrong';
   const status = error instanceof ApiError ? error.status : undefined;
   return (
-    <div role="alert" className="flex items-start gap-2 rounded-md border border-brick/30 bg-brick-soft px-3 py-2 text-sm text-brick">
+    <div role="alert" className="flex items-start gap-2 bg-[#9E2A2B]/10 border border-[#9E2A2B]/25 text-[#721C1D] rounded-xl p-3 text-xs font-semibold backdrop-blur-md">
       <AlertTriangle size={16} className="mt-0.5 shrink-0" />
       <div className="flex-1">
         <p>{status === 401 || status === 403 ? 'You do not have access to this. ' : ''}{msg}</p>

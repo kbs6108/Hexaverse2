@@ -30,16 +30,27 @@ function guard(min: Role) {
   };
 }
 
+export type LandingSearch = {
+  ulpin?: string;
+  auth?: 'signin' | 'signup';
+  next?: string;
+};
+
 type MapSearch = { ulpin?: string };
 
 /** `/` is the cinematic landing; the map explorer lives at /map.
- *  Legacy deep-links (/?ulpin=…) are forwarded to /map so shared URLs keep working. */
+ *  Legacy deep-links (/?ulpin=…) are forwarded to /map so shared URLs keep working.
+ *  Supports ?auth=signin or ?auth=signup to open the spatial auth panel over Landing. */
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: CinematicLanding,
-  validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
-  beforeLoad: ({ search }: { search: MapSearch }) => {
+  validateSearch: (s: Record<string, unknown>): LandingSearch => ({
+    ...(typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
+    ...(s.auth === 'signin' || s.auth === 'signup' ? { auth: s.auth } : {}),
+    ...(typeof s.next === 'string' && s.next ? { next: s.next } : {}),
+  }),
+  beforeLoad: ({ search }: { search: LandingSearch }) => {
     if (search.ulpin) throw redirect({ to: '/map', search: { ulpin: search.ulpin } });
   },
 });
@@ -59,9 +70,20 @@ const loginRoute = createRoute({
   path: '/login',
   component: LoginPage,
   validateSearch: (s: Record<string, unknown>): { next?: string } => (typeof s.next === 'string' ? { next: s.next } : {}),
+  beforeLoad: ({ search }: { search: { next?: string } }) => {
+    throw redirect({
+      to: '/',
+      search: {
+        auth: 'signin',
+        ...(search.next ? { next: search.next } : {}),
+      },
+    });
+  },
 });
 
 const verifyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verify/$id', component: VerifyPage });
+
+import { DocumentVaultPage } from '@/features/citizen/DocumentVaultPage';
 
 /* ---- citizen ---- */
 const citizenRoute = createRoute({ getParentRoute: () => rootRoute, path: '/citizen', component: CitizenLayout, beforeLoad: guard('citizen') });
@@ -73,8 +95,10 @@ const ulpinSearch = (s: Record<string, unknown>): UlpinSearch => ({
 });
 const citizenVerify = createRoute({ getParentRoute: () => citizenRoute, path: '/verify', component: VerifyOwnership, validateSearch: ulpinSearch });
 const citizenTrack = createRoute({ getParentRoute: () => citizenRoute, path: '/track', component: TrackApplication });
+const citizenApplications = createRoute({ getParentRoute: () => citizenRoute, path: '/applications', component: TrackApplication });
 const citizenTrackDetail = createRoute({ getParentRoute: () => citizenRoute, path: '/track/$id', component: TrackApplication });
 const citizenRequest = createRoute({ getParentRoute: () => citizenRoute, path: '/request', component: ServiceRequest, validateSearch: ulpinSearch });
+const citizenVault = createRoute({ getParentRoute: () => citizenRoute, path: '/vault', component: DocumentVaultPage, validateSearch: ulpinSearch });
 
 /* ---- officer ---- */
 const officerRoute = createRoute({ getParentRoute: () => rootRoute, path: '/officer', component: OfficerLayout, beforeLoad: guard('officer') });
@@ -108,7 +132,7 @@ const routeTree = rootRoute.addChildren([
   helpRoute,
   loginRoute,
   verifyRoute,
-  citizenRoute.addChildren([citizenIndex, citizenVerify, citizenTrack, citizenTrackDetail, citizenRequest]),
+  citizenRoute.addChildren([citizenIndex, citizenVerify, citizenTrack, citizenApplications, citizenTrackDetail, citizenRequest, citizenVault]),
   officerRoute.addChildren([officerIndex, officerQueue, officerAlerts]),
   adminRoute,
 ]);
@@ -121,4 +145,4 @@ declare module '@tanstack/react-router' {
   }
 }
 
-export { indexRoute, mapRoute, citizenVerify, citizenRequest, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };
+export { indexRoute, mapRoute, citizenVerify, citizenRequest, citizenVault, officerQueue, loginRoute, citizenTrackDetail, verifyRoute };

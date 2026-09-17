@@ -20,7 +20,7 @@ export function useDemoRegions() {
   return useQuery({
     queryKey: qk.demoRegions(),
     queryFn: async (): Promise<DemoRegion[]> => {
-      const r = await fetch('/data/story_parcels.json');
+      const r = await fetch(`/data/story_parcels.json?v=${Date.now()}`);
       if (!r.ok) return [];
       const j: unknown = await r.json();
       const arr = (j as { regions?: unknown }).regions;

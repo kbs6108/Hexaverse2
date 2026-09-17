@@ -28,34 +28,47 @@ export function ServiceRequest() {
   return (
     <>
       <PageTitle title="Request a service" subtitle="Applications route to the owning department and appear in the officer queue" />
-      <div className="mb-4 inline-flex rounded-md border border-line bg-panel p-1" role="tablist" aria-label="Service type">
+      <div className="mb-6 inline-flex gap-1.5 rounded-2xl border border-[#D5D2C7] bg-[#E9E5D8]/80 p-1.5 shadow-sm" role="tablist" aria-label="Service type">
         {(['mutation', 'building_permission'] as Kind[]).map((k) => (
-          <button key={k} role="tab" aria-selected={kind === k} onClick={() => setKind(k)} className={clsx('rounded px-3 py-1.5 text-sm font-medium', kind === k ? 'bg-primary text-primary-ink' : 'text-ink-2 hover:text-ink')}>
+          <button
+            key={k}
+            role="tab"
+            aria-selected={kind === k}
+            onClick={() => setKind(k)}
+            className={clsx(
+              'rounded-xl px-4 py-2 text-sm transition-all',
+              kind === k
+                ? 'bg-[#23483A] text-[#F4F1E7] font-semibold shadow-sm'
+                : 'bg-[#E9E5D8]/80 text-[#6F7768] hover:text-[#18231F] hover:bg-[#E1E6DE]',
+            )}
+          >
             {k === 'mutation' ? 'Mutation (transfer of RoR)' : 'Building permission'}
           </button>
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         {kind === 'mutation' ? <MutationForm ulpin={ulpin} setUlpin={setUlpin} onDone={setDone} /> : <PermissionForm ulpin={ulpin} setUlpin={setUlpin} onDone={setDone} />}
-        <aside className="text-sm text-ink-2">
-          <Card className="p-4">
-            <h3 className="font-semibold">What happens next</h3>
+        <aside className="text-sm">
+          <Card className="p-6">
+            <h3 className="text-[#18231F] font-bold text-base tracking-tight">What happens next</h3>
             {kind === 'mutation' ? (
-              <ol className="mt-2 list-decimal space-y-1 pl-4">
+              <ol className="mt-3 list-decimal space-y-2 pl-4 text-sm text-[#18231F] font-medium leading-relaxed">
                 <li>Submitted to the Revenue department.</li>
                 <li>Document check against the registered deed.</li>
                 <li>Field verification by the village revenue officer.</li>
                 <li>Approval updates the Record of Rights; you get a new khata entry.</li>
               </ol>
             ) : (
-              <ol className="mt-2 list-decimal space-y-1 pl-4">
+              <ol className="mt-3 list-decimal space-y-2 pl-4 text-sm text-[#18231F] font-medium leading-relaxed">
                 <li>Automatic planning check against the master-plan zone (shown before you submit).</li>
                 <li>Planning officer scrutiny.</li>
                 <li>Site inspection.</li>
                 <li>Permit issued with conditions.</li>
               </ol>
             )}
-            <p className="mt-3 text-xs text-ink-3">Tax arrears or an active dispute on the parcel are surfaced to the officer and can hold an application.</p>
+            <p className="mt-4 pt-3 border-t border-[#D5D2C7]/60 text-xs font-medium text-[#4B5345] leading-relaxed">
+              Tax arrears or an active dispute on the parcel are surfaced to the officer and can hold an application.
+            </p>
           </Card>
         </aside>
       </div>
@@ -99,9 +112,9 @@ function MutationForm({ ulpin, setUlpin, onDone }: { ulpin: string; setUlpin: (v
             <Input id="sr-owner" required value={newOwner} onChange={(e) => setNewOwner(e.target.value)} />
           </Field>
           <Field label="Supporting document" hint="Deed / succession certificate (PDF or image). Upload is a placeholder in this prototype; only the file name is recorded.">
-            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-line-strong px-3 py-3 text-sm hover:border-primary">
-              <FileUp size={16} className="text-ink-3" />
-              <span className="flex-1 truncate">{doc ? doc.name : 'Choose a file…'}</span>
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-[#E9E5D8]/50 border-2 border-dashed border-[#D5D2C7] hover:border-[#176B52] px-4 py-3.5 text-sm text-[#18231F] transition-all">
+              <FileUp size={18} className="text-[#176B52] shrink-0" />
+              <span className="flex-1 truncate font-medium">{doc ? doc.name : 'Choose a file (PDF or image)…'}</span>
               <input type="file" accept="application/pdf,image/*" className="sr-only" onChange={(e) => setDoc(e.target.files?.[0] ?? null)} />
             </label>
           </Field>
@@ -154,22 +167,22 @@ function PermissionForm({ ulpin, setUlpin, onDone }: { ulpin: string; setUlpin: 
             </Field>
           </div>
 
-          <div className="rounded-md border border-line bg-panel-2 p-3">
+          <div className="rounded-xl border border-[#D5D2C7]/40 bg-[#E9E5D8]/40 p-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">Planning pre-check</p>
+              <p className="text-sm font-bold text-[#18231F] tracking-tight">Planning pre-check</p>
               <Button size="sm" loading={check.isFetching} disabled={ulpin.trim().length < 8} onClick={() => setChecked(true)}>Run check</Button>
             </div>
             {check.isError && <div className="mt-2"><ErrorNote error={check.error} /></div>}
             {check.data && (
-              <div className="mt-2 flex items-start gap-2 text-sm">
-                {check.data.permissible ? <CheckCircle2 size={18} className="text-primary" /> : <XCircle size={18} className="text-brick" />}
+              <div className="mt-3 flex items-start gap-2 text-sm">
+                {check.data.permissible ? <CheckCircle2 size={18} className="text-[#176B52] shrink-0 mt-0.5" /> : <XCircle size={18} className="text-brick shrink-0 mt-0.5" />}
                 <div>
-                  <p className="font-medium">{check.data.permissible ? 'Permissible in this zone' : 'Not permissible as proposed'}{check.data.zone_code ? ` · zone ${check.data.zone_code}` : ''}</p>
-                  {check.data.reasons.length > 0 && <ul className="list-disc pl-4 text-ink-2">{check.data.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>}
+                  <p className="font-bold text-[#18231F]">{check.data.permissible ? 'Permissible in this zone' : 'Not permissible as proposed'}{check.data.zone_code ? ` · zone ${check.data.zone_code}` : ''}</p>
+                  {check.data.reasons.length > 0 && <ul className="list-disc pl-4 text-xs font-medium text-[#4B5345] mt-1 space-y-0.5">{check.data.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>}
                 </div>
               </div>
             )}
-            {!check.data && !check.isError && <p className="mt-1 text-xs text-ink-3">Calls the planning department’s <code>/planning/check</code> before you submit.</p>}
+            {!check.data && !check.isError && <p className="mt-1.5 text-xs font-medium text-[#4B5345]">Calls the planning department’s <code>/planning/check</code> before you submit.</p>}
           </div>
           {check.data && !check.data.permissible && <Callout tone="amber" title="You can still submit">The application will be scrutinised by a planning officer, but expect it to be rejected unless the proposal changes.</Callout>}
           {m.isError && <ErrorNote error={m.error} />}
@@ -187,22 +200,22 @@ function Success({ app, onNew }: { app: Application; onNew: () => void }) {
     onError: (e: Error) => toast.error('Could not issue report', e.message),
   });
   return (
-    <div className="mx-auto max-w-lg">
-      <Card className="p-6 text-center">
-        <CheckCircle2 size={44} className="mx-auto text-primary" />
-        <h1 className="mt-3 text-xl font-semibold">Application submitted</h1>
-        <p className="mt-1 text-sm text-ink-2">Keep this id to track progress.</p>
-        <p className="mt-3 inline-block rounded-md border border-line bg-ground-2 px-3 py-1.5 font-mono text-lg">{app.id}</p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+    <div className="mx-auto max-w-lg w-full">
+      <Card className="p-8 text-center">
+        <CheckCircle2 size={48} className="mx-auto text-[#176B52]" />
+        <h1 className="mt-4 text-2xl font-black text-[#18231F]">Application submitted</h1>
+        <p className="mt-1 text-sm font-medium text-[#4B5345]">Keep this id to track progress.</p>
+        <p className="mt-4 inline-block rounded-xl border border-[#D5D2C7] bg-[#E9E5D8]/70 px-4 py-2 font-mono text-lg font-bold text-[#18231F] shadow-xs">{app.id}</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2.5">
           <Link to="/citizen/track/$id" params={{ id: app.id }}><Button variant="primary">Track application</Button></Link>
           <Button icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>Download Land Information Report</Button>
           <Button variant="ghost" onClick={onNew}>New request</Button>
         </div>
         {report.data && (
-          <p className="mt-3 text-xs text-ink-3">
+          <p className="mt-4 text-xs font-medium text-[#4B5345]">
             Report {report.data.id} issued ·{' '}
-            <a className="text-primary underline" href={report.data.url.startsWith('http') ? report.data.url : api.reportPdfUrl(report.data.id)} target="_blank" rel="noopener">open PDF</a>
-            {' '}· <Link to="/verify/$id" params={{ id: report.data.id }} className="text-primary underline">verify link</Link>
+            <a className="text-[#176B52] font-semibold underline" href={report.data.url.startsWith('http') ? report.data.url : api.reportPdfUrl(report.data.id)} target="_blank" rel="noopener">open PDF</a>
+            {' '}· <Link to="/verify/$id" params={{ id: report.data.id }} className="text-[#176B52] font-semibold underline">verify link</Link>
           </p>
         )}
       </Card>

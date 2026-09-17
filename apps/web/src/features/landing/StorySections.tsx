@@ -6,7 +6,6 @@ import { DEPARTMENTS, PITCH_FIGURES, QUICK_START, ROLES, STORY_PARCELS, TIERS } 
 import type { Tone } from '@/components/Badge';
 import { GovStrip } from '@/features/marketing/GovStrip';
 import { SectionHeading } from '@/features/marketing/components';
-import { MapLaunch } from './MapLaunch';
 
 /** Scroll-story landing (light, emerald). Cinematic scenes alternate with
  *  concrete info sections whose content is imported from marketing/pitch.ts —
@@ -270,20 +269,21 @@ function HowItWorksSection() {
   );
 }
 
-function StoriesSection() {
+function StoriesSection({ onOpenAuth }: { onOpenAuth?: (mode?: 'signin' | 'signup') => void }) {
   return (
     <section id="stories" className="landing-section bg-ground px-6 py-28 sm:px-12">
       <InfoHeader
         kicker="Eight parcels / three states"
         title="See it on real records"
-        sub="The demo cadastre seeds eight named parcels across Andhra Pradesh, Tamil Nadu and Telangana — each telling one land-governance story. Click any of them to open it on the live map."
+        sub="The demo cadastre seeds eight named parcels across Andhra Pradesh, Tamil Nadu and Telangana — each telling one land-governance story. Click any of them to inspect its verified dossier."
       />
       <div className="mx-auto mt-14 grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {STORY_PARCELS.map((p, i) => (
           <motion.div key={p.ulpin} initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, delay: i * 0.06 }}>
-            <MapLaunch
-              ulpin={p.ulpin}
-              className="group flex h-full w-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 text-left shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_18px_44px_-18px_rgba(14,107,84,0.35)]"
+            <button
+              type="button"
+              onClick={() => onOpenAuth?.('signin')}
+              className="group flex h-full w-full flex-col rounded-2xl border border-black/[0.06] bg-white p-6 text-left shadow-[0_12px_32px_-16px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_18px_44px_-18px_rgba(14,107,84,0.35)] cursor-pointer"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="font-mono text-sm font-semibold text-ink">Sy. {p.survey_no}</span>
@@ -291,9 +291,9 @@ function StoriesSection() {
               </div>
               <p className="mt-3 flex-1 text-sm leading-6 text-ink-2">{p.note}</p>
               <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition group-hover:gap-2.5">
-                Open on the map <ArrowRight size={14} />
+                Inspect record <ArrowRight size={14} />
               </span>
-            </MapLaunch>
+            </button>
           </motion.div>
         ))}
       </div>
@@ -383,7 +383,7 @@ function CapabilitiesBento() {
 
 /* ---------- assembled page ---------- */
 
-export function StorySections() {
+export function StorySections({ onOpenAuth }: { onOpenAuth?: (mode?: 'signin' | 'signup') => void } = {}) {
   return (
     <div className="bg-ground">
       <StatsStrip />
@@ -484,7 +484,7 @@ export function StorySections() {
         </div>
       </SystemScene>
 
-      <StoriesSection />
+      <StoriesSection onOpenAuth={onOpenAuth} />
 
       <LandScene
         chapter="06"
@@ -498,9 +498,13 @@ export function StorySections() {
           <p className="mb-6 font-display text-[11px] uppercase tracking-[0.3em] text-white/75">The next layer</p>
           <h2 className="font-display text-5xl font-semibold tracking-[-.06em] sm:text-8xl">Explore Land Stack.</h2>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <MapLaunch className="cta-glow inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-primary transition hover:bg-ground active:scale-95">
+            <button
+              type="button"
+              onClick={() => onOpenAuth?.('signin')}
+              className="cta-glow inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-primary transition hover:bg-ground active:scale-95 cursor-pointer"
+            >
               Explore Platform <ArrowRight size={16} />
-            </MapLaunch>
+            </button>
             <Link to="/welcome" className="inline-flex items-center gap-3 rounded-full border border-white/40 px-6 py-3.5 text-sm text-white transition hover:bg-white/10 active:scale-95">
               Read the full overview
             </Link>
