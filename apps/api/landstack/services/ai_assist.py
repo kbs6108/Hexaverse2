@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -287,6 +288,246 @@ def due_diligence(cdm: dict[str, Any]) -> dict[str, Any]:
         "checks": checks,
         "estimated_value": (cdm.get("fiscal") or {}).get("estimated_value"),
     }
+
+
+# ----------------------------------------------------------------------------- Bhu-Sahayak assistant
+_APP_ID_RE = re.compile(r"\bAPP-\d{4}-\d{1,8}\b", re.I)
+_ULPIN_RE = re.compile(r"\b[0-9A-Z]{14}\b")
+_SURVEY_RE = re.compile(r"\b(?:sy\.?\s*no\.?|survey\s*(?:no\.?|number)?)\s*(\d{1,4}(?:/\d{1,3})?)\b", re.I)
+
+# First match wins — keep the more specific intents (succession before transfer) up front.
+_INTENT_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("status", ("status", "track", "progress", "pending with", "my application", "my request")),
+    ("succession", ("succession", "inherit", "deceased", "death", "legal heir", "nominee", "passed away")),
+    ("transfer", ("transfer", "mutation", "sell", "sale", "buyer wants", "change owner", "new owner")),
+    ("buy", ("buy", "buying", "purchase", "due diligence", "safe to", "invest", "worth")),
+    ("correction", ("correction", "correct", "mistake", "wrong", "misspell", "spelling", "fix the record", "fix my")),
+    ("complaint", ("complaint", "complain", "encroach", "grievance", "trespass")),
+    ("build", ("build", "construct", "permit", "permission", "floors", "house plan")),
+    ("tax", ("tax", "dues", "arrears", "payment", "demand")),
+    ("dispute", ("dispute", "court", "case", "litigation", "stay order")),
+    ("owner", ("owner", "who owns", "ownership", "whose", "verify")),
+    ("notice", ("notice", "objection", "object to", "notice board")),
+    ("report", ("report", "certificate", "pdf", "download", "printout")),
+)
+
+ASSISTANT_INTENTS = ("status", *[k for k, _ in _INTENT_KEYWORDS if k != "status"], "help")
+
+_INTENT_APP_TYPE = {
+    "transfer": "mutation",
+    "succession": "succession",
+    "correction": "record_correction",
+    "complaint": "land_complaint",
+    "build": "building_permission",
+}
+
+
+def route_intent(message: str) -> dict[str, Any]:
+    """Pure intent router for the Bhu-Sahayak assistant — regexes and keywords only,
+    so it is unit-testable without a DB and never hallucinates an entity."""
+    text = message.strip()
+    low = text.lower()
+    app_m = _APP_ID_RE.search(text)
+    ulpin_m = _ULPIN_RE.search(text.upper())
+    survey_m = _SURVEY_RE.search(text)
+    intent = None
+    for name, keywords in _INTENT_KEYWORDS:
+        if any(k in low for k in keywords):
+            intent = name
+            break
+    if app_m and intent is None:
+        intent = "status"
+    return {
+        "intent": intent or "help",
+        "app_id": app_m.group(0).upper() if app_m else None,
+        "ulpin": ulpin_m.group(0) if ulpin_m else None,
+        "survey_no": survey_m.group(1) if survey_m else None,
+    }
+
+
+def _worst(items: list[dict[str, Any]], n: int = 2) -> str:
+    return " ".join(i["text"] for i in items[:n])
+
+
+async def assistant(
+    db: DBLike, message: str, ulpin: str | None, principal: Principal
+) -> dict[str, Any]:
+    """Grounded chatbot reply: route the intent, fetch only the app's own records
+    (masked CDM / the caller's applications), compose a templated answer, then let the
+    LLM rephrase it when configured. Facts never come from the model."""
+    from landstack.services import aggregator, workflow
+
+    routed = route_intent(message)
+    intent = routed["intent"]
+    target_ulpin = routed["ulpin"] or (ulpin.strip() if ulpin else None) or None
+    sources: list[dict[str, Any]] = []
+    suggestions: list[str] = []
+    reply: str
+
+    # Survey number → ULPIN, when the message names one and no ULPIN is in play.
+    if not target_ulpin and routed["survey_no"]:
+        rows = await db.fetch(
+            "SELECT ulpin, village FROM landstack.parcels WHERE survey_no = :s ORDER BY ulpin LIMIT 3",
+            s=routed["survey_no"],
+        )
+        if len(rows) == 1:
+            target_ulpin = rows[0]["ulpin"]
+        elif len(rows) > 1:
+            opts = ", ".join(f"{r['ulpin']} ({r['village']})" for r in rows)
+            return {
+                "reply": f"Survey number {routed['survey_no']} matches more than one parcel: {opts}. "
+                         "Tell me the ULPIN (or pick the parcel on the map) and ask again.",
+                "engine": "rules", "intent": intent, "sources": [], "suggestions": [],
+            }
+
+    cdm: dict[str, Any] | None = None
+    if target_ulpin and intent not in ("status", "notice", "report", "help"):
+        try:
+            cdm = await aggregator.get_parcel_cdm(db, target_ulpin, principal)
+            sources.append({"kind": "parcel", "id": target_ulpin})
+        except Exception:
+            reply = (f"I could not find a parcel with id {target_ulpin}. Check the ULPIN, or search "
+                     "by survey number on the map and open the parcel first.")
+            return {"reply": reply, "engine": "rules", "intent": intent, "sources": [], "suggestions": ["How do I find my parcel?"]}
+
+    if intent == "status":
+        if routed["app_id"]:
+            try:
+                app = await workflow.get_application(db, routed["app_id"])
+            except Exception:
+                app = None
+            if app is None or (principal.role == "citizen" and app.get("applicant_uid") != principal.uid):
+                reply = (f"I can't show {routed['app_id']} — it either doesn't exist or was filed by someone else. "
+                         "You can see all of your own applications under Citizen services → Track application.")
+            else:
+                sources.append({"kind": "application", "id": app["id"]})
+                hist = app.get("history") or []
+                last = hist[-1] if hist else None
+                reply = (f"{app['id']} ({app['type'].replace('_', ' ')}, Sy. No. {app.get('survey_no') or '—'}) "
+                         f"is currently **{app['status'].replace('_', ' ')}** with the "
+                         f"{app.get('assigned_department') or 'revenue'} department."
+                         + (f" Last step: {last.get('action', '')} — {last.get('remark')}" if last and last.get("remark") else ""))
+                suggestions = ["What happens next?", "Show my other applications"]
+        else:
+            rows = await db.fetch(
+                "SELECT id, type, status FROM landstack.applications WHERE applicant_uid = :u "
+                "ORDER BY updated_at DESC LIMIT 3", u=principal.uid,
+            )
+            if rows:
+                lines = "; ".join(f"{r['id']} ({r['type'].replace('_', ' ')}) — {r['status'].replace('_', ' ')}" for r in rows)
+                reply = f"Your most recent applications: {lines}. Open Track application for the full step-by-step history."
+                sources = [{"kind": "application", "id": r["id"]} for r in rows]
+            else:
+                reply = ("You have no applications yet. Start one from Citizen services → Apply: pick your parcel, "
+                         "choose what you need (transfer, correction, building permission, complaint or succession), "
+                         "and the record is checked before you submit.")
+            suggestions = ["How do I transfer ownership?", "How do I fix a record mistake?"]
+
+    elif intent in _INTENT_APP_TYPE and cdm is not None:
+        app_type = _INTENT_APP_TYPE[intent]
+        t = triage(cdm, app_type)
+        head = {
+            "transfer": "For an ownership transfer on this parcel",
+            "succession": "For succession (inheritance) on this parcel",
+            "correction": "For a record correction on this parcel",
+            "complaint": "For a complaint on this parcel",
+            "build": "For building permission on this parcel",
+        }[intent]
+        if t["blockers"]:
+            reply = f"{head}, the record shows a likely blocker: {_worst(t['blockers'])} You can still apply — the officer decides."
+        elif t["warnings"]:
+            reply = f"{head}, the record looks workable with caveats: {_worst(t['warnings'])} File it under Citizen services → Apply."
+        else:
+            reply = f"{head}, the record is clean — no blockers or warnings. File it under Citizen services → Apply and it should move quickly."
+        if t["notes"]:
+            reply += f" Also noted: {_worst(t['notes'], 1)}"
+        suggestions = ["What documents do I need?", "Check my application status"]
+
+    elif intent == "buy" and cdm is not None:
+        dd = due_diligence(cdm)
+        bad = [c for c in dd["checks"] if c["status"] == "fail"]
+        warn = [c for c in dd["checks"] if c["status"] == "caution"]
+        verdict = {"clear": "clear on all nine checks", "caution": "mostly clear, with cautions",
+                   "high_risk": "high risk"}[dd["verdict"]]
+        reply = f"Buyer check on this parcel: **{verdict}**."
+        if bad:
+            reply += " Failed: " + "; ".join(f"{c['name']} — {c['text']}" for c in bad[:2])
+        if warn:
+            reply += " Caution: " + "; ".join(f"{c['name']} — {c['text']}" for c in warn[:2])
+        if dd.get("estimated_value"):
+            reply += f" Indicative value ₹{float(dd['estimated_value']):,.0f} at the guideline rate."
+        reply += " This is a record summary, not legal advice — the certified report PDF is the signed artefact."
+        suggestions = ["Any court disputes?", "How do I get the certified report?"]
+
+    elif intent == "tax" and cdm is not None:
+        st = cdm.get("status") or {}
+        tax = (cdm.get("fiscal") or {}).get("tax") or {}
+        arrears = float(st.get("tax_arrears") or 0)
+        if arrears > 0:
+            reply = f"Property tax on this parcel has arrears of ₹{arrears:,.0f}. Clearing dues first usually speeds up any application."
+        else:
+            reply = "Property tax on this parcel is paid up" + (f" till {tax['paid_till']}" if tax.get("paid_till") else "") + "."
+        if (cdm.get("fiscal") or {}).get("estimated_value"):
+            reply += f" Indicative value: ₹{float(cdm['fiscal']['estimated_value']):,.0f} at the guideline rate."
+
+    elif intent == "dispute" and cdm is not None:
+        disputes = (cdm.get("restrictions") or {}).get("disputes") or []
+        if disputes:
+            cases = "; ".join(
+                f"{d.get('case_no', '?')} ({d.get('court', 'court')}" + (f", next hearing {d['next_hearing']})" if d.get("next_hearing") else ")")
+                for d in disputes[:3])
+            reply = f"Yes — active litigation is recorded on this parcel: {cases}. Transfers are normally held until disposal."
+        else:
+            reply = "No court case is recorded on this parcel."
+
+    elif intent == "owner" and cdm is not None:
+        ror = (cdm.get("rights") or {}).get("ror") or {}
+        owner = ror.get("owner_name") or "not on record"
+        reply = (f"The record of rights lists the owner as {owner}"
+                 + (f" (khata {ror['khata_no']})" if ror.get("khata_no") else "") + "."
+                 " Names are masked unless you are the owner or hold consent — to confirm a specific person, "
+                 "use Citizen services → Verify ownership, which answers yes/no without exposing the name.")
+        suggestions = ["Verify a name against this parcel", "Is it safe to buy?"]
+
+    elif intent == "notice":
+        reply = ("Pending transfers of rights (mutation, succession, boundary corrections) are published on the "
+                 "public notice board on the citizen home page for 15 days. Anyone may object during the window — "
+                 "the objection is recorded with your name and shown to the deciding officer.")
+        suggestions = ["Show my application status"]
+
+    elif intent == "report":
+        reply = ("A certified parcel report (PDF with a QR verification link) can be issued from the parcel page — "
+                 "open the parcel and choose the report option. Anyone can verify an issued report at /verify.")
+
+    elif intent in _INTENT_APP_TYPE or intent in ("buy", "tax", "dispute", "owner"):
+        # A parcel intent with no parcel in context.
+        reply = ("Tell me which parcel — share its 14-character ULPIN or say the survey number "
+                 "(e.g. \"survey no 123/4\"), or open a parcel on the map and ask again.")
+        suggestions = ["Survey no 123/4"]
+
+    else:
+        reply = ("I'm Bhu-Sahayak. I can check a parcel before you buy, explain how to transfer ownership, "
+                 "fix a record mistake, get building permission, file a complaint or start a succession, and "
+                 "track your applications. Try: \"is survey no 123/4 safe to buy?\" or \"status of APP-2026-000001\".")
+        suggestions = ["Is survey no 123/4 safe to buy?", "How do I transfer ownership?", "Show my application status"]
+
+    # Optional LLM polish: rephrase only — the facts stay the templated ones.
+    engine = "rules"
+    polished = await chat(
+        [
+            {"role": "system",
+             "content": "You are Bhu-Sahayak, a land-records helper on an Indian land-governance portal. "
+                        "Rewrite the drafted answer to be warm and clear in 1-3 sentences. Keep every fact, "
+                        "number and id exactly as drafted; add nothing new. Output only the rewritten text."},
+            {"role": "user", "content": f"Question: {message}\nDrafted answer: {reply}"},
+        ],
+        max_tokens=600,
+    ) if cdm is not None or intent == "status" else None
+    if polished and len(polished) < 1200:
+        reply = polished
+        engine = engine_name()
+
+    return {"reply": reply, "engine": engine, "intent": intent, "sources": sources, "suggestions": suggestions[:3]}
 
 
 def _fact_sheet(cdm: dict[str, Any], findings: list[dict[str, Any]]) -> str:

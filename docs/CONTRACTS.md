@@ -202,6 +202,11 @@ Any signed-in: `POST /landstack/ai/pre-check {ulpin, type}` → pre-submission t
 `{ulpin, type, engine:"rules", risk_score, risk_level, blockers[], warnings[], notes[], ok_to_submit}` (items are
 `{text, action?}`). Always the deterministic rule engine; never prevents submission — the officer decides.
 422 unknown_type if `type` is not a known application type. The web auto-runs it once a parcel + intent are chosen.
+Any signed-in: `POST /landstack/ai/assistant {message (≤500 chars), ulpin?}` → Bhu-Sahayak chatbot:
+`{reply, engine, intent, sources[{kind: parcel|application, id}], suggestions[]}`. Intent routing is pure regex/keyword
+(`ai_assist.route_intent`); replies are composed only from the caller's own view of the records (masked CDM, own
+applications, triage/due-diligence rules) — the LLM, when configured, only rephrases the templated answer and the
+`engine` field says which happened. One floating launcher in the web app chrome (signed-in, non-minimal pages).
 Admin: `GET /landstack/consistency`, `GET /landstack/connectors`, `GET /landstack/adapters` (mappings from yaml),
 `POST /landstack/consents/grant {ulpin, uid, hours}`, `POST /landstack/admin/simulate/deed {ulpin, claimant}` (calls registration POST /deeds),
 `POST /landstack/admin/demo-reset`.

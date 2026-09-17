@@ -329,6 +329,19 @@ export interface DueDiligence {
   estimated_value?: number | null;
 }
 
+export interface AssistantSource {
+  kind: 'parcel' | 'application' | string;
+  id: string;
+}
+
+export interface AssistantReply {
+  reply: string;
+  engine: string;
+  intent: string;
+  sources: AssistantSource[];
+  suggestions: string[];
+}
+
 export interface ApplicationAdvice {
   application_id: string;
   engine: string;

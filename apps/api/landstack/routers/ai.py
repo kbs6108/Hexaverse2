@@ -30,6 +30,19 @@ class PreCheckBody(BaseModel):
     type: str
 
 
+class AssistantBody(BaseModel):
+    message: str
+    ulpin: str | None = None
+
+    @model_validator(mode="after")
+    def _sane(self) -> AssistantBody:
+        if not self.message.strip():
+            raise ValueError("message is required")
+        if len(self.message) > 500:
+            raise ValueError("message too long (max 500 chars)")
+        return self
+
+
 @router.post("/parcel-brief")
 async def parcel_brief(
     body: ParcelBriefBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
@@ -50,6 +63,15 @@ async def pre_check(
     if body.type not in workflow.APPLICATION_TYPES:
         raise AppError(422, "unknown_type", f"unknown application type: {body.type}")
     return await ai_assist.pre_check(db, body.ulpin, body.type, principal)
+
+
+@router.post("/assistant")
+async def assistant(
+    body: AssistantBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Bhu-Sahayak chatbot: deterministic intent routing grounded on the caller's own view of
+    the records (masked CDM, own applications); the LLM only rephrases the templated answer."""
+    return await ai_assist.assistant(db, body.message, body.ulpin, principal)
 
 
 @router.post("/application-advice")

@@ -82,6 +82,10 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   types `record_correction` and `land_complaint` (migration 011) run through the same workflow engine;
   `POST /landstack/ai/pre-check` triages every application before submission (deterministic rules —
   blockers/warnings/notes, never blocks; officer decides). Tag `demo-stable-v1` marks the pre-wizard state.
+- **Bhu-Sahayak chatbot** (Sep 2026): one floating launcher in the app chrome (signed-in pages);
+  `POST /landstack/ai/assistant` routes intents with pure regex/keywords and answers only from the
+  caller's masked records (CDM, own applications, triage/due-diligence rules); the LLM only rephrases
+  and every reply is engine-labelled. Uses the map's selected parcel as context.
 - **Refinement pass** (Phases 0–5, Sep 2026): browsing simplified (context-aware QuickNav,
   role-aware layer tiers), one design family ("poster" landing / "tool" app on shared emerald
   tokens via `.landing-scope`), landing bento grid + FaintTelemetry hero, docs/help made current
@@ -94,7 +98,8 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
-- 2026-09-17 public notices: GET /notices (15-day statutory window over pending transfers) + POST objections into payload.objections; notice board on the citizen home, objections in the officer drawer.
+- 2026-09-17 Bhu-Sahayak chatbot: POST /landstack/ai/assistant (pure intent router + grounded templated replies, LLM rephrase only) + floating launcher in the shell (6 routing tests, 92 total).
+- 2026-09-17 `b187cb3` public notices: GET /notices (15-day statutory window over pending transfers) + POST objections into payload.objections; notice board on the citizen home, objections in the officer drawer.
 - 2026-09-17 `ab2ea2d` succession flow: nominees on the RoR (migration 012, masked, all 3 dialects) + `succession` type — wizard card, triage (dispute/pending-blocked), officer evidence, approval runs the mutation (86 tests).
 - 2026-09-17 `4087548` buyer due-diligence: GET /parcels/{ulpin}/due-diligence (9-point deterministic checklist) + on-demand "Thinking of buying?" card in the parcel Overview (5 tests, 84 total).
 - 2026-09-17 `3533da8` citizen tracking: approval side effects (payload.side_effect) shown as a one-line cross-department note in every timeline.

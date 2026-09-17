@@ -1,6 +1,6 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Building2, HelpCircle, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { roleAtLeast } from '@/lib/auth';
@@ -9,6 +9,9 @@ import { UserMenu } from '@/features/auth/UserMenu';
 import { QuickNav } from '@/components/QuickNav';
 import { GovBadge } from '@/features/marketing/GovStrip';
 import type { Role } from '@/lib/cdm';
+
+// Bhu-Sahayak loads only when the app chrome renders for a signed-in user.
+const Assistant = lazy(() => import('@/features/assistant/Assistant'));
 
 export function LogoMark({ size = 26 }: { size?: number }) {
   return (
@@ -55,7 +58,7 @@ function useRouteFade(pathname: string) {
 
 export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const minimal = pathname.startsWith('/verify/') || pathname === '/login' || pathname === '/welcome' || pathname === '/help';
   const isMap = pathname === '/map';
   const label = routeLabel(pathname);
@@ -136,6 +139,11 @@ export function Shell() {
         </main>
       </div>
       <QuickNav />
+      {!minimal && user && (
+        <Suspense fallback={null}>
+          <Assistant />
+        </Suspense>
+      )}
     </div>
   );
 }
