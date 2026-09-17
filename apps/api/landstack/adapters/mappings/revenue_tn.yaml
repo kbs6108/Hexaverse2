@@ -16,3 +16,4 @@ map:
   ror.items[0].extent_hectares: rights.ror.extent_sqm
   ror.items[0].land_class: rights.ror.classification
   ror.items[0].mutation_history: rights.ror.mutation_history
+  ror.items[0].nominees: rights.ror.nominees

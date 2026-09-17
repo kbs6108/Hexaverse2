@@ -44,9 +44,9 @@ export function fallbackActions(type: string, status: string): NextAction[] {
     if (status === 'open') return mk([['assigned', 'Assign']]);
     if (status === 'assigned') return mk([['resolved', 'Resolve']]);
   }
-  if (type === 'record_correction') {
+  if (type === 'record_correction' || type === 'succession') {
     if (status === 'submitted') return mk([['document_check', 'Start document check']]);
-    if (status === 'document_check') return mk([['approved', 'Approve correction'], ['returned', 'Return to applicant'], ['rejected', 'Reject']]);
+    if (status === 'document_check') return mk([['approved', type === 'succession' ? 'Approve succession' : 'Approve correction'], ['returned', 'Return to applicant'], ['rejected', 'Reject']]);
   }
   if (type === 'land_complaint') {
     if (status === 'submitted') return mk([['in_review', 'Take up for review']]);
@@ -124,7 +124,7 @@ function SideEffectNote({ app }: { app: Application }) {
     );
   }
   const text =
-    app.type === 'mutation'
+    app.type === 'mutation' || app.type === 'succession'
       ? 'Approval automatically transferred the Record of Rights in the Revenue department.'
       : app.type === 'boundary_correction'
         ? 'Approval applied the new boundary to the map and synced the extent with the Revenue department.'

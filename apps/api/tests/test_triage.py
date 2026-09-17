@@ -54,6 +54,22 @@ def test_area_mismatch_supports_a_correction() -> None:
     assert any("extent already differs" in n["text"] for n in out["notes"])
 
 
+def test_succession_is_dispute_blocked() -> None:
+    cdm = _cdm(status={"has_dispute": True})
+    assert triage(cdm, "succession")["ok_to_submit"] is False
+    assert triage(_cdm(status={"pending_mutation": True}), "succession")["ok_to_submit"] is False
+
+
+def test_succession_surfaces_nominees_or_warns() -> None:
+    cdm = _cdm()
+    cdm["rights"]["ror"] = {"nominees": [{"name": "Lakshmi Devi", "relation": "spouse", "share": 0.5}]}
+    out = triage(cdm, "succession")
+    assert any("Lakshmi Devi" in n["text"] for n in out["notes"])
+    out2 = triage(_cdm(), "succession")
+    assert any("No nominee" in w["text"] for w in out2["warnings"])
+    assert out2["ok_to_submit"] is True  # missing nominee is a warning, not a blocker
+
+
 def test_change_alert_warns_building_permission() -> None:
     out = triage(_cdm(status={"change_alert": True}), "building_permission")
     assert any("Satellite" in w["text"] for w in out["warnings"])

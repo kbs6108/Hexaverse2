@@ -11,6 +11,7 @@ import {
   Flag,
   Info,
   PenLine,
+  UsersRound,
   XCircle,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -27,10 +28,11 @@ import { Spinner } from '@/components/Spinner';
 import { toast } from '@/components/Toast';
 import { PageTitle } from './CitizenHome';
 
-type Intent = 'mutation' | 'record_correction' | 'building_permission' | 'land_complaint';
+type Intent = 'mutation' | 'record_correction' | 'building_permission' | 'land_complaint' | 'succession';
 
 const INTENTS: { key: Intent; title: string; desc: string; icon: typeof ArrowRightLeft }[] = [
-  { key: 'mutation', title: 'Transfer ownership', desc: 'Move the Record of Rights after a sale, inheritance, gift or court order.', icon: ArrowRightLeft },
+  { key: 'mutation', title: 'Transfer ownership', desc: 'Move the Record of Rights after a sale, gift or court order.', icon: ArrowRightLeft },
+  { key: 'succession', title: 'Owner passed away', desc: 'Reallocate the land to the recorded nominees or legal heirs.', icon: UsersRound },
   { key: 'record_correction', title: 'Fix a mistake in the record', desc: 'A name, extent or classification in the record is wrong.', icon: PenLine },
   { key: 'building_permission', title: 'Build on this land', desc: 'Apply for building permission with an instant zoning check.', icon: Building2 },
   { key: 'land_complaint', title: 'Raise a complaint', desc: 'Encroachment, boundary trouble or anything else on this parcel.', icon: Flag },
@@ -59,6 +61,11 @@ const STEPS: Record<Intent, string[]> = {
     'An officer takes it up for review.',
     'You see the outcome and every remark in your tracking page.',
   ],
+  succession: [
+    'Submitted to the Revenue department.',
+    'Officer checks the death certificate and heirship against any recorded nominees.',
+    'Approval transfers the Record of Rights to the heir — nothing happens automatically.',
+  ],
 };
 
 const USES = ['residential', 'commercial', 'mixed', 'industrial', 'institutional'];
@@ -85,7 +92,7 @@ export function ServiceRequest() {
         </Field>
       </Card>
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" role="radiogroup" aria-label="What do you need?">
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="What do you need?">
         {INTENTS.map((it) => (
           <button
             key={it.key}
@@ -110,6 +117,7 @@ export function ServiceRequest() {
           {intent === 'record_correction' && <CorrectionForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'building_permission' && <PermissionForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'land_complaint' && <ComplaintForm ulpin={ulpin} onDone={setDone} />}
+          {intent === 'succession' && <SuccessionForm ulpin={ulpin} onDone={setDone} />}
           <aside className="flex flex-col gap-3 text-sm text-ink-2">
             <PreCheckPanel ulpin={ulpin} type={intent} />
             <Card className="p-4">
@@ -397,6 +405,45 @@ function ComplaintForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicati
       <DocField doc={doc} setDoc={setDoc} hint="Photos or papers that support the complaint." />
       {m.isError && <ErrorNote error={m.error} />}
       <Button type="submit" variant="primary" loading={m.isPending} className="self-start" disabled={ulpin.trim().length < 8}>Register complaint</Button>
+    </FormCard>
+  );
+}
+
+const RELATIONS = ['spouse', 'son', 'daughter', 'parent', 'sibling', 'other'];
+
+function SuccessionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Application) => void }) {
+  const [deceased, setDeceased] = useState('');
+  const [heir, setHeir] = useState('');
+  const [relation, setRelation] = useState('spouse');
+  const [doc, setDoc] = useState<File | null>(null);
+  const m = useMutation({
+    mutationFn: () =>
+      api.createApplication(ulpin.trim(), 'succession', {
+        deceased_name: deceased.trim(),
+        nominee_name: heir.trim(),
+        relation,
+        document_name: doc?.name ?? null,
+      }),
+    onSuccess: (a) => { toast.success('Succession request submitted', a.id); onDone(a); },
+  });
+  return (
+    <FormCard title="Owner passed away" subtitle="Revenue department · succession — officer verifies heirship, nothing is automatic" onSubmit={(e) => { e.preventDefault(); m.mutate(); }}>
+      <Field label="Name of the deceased owner" htmlFor="sr-deceased" hint="Exactly as on the Record of Rights">
+        <Input id="sr-deceased" required value={deceased} onChange={(e) => setDeceased(e.target.value)} />
+      </Field>
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
+        <Field label="Heir / nominee name" htmlFor="sr-heir" hint="Recorded nominees (if any) are shown in the panel on the right">
+          <Input id="sr-heir" required value={heir} onChange={(e) => setHeir(e.target.value)} />
+        </Field>
+        <Field label="Relation" htmlFor="sr-relation">
+          <Select id="sr-relation" value={relation} onChange={(e) => setRelation(e.target.value)}>
+            {RELATIONS.map((r) => <option key={r} value={r}>{r[0]!.toUpperCase() + r.slice(1)}</option>)}
+          </Select>
+        </Field>
+      </div>
+      <DocField doc={doc} setDoc={setDoc} hint="Death certificate and legal-heir certificate (or nominee record)." />
+      {m.isError && <ErrorNote error={m.error} />}
+      <Button type="submit" variant="primary" loading={m.isPending} className="self-start" disabled={ulpin.trim().length < 8}>Submit request</Button>
     </FormCard>
   );
 }

@@ -37,6 +37,15 @@ function evidenceRows(p: ParcelCDM, appType: string): EvidenceRow[] {
       source: 'revenue',
     });
   }
+  if (ror?.nominees?.length) {
+    rows.push({
+      tone: 'ok',
+      text: `Nominees on record: ${ror.nominees.map((n) => `${n.name} (${n.relation})`).join(', ')}`,
+      source: 'revenue',
+    });
+  } else if (appType === 'succession') {
+    rows.push({ tone: 'warn', text: 'No nominee recorded — heirship rests on the certificates attached', source: 'revenue' });
+  }
   if (reg?.status === 'registered') {
     rows.push({ tone: 'ok', text: `Registered ${reg.deed_type ?? 'deed'} ${reg.doc_no ?? ''} on ${reg.registered_on ?? '—'}`, source: 'registration' });
   } else {

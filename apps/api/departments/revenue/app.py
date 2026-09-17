@@ -66,6 +66,7 @@ def _dialect(row: dict[str, Any] | None) -> dict[str, Any] | None:
             "extent_hectares": round(float(row["extent_sqm"]) / 10_000.0, 6),
             "land_class": row["classification"],
             "mutation_history": row["mutation_history"],
+            "nominees": row.get("nominees"),
             "updated_at": row["updated_at"],
         }
     if state == "TG":
@@ -79,6 +80,7 @@ def _dialect(row: dict[str, Any] | None) -> dict[str, Any] | None:
             "extent_acres": round(float(row["extent_sqm"]) / 4046.8564224, 6),
             "land_classification": row["classification"],
             "mutation_history": row["mutation_history"],
+            "nominees": row.get("nominees"),
             "updated_at": row["updated_at"],
         }
     return row

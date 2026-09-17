@@ -30,6 +30,20 @@ export function Ownership({ p }: { p: ParcelCDM }) {
           ))}
         </ul>
       </div>
+      {(ror?.nominees?.length ?? 0) > 0 && (
+        <div>
+          <SectionTitle>Recorded nominees</SectionTitle>
+          <ul className="mt-1 flex flex-col gap-1">
+            {ror!.nominees!.map((n, i) => (
+              <li key={i} className="flex items-center justify-between rounded-md border border-line px-3 py-1.5 text-sm">
+                <span>{n.name ?? '—'}<span className="text-ink-3"> · {titleCase(n.relation)}</span></span>
+                {n.share != null && <Badge>{Math.round(n.share * 100)}%</Badge>}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-xs text-ink-3">Nominees take effect only through an approved succession application — nothing is automatic.</p>
+        </div>
+      )}
       <KV
         items={[
           { k: 'Khata no.', v: ror?.khata_no ?? p.identifiers.khata_no ?? '—', mono: true },

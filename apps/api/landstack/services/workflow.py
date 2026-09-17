@@ -29,6 +29,7 @@ APPLICATION_TYPES = (
     "boundary_correction",
     "record_correction",
     "land_complaint",
+    "succession",
 )
 INITIAL_STATUS = {
     "mutation": "submitted",
@@ -38,6 +39,7 @@ INITIAL_STATUS = {
     "boundary_correction": "submitted",
     "record_correction": "submitted",
     "land_complaint": "submitted",
+    "succession": "submitted",
 }
 DEFAULT_DEPARTMENT = {
     "mutation": "revenue",
@@ -47,6 +49,7 @@ DEFAULT_DEPARTMENT = {
     "boundary_correction": "revenue",
     "record_correction": "revenue",
     "land_complaint": "revenue",
+    "succession": "revenue",
 }
 
 _transitions_cache: TTLCache[list[dict[str, Any]]] = TTLCache(ttl_s=60.0)
@@ -357,6 +360,18 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
     """On approval: mutation → revenue POST /mutations; building_permission → planning POST /permissions."""
     payload = app.get("payload") or {}
     try:
+        if app["type"] == "succession":
+            body = {
+                "ulpin": app["ulpin"],
+                "to_owner": payload.get("nominee_name") or app.get("applicant_name"),
+                "reason": "succession",
+                "application_id": app["id"],
+            }
+            res = await client.post_json("/revenue/mutations", body, timeout=5.0)
+            await audit.record(
+                db, principal, "revenue.succession_recorded", "application", app["id"], app["ulpin"], None, res
+            )
+            return {"department": "revenue", "ok": True, "result": res}
         if app["type"] == "mutation":
             body = {
                 "ulpin": app["ulpin"],

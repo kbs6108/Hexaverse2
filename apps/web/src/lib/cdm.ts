@@ -44,11 +44,19 @@ export interface Registration {
   sro_code?: string | null;
 }
 
+export interface Nominee {
+  name?: string | null;
+  relation?: string | null;
+  share?: number | null;
+}
+
 export interface RoR {
   khata_no?: string | null;
   classification?: string | null;
   extent_sqm?: number | null;
   ownership_type?: string | null;
+  /** Recorded nominees for succession (migration 012); names masked like owners. */
+  nominees?: Nominee[] | null;
 }
 
 export interface Rights {
@@ -251,7 +259,8 @@ export type ApplicationType =
   | 'field_review'
   | 'boundary_correction'
   | 'record_correction'
-  | 'land_complaint';
+  | 'land_complaint'
+  | 'succession';
 
 /* ---------- Boundary correction (bounded parcel editing, CONTRACTS §6/§8) ---------- */
 

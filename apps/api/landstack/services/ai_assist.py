@@ -133,10 +133,20 @@ def triage(cdm: dict[str, Any], app_type: str) -> dict[str, Any]:
     blockers: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
     notes: list[dict[str, Any]] = []
-    transfer_like = app_type in ("mutation", "record_correction")
+    transfer_like = app_type in ("mutation", "record_correction", "succession")
 
     def add(bucket: list[dict[str, Any]], text: str, action: str | None = None) -> None:
         bucket.append({"text": text, "action": action})
+
+    if app_type == "succession":
+        nominees = ((cdm.get("rights") or {}).get("ror") or {}).get("nominees") or []
+        if nominees:
+            names = ", ".join(f"{n.get('name')} ({n.get('relation')})" for n in nominees[:4])
+            add(notes, f"Nominees recorded on the RoR: {names}.",
+                "The reallocation should match the recorded nominees or come with a legal-heir certificate.")
+        else:
+            add(warnings, "No nominee is recorded on the RoR for this parcel.",
+                "Attach the legal-heir certificate and the death certificate — the officer will verify heirship manually.")
 
     if st.get("has_dispute"):
         if transfer_like:
@@ -145,7 +155,7 @@ def triage(cdm: dict[str, Any], app_type: str) -> dict[str, Any]:
         else:
             add(notes, "An active court case is recorded on this parcel — the officer will see it alongside your request.")
     if st.get("pending_mutation"):
-        if app_type == "mutation":
+        if app_type in ("mutation", "succession"):
             add(blockers, "Another ownership transfer is already pending on this parcel.",
                 "Track the existing application before filing a new one — a duplicate will be returned.")
         else:

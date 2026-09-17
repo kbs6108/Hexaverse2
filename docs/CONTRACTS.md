@@ -109,7 +109,7 @@ Key tables (columns are authoritative in SQL; names here are what the API relies
 - landstack.consents(id, ulpin, granted_to_uid, granted_by, expires_at)
 - landstack.applications(id text PK 'APP-2026-000123', ulpin, type, applicant_uid, applicant_name, status,
   payload jsonb, assigned_department, created_at, updated_at)
-  type ∈ mutation | building_permission | ownership_verification | field_review | boundary_correction | record_correction | land_complaint
+  type ∈ mutation | building_permission | ownership_verification | field_review | boundary_correction | record_correction | land_complaint | succession
 - landstack.transitions(type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
 - landstack.audit_log(id bigserial, ts, actor_uid, actor_name, actor_role, action, entity_type, entity_id,
   ulpin, before jsonb, after jsonb, source) — INSERT only for app role
@@ -118,7 +118,8 @@ Key tables (columns are authoritative in SQL; names here are what the API relies
 - landstack.reports(id text PK, ulpin, issued_to_uid, issued_to_name, issued_at, sha256, signature, storage_key)
 - landstack.connector_status(name PK, ok bool, latency_ms int, last_sync timestamptz, note)
 - dept_revenue.ror(khata_no PK, ulpin, survey_no, owner_name, father_name, ownership_type, extent_sqm,
-  classification, mutation_history jsonb, updated_at)
+  classification, mutation_history jsonb, nominees jsonb default '[]' — migration 012,
+  [{name, relation, share}]; surfaces in the CDM as rights.ror.nominees, names masked like owners, updated_at)
 - dept_revenue.mutations(id serial, ulpin, from_owner, to_owner, reason, application_id, created_at)
 - dept_registration.deeds(doc_no PK, ulpin, deed_type, executant, claimant, consideration numeric,
   registered_on date, sro_code); dept_registration.encumbrances(id, ulpin, kind, holder, amount, from_date, to_date, active)
@@ -225,6 +226,9 @@ boundary_correction: submitted → geometry_check → approved | returned | reje
   landstack.parcels (area recomputed) and syncs the RoR extent via revenue POST /extent. Fully audited.
 record_correction: submitted → document_check → approved | returned | rejected (revenue officer; migration 011); returned → submitted (citizen resubmits)
 land_complaint: submitted → in_review → resolved | dismissed (any officer; migration 011; queued under revenue by default)
+succession: submitted → document_check → approved | returned | rejected (revenue officer; migration 012).
+  Dispute- and pending-transfer-blocked in triage; nominees on the RoR are advisory, never automatic.
+  On approved: gateway calls revenue POST /mutations with to_owner=payload.nominee_name, reason=succession.
 ownership_verification: instant (no rows in transitions)
 On mutation approved: gateway calls revenue POST /mutations; on building_permission approved: planning POST /permissions.
 System-initiated mutation (from deed event where claimant != RoR owner): type=mutation, status=submitted, applicant_name=claimant, payload.system_initiated=true.

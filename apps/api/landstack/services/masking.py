@@ -43,6 +43,9 @@ def mask_cdm(cdm: dict[str, Any]) -> dict[str, Any]:
         owner.pop("father_name", None)
     party["masked"] = True
 
+    for nom in out.get("rights", {}).get("ror", {}).get("nominees", []) or []:
+        nom["name"] = mask_name(nom.get("name"))
+
     reg = out.setdefault("rights", {}).setdefault("registration", {})
     if reg:
         reg["doc_no"] = mask_doc_no(reg.get("doc_no"))
