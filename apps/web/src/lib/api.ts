@@ -20,6 +20,7 @@ import type {
   GeoJSONFeature,
   GeoJSONFeatureCollection,
   Me,
+  Notice,
   ParcelBrief,
   ParcelCDM,
   PlanningCheck,
@@ -138,6 +139,10 @@ export const api = {
   proposeBoundary: (ulpin: string, geometry: Record<string, unknown>, reason: string) =>
     request<BoundaryProposalResult>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary`, { method: 'POST', body: { geometry, reason } }),
   requestConsent: (ulpin: string) => request<{ ok: boolean }>('/landstack/consents/request', { method: 'POST', body: { ulpin } }),
+  notices: (village?: string) =>
+    request<{ items: Notice[]; count: number; window_days: number }>('/landstack/notices', { query: { village }, auth: false }),
+  fileObjection: (id: string, reason: string) =>
+    request<{ ok: boolean; objection_count: number }>(`/landstack/applications/${encodeURIComponent(id)}/objections`, { method: 'POST', body: { reason } }),
   dueDiligence: (ulpin: string) =>
     request<DueDiligence>(`/landstack/parcels/${encodeURIComponent(ulpin)}/due-diligence`),
   preCheck: (ulpin: string, type: ApplicationType) =>
@@ -220,4 +225,5 @@ export const qk = {
   planningCheck: (ulpin: string, use: string, floors: number) => ['planning_check', ulpin, use, floors] as const,
   preCheck: (ulpin: string, type: string, identity: string) => ['ai_precheck', ulpin, type, identity] as const,
   dueDiligence: (ulpin: string, identity: string) => ['due_diligence', ulpin, identity] as const,
+  notices: (village: string) => ['notices', village] as const,
 };

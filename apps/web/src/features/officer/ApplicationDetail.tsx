@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { AlertTriangle, CheckCircle2, ExternalLink, Sparkles, XCircle } from 'lucide-react';
 import { api, qk } from '@/lib/api';
-import type { NextAction, ParcelCDM } from '@/lib/cdm';
+import type { NextAction, Objection, ParcelCDM } from '@/lib/cdm';
 import { Drawer } from '@/components/Drawer';
 import { Button } from '@/components/Button';
 import { Field, Textarea } from '@/components/Field';
@@ -213,6 +213,20 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
               <div>
                 <SectionTitle>Evidence</SectionTitle>
                 <EvidencePanel p={parcel.data} appType={app.type} />
+              </div>
+            )}
+
+            {Array.isArray(app.payload.objections) && app.payload.objections.length > 0 && (
+              <div>
+                <SectionTitle>Objections ({(app.payload.objections as Objection[]).length})</SectionTitle>
+                <ul className="flex flex-col gap-1.5">
+                  {(app.payload.objections as Objection[]).map((o, i) => (
+                    <li key={i} className="rounded-md border border-amber/40 bg-amber-soft/40 px-2.5 py-2 text-[12.5px]">
+                      <p className="text-ink-2">“{o.reason}”</p>
+                      <p className="mt-0.5 text-[11px] text-ink-3">{o.by_name ?? 'Anonymous'} · {fmtDate(o.ts, true)}</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

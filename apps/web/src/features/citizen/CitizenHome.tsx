@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { Link, Outlet } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, FileSearch, ListChecks, MapPinned, ShieldCheck } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowRight, FileSearch, ListChecks, MapPinned, Megaphone, ShieldCheck } from 'lucide-react';
 import { Card } from '@/components/Card';
-import { api, qk } from '@/lib/api';
+import { Button } from '@/components/Button';
+import { Textarea } from '@/components/Field';
+import { toast } from '@/components/Toast';
+import { api, qk, ApiError } from '@/lib/api';
+import type { Notice } from '@/lib/cdm';
 import { useAuth } from '@/lib/auth';
 import { StatusBadge } from '@/features/officer/ApplicationBits';
 import { relTime, titleCase } from '@/lib/format';
@@ -33,6 +38,74 @@ const CARDS = [
   { to: '/citizen/track', label: 'Track application', body: 'Follow mutation, building-permission and verification requests through each department step.', icon: ListChecks },
   { to: '/citizen/request', label: 'Apply', body: 'Transfer ownership, fix a record mistake, seek building permission or raise a complaint — checked against the record before you submit.', icon: FileSearch },
 ] as const;
+
+const NOTICE_LABEL: Record<string, string> = {
+  mutation: 'Ownership transfer',
+  succession: 'Succession',
+  boundary_correction: 'Boundary correction',
+};
+
+/** Village notice board — the statutory board outside the tahsildar office, on the home page.
+ *  Pending transfers of rights are published for objection while their window is open. */
+function NoticeBoard() {
+  const q = useQuery({ queryKey: qk.notices(''), queryFn: () => api.notices(), staleTime: 60_000 });
+  const items = q.data?.items ?? [];
+  if (items.length === 0) return null;
+  return (
+    <Card className="mt-4 p-4">
+      <div className="mb-1 flex items-center gap-2">
+        <Megaphone size={15} className="text-ink-3" />
+        <h2 className="text-sm font-semibold">Public notices</h2>
+        <span className="text-xs text-ink-3">· pending transfers of rights, open for objection for {q.data?.window_days} days</span>
+      </div>
+      <ul className="mt-2 flex flex-col gap-1.5">
+        {items.slice(0, 6).map((n) => <NoticeRow key={n.id} n={n} />)}
+      </ul>
+    </Card>
+  );
+}
+
+function NoticeRow({ n }: { n: Notice }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const m = useMutation({
+    mutationFn: () => api.fileObjection(n.id, reason.trim()),
+    onSuccess: (r) => {
+      toast.success('Objection recorded', `${r.objection_count} objection(s) on ${n.id}`);
+      setOpen(false);
+      setReason('');
+      void qc.invalidateQueries({ queryKey: ['notices'] });
+    },
+    onError: (e) => toast.error('Could not record objection', e instanceof ApiError ? e.message : String(e)),
+  });
+  return (
+    <li className="rounded-md border border-line px-3 py-2 text-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{NOTICE_LABEL[n.type] ?? titleCase(n.type)}</span>
+        <span className="text-ink-2">Sy. No. {n.survey_no ?? '—'} · {n.village ?? '—'}</span>
+        <span className="ml-auto text-xs text-ink-3">
+          {n.days_left} day{n.days_left === 1 ? '' : 's'} left{n.objection_count > 0 ? ` · ${n.objection_count} objection(s)` : ''}
+        </span>
+        <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          {open ? 'Cancel' : 'Object'}
+        </Button>
+      </div>
+      {open && (
+        <form
+          className="mt-2 flex flex-col gap-2"
+          onSubmit={(e) => { e.preventDefault(); if (reason.trim().length >= 10) m.mutate(); }}
+        >
+          <Textarea rows={2} required minLength={10} value={reason} onChange={(e) => setReason(e.target.value)}
+            placeholder="Why do you object? (at least 10 characters — recorded with your name and shown to the deciding officer)" />
+          <Button type="submit" size="sm" variant="primary" loading={m.isPending} disabled={reason.trim().length < 10} className="self-start">
+            Submit objection
+          </Button>
+        </form>
+      )}
+    </li>
+  );
+}
 
 export function CitizenHome() {
   const { user } = useAuth();
@@ -82,6 +155,7 @@ export function CitizenHome() {
           </ul>
         </Card>
       )}
+      <NoticeBoard />
       <p className="mt-8 text-xs text-ink-3">
         Owner names are shown masked unless you are the owner or hold a consent token. Every profile section shows which department it came from and when.
       </p>

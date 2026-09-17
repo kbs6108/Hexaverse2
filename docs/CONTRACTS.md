@@ -170,7 +170,10 @@ Masking (citizen without consent): owner names → first letter + '***' per word
 units.owner_name masked; `party.masked=true`.
 
 ## 6. Gateway API (prefix as shown; JSON; errors `{ "error": {"code","message","details"} }`)
-Public: `GET /healthz`, `GET /landstack/collections`, `GET /landstack/collections/{layer}/items?bbox=&limit=&offset=&land_use=&status=`
+Public: `GET /healthz`, `GET /landstack/notices?village=` → village notice board: pending transfer-of-rights
+applications (mutation | succession | boundary_correction) inside their 15-day objection window —
+`{items: [{id, ulpin, type, status, survey_no, village, published_on, window_closes, days_left, objection_count}], window_days}`
+(no personal data), `GET /landstack/collections`, `GET /landstack/collections/{layer}/items?bbox=&limit=&offset=&land_use=&status=`
 (layers: parcels, zones, restriction_zones, roads, projects, village_boundary, buildings, settlement_schemes), `GET /landstack/collections/parcels/items/{ulpin}`,
 `GET /landstack/tiles/{layer}/{z}/{x}/{y}.pbf` (ST_AsMVT; layers: parcels, zones, restriction_zones, roads, water_lines, projects, settlement_schemes, units),
 `GET /landstack/search?q=` (ulpin/survey/khata always; owner name only for officer+), `GET /verify/{report_id}` (JSON), `GET /reports/{id}.pdf`.
@@ -178,6 +181,9 @@ Any signed-in: `GET /landstack/parcels/{ulpin}` (CDM, masked per role/consent), 
 `POST /landstack/verify-ownership {ulpin, claimed_name}` → `{match: bool, score, compared: ["ror","latest_deed"]}`,
 `POST /landstack/applications {ulpin, type, payload}`, `GET /landstack/applications?mine=1`, `GET /landstack/applications/{id}`,
 `POST /landstack/reports/{ulpin}` → `{id, url}`, `POST /landstack/consents/request {ulpin}`,
+`POST /landstack/applications/{id}/objections {reason}` (min 10 chars) → appends `{ts, by_uid, by_name, reason}`
+to the application's `payload.objections` and audits it; 409 objection_window_closed after the window or a
+terminal status, 422 not_a_notice / own_application. Objections render in the officer's application drawer.
 `GET /landstack/parcels/{ulpin}/due-diligence` → buyer checklist over the (masked) CDM:
 `{ulpin, engine:"rules", verdict: clear|caution|high_risk, checks: [{name, status: pass|caution|fail, text}] ×9,
 estimated_value}` — deterministic; a record summary, not legal advice (the signed report PDF is the artefact).

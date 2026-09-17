@@ -379,6 +379,28 @@ export interface Application {
   village?: string | null;
 }
 
+/* ---------- Public notices + objections (CONTRACTS §6/§8) ---------- */
+
+export interface Notice {
+  id: string;
+  ulpin: string;
+  type: ApplicationType;
+  status: string;
+  survey_no?: string | null;
+  village?: string | null;
+  published_on: string;
+  window_closes: string;
+  days_left: number;
+  objection_count: number;
+}
+
+export interface Objection {
+  ts: string;
+  by_uid?: string | null;
+  by_name?: string | null;
+  reason: string;
+}
+
 export interface ReportIssued {
   id: string;
   url: string;

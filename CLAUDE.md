@@ -94,7 +94,8 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
-- 2026-09-17 succession flow: nominees on the RoR (migration 012, masked, all 3 dialects) + `succession` type — wizard card, triage (dispute/pending-blocked), officer evidence, approval runs the mutation (86 tests).
+- 2026-09-17 public notices: GET /notices (15-day statutory window over pending transfers) + POST objections into payload.objections; notice board on the citizen home, objections in the officer drawer.
+- 2026-09-17 `ab2ea2d` succession flow: nominees on the RoR (migration 012, masked, all 3 dialects) + `succession` type — wizard card, triage (dispute/pending-blocked), officer evidence, approval runs the mutation (86 tests).
 - 2026-09-17 `4087548` buyer due-diligence: GET /parcels/{ulpin}/due-diligence (9-point deterministic checklist) + on-demand "Thinking of buying?" card in the parcel Overview (5 tests, 84 total).
 - 2026-09-17 `3533da8` citizen tracking: approval side effects (payload.side_effect) shown as a one-line cross-department note in every timeline.
 - 2026-09-17 `717e37f` officer decision view: auto-assembled per-source evidence panel + readable zoning-check line in the application drawer.
