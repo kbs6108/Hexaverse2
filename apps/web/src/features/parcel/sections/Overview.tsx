@@ -7,13 +7,19 @@ import type { ParcelCDM } from '@/lib/cdm';
 import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useUI } from '@/lib/store';
-import { fmtArea, fmtDate, fmtINR, titleCase } from '@/lib/format';
+import { fmtArea, fmtDate, fmtINR, fmtNum, titleCase } from '@/lib/format';
 import { Button } from '@/components/Button';
 import { Callout, KV, SectionTitle } from '@/components/Section';
 import { toast } from '@/components/Toast';
 import { Badge } from '@/components/Badge';
 import { AIInsight, parcelNeedsAttention } from '@/components/AIInsight';
 import type { ParcelTab } from '../ParcelDrawer';
+
+/** Readable names for consistency-issue fields (raw keys are backend column names). */
+const ISSUE_LABEL: Record<string, string> = {
+  extent_sqm: 'Recorded extent',
+  owner_name: 'Owner name',
+};
 
 const DD_ICON = {
   pass: { icon: CheckCircle2, cls: 'text-primary' },
@@ -160,15 +166,18 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           <ul className="list-disc pl-4">
             {!p.consistency.area_match && !issues.some((i) => i.field === 'extent_sqm') && <li>Area differs between revenue and registration records.</li>}
             {!p.consistency.owner_match && !issues.some((i) => i.field === 'owner_name') && <li>Owner name differs between RoR and latest deed.</li>}
-            {issues.map((i, k) => (
-              <li key={k}>
-                <span className="font-medium">{titleCase(i.field)}</span>:{' '}
-                {Object.entries(i)
-                  .filter(([key]) => key !== 'field')
-                  .map(([src, v]) => `${titleCase(src)} ${String(v)}`)
-                  .join(' vs ')}
-              </li>
-            ))}
+            {issues.map((i, k) => {
+              const values = (['revenue', 'registration', 'parcel'] as const)
+                .filter((s) => i[s] !== null && i[s] !== undefined)
+                .map((s) => `${s === 'parcel' ? 'Surveyed' : titleCase(s)} ${typeof i[s] === 'number' ? fmtNum(i[s] as number, i.field === 'extent_sqm' ? ' sqm' : '') : String(i[s])}`);
+              return (
+                <li key={k}>
+                  <span className="font-medium">{ISSUE_LABEL[i.field] ?? titleCase(i.field)}</span>
+                  {typeof i.note === 'string' && <> — {i.note}.</>}
+                  {values.length > 0 && <span className="mt-0.5 block text-[12px] opacity-80">{values.join(' · ')}</span>}
+                </li>
+              );
+            })}
           </ul>
         </Callout>
       )}

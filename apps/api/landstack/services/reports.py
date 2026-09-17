@@ -82,6 +82,16 @@ def _e(v: Any) -> str:
     return html.escape("—" if v is None or v == "" else str(v))
 
 
+def _yn(v: Any) -> str:
+    return "—" if v is None else ("yes" if v else "no")
+
+
+def _join(parts: list[Any], sep: str) -> str | None:
+    """Join the non-empty parts; None when nothing is left (so `_e` renders the dash)."""
+    keep = [str(p) for p in parts if p not in (None, "")]
+    return sep.join(keep) or None
+
+
 def render_html(
     cdm: dict[str, Any], report_id: str, issued_to: str, geometry: dict[str, Any] | None, verify_url: str
 ) -> str:
@@ -98,8 +108,8 @@ def render_html(
     rows = [
         ("ULPIN", cdm.get("ulpin")),
         ("Survey No", ident.get("survey_no")),
-        ("Village / Taluk", f"{ident.get('village')} / {ident.get('taluk')}"),
-        ("District / State", f"{ident.get('district')} / {ident.get('state')}"),
+        ("Village / Taluk", _join([ident.get("village"), ident.get("taluk")], " / ")),
+        ("District / State", _join([ident.get("district"), ident.get("state")], " / ")),
         ("Khata No", ident.get("khata_no")),
         ("Owner(s)", owners),
         ("Ownership type", ror.get("ownership_type")),
@@ -108,15 +118,16 @@ def render_html(
         ("RoR extent (sqm)", ror.get("extent_sqm")),
         (
             "Registration",
-            f"{reg.get('status')} · {reg.get('deed_type') or ''} {reg.get('doc_no') or ''} {reg.get('registered_on') or ''}",
+            _join([reg.get("status"), _join([reg.get("deed_type"), reg.get("doc_no"), reg.get("registered_on")], " ")], " · "),
         ),
-        ("Zone / Land use", f"{plan.get('zone_code')} {plan.get('zone_name') or ''} / {plan.get('land_use')}"),
+        ("Zone / Land use", _join([_join([plan.get("zone_code"), plan.get("zone_name")], " "), plan.get("land_use")], " / ")),
         ("Building permission", plan.get("building_permission", {}).get("status")),
         ("Guideline value / sqm", fiscal.get("guideline_value_per_sqm")),
         ("Estimated value", fiscal.get("estimated_value")),
         ("Tax arrears", fiscal.get("tax", {}).get("arrears")),
-        ("Utilities", f"water={util.get('water')} electricity={util.get('electricity')} sewer={util.get('sewer')}"),
-        ("Flags", ", ".join(k for k, v in status.items() if v is True) or "none"),
+        ("Utilities", " · ".join(f"{label} {_yn(util.get(key))}" for label, key in
+                                 (("Water", "water"), ("Electricity", "electricity"), ("Sewer", "sewer")))),
+        ("Flags", ", ".join(k.removeprefix("has_").replace("_", " ") for k, v in status.items() if v is True) or "none"),
     ]
     table = "".join(f"<tr><th>{_e(k)}</th><td>{v if k == 'Owner(s)' else _e(v)}</td></tr>" for k, v in rows)
     prov = "".join(

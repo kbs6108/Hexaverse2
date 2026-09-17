@@ -5,7 +5,7 @@ import { useAuth, roleAtLeast } from '@/lib/auth';
 import { Loading } from '@/components/Spinner';
 import { ErrorNote } from '@/components/EmptyState';
 import { Callout } from '@/components/Section';
-import { fmtDate, titleCase } from '@/lib/format';
+import { fmtDate, fmtVal, titleCase } from '@/lib/format';
 import { Badge, type Tone } from '@/components/Badge';
 
 const srcTone: Record<string, Tone> = { revenue: 'primary', registration: 'slate', planning: 'amber', fiscal: 'neutral', legal: 'brick', utilities: 'neutral', landstack: 'violet', satellite: 'brick' };
@@ -38,7 +38,7 @@ export function Timeline({ ulpin }: { ulpin: string }) {
           <p className="mt-0.5 text-sm font-medium">{e.title}</p>
           {e.detail && Object.keys(e.detail).length > 0 && (
             <p className="text-xs text-ink-3">
-              {Object.entries(e.detail).slice(0, 4).map(([k, v]) => `${titleCase(k)}: ${String(v)}`).join(' · ')}
+              {Object.entries(e.detail).slice(0, 4).map(([k, v]) => `${titleCase(k)}: ${fmtVal(v)}`).join(' · ')}
             </p>
           )}
         </li>

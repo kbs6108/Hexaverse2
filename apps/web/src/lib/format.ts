@@ -4,6 +4,17 @@ const num = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 1 });
 export const fmtINR = (v: number | null | undefined) => (v === null || v === undefined ? '—' : inr.format(v));
 export const fmtNum = (v: number | null | undefined, unit = '') =>
   v === null || v === undefined ? '—' : `${num.format(v)}${unit ? ` ${unit}` : ''}`;
+/** Human form of an arbitrary backend value for inline "key: value" lines. */
+export const fmtVal = (v: unknown): string =>
+  v === null || v === undefined || v === ''
+    ? '—'
+    : typeof v === 'boolean'
+      ? v
+        ? 'yes'
+        : 'no'
+      : typeof v === 'number'
+        ? num.format(v)
+        : String(v);
 export const fmtArea = (sqm: number | null | undefined) => {
   if (sqm === null || sqm === undefined) return '—';
   const cents = sqm / 40.4686;

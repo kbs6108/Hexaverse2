@@ -12,7 +12,7 @@ import { Loading } from '@/components/Spinner';
 import { EmptyState, ErrorNote } from '@/components/EmptyState';
 import { Badge } from '@/components/Badge';
 import { toast } from '@/components/Toast';
-import { fmtDate, relTime, titleCase } from '@/lib/format';
+import { fmtDate, fmtVal, relTime, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
 
 export function AdminConsole() {
@@ -81,7 +81,7 @@ function Consistency() {
                   <tr key={`${f.ulpin}-${f.field}-${i}`} className="border-t border-line">
                     <td className="px-4 py-2"><span className="font-medium">{f.survey_no ? `Sy. ${f.survey_no}` : ''}</span> <span className="font-mono text-xs text-ink-3">{f.ulpin}</span></td>
                     <td className="px-3 py-2">{titleCase(f.field)}</td>
-                    <td className="px-3 py-2 text-ink-2">{Object.entries(f.values).map(([k, v]) => `${titleCase(k)}: ${String(v)}`).join(' · ')}</td>
+                    <td className="px-3 py-2 text-ink-2">{Object.entries(f.values).map(([k, v]) => `${titleCase(k)}: ${fmtVal(v)}`).join(' · ')}</td>
                     <td className="px-3 py-2"><Badge tone={f.severity === 'high' ? 'brick' : 'amber'}>{titleCase(f.severity ?? 'medium')}</Badge></td>
                     <td className="px-3 py-2 text-right"><Link to="/map" search={{ ulpin: f.ulpin }} className="text-primary underline-offset-2 hover:underline">Open parcel</Link></td>
                   </tr>
