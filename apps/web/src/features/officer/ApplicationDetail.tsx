@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { ExternalLink, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, Sparkles, XCircle } from 'lucide-react';
 import { api, qk } from '@/lib/api';
-import type { NextAction } from '@/lib/cdm';
+import type { NextAction, ParcelCDM } from '@/lib/cdm';
 import { Drawer } from '@/components/Drawer';
 import { Button } from '@/components/Button';
 import { Field, Textarea } from '@/components/Field';
@@ -16,6 +16,113 @@ import { fallbackActions, StatusBadge, StatusTimeline } from './ApplicationBits'
 import { fmtDate, titleCase } from '@/lib/format';
 import { statusChips } from '@/components/StatusChip';
 import { useAuth } from '@/lib/auth';
+
+/** One line of decision evidence, credited to the department that holds the record. */
+type EvidenceRow = { tone: 'ok' | 'warn' | 'bad'; text: string; source: string };
+
+const fmtINR = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+
+/** Auto-assembled decision evidence: everything the aggregated CDM already knows,
+ *  flattened to per-source lines so the officer never has to open six systems. */
+function evidenceRows(p: ParcelCDM, appType: string): EvidenceRow[] {
+  const rows: EvidenceRow[] = [];
+  const reg = p.rights.registration;
+  const transferLike = appType === 'mutation' || appType === 'record_correction';
+
+  const ror = p.rights.ror;
+  if (ror) {
+    rows.push({
+      tone: 'ok',
+      text: `RoR: khata ${ror.khata_no ?? '—'} · ${ror.classification ?? '—'} · ${ror.extent_sqm ?? '—'} m² (${ror.ownership_type ?? '—'})`,
+      source: 'revenue',
+    });
+  }
+  if (reg?.status === 'registered') {
+    rows.push({ tone: 'ok', text: `Registered ${reg.deed_type ?? 'deed'} ${reg.doc_no ?? ''} on ${reg.registered_on ?? '—'}`, source: 'registration' });
+  } else {
+    rows.push({ tone: transferLike ? 'warn' : 'ok', text: 'No registered deed on record', source: 'registration' });
+  }
+  if (p.consistency.area_match === false) {
+    rows.push({ tone: 'warn', text: 'Extent differs between the revenue and registration records', source: 'consistency' });
+  }
+  if (p.consistency.owner_match === false) {
+    rows.push({ tone: 'warn', text: 'Owner name differs between the RoR and the latest deed', source: 'consistency' });
+  }
+  for (const e of p.restrictions.encumbrances.filter((e) => e.active)) {
+    rows.push({
+      tone: 'warn',
+      text: `Active ${e.kind}${e.holder ? ` · ${e.holder}` : ''}${e.amount ? ` · ${fmtINR(e.amount)}` : ''}`,
+      source: 'registration',
+    });
+  }
+  for (const d of p.restrictions.disputes) {
+    rows.push({
+      tone: 'bad',
+      text: `Court case ${d.case_no} (${d.status})${d.next_hearing ? ` · next hearing ${d.next_hearing}` : ''}`,
+      source: 'legal',
+    });
+  }
+  const tax = p.fiscal.tax;
+  if (tax) {
+    rows.push(
+      (tax.arrears ?? 0) > 0
+        ? { tone: 'warn', text: `Property tax arrears of ${fmtINR(tax.arrears!)}`, source: 'fiscal' }
+        : { tone: 'ok', text: `Tax paid till ${tax.paid_till ?? '—'}`, source: 'fiscal' },
+    );
+  }
+  if (p.status.pending_mutation) {
+    rows.push({ tone: 'warn', text: 'Another mutation is already pending on this parcel', source: 'revenue' });
+  }
+  for (const a of p.alerts.filter((a) => a.status !== 'resolved')) {
+    rows.push({ tone: a.severity === 'high' ? 'bad' : 'warn', text: `Open alert: ${a.title}`, source: a.kind === 'change_detected' ? 'satellite' : 'system' });
+  }
+  return rows;
+}
+
+const EVIDENCE_ICON = {
+  ok: { icon: CheckCircle2, cls: 'text-primary' },
+  warn: { icon: AlertTriangle, cls: 'text-amber' },
+  bad: { icon: XCircle, cls: 'text-brick' },
+} as const;
+
+function EvidencePanel({ p, appType }: { p: ParcelCDM; appType: string }) {
+  const rows = evidenceRows(p, appType);
+  if (rows.length === 0) return <p className="text-sm text-ink-3">Nothing on record for this parcel.</p>;
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {rows.map((r, i) => {
+        const ic = EVIDENCE_ICON[r.tone];
+        return (
+          <li key={i} className="flex items-start gap-1.5 text-[12.5px] text-ink-2">
+            <ic.icon size={13} className={clsx('mt-0.5 shrink-0', ic.cls)} />
+            <span className="flex-1">{r.text}</span>
+            <span className="mt-0.5 font-mono text-[10px] text-ink-3">{r.source}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** The planning pre-check the applicant ran before submitting (stored in payload.precheck).
+ *  Rendered as one readable line instead of raw JSON; unknown shapes fall back to the dump. */
+function PrecheckLine({ pc }: { pc: unknown }) {
+  if (typeof pc === 'object' && pc !== null && 'permissible' in pc) {
+    const c = pc as { permissible: boolean; zone_code?: string | null; reasons?: string[] };
+    const ic = c.permissible ? EVIDENCE_ICON.ok : EVIDENCE_ICON.bad;
+    return (
+      <p className="mt-2 flex items-start gap-1.5 text-[12.5px] text-ink-2">
+        <ic.icon size={13} className={clsx('mt-0.5 shrink-0', ic.cls)} />
+        <span>
+          Applicant’s zoning check: {c.permissible ? 'permissible' : 'not permissible'}
+          {c.zone_code ? ` in zone ${c.zone_code}` : ''}
+          {c.reasons && c.reasons.length > 0 ? ` — ${c.reasons.join('; ')}` : ''}
+        </span>
+      </p>
+    );
+  }
+  return <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-ground-2 p-2 font-mono text-[11px] text-ink-2">{JSON.stringify(pc, null, 2)}</pre>;
+}
 
 export function ApplicationDetail({ id, onClose }: { id: string | null; onClose: () => void }) {
   const qc = useQueryClient();
@@ -90,10 +197,15 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                 { k: 'Submitted', v: fmtDate(app.created_at, true) },
                 ...Object.entries(app.payload).filter(([, v]) => v !== null && typeof v !== 'object').map(([k, v]) => ({ k: titleCase(k), v: String(v) })),
               ]} />
-              {app.payload.precheck !== undefined && app.payload.precheck !== null && (
-                <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-ground-2 p-2 font-mono text-[11px] text-ink-2">{JSON.stringify(app.payload.precheck, null, 2)}</pre>
-              )}
+              {app.payload.precheck !== undefined && app.payload.precheck !== null && <PrecheckLine pc={app.payload.precheck} />}
             </div>
+
+            {parcel.data && (
+              <div>
+                <SectionTitle>Evidence</SectionTitle>
+                <EvidencePanel p={parcel.data} appType={app.type} />
+              </div>
+            )}
 
             <div>
               <SectionTitle>History</SectionTitle>

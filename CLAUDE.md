@@ -94,7 +94,8 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
-- 2026-09-17 citizen Apply wizard: intent cards + AI pre-check endpoint; new types record_correction & land_complaint (migration 011, 6 triage tests).
+- 2026-09-17 officer decision view: auto-assembled per-source evidence panel + readable zoning-check line in the application drawer.
+- 2026-09-17 `c850129` citizen Apply wizard: intent cards + AI pre-check endpoint; new types record_correction & land_complaint (migration 011, 6 triage tests).
 - 2026-09-17 `30b59e5` web: nav cleanup — un-nested citizen apps panel, dropped redundant back buttons.
 - 2026-09-16 `2621476` chore: dead-code cleanup (OverviewHint, ls_seen_welcome) + actions v5.
 - 2026-09-16 `d4eb974` perf: lazy landing/officer routes (−52% first load), memoized hot lists.
