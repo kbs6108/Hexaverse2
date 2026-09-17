@@ -1,7 +1,7 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import { useEffect, useRef } from 'react';
-import { ArrowLeft, Building2, HelpCircle, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
+import { Building2, HelpCircle, Map as MapIcon, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { roleAtLeast } from '@/lib/auth';
 import { SearchBox } from '@/features/map/SearchBox';
@@ -78,15 +78,7 @@ export function Shell() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="z-30 flex h-12 shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
-        <Link
-          to="/"
-          className="flex size-8 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
-          title="Back to landing"
-          aria-label="Back to landing"
-        >
-          <ArrowLeft size={17} />
-        </Link>
-        <Link to="/" className="flex items-center gap-2 rounded-md pr-2 text-ink hover:opacity-90" aria-label="Land Stack home">
+        <Link to="/" className="flex items-center gap-2 rounded-md pr-2 text-ink hover:opacity-90" aria-label="Land Stack home" title="Back to landing">
           <LogoMark />
           <span className="font-display text-[17px] font-semibold tracking-tight">Land Stack</span>
           <span className="hidden rounded-sm border border-line px-1 font-mono text-[10px] uppercase text-ink-3 lg:inline">AP · TN · TG demo</span>

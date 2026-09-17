@@ -1,8 +1,6 @@
-import { Link, useRouter, useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import {
-  ArrowLeft,
-  ArrowRight,
   BookOpen,
   Building2,
   Compass,
@@ -44,7 +42,6 @@ export function QuickNav() {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -92,35 +89,15 @@ export function QuickNav() {
       >
         <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3">All pages</p>
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => router.history.back()}
-              title="Back"
-              aria-label="Go back"
-              className="flex size-7 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
-            >
-              <ArrowLeft size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={() => router.history.forward()}
-              title="Forward"
-              aria-label="Go forward"
-              className="flex size-7 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
-            >
-              <ArrowRight size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={closeNow}
-              title="Close"
-              aria-label="Close quick navigation"
-              className="flex size-7 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
-            >
-              <X size={15} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={closeNow}
+            title="Close"
+            aria-label="Close quick navigation"
+            className="flex size-7 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
+          >
+            <X size={15} />
+          </button>
         </div>
         <ul className="flex flex-col gap-0.5 p-2">
           {PAGES.filter((p) => (!p.min || roleAtLeast(role, p.min)) && !(p.inRail && railVisible(pathname))).map((p) => {

@@ -57,6 +57,11 @@ export function CitizenHome() {
                   </h2>
                   <p className="mt-1 text-sm text-ink-2">{c.body}</p>
                 </div>
+              </div>
+            </Card>
+          </Link>
+        ))}
+      </div>
       {mine.data && mine.data.length > 0 && (
         <Card className="mt-4 p-4">
           <div className="mb-2 flex items-center justify-between">
@@ -77,11 +82,6 @@ export function CitizenHome() {
           </ul>
         </Card>
       )}
-              </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
       <p className="mt-8 text-xs text-ink-3">
         Owner names are shown masked unless you are the owner or hold a consent token. Every profile section shows which department it came from and when.
       </p>
