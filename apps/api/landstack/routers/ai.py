@@ -25,6 +25,11 @@ class AdviceBody(BaseModel):
     id: str
 
 
+class PreCheckBody(BaseModel):
+    ulpin: str
+    type: str
+
+
 @router.post("/parcel-brief")
 async def parcel_brief(
     body: ParcelBriefBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
@@ -32,6 +37,19 @@ async def parcel_brief(
     """Risk brief for one parcel — NVIDIA-generated narrative when configured, rule engine otherwise.
     Built from the CDM the caller is allowed to see (masking applies before the model)."""
     return await ai_assist.parcel_brief(db, body.ulpin, principal)
+
+
+@router.post("/pre-check")
+async def pre_check(
+    body: PreCheckBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Instant pre-submission triage for the citizen Apply wizard: blockers / warnings / notes
+    from the deterministic rule engine. Never prevents submission — the officer decides."""
+    from landstack.services import workflow
+
+    if body.type not in workflow.APPLICATION_TYPES:
+        raise AppError(422, "unknown_type", f"unknown application type: {body.type}")
+    return await ai_assist.pre_check(db, body.ulpin, body.type, principal)
 
 
 @router.post("/application-advice")

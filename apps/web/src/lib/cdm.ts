@@ -244,7 +244,14 @@ export interface VerifyOwnershipResult {
   compared: string[];
 }
 
-export type ApplicationType = 'mutation' | 'building_permission' | 'ownership_verification' | 'field_review' | 'boundary_correction';
+export type ApplicationType =
+  | 'mutation'
+  | 'building_permission'
+  | 'ownership_verification'
+  | 'field_review'
+  | 'boundary_correction'
+  | 'record_correction'
+  | 'land_complaint';
 
 /* ---------- Boundary correction (bounded parcel editing, CONTRACTS §6/§8) ---------- */
 
@@ -280,6 +287,23 @@ export interface ParcelBrief {
   findings: AIFinding[];
   narrative: string;
   recommendations: string[];
+}
+
+export interface PreCheckItem {
+  text: string;
+  action?: string | null;
+}
+
+export interface PreCheck {
+  ulpin: string;
+  type: string;
+  engine: string;
+  risk_score: number;
+  risk_level: 'low' | 'elevated' | 'high' | string;
+  blockers: PreCheckItem[];
+  warnings: PreCheckItem[];
+  notes: PreCheckItem[];
+  ok_to_submit: boolean;
 }
 
 export interface ApplicationAdvice {

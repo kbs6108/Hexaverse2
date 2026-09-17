@@ -31,7 +31,7 @@ const CARDS = [
   { to: '/map', label: 'Search parcel', body: 'Find a parcel by survey number, ULPIN or khata and see its aggregated profile on the map.', icon: MapPinned },
   { to: '/citizen/verify', label: 'Verify ownership', body: 'Check whether a name matches the record of rights and latest registered deed — without exposing the owner.', icon: ShieldCheck },
   { to: '/citizen/track', label: 'Track application', body: 'Follow mutation, building-permission and verification requests through each department step.', icon: ListChecks },
-  { to: '/citizen/request', label: 'Request a service', body: 'Apply for a mutation or a building permission with an instant planning pre-check.', icon: FileSearch },
+  { to: '/citizen/request', label: 'Apply', body: 'Transfer ownership, fix a record mistake, seek building permission or raise a complaint — checked against the record before you submit.', icon: FileSearch },
 ] as const;
 
 export function CitizenHome() {

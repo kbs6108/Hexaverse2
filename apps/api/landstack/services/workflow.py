@@ -21,13 +21,23 @@ from landstack.services.cache import TTLCache
 
 log = logging.getLogger("landstack.workflow")
 
-APPLICATION_TYPES = ("mutation", "building_permission", "ownership_verification", "field_review", "boundary_correction")
+APPLICATION_TYPES = (
+    "mutation",
+    "building_permission",
+    "ownership_verification",
+    "field_review",
+    "boundary_correction",
+    "record_correction",
+    "land_complaint",
+)
 INITIAL_STATUS = {
     "mutation": "submitted",
     "building_permission": "submitted",
     "field_review": "open",
     "ownership_verification": "completed",
     "boundary_correction": "submitted",
+    "record_correction": "submitted",
+    "land_complaint": "submitted",
 }
 DEFAULT_DEPARTMENT = {
     "mutation": "revenue",
@@ -35,6 +45,8 @@ DEFAULT_DEPARTMENT = {
     "ownership_verification": "registration",
     "field_review": None,
     "boundary_correction": "revenue",
+    "record_correction": "revenue",
+    "land_complaint": "revenue",
 }
 
 _transitions_cache: TTLCache[list[dict[str, Any]]] = TTLCache(ttl_s=60.0)

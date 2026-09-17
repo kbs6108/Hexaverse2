@@ -13,10 +13,12 @@ const STATUS_TONE: Record<string, Tone> = {
   site_inspection: 'amber',
   open: 'slate',
   assigned: 'amber',
+  in_review: 'amber',
   approved: 'primary',
   resolved: 'primary',
   returned: 'violet',
   rejected: 'brick',
+  dismissed: 'brick',
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -26,7 +28,7 @@ export function StatusBadge({ status }: { status: string }) {
 /** Fallback when the API does not include `next_actions` (CONTRACTS §8 transitions). */
 export function fallbackActions(type: string, status: string): NextAction[] {
   const mk = (pairs: [string, string][]): NextAction[] =>
-    pairs.map(([to, label]) => ({ action: to, label, to_status: to, is_terminal: ['approved', 'rejected', 'resolved'].includes(to) }));
+    pairs.map(([to, label]) => ({ action: to, label, to_status: to, is_terminal: ['approved', 'rejected', 'resolved', 'dismissed'].includes(to) }));
   if (type === 'mutation') {
     if (status === 'submitted') return mk([['document_check', 'Start document check']]);
     if (status === 'document_check') return mk([['field_verification', 'Send for field verification'], ['returned', 'Return to applicant']]);
@@ -40,6 +42,14 @@ export function fallbackActions(type: string, status: string): NextAction[] {
   if (type === 'field_review') {
     if (status === 'open') return mk([['assigned', 'Assign']]);
     if (status === 'assigned') return mk([['resolved', 'Resolve']]);
+  }
+  if (type === 'record_correction') {
+    if (status === 'submitted') return mk([['document_check', 'Start document check']]);
+    if (status === 'document_check') return mk([['approved', 'Approve correction'], ['returned', 'Return to applicant'], ['rejected', 'Reject']]);
+  }
+  if (type === 'land_complaint') {
+    if (status === 'submitted') return mk([['in_review', 'Take up for review']]);
+    if (status === 'in_review') return mk([['resolved', 'Mark resolved'], ['dismissed', 'Dismiss']]);
   }
   if (type === 'boundary_correction') {
     if (status === 'submitted') return mk([['geometry_check', 'Start geometry check']]);

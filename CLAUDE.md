@@ -77,6 +77,11 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   (true base −3.2 m, rendered as a slab at grade).
 - Imagery basemap works with zero keys (public Esri World Imagery tiles; keyed service if
   `VITE_ESRI_API_KEY` is set).
+- **Citizen Apply wizard** (Sep 2026): `/citizen/request` is one intent-based page — pick a parcel,
+  then Transfer ownership / Fix a record mistake / Build / Raise a complaint; two new citizen-fileable
+  types `record_correction` and `land_complaint` (migration 011) run through the same workflow engine;
+  `POST /landstack/ai/pre-check` triages every application before submission (deterministic rules —
+  blockers/warnings/notes, never blocks; officer decides). Tag `demo-stable-v1` marks the pre-wizard state.
 - **Refinement pass** (Phases 0–5, Sep 2026): browsing simplified (context-aware QuickNav,
   role-aware layer tiers), one design family ("poster" landing / "tool" app on shared emerald
   tokens via `.landing-scope`), landing bento grid + FaintTelemetry hero, docs/help made current
@@ -89,6 +94,8 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-17 citizen Apply wizard: intent cards + AI pre-check endpoint; new types record_correction & land_complaint (migration 011, 6 triage tests).
+- 2026-09-17 `30b59e5` web: nav cleanup — un-nested citizen apps panel, dropped redundant back buttons.
 - 2026-09-16 `2621476` chore: dead-code cleanup (OverviewHint, ls_seen_welcome) + actions v5.
 - 2026-09-16 `d4eb974` perf: lazy landing/officer routes (−52% first load), memoized hot lists.
 - 2026-09-16 `9e11d4b` (team) FaintTelemetry hero + landing typography restyle (+`9c493f7` type fix).

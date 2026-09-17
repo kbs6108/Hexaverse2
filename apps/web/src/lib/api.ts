@@ -22,6 +22,7 @@ import type {
   ParcelBrief,
   ParcelCDM,
   PlanningCheck,
+  PreCheck,
   ReportIssued,
   SearchHit,
   Stats,
@@ -136,6 +137,8 @@ export const api = {
   proposeBoundary: (ulpin: string, geometry: Record<string, unknown>, reason: string) =>
     request<BoundaryProposalResult>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary`, { method: 'POST', body: { geometry, reason } }),
   requestConsent: (ulpin: string) => request<{ ok: boolean }>('/landstack/consents/request', { method: 'POST', body: { ulpin } }),
+  preCheck: (ulpin: string, type: ApplicationType) =>
+    request<PreCheck>('/landstack/ai/pre-check', { method: 'POST', body: { ulpin, type } }),
 
   /* ---------- Officer+ ---------- */
   timeline: (ulpin: string) =>
@@ -212,4 +215,5 @@ export const qk = {
   applicationAdvice: (id: string) => ['ai_advice', id] as const,
   verifyReport: (id: string) => ['verify', id] as const,
   planningCheck: (ulpin: string, use: string, floors: number) => ['planning_check', ulpin, use, floors] as const,
+  preCheck: (ulpin: string, type: string, identity: string) => ['ai_precheck', ulpin, type, identity] as const,
 };

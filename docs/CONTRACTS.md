@@ -109,7 +109,7 @@ Key tables (columns are authoritative in SQL; names here are what the API relies
 - landstack.consents(id, ulpin, granted_to_uid, granted_by, expires_at)
 - landstack.applications(id text PK 'APP-2026-000123', ulpin, type, applicant_uid, applicant_name, status,
   payload jsonb, assigned_department, created_at, updated_at)
-  type ∈ mutation | building_permission | ownership_verification | field_review | boundary_correction
+  type ∈ mutation | building_permission | ownership_verification | field_review | boundary_correction | record_correction | land_complaint
 - landstack.transitions(type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
 - landstack.audit_log(id bigserial, ts, actor_uid, actor_name, actor_role, action, entity_type, entity_id,
   ulpin, before jsonb, after jsonb, source) — INSERT only for app role
@@ -188,6 +188,10 @@ Officer+: `GET /landstack/parcels/{ulpin}/timeline`, `GET /landstack/queue?depar
 Any signed-in: `POST /landstack/ai/parcel-brief {ulpin}` → risk score/level, findings, narrative, recommendations —
 NVIDIA Build model when NVIDIA_API_KEY is set, deterministic rule engine otherwise; response carries `engine`.
 The web auto-runs the brief on flagged parcels and the advice on any open application.
+Any signed-in: `POST /landstack/ai/pre-check {ulpin, type}` → pre-submission triage for the citizen Apply wizard:
+`{ulpin, type, engine:"rules", risk_score, risk_level, blockers[], warnings[], notes[], ok_to_submit}` (items are
+`{text, action?}`). Always the deterministic rule engine; never prevents submission — the officer decides.
+422 unknown_type if `type` is not a known application type. The web auto-runs it once a parcel + intent are chosen.
 Admin: `GET /landstack/consistency`, `GET /landstack/connectors`, `GET /landstack/adapters` (mappings from yaml),
 `POST /landstack/consents/grant {ulpin, uid, hours}`, `POST /landstack/admin/simulate/deed {ulpin, claimant}` (calls registration POST /deeds),
 `POST /landstack/admin/demo-reset`.
@@ -216,6 +220,8 @@ field_review: open → assigned → resolved (admin assigns, revenue/planning of
 boundary_correction: submitted → geometry_check → approved | returned | rejected (revenue officer; migration 008).
   Approval RE-validates the proposal (409 boundary_invalid if it no longer passes), then applies the geometry to
   landstack.parcels (area recomputed) and syncs the RoR extent via revenue POST /extent. Fully audited.
+record_correction: submitted → document_check → approved | returned | rejected (revenue officer; migration 011); returned → submitted (citizen resubmits)
+land_complaint: submitted → in_review → resolved | dismissed (any officer; migration 011; queued under revenue by default)
 ownership_verification: instant (no rows in transitions)
 On mutation approved: gateway calls revenue POST /mutations; on building_permission approved: planning POST /permissions.
 System-initiated mutation (from deed event where claimant != RoR owner): type=mutation, status=submitted, applicant_name=claimant, payload.system_initiated=true.

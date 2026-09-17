@@ -124,6 +124,73 @@ def risk_level(score: int) -> str:
     return "high" if score >= 40 else "elevated" if score >= 15 else "low"
 
 
+def triage(cdm: dict[str, Any], app_type: str) -> dict[str, Any]:
+    """Pre-submission triage for the citizen wizard — pure and deterministic (no LLM),
+    so the wizard can show it instantly. Blockers say "this will very likely be rejected
+    and why"; the citizen may still submit (the officer decides, not the machine)."""
+    st = cdm.get("status") or {}
+    cons = cdm.get("consistency") or {}
+    blockers: list[dict[str, Any]] = []
+    warnings: list[dict[str, Any]] = []
+    notes: list[dict[str, Any]] = []
+    transfer_like = app_type in ("mutation", "record_correction")
+
+    def add(bucket: list[dict[str, Any]], text: str, action: str | None = None) -> None:
+        bucket.append({"text": text, "action": action})
+
+    if st.get("has_dispute"):
+        if transfer_like:
+            add(blockers, "An active court case is recorded on this parcel; a transfer or correction is normally held until the case is disposed.",
+                "Attach the court order if the case is already decided, or wait for disposal.")
+        else:
+            add(notes, "An active court case is recorded on this parcel — the officer will see it alongside your request.")
+    if st.get("pending_mutation"):
+        if app_type == "mutation":
+            add(blockers, "Another ownership transfer is already pending on this parcel.",
+                "Track the existing application before filing a new one — a duplicate will be returned.")
+        else:
+            add(warnings, "An ownership transfer is pending on this parcel; your request may be processed after it.")
+    if st.get("has_mortgage") and transfer_like:
+        add(warnings, "An active mortgage is recorded on this parcel.",
+            "A transfer needs the lender's consent or a discharge certificate — attach it if you have one.")
+    arrears = float(st.get("tax_arrears") or 0)
+    if arrears > 0:
+        add(warnings, f"Property-tax arrears of ₹{arrears:,.0f} are recorded.",
+            "Clearing dues first usually speeds up processing.")
+    if st.get("change_alert") and app_type == "building_permission":
+        add(warnings, "Satellite imagery flags possible unrecorded construction on this parcel.",
+            "Expect a site inspection; existing structures will be compared with the permission record.")
+    if cons.get("area_match") is False and app_type == "record_correction":
+        add(notes, "The recorded extent already differs between the revenue and registration records — attach any measurement or deed evidence to support your correction.")
+    if cons.get("owner_match") is False and transfer_like:
+        add(warnings, "The owner name differs between the RoR and the latest registered deed.",
+            "The officer will reconcile the records during the document check.")
+    reg = (cdm.get("rights") or {}).get("registration") or {}
+    if reg.get("status") == "unregistered" and app_type == "mutation":
+        add(warnings, "No registered deed is on record for this parcel.",
+            "A mutation normally needs the registered deed; attach it or register the transaction first.")
+
+    _, score = rule_findings(cdm)
+    return {
+        "type": app_type,
+        "engine": "rules",
+        "risk_score": score,
+        "risk_level": risk_level(score),
+        "blockers": blockers,
+        "warnings": warnings,
+        "notes": notes,
+        "ok_to_submit": not blockers,
+    }
+
+
+async def pre_check(db: DBLike, ulpin: str, app_type: str, principal: Principal) -> dict[str, Any]:
+    """Triage against the CDM the caller is allowed to see (masking applies first)."""
+    from landstack.services import aggregator
+
+    cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
+    return {"ulpin": ulpin, **triage(cdm, app_type)}
+
+
 def _fact_sheet(cdm: dict[str, Any], findings: list[dict[str, Any]]) -> str:
     ids = cdm.get("identifiers") or {}
     keep = {
