@@ -76,7 +76,7 @@ export function HeroSection() {
         {/* Background Shader Lines animation: Living topographic contours & elevation waves */}
         <ShaderAnimation />
         {/* Subtle atmospheric veil ensuring high contrast and legibility for foreground text */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ground/25 via-ground/10 to-ground/85" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ground/15 via-transparent to-ground/80" />
 
       <div id="top" className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1400px] items-center px-6 pb-16 pt-32 sm:px-10 lg:px-16">
         <div className="max-w-5xl">
