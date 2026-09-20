@@ -548,6 +548,8 @@ export interface StoryParcel {
   note?: string;
   owner_name?: string;
   land_use?: string;
+  state?: string;
+  village?: string;
   centroid?: [number, number];
   bbox?: [number, number, number, number];
 }

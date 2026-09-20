@@ -83,9 +83,25 @@ export function ParcelPicker({ id, value, onChange }: { id: string; value: strin
             <>
               <p className="flex items-center gap-1 border-b border-t border-line px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-3 first:border-t-0"><Sparkles size={11} /> Demo parcels</p>
               {stories.map((s) => (
-                <button key={s.ulpin} type="button" onClick={() => pick(s.ulpin!)} className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[13px] hover:bg-primary-soft/50">
-                  <span className="font-medium">Sy. {s.survey_no}<span className="ml-1 text-[11px] text-ink-3">{(s.title ?? s.key ?? '').toString().replace(/_/g, ' ')}</span></span>
-                  <span className="font-mono text-[10.5px] text-ink-3">{s.ulpin}</span>
+                <button
+                  key={s.ulpin}
+                  type="button"
+                  onClick={() => pick(s.ulpin!)}
+                  className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[13px] hover:bg-primary-soft/50 transition-colors cursor-pointer"
+                >
+                  <div className="min-w-0 flex items-center gap-1.5 truncate">
+                    <span className="font-medium shrink-0">Sy. {s.survey_no}</span>
+                    <span className="text-[11px] text-ink-3 truncate">
+                      {(s.title ?? s.key ?? '').toString().replace(/_/g, ' ')}
+                      {s.owner_name ? ` · ${s.owner_name}` : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {s.state && (
+                      <span className="text-[9.5px] font-mono px-1 py-0.2 rounded bg-ground-2 text-ink-3 font-semibold">{s.state}</span>
+                    )}
+                    <span className="font-mono text-[10.5px] text-ink-3">{s.ulpin}</span>
+                  </div>
                 </button>
               ))}
             </>
