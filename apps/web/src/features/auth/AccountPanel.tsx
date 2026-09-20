@@ -116,10 +116,15 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
               </div>
 
               {/* Language Selection Card */}
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-2.5 flex items-center gap-1.5">
-                  <Globe size={14} className="text-primary" /> {t('account.switchLanguage')}
-                </h4>
+              <div className="rounded-2xl border border-line bg-panel-2/70 p-4 shadow-2xs">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1.5">
+                    <Globe size={14} className="text-primary" /> {t('account.switchLanguage')}
+                  </h4>
+                  <span className="text-[11px] font-bold text-primary px-2 py-0.5 rounded-full bg-primary-soft">
+                    {languages.find((l) => l.code === locale)?.native}
+                  </span>
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   {languages.map((lang) => {
                     const isSelected = locale === lang.code;
@@ -129,14 +134,16 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                         type="button"
                         onClick={() => setLocale(lang.code)}
                         className={clsx(
-                          'flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer select-none text-center',
+                          'flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer select-none text-center relative group',
                           isSelected
-                            ? 'bg-primary-soft/80 border-primary text-primary font-bold shadow-xs'
+                            ? 'bg-primary text-primary-ink border-primary font-bold shadow-xs'
                             : 'bg-panel border-line text-ink-2 hover:bg-ground-2 hover:border-line-strong',
                         )}
                       >
                         <span className="text-sm font-semibold">{lang.native}</span>
-                        <span className="text-[10.5px] opacity-75">{lang.label}</span>
+                        <span className={clsx('text-[10.5px]', isSelected ? 'opacity-90' : 'opacity-70')}>
+                          {lang.label}
+                        </span>
                       </button>
                     );
                   })}

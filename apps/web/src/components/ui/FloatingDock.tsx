@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Maximize2, Minimize2, HelpCircle, Search } from 'lucide-react';
+import { Maximize2, Minimize2, HelpCircle, Search, Globe } from 'lucide-react';
 import { LogoMark } from '@/app/Shell';
 import { useAuth, roleAtLeast } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
@@ -163,33 +163,6 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
 
         {/* Right Action Controls */}
         <div className="relative z-10 flex items-center gap-2 shrink-0 ml-auto">
-          {/* Language Switcher 1-Click Pill (EN | తె | हि) */}
-          <div
-            role="radiogroup"
-            aria-label="Language selector"
-            className="flex items-center rounded-full bg-[#E9E5D8]/70 border border-[#D5D2C7] p-0.5 shadow-2xs"
-          >
-            {languages.map((lang) => (
-              <button
-                key={lang.code}
-                type="button"
-                role="radio"
-                aria-checked={locale === lang.code}
-                onClick={() => setLocale(lang.code)}
-                title={`Switch language to ${lang.native} (${lang.label})`}
-                aria-label={lang.label}
-                className={cn(
-                  'px-2 py-0.5 text-[10.5px] font-bold rounded-full transition-all cursor-pointer select-none',
-                  locale === lang.code
-                    ? 'bg-[#23483A] text-[#F4F1E7] shadow-xs'
-                    : 'text-[#6F7768] hover:text-[#18231F]',
-                )}
-              >
-                {lang.short}
-              </button>
-            ))}
-          </div>
-
           {/* Search Popdown Toggle Button */}
           <button
             type="button"
@@ -209,11 +182,12 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
           {/* Guide minimalist text button */}
           <Link
             to="/help"
-            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#6F7768] hover:text-[#18231F] hover:bg-[#E9E5D8]/70 rounded-full transition-colors cursor-pointer"
+            className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#6F7768] hover:text-[#18231F] hover:bg-[#E9E5D8]/70 rounded-full transition-colors cursor-pointer"
             title={t('nav.guide')}
+            aria-label={t('nav.guide')}
           >
             <HelpCircle size={13} />
-            <span>{t('nav.guide')}</span>
+            <span className="hidden lg:inline">{t('nav.guide')}</span>
           </Link>
 
           {/* Cinematic Fullscreen Toggle with Expand SVG */}
@@ -227,18 +201,23 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>
 
-          {/* Profile Pill: High-contrast Forest Green (#23483A) with slight vertical lift on hover */}
+          {/* Profile Pill: Opens Profile & Account menu (where language switching is located) */}
           <button
             type="button"
             onClick={onOpenAccount}
-            className="flex items-center gap-2 bg-[#23483A] text-[#F4F1E7] pl-2 pr-3 py-1 rounded-full text-xs font-semibold shadow-xs hover:bg-[#23483A]/90 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#176B52]"
+            className="flex items-center gap-2 bg-[#23483A] text-[#F4F1E7] pl-2 pr-2.5 py-1 rounded-full text-xs font-semibold shadow-xs hover:bg-[#23483A]/90 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#176B52]"
             aria-label={t('nav.account')}
+            title={`${t('nav.account')} • ${languages.find((l) => l.code === locale)?.native || 'Language'}`}
           >
             <span className="flex size-5 items-center justify-center rounded-full bg-[#176B52] text-[10px] font-bold text-[#F4F1E7]">
               {userInitials}
             </span>
             <span className="hidden sm:inline font-medium tracking-tight truncate max-w-[120px]">
               {userDisplayName}
+            </span>
+            <span className="flex items-center gap-1 text-[10.5px] font-bold px-1.5 py-0.5 rounded-full bg-[#176B52]/70 text-[#E9E5D8] border border-[#176B52]">
+              <Globe size={10} className="text-[#D4AF37]" />
+              <span>{languages.find((l) => l.code === locale)?.short || 'EN'}</span>
             </span>
           </button>
         </div>

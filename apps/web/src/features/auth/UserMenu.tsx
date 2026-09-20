@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ChevronDown, LogOut, UserRound } from 'lucide-react';
+import { ChevronDown, LogOut, UserRound, Globe } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
@@ -14,7 +14,7 @@ const roleTone = { citizen: 'neutral', officer: 'slate', admin: 'violet' } as co
 /** Top-right identity control. In dev mode this is the RoleSwitcher (CONTRACTS §3/§10). */
 export function UserMenu() {
   const { user, mode, devUsers, setDevUser, signOut } = useAuth();
-  const { t } = useTranslation();
+  const { t, locale, setLocale, languages } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
@@ -68,6 +68,38 @@ export function UserMenu() {
       </button>
       {open && (
         <div role="menu" className="fade-up absolute right-0 mt-1 w-80 max-h-[420px] overflow-y-auto scroll-thin rounded-xl border border-line bg-panel p-1.5 shadow-panel">
+          {/* Quick Language Switcher */}
+          <div className="p-2 border-b border-line/60 bg-ground-2/40 rounded-lg mb-1">
+            <div className="flex items-center justify-between mb-1.5 px-0.5">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3 flex items-center gap-1">
+                <Globe size={12} className="text-primary" /> {t('account.switchLanguage')}
+              </span>
+              <span className="text-[10px] font-bold text-primary px-1.5 py-0.2 rounded bg-primary-soft">
+                {languages.find((l) => l.code === locale)?.native}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              {languages.map((lang) => {
+                const isSelected = locale === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => setLocale(lang.code)}
+                    className={clsx(
+                      'px-1.5 py-1 text-xs rounded-md font-semibold text-center transition-all cursor-pointer select-none',
+                      isSelected
+                        ? 'bg-primary text-primary-ink shadow-xs'
+                        : 'bg-panel border border-line/70 hover:bg-ground text-ink-2',
+                    )}
+                  >
+                    {lang.native}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {mode === 'dev' ? (
             <>
               <div className="px-2 pt-1 pb-1.5 border-b border-line/60 flex items-center justify-between">
