@@ -6,6 +6,7 @@ import { LogoMark } from '@/app/Shell';
 import { useAuth, roleAtLeast } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { Kbd } from '@/components/Kbd';
 import { SearchBox } from '@/features/map/SearchBox';
 import { CinematicLetterbox, useCinematicTransition } from './CinematicLetterbox';
 
@@ -163,20 +164,22 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
 
         {/* Right Action Controls */}
         <div className="relative z-10 flex items-center gap-2 shrink-0 ml-auto">
-          {/* Search Popdown Toggle Button */}
+          {/* Search Popdown Toggle Button with Kbd shortcut */}
           <button
             type="button"
             onClick={() => setIsSearchOpen((v) => !v)}
             title={isSearchOpen ? 'Close search (Esc)' : 'Search parcels (/ or ⌘K)'}
             aria-label={isSearchOpen ? 'Close search' : 'Search parcels'}
             className={cn(
-              'flex size-7 items-center justify-center rounded-full transition-all cursor-pointer select-none',
+              'flex items-center gap-1.5 h-7 px-2.5 rounded-full transition-all cursor-pointer select-none text-xs font-semibold',
               isSearchOpen
                 ? 'bg-[#23483A] text-[#F4F1E7] border border-[#23483A] shadow-xs'
-                : 'bg-[#E9E5D8]/70 hover:bg-[#E1E6DE] text-[#18231F] border border-[#D5D2C7]',
+                : 'bg-[#E9E5D8]/70 hover:bg-[#E1E6DE] text-[#18231F] border border-[#D5D2C7] hover:border-[#176B52]/40',
             )}
           >
-            <Search size={13} />
+            <Search size={12} className={isSearchOpen ? 'text-[#B38A4C]' : 'text-[#176B52]'} />
+            <span className="hidden sm:inline text-[11px] text-[#4B5345]">Search</span>
+            <Kbd className="hidden md:inline-flex text-[8.5px] px-1 py-0 leading-none">⌘K</Kbd>
           </button>
 
           {/* Guide minimalist text button */}

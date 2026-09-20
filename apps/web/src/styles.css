@@ -363,3 +363,31 @@ code, kbd, .mono { font-family: var(--font-mono); }
   color: var(--primary);
   font-weight: 600;
 }
+
+/* Glass depth & specular border highlights (Manus / Apple inspired) */
+.glass-depth {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.65), 0 1px 3px 0 rgba(24, 35, 31, 0.04), 0 8px 24px -4px rgba(24, 35, 31, 0.06);
+}
+
+.specular-border {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.75);
+}
+
+/* Subtle single-sweep button shine on hover */
+.button-shine {
+  position: relative;
+  overflow: hidden;
+}
+.button-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.button-shine:hover::after {
+  transform: translateX(100%);
+}
+

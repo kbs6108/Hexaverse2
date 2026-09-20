@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Outlet, useRouterState } from '@tanstack/react-router';
+import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { ArrowRight, FileSearch, ListChecks, MapPin, MapPinned, Megaphone, ShieldCheck } from 'lucide-react';
@@ -8,6 +8,8 @@ import { Textarea } from '@/components/Field';
 import { toast } from '@/components/Toast';
 import { SpotlightCard } from '@/components/SpotlightCard';
 import { Marquee } from '@/components/Marquee';
+import { SlidingTabs } from '@/components/SlidingTabs';
+import { LiveIndicator } from '@/components/LiveIndicator';
 import { api, qk, ApiError } from '@/lib/api';
 import type { Notice } from '@/lib/cdm';
 import { useAuth } from '@/lib/auth';
@@ -18,35 +20,35 @@ import { useTranslation } from '@/lib/i18n';
 
 export function CitizenLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const currentTab = pathname.startsWith('/citizen/verify')
+    ? '/citizen/verify'
+    : pathname.startsWith('/citizen/request')
+      ? '/citizen/request'
+      : pathname.startsWith('/citizen/track')
+        ? '/citizen/track'
+        : '/citizen';
+
   const navItems = [
-    { to: '/citizen', label: t('citizen.navOverview'), exact: true },
-    { to: '/citizen/verify', label: t('citizen.navVerify'), exact: false },
-    { to: '/citizen/request', label: t('citizen.navApply'), exact: false },
-    { to: '/citizen/track', label: t('citizen.navTrack'), exact: false },
+    { id: '/citizen', label: t('citizen.navOverview') },
+    { id: '/citizen/verify', label: t('citizen.navVerify') },
+    { id: '/citizen/request', label: t('citizen.navApply') },
+    { id: '/citizen/track', label: t('citizen.navTrack') },
   ];
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-6">
-      <nav aria-label="Citizen sections" className="mb-6 flex flex-wrap gap-2 border-b border-line pb-3">
-        {navItems.map((n) => {
-          const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
-          return (
-            <Link
-              key={n.to}
-              to={n.to}
-              search={{}}
-              aria-current={active ? 'page' : undefined}
-              className={clsx(
-                'rounded-full px-4 py-1.5 text-xs font-semibold transition-all shadow-xs',
-                active ? 'bg-primary text-white shadow-sm' : 'border border-line bg-panel text-ink-2 hover:bg-ground-2 hover:text-ink',
-              )}
-            >
-              {n.label}
-            </Link>
-          );
-        })}
+      <nav aria-label="Citizen sections" className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+        <div className="w-full sm:w-auto max-w-md">
+          <SlidingTabs
+            items={navItems}
+            value={currentTab}
+            onChange={(to) => void navigate({ to })}
+            layoutId="citizen-subnav-pill"
+          />
+        </div>
       </nav>
       <Outlet />
     </div>
@@ -74,11 +76,16 @@ function NoticeBoard() {
   if (items.length === 0) return null;
 
   return (
-    <div className="mt-6 rounded-2xl border border-line bg-panel p-5 shadow-panel">
-      <div className="mb-3 flex items-center gap-2 border-b border-line pb-2.5">
-        <Megaphone size={16} className="text-primary" />
-        <h2 className="font-display text-sm font-bold text-ink">{t('citizen.noticesTitle')}</h2>
-        <span className="text-xs text-ink-3">· {t('citizen.noticesSubtitle')} ({q.data?.window_days} {t('citizen.windowDays')})</span>
+    <div className="mt-6 rounded-2xl border border-line bg-panel p-5 shadow-panel glass-depth">
+      <div className="mb-3 flex items-center justify-between gap-2 border-b border-line pb-2.5">
+        <div className="flex items-center gap-2">
+          <Megaphone size={16} className="text-primary" />
+          <h2 className="font-display text-sm font-bold text-ink">{t('citizen.noticesTitle')}</h2>
+        </div>
+        <LiveIndicator
+          tone="emerald"
+          label={`${q.data?.window_days} ${t('citizen.windowDays')} ${t('citizen.noticesSubtitle')}`}
+        />
       </div>
       <ul className="flex flex-col gap-2">
         {items.slice(0, 6).map((n) => <NoticeRow key={n.id} n={n} />)}

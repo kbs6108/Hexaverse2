@@ -1,4 +1,4 @@
-import { Link, Outlet, useRouterState } from '@tanstack/react-router';
+import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
 import { AlertTriangle, BadgeCheck, Inbox, Landmark, Radar, Receipt, Scale, type LucideIcon } from 'lucide-react';
@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Loading } from '@/components/Spinner';
 import { ErrorNote } from '@/components/EmptyState';
+import { SlidingTabs } from '@/components/SlidingTabs';
+import { SpotlightCard } from '@/components/SpotlightCard';
 import { fmtNum, pct, titleCase } from '@/lib/format';
 import { LAND_USE } from '@/features/map/legend';
 import { PageTitle } from '@/features/citizen/CitizenHome';
@@ -15,34 +17,32 @@ import { useTranslation } from '@/lib/i18n';
 
 export function OfficerLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const currentTab = pathname.startsWith('/officer/queue')
+    ? '/officer/queue'
+    : pathname.startsWith('/officer/alerts')
+      ? '/officer/alerts'
+      : '/officer';
+
   const subnav = [
-    { to: '/officer', label: t('officer.navConsole'), exact: true },
-    { to: '/officer/queue', label: t('officer.navQueue'), exact: false },
-    { to: '/officer/alerts', label: t('officer.navAlerts'), exact: false },
+    { id: '/officer', label: t('officer.navConsole') },
+    { id: '/officer/queue', label: t('officer.navQueue') },
+    { id: '/officer/alerts', label: t('officer.navAlerts') },
   ];
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-6">
-      <nav aria-label="Officer sections" className="mb-6 flex gap-2 border-b border-line pb-3">
-        {subnav.map((n) => {
-          const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
-          return (
-            <Link
-              key={n.to}
-              to={n.to}
-              search={{}}
-              aria-current={active ? 'page' : undefined}
-              className={clsx(
-                'rounded-full px-4 py-1.5 text-xs font-semibold transition-all shadow-xs',
-                active ? 'bg-primary text-white shadow-sm' : 'border border-line bg-panel text-ink-2 hover:bg-ground-2 hover:text-ink',
-              )}
-            >
-              {n.label}
-            </Link>
-          );
-        })}
+      <nav aria-label="Officer sections" className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+        <div className="w-full sm:w-auto max-w-xs">
+          <SlidingTabs
+            items={subnav}
+            value={currentTab}
+            onChange={(to) => void navigate({ to })}
+            layoutId="officer-subnav-pill"
+          />
+        </div>
       </nav>
       <Outlet />
     </div>
@@ -116,12 +116,16 @@ export function OfficerConsole() {
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {kpis.map((k) => (
-              <div key={k.label} className="flex flex-col justify-between rounded-2xl border border-line bg-panel p-4 shadow-panel transition hover:border-line-strong">
+              <SpotlightCard
+                key={k.label}
+                spotlightColor="rgba(24, 59, 43, 0.08)"
+                className="flex flex-col justify-between p-4 shadow-panel glass-depth transition-transform hover:-translate-y-0.5 duration-200"
+              >
                 <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-ink-3">
                   <k.icon size={13} className="text-primary" /> {k.label}
                 </div>
                 <p className={clsx('mt-2 font-display text-2xl font-bold', k.tone)}>{k.value}</p>
-              </div>
+              </SpotlightCard>
             ))}
           </div>
           <div className="mt-6 grid gap-4 lg:grid-cols-3">

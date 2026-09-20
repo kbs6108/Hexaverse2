@@ -23,6 +23,8 @@ import { useUI, type DevUserId } from '@/lib/store';
 import { clearCitizenCinematic } from '@/lib/cinematic';
 import { useMyParcel } from '@/lib/my-parcel';
 import { useTranslation } from '@/lib/i18n';
+import { SlidingTabs } from '@/components/SlidingTabs';
+import { Kbd } from '@/components/Kbd';
 
 interface AccountPanelProps {
   isOpen: boolean;
@@ -90,9 +92,10 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                 type="button"
                 onClick={onClose}
                 aria-label="Close panel"
-                className="rounded-lg p-1.5 text-ink-3 hover:bg-ground-2 hover:text-ink transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg py-1 px-2 text-ink-3 hover:bg-ground-2 hover:text-ink transition-colors cursor-pointer text-xs"
               >
-                <X size={18} />
+                <Kbd className="text-[9px] px-1 py-0">ESC</Kbd>
+                <X size={16} />
               </button>
             </div>
 
@@ -283,35 +286,19 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                   </div>
 
                   {/* Filter Tabs */}
-                  <div className="flex items-center gap-1 p-1 rounded-xl bg-ground-2 border border-line mb-3">
-                    {(['all', 'citizen', 'officer', 'admin'] as const).map((tab) => {
-                      const count = tab === 'all'
-                        ? devUsers.length
-                        : devUsers.filter((d) => d.role === tab).length;
-                      return (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => setFilter(tab)}
-                          className={clsx(
-                            'flex-1 py-1 px-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer text-center',
-                            filter === tab
-                              ? 'bg-panel text-primary shadow-xs'
-                              : 'text-ink-3 hover:text-ink hover:bg-panel/50',
-                          )}
-                        >
-                          {tab === 'all'
-                            ? t('account.filterAll')
-                            : tab === 'citizen'
-                              ? t('account.filterCitizens')
-                              : tab === 'officer'
-                                ? t('account.filterOfficers')
-                                : t('account.filterAdmin')}
-                          <span className="ml-1 text-[10px] opacity-70">({count})</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <SlidingTabs
+                    items={[
+                      { id: 'all', label: t('account.filterAll'), count: devUsers.length },
+                      { id: 'citizen', label: t('account.filterCitizens'), count: devUsers.filter((d) => d.role === 'citizen').length },
+                      { id: 'officer', label: t('account.filterOfficers'), count: devUsers.filter((d) => d.role === 'officer').length },
+                      { id: 'admin', label: t('account.filterAdmin'), count: devUsers.filter((d) => d.role === 'admin').length },
+                    ]}
+                    value={filter}
+                    onChange={(tab) => setFilter(tab as typeof filter)}
+                    layoutId="account-identities-filter"
+                    size="sm"
+                    className="mb-3"
+                  />
 
                   {/* Switcher List */}
                   <div className="rounded-xl border border-line bg-panel divide-y divide-line overflow-hidden shadow-xs max-h-72 overflow-y-auto scroll-thin">
