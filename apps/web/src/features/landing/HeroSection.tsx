@@ -84,14 +84,41 @@ export function HeroSection() {
           <p className="mt-8 max-w-xl text-base leading-7 text-ink-2 sm:text-lg">
             Click any parcel and see everything government knows about it — ownership, registration, zoning, tax, disputes and utilities — assembled live from six departments through one parcel key.
           </p>
-          <div className="mt-9 flex flex-wrap items-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <MapLaunch className="relative overflow-hidden inline-flex items-center gap-2.5 rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white transition hover:brightness-105 active:scale-[0.98] shadow-sm">
               <BorderBeam size={160} duration={6} colorFrom="#D1A654" colorTo="#E3ECE6" />
               Open the live map <ArrowRight size={17} />
             </MapLaunch>
-            <a href="#departments" className="inline-flex items-center gap-2.5 rounded-full border border-line bg-panel px-6 py-3.5 text-[15px] font-semibold text-ink-2 transition hover:bg-ground-2 hover:text-ink shadow-xs">
+            <a href="#how" className="inline-flex items-center gap-2.5 rounded-full border border-line bg-panel px-6 py-3.5 text-[15px] font-semibold text-ink-2 transition hover:bg-ground-2 hover:text-ink shadow-xs">
               See how it works
             </a>
+          </div>
+
+          {/* Quick launch real demo parcels */}
+          <div className="mt-8 max-w-3xl">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-ink-3">
+              Explore real cadastre parcels live:
+            </p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              {[
+                { label: 'Sy. 123/4 · Mangalagiri (AP)', tag: 'Clean Title', ulpin: 'TFCM91641E6C82', color: 'text-primary' },
+                { label: 'Sy. 124 · Mangalagiri (AP)', tag: 'Satellite Alert', ulpin: 'TFCM91D3533DD2', color: 'text-amber-700' },
+                { label: 'Sy. 45/2 · Sriperumbudur (TN)', tag: 'Patta Chitta', ulpin: 'TF2CEQ4ACED970', color: 'text-primary' },
+                { label: 'Sy. 77 · Shamshabad (TG)', tag: 'Dharani Passbook', ulpin: 'TEPDPUQC13C0D7', color: 'text-primary' },
+              ].map((p) => (
+                <MapLaunch
+                  key={p.ulpin}
+                  ulpin={p.ulpin}
+                  className="group flex items-center gap-2 rounded-full border border-line bg-panel/90 px-3.5 py-1.5 text-xs font-semibold text-ink shadow-2xs backdrop-blur-md transition-all hover:border-primary hover:bg-ground-2 hover:shadow-xs cursor-pointer active:scale-95"
+                >
+                  <span className="size-1.5 rounded-full bg-primary group-hover:scale-125 transition-transform" />
+                  <span>{p.label}</span>
+                  <span className="rounded-full bg-primary-soft/60 px-2 py-0.5 font-mono text-[10px] font-bold text-primary">
+                    {p.tag}
+                  </span>
+                </MapLaunch>
+              ))}
+            </div>
           </div>
         </div>
         <a href="#departments" className="absolute bottom-8 left-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] text-ink-3 sm:left-10 lg:left-16 hover:text-primary transition-colors">
