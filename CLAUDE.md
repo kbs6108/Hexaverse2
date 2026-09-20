@@ -114,6 +114,11 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   - Compact view mode: high-density UI toggle in floating assistant with localStorage persistence, tighter line heights and margins.
   - Instant one-click copy response utility on every assistant reply.
   - Lean fact-sheet pruning: omitting empty/null keys from model inputs, slashing token consumption by ~60%.
+- **Dynamic RoR Land Ownership & Statutory Authority** (Sep 2026):
+  - Eradicated all static/mock citizen parcel dictionaries (`KNOWN_USER_PARCELS`).
+  - Real-time `useMyParcel()` hook querying `GET /landstack/citizen/my-parcels` backed dynamically by `dept_revenue.ror`.
+  - Statutory applicant authority guard in Citizen Apply (`ServiceRequest.tsx`), AI pre-check (`ai_assist.py`), and backend workflow (`workflow.py`): building permission applications require verified title ownership on the RoR, rendering prominent blocker notices and disabling submissions for non-owners.
+  - Cross-app cache synchronization: mutation approvals immediately invalidate `['citizen', 'my-parcels']`, `['parcel']`, and `['applications']`.
 Notable fixed first-run issues: asyncpg `substring(id from :n)` typing, MapLibre nested-zoom
 expressions, Vite dep-optimizer maplibre worker, persisted-layers merge bug, web healthcheck.
 Still open: Neon/Firebase/Cloud Run deployment not yet exercised; WeasyPrint deps on Cloud Run
@@ -121,6 +126,7 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-20 dynamic land ownership & statutory building authority: removed static KNOWN_USER_PARCELS, wired useMyParcel to GET /citizen/my-parcels, enforced statutory Pattadar verification in building permissions (UI blocker, AI triage, 403 in workflow), and added comprehensive cross-app query invalidation on mutation approvals.
 - 2026-09-20 AI tuning, responses & compactness: hyperparameter optimization (Assistant max_tokens 650, advice 180, DD summary 200), high-density structured prompt engineering, interactive deep-link action buttons in chat, compact view toggle, copy response utility, and lean fact-sheet pruning.
 - 2026-09-20 workflow clarity & governance: visual lifecycle pipeline in Admin, linked queue applications in Alerts, upfront statutory record impact preview in Queue, citizen parcel linkage (Sy 123/4 fly-to), dead-center limelight dock, and MechanismExplainerModal.
 - 2026-09-17 readable values everywhere: consistency callout, admin findings, timeline details, report PDF (utilities yes/no, flags humanized, None-safe rows).

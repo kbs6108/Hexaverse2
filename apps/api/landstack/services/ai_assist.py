@@ -147,7 +147,12 @@ def risk_level(score: int) -> str:
     return "high" if score >= 40 else "elevated" if score >= 15 else "low"
 
 
-def triage(cdm: dict[str, Any], app_type: str) -> dict[str, Any]:
+def triage(
+    cdm: dict[str, Any],
+    app_type: str,
+    principal: Principal | None = None,
+    ror_owner: str | None = None,
+) -> dict[str, Any]:
     """Pre-submission triage for the citizen wizard — pure and deterministic (no LLM),
     so the wizard can show it instantly. Blockers say "this will very likely be rejected
     and why"; the citizen may still submit (the officer decides, not the machine)."""
@@ -160,6 +165,25 @@ def triage(cdm: dict[str, Any], app_type: str) -> dict[str, Any]:
 
     def add(bucket: list[dict[str, Any]], text: str, action: str | None = None) -> None:
         bucket.append({"text": text, "action": action})
+
+    # Statutory title check for building permission
+    if app_type == "building_permission" and principal is not None and not principal.is_officer:
+        owner_candidate = ror_owner or ((cdm.get("rights") or {}).get("ror") or {}).get("owner_name")
+        if owner_candidate:
+            p_name = (principal.name or "").strip().lower()
+            o_name = owner_candidate.strip().lower()
+            is_match = False
+            if p_name and o_name:
+                is_match = (p_name in o_name) or (o_name in p_name)
+                if not is_match:
+                    from landstack.services.consistency import name_score
+                    is_match = name_score(owner_candidate, principal.name or "") >= 60
+            if not is_match:
+                add(
+                    blockers,
+                    f"Applicant identity mismatch: Registered owner on the Record of Rights is '{owner_candidate}', but you are applying as '{principal.name}'. Statutory building permission requires verified title ownership.",
+                    "Only the lawful title holder can apply for construction permission. If you recently acquired this land, wait for the revenue mutation to complete.",
+                )
 
     if app_type == "succession":
         nominees = ((cdm.get("rights") or {}).get("ror") or {}).get("nominees") or []
@@ -221,7 +245,11 @@ async def pre_check(db: DBLike, ulpin: str, app_type: str, principal: Principal)
     from landstack.services import aggregator
 
     cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
-    return {"ulpin": ulpin, **triage(cdm, app_type)}
+    ror_owner = await db.fetchval(
+        "SELECT owner_name FROM dept_revenue.ror WHERE ulpin = :u ORDER BY updated_at DESC NULLS LAST LIMIT 1",
+        u=ulpin,
+    )
+    return {"ulpin": ulpin, "ror_owner": ror_owner, **triage(cdm, app_type, principal=principal, ror_owner=ror_owner)}
 
 
 def due_diligence(cdm: dict[str, Any]) -> dict[str, Any]:
@@ -592,7 +620,13 @@ async def assistant(
 
     elif intent in _INTENT_APP_TYPE and cdm is not None:
         app_type = _INTENT_APP_TYPE[intent]
-        t = triage(cdm, app_type)
+        ror_owner = None
+        if ulpin:
+            ror_owner = await db.fetchval(
+                "SELECT owner_name FROM dept_revenue.ror WHERE ulpin = :u ORDER BY updated_at DESC NULLS LAST LIMIT 1",
+                u=ulpin,
+            )
+        t = triage(cdm, app_type, principal=principal, ror_owner=ror_owner)
         head = {
             "transfer": "For an ownership transfer on this parcel",
             "succession": "For succession (inheritance) on this parcel",
@@ -601,7 +635,7 @@ async def assistant(
             "build": "For building permission on this parcel",
         }[intent]
         if t["blockers"]:
-            reply = f"{head}, the record shows a likely blocker: {_worst(t['blockers'])} You can still apply — the officer decides."
+            reply = f"{head}, the record shows a statutory blocker: {_worst(t['blockers'])}"
         elif t["warnings"]:
             reply = f"{head}, the record looks workable with caveats: {_worst(t['warnings'])} File it under Citizen services → Apply."
         else:

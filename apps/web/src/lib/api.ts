@@ -22,6 +22,7 @@ import type {
   GeoJSONFeatureCollection,
   Me,
   Notice,
+  OwnedParcel,
   ParcelBrief,
   ParcelCDM,
   PlanningCheck,
@@ -133,6 +134,8 @@ export const api = {
     request<Application>('/landstack/applications', { method: 'POST', body: { ulpin, type, payload } }),
   myApplications: () =>
     request<Application[] | { items: Application[] }>('/landstack/applications', { query: { mine: 1 } }).then(unwrapList),
+  myParcels: () =>
+    request<{ items: OwnedParcel[] }>('/landstack/citizen/my-parcels'),
   application: (id: string) => request<Application>(`/landstack/applications/${encodeURIComponent(id)}`),
   issueReport: (ulpin: string) => request<ReportIssued>(`/landstack/reports/${encodeURIComponent(ulpin)}`, { method: 'POST' }),
   validateBoundary: (ulpin: string, geometry: Record<string, unknown>) =>
@@ -215,6 +218,7 @@ export const qk = {
   timeline: (ulpin: string) => ['timeline', ulpin] as const,
   search: (q: string) => ['search', q] as const,
   myApplications: (identity: string) => ['applications', 'mine', identity] as const,
+  myParcels: (identity: string) => ['citizen', 'my-parcels', identity] as const,
   application: (id: string) => ['application', id] as const,
   queue: (department: string) => ['queue', department] as const,
   stats: () => ['stats'] as const,

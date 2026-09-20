@@ -238,8 +238,10 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
       setRemark('');
       setPending(null);
       void qc.invalidateQueries({ queryKey: ['queue'] });
+      void qc.invalidateQueries({ queryKey: ['applications'] });
       void qc.invalidateQueries({ queryKey: qk.application(app.id) });
-      void qc.invalidateQueries({ queryKey: ['parcel', app.ulpin] });
+      void qc.invalidateQueries({ queryKey: ['parcel'] });
+      void qc.invalidateQueries({ queryKey: ['citizen', 'my-parcels'] });
       void qc.invalidateQueries({ queryKey: qk.stats() });
     },
     onError: (e: Error) => toast.error('Transition failed', e.message),

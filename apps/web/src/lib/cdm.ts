@@ -551,3 +551,19 @@ export interface StoryParcel {
   centroid?: [number, number];
   bbox?: [number, number, number, number];
 }
+
+export interface OwnedParcel {
+  ulpin: string;
+  survey_no: string;
+  khata_no: string;
+  village: string;
+  district?: string;
+  state: string;
+  land_use: string;
+  area_sqm: number;
+  owner_name: string;
+  ownership_type: string;
+  centroid?: [number, number];
+  bbox?: [number, number, number, number];
+}
+

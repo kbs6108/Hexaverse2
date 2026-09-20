@@ -42,8 +42,8 @@ const defaultLayers: LayerToggles = {
 
 /** Dev-mode identities (CONTRACTS §10). Value is the exact X-Dev-User header string. */
 export const DEV_USERS = [
-  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', hint: 'Citizen · pattadar, Mangalagiri' },
-  { id: 'citizen::Lakshmi Devi', label: 'Lakshmi Devi', role: 'citizen', hint: 'Citizen' },
+  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', hint: 'Citizen · Mangalagiri' },
+  { id: 'citizen::Lakshmi Devi', label: 'Lakshmi Devi', role: 'citizen', hint: 'Citizen · Mangalagiri' },
   { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', hint: 'Tahsildar · Mangalagiri Mandal' },
   { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', hint: 'Sub-Registrar · SRO Mangalagiri' },
   { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', hint: 'Town Planning Officer · MTMC' },

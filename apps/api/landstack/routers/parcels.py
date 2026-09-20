@@ -43,6 +43,7 @@ async def my_parcels(
         FROM dept_revenue.ror r
         JOIN landstack.parcels p ON p.ulpin = r.ulpin
         WHERE r.owner_name ILIKE :like OR similarity(r.owner_name, :name) > 0.5
+        ORDER BY r.updated_at DESC
         LIMIT 10
     """
     rows = await db.fetch(sql, like=f"%{name}%", name=name)

@@ -151,71 +151,83 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
               </div>
 
               {/* Owned Land & Property linked to profile */}
-              {hasOwnedLand && parcel && (
+              {user.role === 'citizen' && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1.5">
-                      <Landmark size={14} className="text-primary" /> Owned Land & Property
+                      <Landmark size={14} className="text-primary" /> Owned Land &amp; Property
                     </h4>
-                    <span className="text-[11px] font-medium text-primary bg-primary-soft px-2 py-0.5 rounded-full">
-                      Linked Title
+                    <span className={clsx(
+                      'text-[11px] font-medium px-2 py-0.5 rounded-full',
+                      hasOwnedLand ? 'text-primary bg-primary-soft' : 'text-ink-3 bg-ground-2'
+                    )}>
+                      {hasOwnedLand ? 'Linked Title' : 'No Title On Record'}
                     </span>
                   </div>
 
-                  <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary-soft/40 via-panel to-panel p-4 shadow-sm relative overflow-hidden">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-display text-base font-bold text-ink">
-                            Survey {parcel.survey_no}
-                          </span>
-                          <span className="text-xs text-ink-3">·</span>
-                          <span className="text-xs font-semibold text-ink-2">
-                            {parcel.village}
-                          </span>
+                  {hasOwnedLand && parcel ? (
+                    <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary-soft/40 via-panel to-panel p-4 shadow-sm relative overflow-hidden">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-display text-base font-bold text-ink">
+                              Survey {parcel.survey_no}
+                            </span>
+                            <span className="text-xs text-ink-3">·</span>
+                            <span className="text-xs font-semibold text-ink-2">
+                              {parcel.village}
+                            </span>
+                          </div>
+                          <p className="font-mono text-[11.5px] text-primary mt-0.5 font-medium">
+                            ULPIN: {parcel.ulpin}
+                          </p>
                         </div>
-                        <p className="font-mono text-[11.5px] text-primary mt-0.5 font-medium">
-                          ULPIN: {parcel.ulpin}
-                        </p>
+
+                        <span className="shrink-0 flex items-center justify-center size-8 rounded-xl bg-primary text-white shadow-xs">
+                          <MapPin size={16} />
+                        </span>
                       </div>
 
-                      <span className="shrink-0 flex items-center justify-center size-8 rounded-xl bg-primary text-white shadow-xs">
-                        <MapPin size={16} />
-                      </span>
+                      <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-line/70 text-xs">
+                        <div>
+                          <span className="text-ink-3 block text-[11px]">Khata Number</span>
+                          <span className="font-mono font-medium text-ink">{parcel.khata_no}</span>
+                        </div>
+                        <div>
+                          <span className="text-ink-3 block text-[11px]">Total Extent</span>
+                          <span className="font-medium text-ink">{parcel.area_sqm} m²</span>
+                        </div>
+                        <div>
+                          <span className="text-ink-3 block text-[11px]">Land Use</span>
+                          <span className="font-medium text-ink capitalize">{parcel.land_use}</span>
+                        </div>
+                        <div>
+                          <span className="text-ink-3 block text-[11px]">Tenure / Type</span>
+                          <span className="font-medium text-ink">{parcel.ownership_type}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          onClose();
+                          await goToMyParcel();
+                        }}
+                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary text-white py-2.5 px-4 text-xs font-bold shadow-sm hover:bg-primary/90 hover:shadow transition-all cursor-pointer"
+                      >
+                        <MapPin size={14} />
+                        <span>Go to My Parcel</span>
+                        <ArrowRight size={14} className="ml-0.5" />
+                      </button>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-line/70 text-xs">
-                      <div>
-                        <span className="text-ink-3 block text-[11px]">Khata Number</span>
-                        <span className="font-mono font-medium text-ink">{parcel.khata_no}</span>
-                      </div>
-                      <div>
-                        <span className="text-ink-3 block text-[11px]">Total Extent</span>
-                        <span className="font-medium text-ink">{parcel.area_sqm} m²</span>
-                      </div>
-                      <div>
-                        <span className="text-ink-3 block text-[11px]">Land Use</span>
-                        <span className="font-medium text-ink capitalize">{parcel.land_use}</span>
-                      </div>
-                      <div>
-                        <span className="text-ink-3 block text-[11px]">Tenure / Type</span>
-                        <span className="font-medium text-ink">{parcel.ownership_type}</span>
-                      </div>
+                  ) : (
+                    <div className="rounded-xl border border-line bg-panel p-4 text-center">
+                      <p className="text-xs font-medium text-ink">No registered land parcels</p>
+                      <p className="mt-1 text-[11px] text-ink-3 leading-relaxed">
+                        Statutory land records (RoR) do not currently list this citizen as a registered title holder.
+                      </p>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        onClose();
-                        await goToMyParcel();
-                      }}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary text-white py-2.5 px-4 text-xs font-bold shadow-sm hover:bg-primary/90 hover:shadow transition-all cursor-pointer"
-                    >
-                      <MapPin size={14} />
-                      <span>Go to My Parcel</span>
-                      <ArrowRight size={14} className="ml-0.5" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               )}
 

@@ -10,7 +10,9 @@ import {
   FileUp,
   Flag,
   Info,
+  MapPin,
   PenLine,
+  ShieldAlert,
   UsersRound,
   XCircle,
 } from 'lucide-react';
@@ -18,6 +20,7 @@ import { clsx } from 'clsx';
 import { api, qk } from '@/lib/api';
 import type { Application, ApplicationType } from '@/lib/cdm';
 import { useAuth } from '@/lib/auth';
+import { useMyParcel } from '@/lib/my-parcel';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Field, Input, Select, Textarea } from '@/components/Field';
 import { ParcelPicker } from '@/components/ParcelPicker';
@@ -79,6 +82,7 @@ export function ServiceRequest() {
   const [intent, setIntent] = useState<Intent | null>(isIntent(search.type) ? search.type : null);
   const [ulpin, setUlpin] = useState(search.ulpin ?? '');
   const [done, setDone] = useState<Application | null>(null);
+  const { parcels, hasOwnedLand } = useMyParcel();
 
   if (done) return <Success app={done} onNew={() => setDone(null)} />;
 
@@ -90,6 +94,29 @@ export function ServiceRequest() {
         <Field label="Which parcel is this about?" htmlFor="sr-ulpin" hint="Pick a recently opened parcel, or select one on the map and choose “Request service”.">
           <ParcelPicker id="sr-ulpin" value={ulpin} onChange={setUlpin} />
         </Field>
+        {hasOwnedLand && parcels.length > 0 && (
+          <div className="mt-3 flex items-center gap-2 flex-wrap pt-2.5 border-t border-line">
+            <span className="text-xs font-semibold text-ink-2 flex items-center gap-1">
+              <MapPin size={13} className="text-primary" /> Your registered land:
+            </span>
+            {parcels.map((p) => (
+              <button
+                key={p.ulpin}
+                type="button"
+                onClick={() => setUlpin(p.ulpin)}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer border',
+                  ulpin.trim() === p.ulpin
+                    ? 'border-primary bg-primary text-white shadow-xs'
+                    : 'border-line bg-panel text-ink hover:border-primary/50'
+                )}
+              >
+                <span>Survey {p.survey_no}</span>
+                <span className="opacity-70 text-[10.5px]">({p.village})</span>
+              </button>
+            ))}
+          </div>
+        )}
       </Card>
 
       <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="What do you need?">
@@ -115,7 +142,7 @@ export function ServiceRequest() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
           {intent === 'mutation' && <MutationForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'record_correction' && <CorrectionForm ulpin={ulpin} onDone={setDone} />}
-          {intent === 'building_permission' && <PermissionForm ulpin={ulpin} onDone={setDone} />}
+          {intent === 'building_permission' && <PermissionForm ulpin={ulpin} setUlpin={setUlpin} onDone={setDone} />}
           {intent === 'land_complaint' && <ComplaintForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'succession' && <SuccessionForm ulpin={ulpin} onDone={setDone} />}
           <aside className="flex flex-col gap-3 text-sm text-ink-2">
@@ -206,7 +233,11 @@ function PreCheckPanel({ ulpin, type }: { ulpin: string; type: ApplicationType }
         </div>
       )}
       {!c.ok_to_submit && (
-        <p className="mt-2 border-t border-line pt-2 text-xs text-ink-3">You can still submit — the officer decides. This check only tells you what they will see.</p>
+        <p className="mt-2 border-t border-line pt-2 text-xs text-ink-3">
+          {type === 'building_permission'
+            ? 'Statutory building regulations mandate verified title ownership. Non-owners will have applications rejected.'
+            : 'You can still submit — the officer decides. This check only tells you what they will see.'}
+        </p>
       )}
     </Card>
   );
@@ -311,16 +342,39 @@ function CorrectionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
   );
 }
 
-function PermissionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Application) => void }) {
+function PermissionForm({ ulpin, setUlpin, onDone }: { ulpin: string; setUlpin: (u: string) => void; onDone: (a: Application) => void }) {
+  const { user } = useAuth();
+  const { parcels, isLoading: loadingParcels } = useMyParcel();
+  const isCitizen = user?.role === 'citizen';
+  const ready = ulpin.trim().length >= 8;
+
   const [floors, setFloors] = useState(2);
   const [builtUp, setBuiltUp] = useState(150);
   const [use, setUse] = useState('residential');
   const [checked, setChecked] = useState(false);
+
+  // Pre-check query to verify statutory title rules
+  const preCheck = useQuery({
+    queryKey: qk.preCheck(ulpin.trim(), 'building_permission', user?.uid ?? 'anon'),
+    queryFn: () => api.preCheck(ulpin.trim(), 'building_permission'),
+    enabled: ready,
+    staleTime: 10_000,
+  });
+
   const check = useQuery({
     queryKey: qk.planningCheck(ulpin.trim(), use, floors),
     queryFn: () => api.planningCheck(ulpin.trim(), use, floors),
-    enabled: checked && ulpin.trim().length >= 8,
+    enabled: checked && ready,
   });
+
+  // Dynamic ownership check:
+  const isDirectlyOwned = parcels.some((p) => p.ulpin.toLowerCase() === ulpin.trim().toLowerCase());
+  const identityBlocker = preCheck.data?.blockers?.find((b) =>
+    b.text.toLowerCase().includes('identity mismatch') || b.text.toLowerCase().includes('registered owner')
+  );
+  const isOwnershipDenied = isCitizen && ready && !loadingParcels && (!isDirectlyOwned || !!identityBlocker);
+  const registeredOwnerName = preCheck.data?.ror_owner;
+
   const m = useMutation({
     mutationFn: () =>
       api.createApplication(ulpin.trim(), 'building_permission', {
@@ -331,8 +385,47 @@ function PermissionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       }),
     onSuccess: (a) => { toast.success('Building permission application submitted', a.id); onDone(a); },
   });
+
   return (
     <FormCard title="Build on this land" subtitle="Planning department · with automatic zoning check" onSubmit={(e) => { e.preventDefault(); m.mutate(); }}>
+      {isOwnershipDenied && (
+        <div className="rounded-xl border border-brick/40 bg-brick/5 p-4 text-brick">
+          <div className="flex items-start gap-3">
+            <ShieldAlert size={20} className="shrink-0 mt-0.5 text-brick" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-ink">Statutory Title Verification: Ownership Mismatch</h4>
+              <p className="text-xs text-ink-2 leading-relaxed">
+                Under Town &amp; Country Planning regulations, building permissions can only be granted to the lawful title holder recorded on the Record of Rights (RoR).
+                {registeredOwnerName ? (
+                  <> The registered owner for parcel <span className="font-mono font-medium text-ink">{ulpin}</span> is <strong className="text-ink">{registeredOwnerName}</strong>, not <strong className="text-ink">{user?.name}</strong>.</>
+                ) : (
+                  <> You do not hold verified title ownership for parcel <span className="font-mono font-medium text-ink">{ulpin}</span>.</>
+                )}
+              </p>
+              <p className="text-[11.5px] text-ink-3">
+                {identityBlocker?.action ?? 'If you recently purchased this property, the Revenue Mutation must be completed and approved before applying for building permission.'}
+              </p>
+              {parcels.length > 0 && (
+                <div className="mt-2.5 pt-2 border-t border-line/60 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-ink">Your registered land:</span>
+                  {parcels.map((p) => (
+                    <button
+                      key={p.ulpin}
+                      type="button"
+                      onClick={() => setUlpin(p.ulpin)}
+                      className="inline-flex items-center gap-1 rounded-md bg-panel border border-line px-2.5 py-1 text-xs font-semibold text-primary hover:border-primary cursor-pointer shadow-2xs"
+                    >
+                      <MapPin size={11} />
+                      <span>Survey {p.survey_no} ({p.village})</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-3">
         <Field label="Floors" htmlFor="sr-floors">
           <Input id="sr-floors" type="number" min={1} max={30} value={floors} onChange={(e) => { setFloors(Number(e.target.value)); setChecked(false); }} />
@@ -350,7 +443,7 @@ function PermissionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       <div className="rounded-md border border-line bg-panel-2 p-3">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">Zoning check</p>
-          <Button size="sm" loading={check.isFetching} disabled={ulpin.trim().length < 8} onClick={() => setChecked(true)}>Run check</Button>
+          <Button size="sm" loading={check.isFetching} disabled={!ready || isOwnershipDenied} onClick={() => setChecked(true)}>Run check</Button>
         </div>
         {check.isError && <div className="mt-2"><ErrorNote error={check.error} /></div>}
         {check.data && (
@@ -366,7 +459,15 @@ function PermissionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       </div>
       {check.data && !check.data.permissible && <Callout tone="amber" title="You can still submit">The application will be scrutinised by a planning officer, but expect it to be rejected unless the proposal changes.</Callout>}
       {m.isError && <ErrorNote error={m.error} />}
-      <Button type="submit" variant="primary" loading={m.isPending} className="self-start" disabled={!checked || !check.data}>Submit application</Button>
+      <Button
+        type="submit"
+        variant="primary"
+        loading={m.isPending}
+        className="self-start"
+        disabled={!checked || !check.data || isOwnershipDenied}
+      >
+        {isOwnershipDenied ? 'Restricted: Non-Owner' : 'Submit application'}
+      </Button>
     </FormCard>
   );
 }

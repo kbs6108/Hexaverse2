@@ -194,7 +194,8 @@ function SimulateDeed({ initialUlpin }: { initialUlpin: string }) {
       toast.success('Deed registered upstream', 'Registration → outbox → gateway event → system-initiated mutation');
       void qc.invalidateQueries({ queryKey: ['queue'] });
       void qc.invalidateQueries({ queryKey: ['alerts'] });
-      void qc.invalidateQueries({ queryKey: ['parcel', ulpin.trim()] });
+      void qc.invalidateQueries({ queryKey: ['parcel'] });
+      void qc.invalidateQueries({ queryKey: ['citizen', 'my-parcels'] });
       void qc.invalidateQueries({ queryKey: qk.consistency() });
     },
     onError: (e: Error) => toast.error('Simulation failed', e.message),

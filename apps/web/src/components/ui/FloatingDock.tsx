@@ -79,13 +79,15 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
     navItems.find((item) => (item.match ? item.match(pathname) : pathname === item.to))?.id ??
     (pathname.startsWith('/map') ? 'map' : pathname.startsWith('/citizen') ? 'citizen' : pathname.startsWith('/officer') ? 'officer' : pathname.startsWith('/admin') ? 'admin' : 'home');
 
-  const userDisplayName = user?.name ?? 'RK Ravi Kumar';
-  const userInitials = userDisplayName
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const userDisplayName = user?.name ?? 'Guest Citizen';
+  const userInitials = user?.name
+    ? user.name
+        .split(' ')
+        .map((p) => p[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'GC';
 
   return (
     <>

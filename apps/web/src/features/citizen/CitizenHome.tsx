@@ -199,13 +199,35 @@ export function CitizenHome() {
           </div>
           <button
             type="button"
-            onClick={goToMyParcel}
+            onClick={() => goToMyParcel()}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-primary/90 hover:shadow transition-all cursor-pointer"
           >
             <MapPin size={14} />
             <span>Go to My Land</span>
             <ArrowRight size={14} />
           </button>
+        </div>
+      )}
+
+      {user?.role === 'citizen' && !hasOwnedLand && (
+        <div className="mb-6 rounded-2xl border border-line bg-panel p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-ink-2">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-ground-2 text-ink-3">
+              <MapPin size={18} />
+            </span>
+            <div>
+              <p className="text-xs font-medium text-ink">No active land parcels currently registered under this profile</p>
+              <p className="text-[11px] text-ink-3">If you recently transferred or purchased property, track your mutation application below.</p>
+            </div>
+          </div>
+          <Link
+            to="/citizen/request"
+            search={{ type: 'mutation' }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-ground-2 px-3 py-1.5 text-xs font-semibold text-ink hover:border-primary/50 transition-colors"
+          >
+            <span>Register Transfer</span>
+            <ArrowRight size={12} />
+          </Link>
         </div>
       )}
 

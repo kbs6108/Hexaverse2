@@ -27,7 +27,7 @@ export function StoryChips() {
       {hasOwnedLand && myParcel && (
         <button
           type="button"
-          onClick={goToMyParcel}
+          onClick={() => goToMyParcel()}
           title={`Your owned parcel (${myParcel.village}): Survey ${myParcel.survey_no}`}
           className="pointer-events-auto shrink-0 flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary-soft/95 px-3 py-1 text-xs font-bold text-primary shadow-sm backdrop-blur-md hover:bg-primary hover:text-white transition-all cursor-pointer"
         >

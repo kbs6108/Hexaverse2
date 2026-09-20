@@ -190,6 +190,27 @@ async def create_application(
     exists = await db.fetchval("SELECT 1 FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
     if not exists:
         raise not_found("parcel", ulpin)
+
+    # Statutory title check for building permission
+    if app_type == "building_permission" and not principal.is_officer and not system_initiated:
+        ror_owner = await db.fetchval(
+            "SELECT owner_name FROM dept_revenue.ror WHERE ulpin = :u ORDER BY updated_at DESC NULLS LAST LIMIT 1",
+            u=ulpin,
+        )
+        if ror_owner:
+            p_name = (applicant_name or principal.name or "").strip().lower()
+            o_name = ror_owner.strip().lower()
+            is_match = (p_name in o_name) or (o_name in p_name)
+            if not is_match:
+                from landstack.services.consistency import name_score
+                is_match = name_score(ror_owner, applicant_name or principal.name or "") >= 60
+            if not is_match:
+                raise AppError(
+                    403,
+                    "not_parcel_owner",
+                    f"Applicant '{applicant_name or principal.name}' is not the registered title holder ({ror_owner}) of parcel {ulpin}. Statutory town planning regulations require verified title ownership to apply for building permission.",
+                )
+
     payload = dict(payload or {})
     if system_initiated:
         payload["system_initiated"] = True
