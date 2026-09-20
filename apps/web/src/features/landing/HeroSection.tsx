@@ -38,13 +38,9 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative isolate flex min-h-screen w-full overflow-hidden bg-ground">
-      {/* Background Shader Lines animation: Living topographic contours & elevation waves */}
-      <ShaderAnimation />
-      {/* Subtle atmospheric veil ensuring high contrast and legibility for foreground text */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ground/25 via-ground/10 to-ground/85" />
-
-      <div className="pointer-events-none fixed left-0 right-0 top-5 z-[9999] flex justify-center px-4">
+    <>
+      {/* Global Fixed Header Dock: Root viewport level to guarantee stacking above all cards and sections */}
+      <div className="pointer-events-none fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
         <header
           id="dock"
           className="atd-modern__bar pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-sm border border-line bg-panel/95 px-4 py-2 text-ink shadow-sm backdrop-blur-md"
@@ -71,7 +67,13 @@ export function HeroSection() {
         </header>
       </div>
 
-      <div id="top" className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1400px] items-center px-6 pb-16 pt-32 sm:px-10 lg:px-16">
+      <section className="relative isolate flex min-h-screen w-full overflow-hidden bg-ground">
+        {/* Background Shader Lines animation: Living topographic contours & elevation waves */}
+        <ShaderAnimation />
+        {/* Subtle atmospheric veil ensuring high contrast and legibility for foreground text */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ground/25 via-ground/10 to-ground/85" />
+
+        <div id="top" className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1400px] items-center px-6 pb-16 pt-32 sm:px-10 lg:px-16">
         <div className="max-w-5xl">
           <GovBadge variant="landing" className="mb-5" />
           <p className="mb-6 font-mono text-xs font-bold uppercase tracking-[0.2em] text-ink-3">Digital Land Public Infrastructure</p>
@@ -124,5 +126,6 @@ export function HeroSection() {
         </a>
       </div>
     </section>
+    </>
   );
 }
