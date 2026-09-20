@@ -381,6 +381,14 @@ export const TRANSLATIONS = {
     'ai.quickQ2': 'How do I transfer ownership after buying?',
     'ai.quickQ3': 'Neighbor encroached on my boundary, what to do?',
     'ai.quickQ4': 'Can I build on Survey 124?',
+    'ai.voiceSearch': 'Voice search',
+    'ai.voiceListening': 'Listening...',
+    'ai.voiceLangHint': 'Listening in {lang}',
+    'ai.voiceSilenceHint': '4-5 seconds pause will automatically submit your query',
+    'ai.voiceStopAndSend': 'Stop & Send',
+    'ai.voiceCancel': 'Cancel',
+    'ai.voiceNotSupported': 'Voice recognition is not supported in this browser.',
+    'ai.voicePermissionDenied': 'Microphone permission was denied. Please allow microphone access in your browser.',
 
     // Account & Personas
     'account.title': 'Profile & Account',
@@ -822,6 +830,14 @@ export const TRANSLATIONS = {
     'ai.quickQ2': 'భూమి కొన్న తర్వాత మ్యుటేషన్ ఎలా చేయాలి?',
     'ai.quickQ3': 'నా పొలం హద్దులపై పొరుగువారితో వివాదం ఉంది, ఏమి చేయాలి?',
     'ai.quickQ4': 'సర్వే 124 పై ఇల్లు లేదా షాపు కట్టవచ్చా?',
+    'ai.voiceSearch': 'వాయిస్ శోధన (మాట్లాడండి)',
+    'ai.voiceListening': 'వింటూ ఉన్నాము... మాట్లాడండి',
+    'ai.voiceLangHint': '{lang}లో వింటున్నాము',
+    'ai.voiceSilenceHint': '4-5 సెకన్లు మాట్లాడకుండా ఆగితే మీ ప్రశ్న స్వయంచాలకంగా పంపబడుతుంది',
+    'ai.voiceStopAndSend': 'ఆపి పంపండి',
+    'ai.voiceCancel': 'రద్దు చేయండి',
+    'ai.voiceNotSupported': 'ఈ బ్రౌజర్‌లో వాయిస్ శోధన సదుపాయం అందుబాటులో లేదు.',
+    'ai.voicePermissionDenied': 'మైక్రోఫోన్ అనుమతి నిరాకరించబడింది. దయచేసి బ్రౌజర్ సెట్టింగ్స్‌లో మైక్రోఫోన్ అనుమతించండి.',
 
     // Account & Personas
     'account.title': 'ప్రొఫైల్ & ఖాతా',
@@ -1263,6 +1279,14 @@ export const TRANSLATIONS = {
     'ai.quickQ2': 'ज़मीन खरीदने के बाद दाखिल-खारिज कैसे कराएं?',
     'ai.quickQ3': 'मेढ़ या सीमा विवाद के समाधान के लिए क्या करें?',
     'ai.quickQ4': 'क्या खसरा 124 पर मकान या दुकान बना सकते हैं?',
+    'ai.voiceSearch': 'वॉइस सर्च (बोलकर पूछें)',
+    'ai.voiceListening': 'सुन रहे हैं... बोलिए',
+    'ai.voiceLangHint': '{lang} में सुन रहे हैं',
+    'ai.voiceSilenceHint': '4-5 सेकंड मौन रहने पर आपका प्रश्न स्वतः भेज दिया जाएगा',
+    'ai.voiceStopAndSend': 'रोकें और भेजें',
+    'ai.voiceCancel': 'रद्द करें',
+    'ai.voiceNotSupported': 'इस ब्राउज़र में वॉइस सर्च समर्थित नहीं है।',
+    'ai.voicePermissionDenied': 'माइक्रोफ़ोन की अनुमति अस्वीकार कर दी गई। कृपया ब्राउज़र सेटिंग्स में माइक्रोफ़ोन की अनुमति दें।',
 
     // Account & Personas
     'account.title': 'प्रोफ़ाइल एवं खाता',

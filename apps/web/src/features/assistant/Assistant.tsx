@@ -12,12 +12,15 @@ import {
   Check,
   Copy,
   Maximize2,
+  Mic,
+  MicOff,
   Minimize2,
   RotateCcw,
   Send,
   Sparkles,
   X,
 } from 'lucide-react';
+import { useVoiceSearch, LOCALE_LANG_NAMES } from '@/lib/useVoiceSearch';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Field';
 import { api, ApiError } from '@/lib/api';
@@ -401,6 +404,17 @@ export default function Assistant() {
     m.mutate({ message: trimmed, history });
   };
 
+  const voice = useVoiceSearch({
+    locale,
+    silenceDurationMs: 4500, // Stop after 4.5 seconds of voice silence
+    onFinalTranscript: (meaningfulQuery) => {
+      if (meaningfulQuery.trim()) {
+        setText(meaningfulQuery);
+        send(meaningfulQuery);
+      }
+    },
+  });
+
   const handleReset = () => {
     setMsgs([GREETINGS_BY_LOCALE[locale] || GREETINGS_BY_LOCALE.en]);
     const cats = PROMPT_CATEGORIES_BY_LOCALE[locale] || PROMPT_CATEGORIES_BY_LOCALE.en;
@@ -497,7 +511,10 @@ export default function Assistant() {
               <RotateCcw size={14} />
             </button>
             <button
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                voice.cancelListening();
+                setOpen(false);
+              }}
               aria-label={t('common.close')}
               className="flex size-7 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink cursor-pointer"
             >
@@ -613,9 +630,89 @@ export default function Assistant() {
             </div>
           )}
 
+          {/* Active Voice Search Listening Banner */}
+          {voice.isListening && (
+            <div className="border-t border-line bg-primary-soft/40 px-3 py-2 flex flex-col gap-1.5 shadow-inner">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex size-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex size-2.5 rounded-full bg-red-500" />
+                  </span>
+                  <span className="text-xs font-semibold text-ink">
+                    {t('ai.voiceLangHint', { lang: LOCALE_LANG_NAMES[locale]?.nativeName || locale })}
+                  </span>
+                  {/* Sound wave animated visual bars */}
+                  <div className="flex items-center gap-0.5 ml-1">
+                    <span className="h-2 w-0.5 animate-pulse bg-primary rounded-full" />
+                    <span className="h-3.5 w-0.5 animate-pulse bg-primary rounded-full [animation-delay:150ms]" />
+                    <span className="h-4 w-0.5 animate-pulse bg-primary rounded-full [animation-delay:300ms]" />
+                    <span className="h-2.5 w-0.5 animate-pulse bg-primary rounded-full [animation-delay:200ms]" />
+                    <span className="h-3 w-0.5 animate-pulse bg-primary rounded-full [animation-delay:350ms]" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {voice.silenceSecondsRemaining !== null && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                      ⏱ {voice.silenceSecondsRemaining}s
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => voice.stopListening()}
+                    className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                  >
+                    {t('ai.voiceStopAndSend')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => voice.cancelListening()}
+                    className="text-[11px] font-medium text-ink-3 hover:text-ink cursor-pointer"
+                  >
+                    {t('ai.voiceCancel')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Real-time preview of meaningful / interim voice text */}
+              <div className="min-h-[22px] rounded-lg bg-panel border border-line/60 px-2.5 py-1 text-xs text-ink flex items-center">
+                {voice.cleanedPreview || voice.interimTranscript ? (
+                  <span className="font-medium text-ink">{voice.cleanedPreview || voice.interimTranscript}</span>
+                ) : (
+                  <span className="text-ink-3 italic">{t('ai.voiceListening')}</span>
+                )}
+              </div>
+
+              <p className="text-[9.5px] text-ink-3">
+                💡 {t('ai.voiceSilenceHint')}
+              </p>
+            </div>
+          )}
+
+          {/* Voice Error Banner */}
+          {voice.error && (
+            <div className="border-t border-line bg-brick-soft/30 px-3 py-1.5 flex items-center justify-between text-xs text-brick">
+              <span>
+                {voice.error === 'permission_denied'
+                  ? t('ai.voicePermissionDenied')
+                  : voice.error === 'speech_not_supported'
+                    ? t('ai.voiceNotSupported')
+                    : `Voice error: ${voice.error}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => voice.cancelListening()}
+                className="text-ink-3 hover:text-ink text-xs font-bold px-1"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {/* Input Form */}
           <form
-            className={`flex items-center gap-2 border-t border-line bg-panel ${compact ? 'px-2.5 py-2' : 'px-3 py-2.5'}`}
+            className={`flex items-center gap-1.5 border-t border-line bg-panel ${compact ? 'px-2.5 py-2' : 'px-3 py-2.5'}`}
             onSubmit={(e) => {
               e.preventDefault();
               send(text);
@@ -630,6 +727,34 @@ export default function Assistant() {
               aria-label={t('ai.title')}
               className={compact ? 'text-xs py-1.5' : 'text-sm'}
             />
+
+            {/* Voice Search Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (voice.isListening) {
+                  voice.stopListening();
+                } else {
+                  voice.startListening();
+                }
+              }}
+              title={
+                voice.isSupported
+                  ? `${t('ai.voiceSearch')} (${LOCALE_LANG_NAMES[locale]?.nativeName || locale})`
+                  : t('ai.voiceNotSupported')
+              }
+              aria-label={t('ai.voiceSearch')}
+              className={`flex items-center justify-center rounded-lg border transition-all shrink-0 cursor-pointer ${
+                compact ? 'size-7' : 'size-8'
+              } ${
+                voice.isListening
+                  ? 'bg-brick text-white border-brick shadow-md animate-pulse ring-2 ring-brick/30'
+                  : 'border-line bg-ground-2 text-ink-2 hover:bg-primary-soft/60 hover:text-primary hover:border-primary/40 active:scale-95'
+              }`}
+            >
+              {voice.isListening ? <MicOff size={compact ? 13 : 15} /> : <Mic size={compact ? 13 : 15} />}
+            </button>
+
             <Button
               type="submit"
               size="sm"
@@ -682,7 +807,12 @@ export default function Assistant() {
       >
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() =>
+            setOpen((v) => {
+              if (v) voice.cancelListening();
+              return !v;
+            })
+          }
           aria-label={open ? t('common.close') : t('ai.title')}
           title={open ? t('common.close') : t('ai.title')}
           aria-expanded={open}

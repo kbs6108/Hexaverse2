@@ -2,8 +2,9 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, CornerDownLeft, Search, Sparkles, X } from 'lucide-react';
+import { Clock, CornerDownLeft, Mic, MicOff, Search, Sparkles, X } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useVoiceSearch, LOCALE_LANG_NAMES } from '@/lib/useVoiceSearch';
 import { api, qk } from '@/lib/api';
 import { useUI, type RecentParcel } from '@/lib/store';
 import { Spinner } from '@/components/Spinner';
@@ -73,8 +74,23 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
   const containerRef = useRef<HTMLDivElement>(null);
   const openParcel = useOpenParcel();
   const { role } = useAuth();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const recentParcels = useUI((s) => s.recentParcels);
+
+  const voice = useVoiceSearch({
+    locale,
+    silenceDurationMs: 4500, // 4.5s silence duration
+    onFinalTranscript: (meaningfulQuery) => {
+      if (meaningfulQuery.trim()) {
+        setQ(meaningfulQuery);
+      }
+    },
+    onInterimTranscript: (interim) => {
+      if (interim.trim()) {
+        setQ(interim);
+      }
+    },
+  });
 
   const results = useQuery({
     queryKey: qk.search(dq),
@@ -100,6 +116,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
     if (!isOpen) return;
     const onDoc = (e: MouseEvent) => {
       if (!containerRef.current?.contains(e.target as Node)) {
+        voice.cancelListening();
         onClose?.();
       }
     };
@@ -187,16 +204,78 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
               )
             )}
 
+            {/* Voice search button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (voice.isListening) {
+                  voice.stopListening();
+                } else {
+                  voice.startListening();
+                }
+              }}
+              title={
+                voice.isSupported
+                  ? `${t('ai.voiceSearch')} (${LOCALE_LANG_NAMES[locale]?.nativeName || locale})`
+                  : t('ai.voiceNotSupported')
+              }
+              aria-label={t('ai.voiceSearch')}
+              className={`p-1 rounded-md transition-all shrink-0 cursor-pointer ${
+                voice.isListening
+                  ? 'bg-brick text-white shadow-xs animate-pulse ring-2 ring-brick/30'
+                  : 'text-[#6F7768] hover:text-[#176B52] hover:bg-[#E9E5D8]/70'
+              }`}
+            >
+              {voice.isListening ? <MicOff size={14} /> : <Mic size={14} />}
+            </button>
+
             {/* Esc dismiss shortcut pill */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                voice.cancelListening();
+                onClose?.();
+              }}
               aria-label="Close search"
               className="flex items-center gap-1 text-[11px] font-semibold text-[#6F7768] hover:text-[#18231F] px-1.5 py-0.5 rounded-md border border-[#D5D2C7] bg-[#E9E5D8]/60 hover:bg-[#E1E6DE] transition-colors cursor-pointer shrink-0"
             >
               <span>Esc</span>
             </button>
           </div>
+
+          {/* Pop-down Voice Search Status Banner */}
+          {voice.isListening && (
+            <div className="flex items-center justify-between px-4 py-1.5 bg-[#176B52]/10 border-b border-[#176B52]/20 text-xs">
+              <div className="flex items-center gap-2 text-[#176B52] font-medium">
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#176B52] opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-[#176B52]" />
+                </span>
+                <span>{t('ai.voiceLangHint', { lang: LOCALE_LANG_NAMES[locale]?.nativeName || locale })}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {voice.silenceSecondsRemaining !== null && (
+                  <span className="text-[10px] font-mono text-[#176B52] font-semibold">
+                    ⏱ {voice.silenceSecondsRemaining}s
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => voice.stopListening()}
+                  className="text-[11px] font-semibold text-[#176B52] hover:underline cursor-pointer"
+                >
+                  {t('ai.voiceStopAndSend')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => voice.cancelListening()}
+                  className="text-[11px] font-medium text-[#6F7768] hover:text-[#18231F] cursor-pointer"
+                >
+                  {t('ai.voiceCancel')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Results & Quick Actions Body */}
           <div className="max-h-80 overflow-y-auto p-2 scroll-thin">
