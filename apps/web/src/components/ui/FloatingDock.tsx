@@ -4,11 +4,10 @@ import { motion } from 'framer-motion';
 import { Maximize2, Minimize2, HelpCircle, Search } from 'lucide-react';
 import { LogoMark } from '@/app/Shell';
 import { useAuth, roleAtLeast } from '@/lib/auth';
-import { useCinematicTransition } from '@/lib/cinematic';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { SearchBox } from '@/features/map/SearchBox';
-import { CinematicLetterbox } from './CinematicLetterbox';
+import { CinematicLetterbox, useCinematicTransition } from './CinematicLetterbox';
 
 export interface NavItem {
   id: string;

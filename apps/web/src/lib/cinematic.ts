@@ -19,3 +19,6 @@ export function consumeCitizenCinematic(): boolean {
 export function clearCitizenCinematic(): void {
   pendingCinematic = false;
 }
+
+export { useCinematicTransition, CinematicLetterbox } from '@/components/ui/CinematicLetterbox';
+export type { LetterboxPhase } from '@/components/ui/CinematicLetterbox';
