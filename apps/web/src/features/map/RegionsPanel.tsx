@@ -38,6 +38,8 @@ export function RegionsPanel() {
     }
   }, [open]);
 
+  const isDrawerOpen = useUI((s) => s.drawerOpen && !!s.selectedUlpin);
+
   if (!regions.data || regions.data.length === 0) return null;
 
   const activeRegion = regions.data.find((r) => r.code === activeCode);
@@ -47,8 +49,6 @@ export function RegionsPanel() {
     requestFlyTo(r.bbox);
     setOpen(false);
   };
-
-  const isDrawerOpen = useUI((s) => s.drawerOpen && !!s.selectedUlpin);
 
   const handleAllIndia = () => {
     setActiveCode(null);
