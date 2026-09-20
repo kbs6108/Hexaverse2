@@ -2,7 +2,7 @@
  * every answer is composed from the caller's masked records (CDM, due diligence, restrictions,
  * fiscal status, active applications); the LLM (Gemini 2.5 Flash / NVIDIA / Rule Engine) reasons
  * and replies warmly with multi-turn conversational context and actionable platform solutions. */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
@@ -191,27 +191,65 @@ function CopyButton({ text, copyLabel, copiedLabel }: { text: string; copyLabel:
   );
 }
 
-/** Formats text with markdown bold, bullet points, and actionable app links */
+/** Formats text with markdown bold, bullet points, actionable app links, and line-by-line streaming */
 function FormattedMessage({
   text,
   isUser,
   onNavigate,
   compact = false,
+  animateLines = false,
+  onLineRevealed,
+  onFinishAnimating,
 }: {
   text: string;
   isUser: boolean;
   onNavigate: (path: string) => void;
   compact?: boolean;
+  animateLines?: boolean;
+  onLineRevealed?: () => void;
+  onFinishAnimating?: () => void;
 }) {
   if (isUser) {
     return <span className="break-words">{text}</span>;
   }
 
-  const lines = text.split('\n');
+  const allLines = useMemo(() => text.split('\n'), [text]);
+  const [visibleCount, setVisibleCount] = useState(() => (animateLines ? 1 : allLines.length));
+
+  useEffect(() => {
+    if (!animateLines) {
+      setVisibleCount(allLines.length);
+      return;
+    }
+
+    if (visibleCount < allLines.length) {
+      const timer = setTimeout(() => {
+        setVisibleCount((prev) => Math.min(prev + 1, allLines.length));
+        onLineRevealed?.();
+      }, 125); // Smooth 125ms per line reveal
+      return () => clearTimeout(timer);
+    } else {
+      onFinishAnimating?.();
+    }
+  }, [visibleCount, allLines.length, animateLines, onLineRevealed, onFinishAnimating]);
+
+  const linesToRender = allLines.slice(0, visibleCount);
+  const isTyping = animateLines && visibleCount < allLines.length;
 
   return (
-    <div className={`space-y-1.5 leading-relaxed break-words ${compact ? 'text-[12.5px]' : 'text-[13px]'}`}>
-      {lines.map((line, lIdx) => {
+    <div
+      onClick={() => {
+        if (isTyping) {
+          setVisibleCount(allLines.length);
+          onFinishAnimating?.();
+        }
+      }}
+      className={`space-y-1.5 leading-relaxed break-words ${compact ? 'text-[12.5px]' : 'text-[13px]'} ${
+        isTyping ? 'cursor-pointer select-none' : ''
+      }`}
+      title={isTyping ? 'Click to reveal all immediately' : undefined}
+    >
+      {linesToRender.map((line, lIdx) => {
         const trimmed = line.trim();
         if (!trimmed) {
           return <div key={lIdx} className={compact ? 'h-0.5' : 'h-1'} />;
@@ -233,7 +271,14 @@ function FormattedMessage({
               <button
                 key={pIdx}
                 type="button"
-                onClick={() => (isInternal ? onNavigate(href) : window.open(href, '_blank'))}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isInternal) {
+                    onNavigate(href);
+                  } else {
+                    window.open(href, '_blank');
+                  }
+                }}
                 className="inline-flex items-center gap-1 rounded-md bg-primary-soft/80 px-2 py-0.5 font-semibold text-primary underline underline-offset-2 transition-all hover:bg-primary hover:text-white hover:no-underline cursor-pointer shadow-2xs mx-0.5"
               >
                 <span>{label}</span>
@@ -255,19 +300,41 @@ function FormattedMessage({
           return <span key={pIdx}>{part}</span>;
         });
 
+        const isLastVisible = lIdx === linesToRender.length - 1;
+
         if (isBullet) {
           return (
-            <div key={lIdx} className="flex items-start gap-1.5 pl-1 text-ink-2">
+            <motion.div
+              key={lIdx}
+              initial={animateLines ? { opacity: 0, y: 3 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.16 }}
+              className="flex items-start gap-1.5 pl-1 text-ink-2"
+            >
               <span className="text-primary font-bold select-none leading-tight mt-0.5">•</span>
-              <div className="flex-1">{renderedLine}</div>
-            </div>
+              <div className="flex-1">
+                {renderedLine}
+                {isTyping && isLastVisible && (
+                  <span className="inline-block w-1.5 h-3 ml-1 bg-primary/70 animate-pulse align-middle rounded-xs" />
+                )}
+              </div>
+            </motion.div>
           );
         }
 
         return (
-          <p key={lIdx} className="text-ink-2">
+          <motion.p
+            key={lIdx}
+            initial={animateLines ? { opacity: 0, y: 3 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.16 }}
+            className="text-ink-2"
+          >
             {renderedLine}
-          </p>
+            {isTyping && isLastVisible && (
+              <span className="inline-block w-1.5 h-3 ml-1 bg-primary/70 animate-pulse align-middle rounded-xs" />
+            )}
+          </motion.p>
         );
       })}
     </div>
@@ -279,6 +346,7 @@ export default function Assistant() {
   const { t, locale } = useTranslation();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
 
   const currentGreeting = GREETINGS_BY_LOCALE[locale] || GREETINGS_BY_LOCALE.en;
   const currentCategories = PROMPT_CATEGORIES_BY_LOCALE[locale] || PROMPT_CATEGORIES_BY_LOCALE.en;
@@ -370,7 +438,11 @@ export default function Assistant() {
     mutationFn: (vars: { message: string; history: { role: string; content: string }[] }) =>
       api.assistant(vars.message, selectedUlpin, vars.history),
     onSuccess: (r) => {
-      setMsgs((prev) => [...prev, { who: 'bot', text: r.reply, engine: r.engine, sources: r.sources }]);
+      setMsgs((prev) => {
+        const next = [...prev, { who: 'bot', text: r.reply, engine: r.engine, sources: r.sources }];
+        setAnimatingIndex(next.length - 1);
+        return next;
+      });
       if (r.suggestions && r.suggestions.length > 0) {
         setChips(r.suggestions);
       }
@@ -421,6 +493,7 @@ export default function Assistant() {
   });
 
   const handleReset = () => {
+    setAnimatingIndex(null);
     setMsgs([GREETINGS_BY_LOCALE[locale] || GREETINGS_BY_LOCALE.en]);
     const cats = PROMPT_CATEGORIES_BY_LOCALE[locale] || PROMPT_CATEGORIES_BY_LOCALE.en;
     setChips(cats[0]?.prompts ? [...cats[0].prompts] : []);
@@ -433,7 +506,7 @@ export default function Assistant() {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [msgs, m.isPending]);
+  }, [msgs, m.isPending, animatingIndex]);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -539,9 +612,21 @@ export default function Assistant() {
                         : `${compact ? 'max-w-[94%] rounded-xl rounded-tl-xs px-3 py-2 text-[12.5px]' : 'max-w-[92%] rounded-2xl rounded-tl-xs px-4 py-3 text-[13.5px]'} border border-line bg-ground-2 text-ink-2 shadow-xs`
                     }
                   >
-                    <FormattedMessage text={msg.text} isUser={msg.who === 'me'} onNavigate={handleNavigate} compact={compact} />
+                    <FormattedMessage
+                      text={msg.text}
+                      isUser={msg.who === 'me'}
+                      onNavigate={handleNavigate}
+                      compact={compact}
+                      animateLines={msg.who === 'bot' && animatingIndex === i}
+                      onLineRevealed={() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
+                      onFinishAnimating={() => {
+                        if (animatingIndex === i) {
+                          setAnimatingIndex(null);
+                        }
+                      }}
+                    />
 
-                    {msg.who === 'bot' && (
+                    {msg.who === 'bot' && animatingIndex !== i && (
                       <>
                         {msg.sources && msg.sources.length > 0 && (
                           <div className={`mt-2 flex flex-wrap items-center gap-1.5 border-t border-line/60 ${compact ? 'pt-1.5' : 'pt-2.5'}`}>
