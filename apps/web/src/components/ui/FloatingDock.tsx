@@ -7,6 +7,7 @@ import { useAuth, roleAtLeast } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { Kbd } from '@/components/Kbd';
+import { useUI } from '@/lib/store';
 import { SearchBox } from '@/features/map/SearchBox';
 import { CinematicLetterbox, useCinematicTransition } from './CinematicLetterbox';
 
@@ -107,6 +108,8 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
         <div className="relative z-10 flex items-center gap-2.5 shrink-0">
           <Link
             to="/"
+            search={() => ({})}
+            onClick={() => useUI.getState().select(null)}
             className="flex items-center gap-2 hover:opacity-90 transition-opacity select-none"
             aria-label="Land Stack home"
           >
@@ -128,6 +131,8 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
               <Link
                 key={item.id}
                 to={item.to as any}
+                search={item.to === '/' ? () => ({}) : undefined}
+                onClick={item.to === '/' ? () => useUI.getState().select(null) : undefined}
                 className={cn(
                   'relative z-20 px-3.5 py-1.5 text-xs font-bold select-none transition-colors duration-200 outline-none focus-visible:ring-1 focus-visible:ring-[#176B52] rounded-md',
                   isActive ? 'text-[#18231F]' : 'text-[#6F7768] hover:text-[#18231F]',

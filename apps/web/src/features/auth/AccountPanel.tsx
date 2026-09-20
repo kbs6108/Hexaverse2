@@ -407,7 +407,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                   clearCitizenCinematic();
                   void signOut();
                   onClose();
-                  void navigate({ to: '/' });
+                  void navigate({ to: '/', search: () => ({}) });
                 }}
                 className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-line bg-panel text-brick hover:bg-brick-soft/40 hover:border-brick/30 font-medium text-sm transition-colors shadow-xs cursor-pointer"
               >

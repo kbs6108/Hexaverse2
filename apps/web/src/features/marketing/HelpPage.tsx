@@ -78,6 +78,7 @@ export function HelpPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
             to="/"
+            search={() => ({})}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-4 py-2 text-xs font-semibold text-ink-2 shadow-xs transition hover:bg-ground-2 hover:text-ink"
           >
             <Home size={14} /> {t('guide.home')}
