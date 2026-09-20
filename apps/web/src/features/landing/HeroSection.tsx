@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShaderAnimation } from './ShaderAnimation';
 import { FluidStrings } from './FluidStrings';
 import { MapLaunch } from './MapLaunch';
 import { GovBadge } from '@/features/marketing/GovStrip';

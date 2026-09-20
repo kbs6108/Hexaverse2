@@ -107,7 +107,7 @@ export function FluidStrings() {
         }
 
         // Palette: deep black to rich graphite tones
-        const alpha = 0.25 + ((i % 6) / 5) * 0.55; // 0.25 to 0.80 contrast
+        const alpha = 0.22 + ((i % 6) / 5) * 0.45; // balanced contrast on white
         const isAccent = i % 4 === 0;
 
         strings.push({
