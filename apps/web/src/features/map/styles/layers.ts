@@ -28,6 +28,7 @@ export const tileUrl = (layer: string) => `${env.apiUrl}/landstack/tiles/${layer
 /* ---------- Basemaps ---------- */
 export const STREETS_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
+const FONT = ['Noto Sans Regular'];
 const FONT_BOLD = ['Noto Sans Bold'];
 
 export function imageryStyle(key?: string): StyleSpecification {
