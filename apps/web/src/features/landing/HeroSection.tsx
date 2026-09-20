@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { ShaderAnimation } from './ShaderAnimation';
 import { MapLaunch } from './MapLaunch';
 import { GovBadge } from '@/features/marketing/GovStrip';
@@ -42,8 +43,11 @@ export function HeroSection() {
     <>
       {/* Floating Landing Dock: Outside section so it never gets trapped by section stacking contexts */}
       <div className="pointer-events-none fixed left-0 right-0 top-5 z-[9999] flex justify-center px-4">
-        <header
+        <motion.header
           id="dock"
+          initial={{ y: -24, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="atd-modern__bar pointer-events-auto flex w-full max-w-5xl items-center justify-between rounded-full border border-line bg-panel/90 px-4 py-2 text-ink shadow-panel backdrop-blur-xl"
         >
           <a href="#top" className="flex items-center gap-2 px-2 text-ink">
@@ -65,7 +69,7 @@ export function HeroSection() {
               Explore Platform
             </MapLaunch>
           </div>
-        </header>
+        </motion.header>
       </div>
 
       <section className="relative flex min-h-screen w-full overflow-hidden bg-ground">
