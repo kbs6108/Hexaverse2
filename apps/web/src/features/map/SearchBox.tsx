@@ -204,30 +204,37 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
               )
             )}
 
-            {/* Voice search button */}
-            <button
-              type="button"
-              onClick={() => {
-                if (voice.isListening) {
-                  voice.stopListening();
-                } else {
-                  voice.startListening();
+            {/* Voice search button & silence timer */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  if (voice.isListening) {
+                    voice.stopListening();
+                  } else {
+                    voice.startListening();
+                  }
+                }}
+                title={
+                  voice.isSupported
+                    ? `${t('ai.voiceSearch')} (${LOCALE_LANG_NAMES[locale]?.nativeName || locale})`
+                    : t('ai.voiceNotSupported')
                 }
-              }}
-              title={
-                voice.isSupported
-                  ? `${t('ai.voiceSearch')} (${LOCALE_LANG_NAMES[locale]?.nativeName || locale})`
-                  : t('ai.voiceNotSupported')
-              }
-              aria-label={t('ai.voiceSearch')}
-              className={`p-1 rounded-md transition-all shrink-0 cursor-pointer ${
-                voice.isListening
-                  ? 'bg-brick text-white shadow-xs animate-pulse ring-2 ring-brick/30'
-                  : 'text-[#6F7768] hover:text-[#176B52] hover:bg-[#E9E5D8]/70'
-              }`}
-            >
-              {voice.isListening ? <MicOff size={14} /> : <Mic size={14} />}
-            </button>
+                aria-label={t('ai.voiceSearch')}
+                className={`p-1 rounded-md transition-all shrink-0 cursor-pointer ${
+                  voice.isListening
+                    ? 'bg-brick text-white shadow-xs animate-pulse ring-2 ring-brick/30'
+                    : 'text-[#6F7768] hover:text-[#176B52] hover:bg-[#E9E5D8]/70'
+                }`}
+              >
+                {voice.isListening ? <MicOff size={14} /> : <Mic size={14} />}
+              </button>
+              {voice.isListening && voice.silenceSecondsRemaining !== null && (
+                <span className="text-[10px] font-mono text-brick font-semibold">
+                  ⏱ {voice.silenceSecondsRemaining}s
+                </span>
+              )}
+            </div>
 
             {/* Esc dismiss shortcut pill */}
             <button
@@ -242,40 +249,6 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
               <span>Esc</span>
             </button>
           </div>
-
-          {/* Pop-down Voice Search Status Banner */}
-          {voice.isListening && (
-            <div className="flex items-center justify-between px-4 py-1.5 bg-[#176B52]/10 border-b border-[#176B52]/20 text-xs">
-              <div className="flex items-center gap-2 text-[#176B52] font-medium">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#176B52] opacity-75" />
-                  <span className="relative inline-flex size-2 rounded-full bg-[#176B52]" />
-                </span>
-                <span>{t('ai.voiceLangHint', { lang: LOCALE_LANG_NAMES[locale]?.nativeName || locale })}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {voice.silenceSecondsRemaining !== null && (
-                  <span className="text-[10px] font-mono text-[#176B52] font-semibold">
-                    ⏱ {voice.silenceSecondsRemaining}s
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => voice.stopListening()}
-                  className="text-[11px] font-semibold text-[#176B52] hover:underline cursor-pointer"
-                >
-                  {t('ai.voiceStopAndSend')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => voice.cancelListening()}
-                  className="text-[11px] font-medium text-[#6F7768] hover:text-[#18231F] cursor-pointer"
-                >
-                  {t('ai.voiceCancel')}
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Results & Quick Actions Body */}
           <div className="max-h-80 overflow-y-auto p-2 scroll-thin">
