@@ -134,6 +134,7 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-21 hero animation integrated GLSLHills: integrated 21st.dev GLSLHills component (apps/web/src/components/ui/glsl-hills.tsx) by Ali Imam into HeroSection.tsx with 3D procedural wireframe hill contours framing the hero over white canvas.
 - 2026-09-21 hero animation switched to FluidStrings: activated interactive fluid black strings over white canvas (apps/web/src/features/landing/FluidStrings.tsx) in HeroSection.tsx with harmonic wave breathing layout and real-time cursor pluck physics.
 - 2026-09-20 authentic farmer-connectable Telugu & Hindi localization: implemented reactive i18n system (apps/web/src/lib/i18n.ts) with authentic revenue terminology (1-B పహణీ, పట్టాదారు, మ్యుటేషన్, హద్దుల కొలత; खतौनी, खसरा, दाखिल-खारिज, मेढ़ पैमाइश, लगान) across Citizen, Map, Parcel Drawer, Officer Console, and Bhu-Sahayak AI with prompt tuning in ai_assist.py.
 - 2026-09-20 demo users expansion: expanded demo identities to 17 users spanning AP, TN, and TG citizens (matching all seeded story parcels in dept_revenue.ror), regional departmental officers (Revenue, Registration, Planning), and system admin, with categorized switcher tabs in AccountPanel and UserMenu.

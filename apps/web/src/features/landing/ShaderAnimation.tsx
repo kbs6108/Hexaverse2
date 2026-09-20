@@ -2,13 +2,10 @@ import { useEffect, useRef } from "react"
 import * as THREE from "three"
 
 /**
- * 21st.dev "Shader Lines" Caustic Ripples Animation.
- * Features:
- * - Concentric expanding ripple loops with 45-degree caustic slats
- * - Rich warm amber & golden bronze body (#C7994D / #E0BD6B)
- * - Luminous champagne shine highlights (#FFF5D1)
- * - Subtle trailing ribbon drop-shadows for 3D depth
- * - Alpha compositing seamlessly over the warm sandstone canvas
+ * Living Topographic Elevation & Contour Waves Mesh Shader.
+ * Renders real-time cartographic elevation contours and gentle domain-warped terrain waves
+ * in warm sandstone (#F5F2EB), rich golden amber (#D1A654), and heritage forest green (#183B2B).
+ * Subtly deflects around the user's cursor while ensuring 100% legibility under hero typography.
  */
 export function ShaderAnimation() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -16,9 +13,15 @@ export function ShaderAnimation() {
     camera: THREE.Camera
     scene: THREE.Scene
     renderer: THREE.WebGLRenderer
-    uniforms: any
+    uniforms: {
+      time: { value: number }
+      resolution: { value: THREE.Vector2 }
+      mouse: { value: THREE.Vector2 }
+    }
     animationId: number
   } | null>(null)
+
+  const mousePos = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 })
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -32,65 +35,107 @@ export function ShaderAnimation() {
     `
 
     const fragmentShader = `
-      #define TWO_PI 6.2831853072
-      #define PI 3.14159265359
-
       precision highp float;
       uniform vec2 resolution;
       uniform float time;
+      uniform vec2 mouse;
+
+      // 2D pseudo-random hash
+      vec2 hash(vec2 p) {
+        p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+        return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+      }
+
+      // Quintic Hermite interpolated gradient noise
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+        return mix(mix(dot(hash(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0)),
+                       dot(hash(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0)), u.x),
+                   mix(dot(hash(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0)),
+                       dot(hash(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0)), u.x), u.y);
+      }
+
+      // 4-octave Fractional Brownian Motion (FBM) with rotation
+      float fbm(vec2 p) {
+        float v = 0.0;
+        float a = 0.52;
+        mat2 rot = mat2(0.877, 0.479, -0.479, 0.877);
+        for (int i = 0; i < 4; ++i) {
+          v += a * noise(p);
+          p = rot * p * 2.02 + vec2(100.0);
+          a *= 0.49;
+        }
+        return v;
+      }
 
       void main(void) {
         vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / min(resolution.x, resolution.y);
-        float t = time * 0.048;
-        float lineWidth = 0.0028;
+        float t = time * 0.038;
 
-        vec3 glowAcc = vec3(0.0);
-        float shineAcc = 0.0;
-        float shadowAcc = 0.0;
+        // Interactive mouse deflection: gentle terrain elevation swell near cursor
+        float dMouse = length(uv - mouse);
+        vec2 p = uv * 1.65;
+        p += (uv - mouse) * exp(-dMouse * 3.2) * 0.18;
 
-        for(int j = 0; j < 3; j++){
-          for(int i = 0; i < 5; i++){
-            // Wave distance calculation maintaining the exact ripple & slat geometry
-            float wavePhase = fract(t - 0.012 * float(j) + float(i) * 0.01) * 4.5 - length(uv) + mod(uv.x + uv.y, 0.2);
-            float dist = abs(wavePhase);
+        // Multi-stage domain warping for natural geomorphology & river valley contours
+        vec2 q = vec2(
+          fbm(p + vec2(0.0, 0.0) + vec2(t * 0.28, t * 0.16)),
+          fbm(p + vec2(5.2, 1.3) + vec2(t * -0.20, t * 0.24))
+        );
 
-            // 1. Broad soft ambient golden glow
-            glowAcc[j] += lineWidth * float(i * i) / (dist + 0.001);
+        vec2 r = vec2(
+          fbm(p + 3.0 * q + vec2(1.7, 9.2) + vec2(t * 0.12, t * -0.08)),
+          fbm(p + 3.0 * q + vec2(8.3, 2.8) + vec2(t * -0.10, t * 0.14))
+        );
 
-            // 2. Specular shine: concentrated brilliant crest gleam
-            float crest = max(1.0 - dist * 15.0, 0.0);
-            shineAcc += pow(crest, 3.5) * float(i + 1) * 0.12;
+        float elevation = fbm(p + 3.4 * r);
+        float h = elevation * 0.5 + 0.5;
 
-            // 3. Subtle trailing drop-shadow giving 3D ribbon depth
-            if (wavePhase < 0.0 && wavePhase > -0.25) {
-              shadowAcc += smoothstep(0.0, -0.06, wavePhase) * smoothstep(-0.25, -0.09, wavePhase) * 0.14;
-            }
-          }
-        }
+        // Topographic Contour Lines
+        float contourFreq = 16.0;
+        float contourVal = h * contourFreq;
+        float fracVal = abs(fract(contourVal) - 0.5);
 
-        // Palette definitions:
-        vec3 shadowColor = vec3(0.65, 0.54, 0.40); // soft warm cast shadow (#A68A66)
-        vec3 bodyBronze  = vec3(0.78, 0.60, 0.30); // warm amber bronze (#C7994D)
-        vec3 bodyGold    = vec3(0.88, 0.74, 0.42); // radiant warm gold (#E0BD6B)
-        vec3 shineColor  = vec3(1.00, 0.96, 0.82); // luminous champagne shine (#FFF5D1)
+        // Minor contour lines: crisp, anti-aliased
+        float minorLine = smoothstep(0.08, 0.004, fracVal);
 
-        float totalGlow = glowAcc[0] + glowAcc[1] + glowAcc[2];
-        vec3 goldenBody = (glowAcc[0] * bodyBronze + glowAcc[1] * bodyGold + glowAcc[2] * bodyGold) / max(totalGlow, 0.001);
+        // Major index contours (every 4th line): bolder with luminous specular sheen
+        float majorContourVal = h * (contourFreq / 4.0);
+        float majorFrac = abs(fract(majorContourVal) - 0.5);
+        float majorLine = smoothstep(0.10, 0.005, majorFrac);
 
-        // Normalize intensities
-        float glowIntensity   = smoothstep(0.08, 0.95, totalGlow * 0.40);
-        float shineIntensity  = clamp(shineAcc * 0.80, 0.0, 0.95);
-        float shadowIntensity = clamp(shadowAcc, 0.0, 0.45);
+        // Palette: Warm Sandstone substrate, Golden Amber crests, Heritage Forest depth
+        vec3 sandstone = vec3(0.96, 0.95, 0.92);      // #F5F2EB
+        vec3 sageLowland = vec3(0.86, 0.91, 0.88);     // subtle sage
+        vec3 goldenAmber = vec3(0.82, 0.65, 0.33);     // #D1A654
+        vec3 forestGreen = vec3(0.10, 0.26, 0.18);     // #183B2B
+        vec3 specularChampagne = vec3(0.99, 0.95, 0.82); // luminous crest
 
-        // Composite: warm golden body -> blend subtle shadow -> overlay specular shine
-        vec3 color = goldenBody;
-        color = mix(color, shadowColor, shadowIntensity * 0.60);
-        color = mix(color, shineColor, shineIntensity * 0.75);
+        // Soft elevation-based hypsometric tinting
+        vec3 terrainColor = mix(sandstone, sageLowland, smoothstep(0.20, 0.55, h));
+        terrainColor = mix(terrainColor, goldenAmber, smoothstep(0.45, 0.85, h) * 0.40);
 
-        // Compute alpha for natural WebGL compositing over the warm sandstone canvas
-        float alpha = clamp(max(glowIntensity * 0.65 + shineIntensity * 0.85, shadowIntensity * 0.55), 0.0, 0.85);
+        // Subtle topographic hillshade
+        float hillshade = clamp(0.80 + 0.30 * (q.x - r.y), 0.60, 1.15);
+        terrainColor *= hillshade;
 
-        gl_FragColor = vec4(color, alpha);
+        // Composite contours
+        vec3 minorLineColor = mix(goldenAmber, forestGreen, 0.40);
+        vec3 finalColor = mix(terrainColor, minorLineColor, minorLine * 0.60);
+        finalColor = mix(finalColor, specularChampagne, majorLine * 0.85);
+
+        // Luminous alpha curve ensuring complete foreground legibility
+        float lineAlpha = minorLine * 0.32 + majorLine * 0.52;
+        float ridgeAlpha = smoothstep(0.38, 0.85, h) * 0.15;
+        float alpha = clamp(lineAlpha + ridgeAlpha, 0.0, 0.72);
+
+        // Soft radial vignette to fade contours seamlessly at screen edges
+        float vignette = smoothstep(1.85, 0.60, length(uv * vec2(0.85, 1.0)));
+        alpha *= vignette;
+
+        gl_FragColor = vec4(finalColor, alpha);
       }
     `
 
@@ -101,8 +146,9 @@ export function ShaderAnimation() {
     const geometry = new THREE.PlaneGeometry(2, 2)
 
     const uniforms = {
-      time: { type: "f", value: 1.0 },
-      resolution: { type: "v2", value: new THREE.Vector2() },
+      time: { value: 1.0 },
+      resolution: { value: new THREE.Vector2() },
+      mouse: { value: new THREE.Vector2(0, 0) },
     }
 
     const material = new THREE.ShaderMaterial({
@@ -115,19 +161,14 @@ export function ShaderAnimation() {
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearColor(0x000000, 0)
-    renderer.domElement.style.position = "absolute"
-    renderer.domElement.style.inset = "0"
-    renderer.domElement.style.width = "100%"
-    renderer.domElement.style.height = "100%"
-    renderer.domElement.style.pointerEvents = "none"
     container.appendChild(renderer.domElement)
 
     const onWindowResize = () => {
-      const width = container.clientWidth || window.innerWidth
-      const height = container.clientHeight || window.innerHeight
+      const width = container.clientWidth
+      const height = container.clientHeight
       renderer.setSize(width, height)
       uniforms.resolution.value.x = renderer.domElement.width
       uniforms.resolution.value.y = renderer.domElement.height
@@ -136,12 +177,32 @@ export function ShaderAnimation() {
     onWindowResize()
     window.addEventListener("resize", onWindowResize, false)
 
-    // Also trigger resize check after layout settles
-    const resizeTimer = setTimeout(onWindowResize, 100)
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!container) return
+      const rect = container.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return
+      const x = ((e.clientX - rect.left) * 2.0 - rect.width) / Math.min(rect.width, rect.height)
+      const y = -((e.clientY - rect.top) * 2.0 - rect.height) / Math.min(rect.width, rect.height)
+      mousePos.current.targetX = x
+      mousePos.current.targetY = y
+    }
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true })
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
     const animate = () => {
       const animationId = requestAnimationFrame(animate)
-      uniforms.time.value += 0.045
+
+      if (!prefersReducedMotion) {
+        uniforms.time.value += 0.035
+      }
+
+      // Smooth mouse lerping
+      mousePos.current.x += (mousePos.current.targetX - mousePos.current.x) * 0.06
+      mousePos.current.y += (mousePos.current.targetY - mousePos.current.y) * 0.06
+      uniforms.mouse.value.set(mousePos.current.x, mousePos.current.y)
+
       renderer.render(scene, camera)
 
       if (sceneRef.current) {
@@ -153,8 +214,8 @@ export function ShaderAnimation() {
     animate()
 
     return () => {
-      clearTimeout(resizeTimer)
       window.removeEventListener("resize", onWindowResize)
+      window.removeEventListener("pointermove", handlePointerMove)
 
       if (sceneRef.current) {
         cancelAnimationFrame(sceneRef.current.animationId)
@@ -168,10 +229,5 @@ export function ShaderAnimation() {
     }
   }, [])
 
-  return (
-    <div
-      ref={containerRef}
-      className="absolute inset-0 z-0 h-full w-full overflow-hidden pointer-events-none"
-    />
-  )
+  return <div ref={containerRef} className="absolute inset-0 -z-10 h-full w-full overflow-hidden" />
 }
