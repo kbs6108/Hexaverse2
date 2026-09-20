@@ -261,7 +261,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
   });
 
   return (
-    <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-14 bottom-0"
+    <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-14 bottom-0 right-0 border-l border-[#D5D2C7]/70 rounded-none"
       header={
         <div>
           <p className="text-[11px] uppercase tracking-wide text-ink-3">Application</p>

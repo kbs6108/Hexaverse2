@@ -129,9 +129,20 @@ code, kbd, .mono { font-family: var(--font-mono); }
   position: absolute !important;
   bottom: 2rem !important; /* bottom-8 */
   right: 1rem !important;  /* right-4 */
-  z-index: 40 !important;
+  z-index: 30 !important;
   pointer-events: auto !important;
   margin: 0 !important;
+  transition: right 0.3s ease-out !important;
+}
+
+[data-drawer-open="true"] .maplibregl-ctrl-bottom-right {
+  right: 488px !important;
+}
+
+@media (max-width: 640px) {
+  [data-drawer-open="true"] .maplibregl-ctrl-bottom-right {
+    display: none !important;
+  }
 }
 
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl {

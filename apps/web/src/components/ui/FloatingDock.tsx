@@ -178,19 +178,19 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             )}
           >
             <Search size={12} className={isSearchOpen ? 'text-[#B38A4C]' : 'text-[#176B52]'} />
-            <span className="hidden sm:inline text-[11px] text-[#4B5345]">Search</span>
+            <span className="hidden md:inline text-[11px] text-[#4B5345]">Search</span>
             <Kbd className="hidden md:inline-flex text-[8.5px] px-1 py-0 leading-none">⌘K</Kbd>
           </button>
 
           {/* Guide minimalist text button */}
           <Link
             to="/help"
-            className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#6F7768] hover:text-[#18231F] hover:bg-[#E9E5D8]/70 rounded-full transition-colors cursor-pointer"
+            className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#6F7768] hover:text-[#18231F] hover:bg-[#E9E5D8]/70 rounded-full transition-colors cursor-pointer"
             title={t('nav.guide')}
             aria-label={t('nav.guide')}
           >
             <HelpCircle size={13} />
-            <span className="hidden lg:inline">{t('nav.guide')}</span>
+            <span className="hidden xl:inline">{t('nav.guide')}</span>
           </Link>
 
           {/* Cinematic Fullscreen Toggle with Expand SVG */}
@@ -215,7 +215,7 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             <span className="flex size-5 items-center justify-center rounded-full bg-[#176B52] text-[10px] font-bold text-[#F4F1E7]">
               {userInitials}
             </span>
-            <span className="hidden sm:inline font-medium tracking-tight truncate max-w-[120px]">
+            <span className="hidden sm:inline font-medium tracking-tight truncate max-w-[80px] lg:max-w-[120px]">
               {userDisplayName}
             </span>
             <span className="flex items-center gap-1 text-[10.5px] font-bold px-1.5 py-0.5 rounded-full bg-[#176B52]/70 text-[#E9E5D8] border border-[#176B52]">

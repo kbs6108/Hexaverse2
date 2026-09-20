@@ -48,6 +48,8 @@ export function RegionsPanel() {
     setOpen(false);
   };
 
+  const isDrawerOpen = useUI((s) => s.drawerOpen && !!s.selectedUlpin);
+
   const handleAllIndia = () => {
     setActiveCode(null);
     requestFlyTo(INDIA_BBOX);
@@ -55,7 +57,13 @@ export function RegionsPanel() {
   };
 
   return (
-    <div ref={containerRef} className="absolute top-20 right-4 z-30 select-none">
+    <div
+      ref={containerRef}
+      className={clsx(
+        'absolute top-20 z-30 select-none transition-all duration-300 ease-out',
+        isDrawerOpen ? 'right-4 sm:right-[488px] max-sm:hidden' : 'right-4',
+      )}
+    >
       {/* Trigger Pill */}
       <button
         type="button"

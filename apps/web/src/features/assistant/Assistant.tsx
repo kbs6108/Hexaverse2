@@ -399,6 +399,8 @@ export default function Assistant() {
   });
 
   const selectedUlpin = useUI((s) => s.selectedUlpin);
+  const drawerOpen = useUI((s) => s.drawerOpen);
+  const isDrawerOpen = drawerOpen && !!selectedUlpin;
   const select = useUI((s) => s.select);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -512,7 +514,12 @@ export default function Assistant() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const isRightHalf = pos.x > (typeof window !== 'undefined' ? window.innerWidth / 2 : 500);
+  const targetX =
+    isDrawerOpen && typeof window !== 'undefined' && pos.x > window.innerWidth - 520
+      ? Math.max(16, window.innerWidth - 540)
+      : pos.x;
+
+  const isRightHalf = targetX > (typeof window !== 'undefined' ? window.innerWidth / 2 : 500);
   const isBottomHalf = pos.y > (typeof window !== 'undefined' ? window.innerHeight / 2 : 400);
 
   const dialogStyle: React.CSSProperties = {
@@ -523,9 +530,9 @@ export default function Assistant() {
   };
 
   if (isRightHalf) {
-    dialogStyle.right = Math.max(16, window.innerWidth - pos.x - 48);
+    dialogStyle.right = Math.max(16, window.innerWidth - targetX - 48);
   } else {
-    dialogStyle.left = Math.max(16, pos.x);
+    dialogStyle.left = Math.max(16, targetX);
   }
 
   if (isBottomHalf) {
@@ -801,9 +808,9 @@ export default function Assistant() {
           top: 16,
           bottom: typeof window !== 'undefined' ? window.innerHeight - 64 : 800,
         }}
-        initial={{ x: pos.x, y: pos.y }}
-        animate={{ x: pos.x, y: pos.y }}
-        transition={{ duration: 0 }}
+        initial={{ x: targetX, y: pos.y }}
+        animate={{ x: targetX, y: pos.y }}
+        transition={{ type: 'spring', stiffness: 350, damping: 30 }}
         style={{
           position: 'fixed',
           left: 0,
@@ -815,7 +822,7 @@ export default function Assistant() {
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
         onDragEnd={(_, info) => {
-          const newX = Math.min(Math.max(16, pos.x + info.offset.x), window.innerWidth - 64);
+          const newX = Math.min(Math.max(16, targetX + info.offset.x), window.innerWidth - 64);
           const newY = Math.min(Math.max(16, pos.y + info.offset.y), window.innerHeight - 64);
           setPos({ x: newX, y: newY });
           try {

@@ -19,7 +19,8 @@ const MAX_BOUNDS: [number, number, number, number] = [55.0, 0.0, 110.0, 40.0];
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
-  const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, select, setHover } = useUI();
+  const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, select, setHover, drawerOpen } = useUI();
+  const isDrawerOpen = drawerOpen && !!selectedUlpin;
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
   const imagery = basemap === 'imagery';
@@ -120,7 +121,7 @@ export function MapView() {
   };
 
   return (
-    <div className="relative h-full w-full" data-basemap={basemap}>
+    <div className="relative h-full w-full" data-basemap={basemap} data-drawer-open={isDrawerOpen ? 'true' : 'false'}>
       <Map
         ref={mapRef}
         initialViewState={{ longitude: env.defaultCenter[0], latitude: env.defaultCenter[1], zoom: env.defaultZoom }}
