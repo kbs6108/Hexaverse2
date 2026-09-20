@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import {
@@ -6,6 +6,7 @@ import {
   Building2,
   Boxes,
   Check,
+  ChevronLeft,
   ChevronRight,
   Copy,
   Droplets,
@@ -17,9 +18,10 @@ import {
   Receipt,
   Satellite,
   Scale,
+  ShieldCheck,
   Sparkles,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { DEPARTMENTS, ROLES } from '@/features/marketing/pitch';
 import { GovStrip } from '@/features/marketing/GovStrip';
 import { SectionHeading } from '@/features/marketing/components';
@@ -122,7 +124,7 @@ const LIVE_PARCEL_CHECKS: ParcelDepartmentCheck[] = [
     label: 'Record of Rights (RoR)',
     status: 'clean',
     badge: 'Synced & Matched',
-    detail: 'Khata No. 412 · Extent: 3.44 acres (13,929 m²) · Classified as Dry Agricultural. No pending mutation backlog.',
+    detail: 'Khata No. 412 · Extent: 3.44 acres (13,929 m²) · Dry Agricultural. No pending mutation backlog.',
     source: 'Meebhoomi RoR-1B Gateway',
     icon: Landmark,
   },
@@ -132,7 +134,7 @@ const LIVE_PARCEL_CHECKS: ParcelDepartmentCheck[] = [
     label: 'Deed & Encumbrance',
     status: 'clean',
     badge: 'Nil Encumbrance (EC Clear)',
-    detail: 'Registered Sale Deed Doc #1420/2021 (SRO Mangalagiri). Zero active bank mortgages or third-party attachments.',
+    detail: 'Registered Sale Deed Doc #1420/2021 (SRO Mangalagiri). Zero active bank mortgages or attachments.',
     source: 'CARD Online Registration System',
     icon: FileText,
   },
@@ -142,7 +144,7 @@ const LIVE_PARCEL_CHECKS: ParcelDepartmentCheck[] = [
     label: 'Master Plan Zoning',
     status: 'clean',
     badge: 'Zone: Agricultural / R-1 Compatible',
-    detail: 'Outside flood mitigation buffer (Krishna Basin). Permissible building height: G+2 residential / farmstead.',
+    detail: 'Outside flood mitigation buffer. Permissible building height: G+2 residential / farmstead.',
     source: 'CRDA Master Plan 2035 GIS',
     icon: Building2,
   },
@@ -152,7 +154,7 @@ const LIVE_PARCEL_CHECKS: ParcelDepartmentCheck[] = [
     label: 'Property Assessment & Tax',
     status: 'clean',
     badge: 'Paid Up to FY 2026',
-    detail: 'Annual assessment ₹1,840 paid in full. Guideline valuation: ₹14,200/sqm (Reference market rate: ₹18,500/sqm).',
+    detail: 'Annual assessment ₹1,840 paid in full. Guideline valuation: ₹14,200/sqm (Market ref: ₹18,500/sqm).',
     source: 'Panchayat Raj Fiscal Gateway',
     icon: Receipt,
   },
@@ -162,7 +164,7 @@ const LIVE_PARCEL_CHECKS: ParcelDepartmentCheck[] = [
     label: 'Dispute & Litigation',
     status: 'clean',
     badge: 'Clear · Zero Active Stays',
-    detail: 'District Munsif Court registry scanned. Suit OS 42/2018 disposed with final decree. No active injunctions.',
+    detail: 'District Munsif Court registry scanned. Suit OS 42/2018 disposed with final decree. No active stays.',
     source: 'e-Courts National Portal',
     icon: Scale,
   },
@@ -172,7 +174,7 @@ const LIVE_PARCEL_CHECKS: ParcelDepartmentCheck[] = [
     label: 'Public Rights-of-Way',
     status: 'info',
     badge: 'Irrigation Canal Buffer Clear',
-    detail: 'Secondary feeder canal 28m east (15m mandatory buffer respected). 11kV distribution line easement registered.',
+    detail: 'Secondary feeder canal 28m east (15m mandatory buffer respected). 11kV distribution easement registered.',
     source: 'APCPDCL & Water Resources Dept',
     icon: Droplets,
   },
@@ -231,19 +233,19 @@ function InteractiveParcelCard() {
           <p className="text-[10.5px] text-ink-2">3.44 acres · 344 cents</p>
         </div>
         <div className="rounded-xl border border-line bg-panel-2/60 p-2.5">
-          <span className="text-[10px] uppercase tracking-wide text-ink-3">Land Classification</span>
+          <span className="text-[10px] uppercase tracking-wide text-ink-3">Classification</span>
           <p className="font-bold text-ink text-[13px] mt-0.5">Dry Agricultural</p>
           <p className="text-[10.5px] text-ink-2">Passbook Khata #412</p>
         </div>
         <div className="rounded-xl border border-line bg-panel-2/60 p-2.5">
-          <span className="text-[10px] uppercase tracking-wide text-ink-3">DPDP Owner Privacy</span>
+          <span className="text-[10px] uppercase tracking-wide text-ink-3">DPDP Privacy</span>
           <p className="font-bold text-ink text-[13px] mt-0.5">R*** K***</p>
           <p className="text-[10.5px] text-primary">Masked by default</p>
         </div>
         <div className="rounded-xl border border-line bg-panel-2/60 p-2.5">
-          <span className="text-[10px] uppercase tracking-wide text-ink-3">Overall Health</span>
+          <span className="text-[10px] uppercase tracking-wide text-ink-3">Overall Status</span>
           <p className="font-bold text-emerald-700 text-[13px] mt-0.5">Clean Title</p>
-          <p className="text-[10.5px] text-ink-2">9/9 verification checks</p>
+          <p className="text-[10.5px] text-ink-2">9/9 checks passed</p>
         </div>
       </div>
 
@@ -311,7 +313,7 @@ function InteractiveParcelCard() {
 
       {/* Direct launch link */}
       <div className="mt-5 flex items-center justify-between pt-2">
-        <span className="text-xs text-ink-3 font-medium">Ready to see this parcel live on the map?</span>
+        <span className="text-xs text-ink-3 font-medium">Ready to inspect on the map?</span>
         <MapLaunch
           ulpin="TFCM91641E6C82"
           className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-white shadow-2xs hover:brightness-105 active:scale-95 transition-all cursor-pointer"
@@ -439,107 +441,379 @@ function DepartmentsSection() {
 }
 
 /* =========================================================================
-   4. CORE CAPABILITIES: COMPACT HIGH-IMPACT GRID (REPLACES 360vh SCROLL)
+   4. STICKY HORIZONTAL SHOWCASE (BUTTERY-SMOOTH, ZERO-STUTTER)
    ========================================================================= */
 
-const CAPABILITIES = [
+const SHOWCASE_CARDS = [
   {
     num: '01',
-    title: 'AI Due Diligence Check',
-    tag: 'NVIDIA Nemotron',
+    title: 'AI Risk & Title Briefs',
+    tag: 'AI INFERENCE',
+    engine: 'NVIDIA Nemotron',
     icon: Sparkles,
-    lead: 'Automated 9-point title & legal synthesis',
-    desc: 'Analyzes court stays, encumbrance overlapping charges, fiscal arrears, and survey boundary mismatches into one plain-language brief with recommendations.',
-    metric: 'Instant Legal Brief',
+    lead: 'Instant cross-department risk scoring and legal flags.',
+    body: 'Flagged parcels are analysed automatically by the AI engine: court stays, encumbrance overlap, fiscal arrears, and survey mismatches synthesized into one plain-language brief with recommendations.',
+    metric: '9-Point Due Diligence Check',
   },
   {
     num: '02',
-    title: 'Satellite Change Alerts',
-    tag: 'Sentinel-2 Orbit (10m)',
+    title: 'Satellite Change Detection',
+    tag: 'EARTH OBSERVATION',
+    engine: 'Sentinel-2 Orbit (10m)',
     icon: Satellite,
-    lead: 'Detects unrecorded built-up from orbit',
-    desc: 'Multi-spectral NDVI/NDBI delta checks compare satellite passes against approved municipal building permissions, triggering field inspection alerts in the officer queue.',
-    metric: 'Bi-Weekly Orbit Sync',
+    lead: 'Unrecorded construction detected from orbit.',
+    body: 'Multi-spectral NDVI and NDBI delta comparison compares satellite passes against registered building permissions. Likely unauthorized built-up triggers an automated field review in the officer queue in one click.',
+    metric: 'Bi-Weekly Orbit Revisit',
   },
   {
     num: '03',
     title: 'Vertical Property (3D Cadastre)',
-    tag: 'PostGIS 3D Vector',
+    tag: '3D STRATIFIED',
+    engine: 'PostGIS 3D Vector',
     icon: Boxes,
-    lead: 'Stratified 3D-ULPIN for multi-storey units',
-    desc: 'Land is no longer flat. Binds apartments, commercial towers, elevation bands, common facilities, and underground basements to authoritative sub-parcel keys.',
-    metric: 'Full Stratum Registry',
+    lead: 'True 3D-ULPIN for multi-storey apartments and basements.',
+    body: 'Land is no longer flat. Land Stack binds vertical property units to their elevation band, unit floor area, common areas, and underground basements with authoritative sub-parcel keys.',
+    metric: 'Full 3D Stratum Registry',
   },
   {
     num: '04',
-    title: 'Bounded Boundary Resurvey',
-    tag: 'Norm Enforcement',
+    title: 'Bounded Boundary Edits',
+    tag: 'RESURVEY & GIS',
+    engine: 'Norm Enforcement',
     icon: PenLine,
-    lead: 'Surveyors drag corners with strict rules',
-    desc: 'Interactive map editor enforces strict geometry norms: blocks polygon overlaps, bounds area drift to ±15%, and mandates dual-officer sign-off to sync the RoR.',
-    metric: '±15% Limit · 0 Overlap',
+    lead: 'Officers drag corners; geometry validation enforces norms.',
+    body: 'Surveyors correct parcel geometry directly on the map. Strict automated validation blocks overlaps, limits area drift to ±15%, and requires a two-step second-officer sign-off that synchronizes the Record of Rights.',
+    metric: '±15% Tolerance · 0 Overlaps',
   },
   {
     num: '05',
     title: 'Verifiable LIR Reports',
-    tag: 'Cryptographic QR',
+    tag: 'INTEGRITY',
+    engine: 'Cryptographic QR',
     icon: QrCode,
-    lead: 'Official reports checkable on any smartphone',
-    desc: 'Citizens and financial institutions download certified Land Information Reports with embedded government cryptographic hashes, verifiable in under two seconds.',
-    metric: 'Sub-2s Mobile Check',
+    lead: 'Tamper-evident Land Information Reports anyone can verify.',
+    body: 'Citizens and financial institutions download officially signed PDFs containing full parcel provenance. Anyone with a smartphone can scan the embedded QR code to verify the live government hash in under two seconds.',
+    metric: 'Sub-2s Mobile Verification',
   },
   {
     num: '06',
-    title: 'DPDP 2023 Consent Privacy',
-    tag: 'Privacy by Design',
+    title: 'Privacy by Consent',
+    tag: 'DPDP 2023',
+    engine: 'Tokenized Gateways',
     icon: EyeOff,
-    lead: 'Masked owner identities by default',
-    desc: 'Complies with the Digital Personal Data Protection Act. Public lookups display masked owner names until the owner grants a time-boxed cryptographic consent token.',
+    lead: 'Owner identities masked by default for public search.',
+    body: 'Compliant with the Digital Personal Data Protection Act. Landowner details show as masked (e.g. R*** K***) for public queries until the owner grants a cryptographically signed, time-boxed consent token.',
     metric: 'Zero-Knowledge Public Search',
+  },
+  {
+    num: '07',
+    title: 'State Adapters Engine',
+    tag: 'MULTI-STATE CDM',
+    engine: 'Common Land Model 1.0',
+    icon: Landmark,
+    lead: 'Unifies AP, TN, and TG cadastre schemas in real-time.',
+    body: 'Translates local nomenclature — khata (Meebhoomi), patta (Chitta), and passbook (Dharani) — into one canonical standard. Integrates each state without replacing their existing database.',
+    metric: '3 States · 1 Common Schema',
+  },
+  {
+    num: '08',
+    title: 'Tamper-Evident Provenance',
+    tag: 'AUDIT LEDGER',
+    engine: 'Cryptographic Hash Chain',
+    icon: ShieldCheck,
+    lead: 'Every transaction sealed with verifiable government signatures.',
+    body: 'Deed registration, court orders, boundary updates, and tax clears form an unbroken audit chain. Any attempt to alter historical records is immediately flagged during verification.',
+    metric: 'Immutable Audit Trail',
   },
 ];
 
-function CapabilitiesGridSection() {
-  return (
-    <section id="capabilities" className="landing-section bg-ground px-6 py-20 sm:px-12 lg:px-20">
-      <div className="mx-auto max-w-6xl">
-        <SectionHeading
-          kicker="03 / Platform Capabilities"
-          title="Engineered like true public infrastructure."
-          sub="Purpose-built for spatial certainty, auditability, and speed — without gimmicks or manual delays."
-          align="center"
-          size="lg"
-        />
+function StickyHorizontalScroll() {
+  const targetRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [scrollRange, setScrollRange] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const activeIdxRef = useRef(0);
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {CAPABILITIES.map((cap) => {
-            const Icon = cap.icon;
-            return (
-              <SpotlightCard
-                key={cap.num}
-                className="flex flex-col justify-between p-6 sm:p-7 rounded-3xl border border-line bg-panel shadow-panel hover:border-primary/40 hover:shadow-md transition-all duration-200"
-              >
+  const totalCardCount = SHOWCASE_CARDS.length + 2; // 10 cards total
+
+  // Native hardware-accelerated scroll tracking without any main-thread scroll listener lag
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ['start start', 'end end'],
+  });
+
+  // Direct 1:1 compositor transform: Eliminates spring oscillation micro-stutters completely
+  const x = useTransform(scrollYProgress, [0, 1], [0, -scrollRange]);
+  const progressPercent = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+
+  // Only trigger React state updates when crossing discrete card thresholds
+  useEffect(() => {
+    return scrollYProgress.on('change', (latest) => {
+      const nextIdx = Math.min(totalCardCount - 1, Math.max(0, Math.floor(latest * totalCardCount)));
+      if (nextIdx !== activeIdxRef.current) {
+        activeIdxRef.current = nextIdx;
+        setActiveIdx(nextIdx);
+      }
+    });
+  }, [scrollYProgress, totalCardCount]);
+
+  // Dynamically compute exact scroll width
+  useEffect(() => {
+    const updateRange = () => {
+      if (contentRef.current) {
+        const scrollWidth = contentRef.current.scrollWidth;
+        const viewportWidth = window.innerWidth;
+        // Make sure the last card rests comfortably inside viewport with padding
+        setScrollRange(Math.max(0, scrollWidth - viewportWidth + 100));
+      }
+    };
+
+    updateRange();
+    window.addEventListener('resize', updateRange, { passive: true });
+    return () => window.removeEventListener('resize', updateRange);
+  }, []);
+
+  // Support horizontal trackpad swipe translating to page scroll
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 4) {
+        window.scrollBy({ top: e.deltaX, behavior: 'auto' });
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: true });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  const scrollToCard = (cardIndex: number) => {
+    const target = targetRef.current;
+    if (!target) return;
+    const targetTop = target.getBoundingClientRect().top + window.scrollY;
+    const totalDistance = target.offsetHeight - window.innerHeight;
+    if (totalDistance <= 0) return;
+    const targetScroll = targetTop + (totalDistance * (cardIndex / (totalCardCount - 1)));
+    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+  };
+
+  const handleNav = (direction: 'next' | 'prev') => {
+    const nextIdx = direction === 'next'
+      ? Math.min(totalCardCount - 1, activeIdxRef.current + 1)
+      : Math.max(0, activeIdxRef.current - 1);
+    scrollToCard(nextIdx);
+  };
+
+  return (
+    <section ref={targetRef} className="relative h-[300vh] bg-ground">
+      <div className="sticky top-0 flex h-screen max-h-screen flex-col justify-between overflow-hidden border-y border-line bg-panel-2/30 py-6 sm:py-8 lg:py-10 backdrop-blur-xs">
+        {/* Sticky Section Header */}
+        <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-12 lg:px-20">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                  03 / Platform Capabilities
+                </p>
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold text-primary">
+                  Sticky Horizontal Showcase
+                </span>
+              </div>
+              <h2 className="mt-1.5 font-display text-2xl font-bold tracking-tight text-ink sm:text-4xl lg:text-5xl">
+                Built like public infrastructure.
+              </h2>
+              <p className="mt-1 max-w-xl text-xs sm:text-sm leading-relaxed text-ink-2">
+                Scroll vertically down to glide horizontally through the core modules unifying analysis, geometry integrity, verifiable deeds, and privacy.
+              </p>
+            </div>
+
+            {/* Interactive Progress & Arrow controls */}
+            <div className="flex items-center gap-4 self-start sm:self-auto">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleNav('prev')}
+                  disabled={activeIdx === 0}
+                  className="flex size-9 items-center justify-center rounded-full border border-line bg-panel text-ink transition hover:border-line-strong hover:bg-ground active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs cursor-pointer"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNav('next')}
+                  disabled={activeIdx >= totalCardCount - 1}
+                  className="flex size-9 items-center justify-center rounded-full border border-line bg-panel text-ink transition hover:border-line-strong hover:bg-ground active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs cursor-pointer"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
+              <div className="flex flex-col items-end gap-1.5">
+                <span className="font-mono text-[11px] font-bold text-primary">
+                  Card {activeIdx + 1} of {totalCardCount}
+                </span>
+                <div className="h-2 w-36 sm:w-44 overflow-hidden rounded-full bg-line/80">
+                  <motion.div
+                    style={{ width: progressPercent }}
+                    className="h-full rounded-full bg-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Horizontal Motion Track: Hardware accelerated with will-change and translate3d */}
+        <div className="relative my-auto w-full overflow-hidden py-3">
+          <motion.div
+            ref={contentRef}
+            style={{
+              x,
+              transform: 'translate3d(0, 0, 0)',
+              willChange: 'transform',
+            }}
+            className="flex gap-6 px-6 sm:px-12 lg:px-20 w-max"
+          >
+            {/* Intro Lead Card */}
+            <div
+              style={{ transform: 'translate3d(0, 0, 0)' }}
+              className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 h-[400px] sm:h-[440px] lg:h-[460px]"
+            >
+              <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-3xl border border-primary/30 bg-primary p-7 sm:p-8 text-white shadow-panel">
+                <BorderBeam size={200} duration={8} colorFrom="#52B788" colorTo="#D1A654" />
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex size-11 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-2xs">
-                      <Icon size={20} strokeWidth={1.8} />
-                    </span>
-                    <span className="rounded-full border border-line bg-panel-2 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-                      {cap.tag}
+                  <span className="font-mono text-xs font-semibold uppercase tracking-widest text-primary-soft">
+                    Six Systems · One Cadastre
+                  </span>
+                  <h3 className="mt-4 font-display text-2xl sm:text-3xl font-bold leading-tight">
+                    Beyond simple mapping.
+                  </h3>
+                  <p className="mt-4 text-xs sm:text-sm leading-relaxed text-white/80">
+                    A land platform is only as trustworthy as the capabilities it unlocks when a citizen applies, an officer reviews, or an audit inspects.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-xs">
+                    <p className="font-mono text-[11px] font-bold text-primary-soft uppercase tracking-wider">
+                      Vertical Scroll Activated
+                    </p>
+                    <p className="mt-1 text-xs text-white/90">
+                      Continue scrolling down your mouse or trackpad to pan through all 8 system pillars.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between font-mono text-[11px] text-primary-soft">
+                    <span>8 Core Pillars</span>
+                    <span className="flex items-center gap-1">Scroll down ↓</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Showcase Innovation Cards */}
+            {SHOWCASE_CARDS.map((card) => (
+              <div
+                key={card.num}
+                style={{ transform: 'translate3d(0, 0, 0)' }}
+                className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 h-[400px] sm:h-[440px] lg:h-[460px]"
+              >
+                <SpotlightCard className="h-full p-7 sm:p-8 shadow-panel flex flex-col justify-between rounded-3xl border border-line bg-panel hover:border-line-strong hover:shadow-md transition-all">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-xs">
+                        <card.icon size={22} strokeWidth={1.8} />
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-ink-3">#{card.num}</span>
+                        <span className="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-primary">
+                          {card.tag}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h3 className="mt-5 font-display text-xl sm:text-2xl font-bold text-ink">
+                      {card.title}
+                    </h3>
+                    <p className="mt-2 text-xs font-semibold text-primary uppercase tracking-wide">
+                      {card.lead}
+                    </p>
+                    <p className="mt-3 text-xs sm:text-sm leading-relaxed text-ink-2">
+                      {card.body}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-line/60 pt-4 flex items-center justify-between">
+                    <span className="font-mono text-xs font-semibold text-primary">{card.engine}</span>
+                    <span className="rounded-md bg-panel-2 px-2.5 py-1 font-mono text-[10px] font-bold text-ink-2">
+                      {card.metric}
                     </span>
                   </div>
-                  <h3 className="mt-4 font-display text-lg sm:text-xl font-bold text-ink">{cap.title}</h3>
-                  <p className="mt-1 text-xs font-semibold text-primary">{cap.lead}</p>
-                  <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-ink-2">{cap.desc}</p>
+                </SpotlightCard>
+              </div>
+            ))}
+
+            {/* Outro Finale Card */}
+            <div
+              style={{ transform: 'translate3d(0, 0, 0)' }}
+              className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 h-[400px] sm:h-[440px] lg:h-[460px]"
+            >
+              <div className="flex h-full flex-col justify-between rounded-3xl border border-primary/40 bg-panel p-7 sm:p-8 shadow-panel">
+                <div>
+                  <span className="font-mono text-xs font-semibold uppercase tracking-widest text-primary">
+                    Live Demo Ready
+                  </span>
+                  <h3 className="mt-4 font-display text-2xl sm:text-3xl font-bold text-ink leading-tight">
+                    Experience it on the ground.
+                  </h3>
+                  <p className="mt-4 text-xs sm:text-sm leading-relaxed text-ink-2">
+                    Every feature above is integrated live into the Land Stack cadastre map across 575+ parcels in Andhra Pradesh, Tamil Nadu, and Telangana.
+                  </p>
                 </div>
 
-                <div className="mt-5 border-t border-line/60 pt-3 flex items-center justify-between font-mono text-xs">
-                  <span className="text-ink-3 font-medium">Metric</span>
-                  <span className="font-bold text-ink">{cap.metric}</span>
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-line bg-ground p-4">
+                    <div className="flex items-center gap-2 font-mono text-xs font-bold text-ink">
+                      <span className="size-2 rounded-full bg-primary animate-pulse" />
+                      <span>Ready for exploration</span>
+                    </div>
+                    <p className="mt-1 text-xs text-ink-2">
+                      Inspect 3D layers, AI risk scoring, and verified Land Information Reports in one click.
+                    </p>
+                  </div>
+
+                  <MapLaunch className="w-full justify-center inline-flex items-center gap-2.5 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-white transition hover:brightness-110 active:scale-95 shadow-sm cursor-pointer">
+                    Launch Interactive Map <ArrowRight size={16} />
+                  </MapLaunch>
                 </div>
-              </SpotlightCard>
-            );
-          })}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Footer info & clickable dots indicator */}
+        <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-12 lg:px-20">
+          <div className="flex items-center justify-between border-t border-line/60 pt-3 sm:pt-4">
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalCardCount }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => scrollToCard(i)}
+                  title={`Jump to card ${i + 1}`}
+                  aria-label={`Jump to card ${i + 1}`}
+                  className={clsx(
+                    'h-1.5 rounded-full transition-all duration-300 cursor-pointer',
+                    i === activeIdx ? 'w-6 bg-primary' : 'w-2 bg-line hover:bg-ink-3'
+                  )}
+                />
+              ))}
+            </div>
+
+            <p className="font-mono text-[11px] text-ink-3">
+              Vertical scroll continues below after card 10 ↓
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -732,7 +1006,7 @@ export function StorySections() {
       <StandardsMarqueeStrip />
       <ProblemBreakthroughSection />
       <DepartmentsSection />
-      <CapabilitiesGridSection />
+      <StickyHorizontalScroll />
       <PilotClustersSection />
       <HowItWorksSection />
       <FinalCTASection />
