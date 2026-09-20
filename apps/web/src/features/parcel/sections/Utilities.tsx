@@ -4,18 +4,19 @@ import type { ParcelCDM } from '@/lib/cdm';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { KV, SectionTitle } from '@/components/Section';
 import { titleCase } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 export function UtilitiesSection({ p }: { p: ParcelCDM }) {
   const u = p.utilities;
   const items = [
-    { label: 'Water', on: u?.water ?? false, icon: Droplets },
-    { label: 'Electricity', on: u?.electricity ?? false, icon: Zap },
-    { label: 'Sewer', on: u?.sewer ?? false, icon: Waves },
+    { label: t('drawer.water', 'Water'), on: u?.water ?? false, icon: Droplets },
+    { label: t('drawer.electricity', 'Electricity'), on: u?.electricity ?? false, icon: Zap },
+    { label: t('drawer.sewer', 'Sewer'), on: u?.sewer ?? false, icon: Waves },
   ];
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <SectionTitle right={<ProvenanceBadge source="utilities" p={p.provenance.utilities} />}>Connections</SectionTitle>
+        <SectionTitle right={<ProvenanceBadge source="utilities" p={p.provenance.utilities} />}>{t('drawer.connections', 'Connections')}</SectionTitle>
         <div className="grid grid-cols-3 gap-2">
           {items.map((it) => (
             <div key={it.label} className={clsx('flex items-center gap-2 rounded-md border px-3 py-2', it.on ? 'border-primary/25 bg-primary-soft/60 text-primary' : 'border-line bg-ground-2 text-ink-3')}>
@@ -28,16 +29,16 @@ export function UtilitiesSection({ p }: { p: ParcelCDM }) {
         <KV
           className="mt-3"
           items={[
-            { k: 'Road access', v: u?.road_access_m !== null && u?.road_access_m !== undefined ? `${u.road_access_m} m` : '—' },
-            { k: 'Nearest road class', v: <span className="inline-flex items-center gap-1"><Route size={13} />{titleCase(u?.nearest_road_class)}</span> },
+            { k: t('drawer.roadAccess', 'Road access'), v: u?.road_access_m !== null && u?.road_access_m !== undefined ? `${u.road_access_m} m` : '—' },
+            { k: t('drawer.nearestRoadClass', 'Nearest road class'), v: <span className="inline-flex items-center gap-1"><Route size={13} />{titleCase(u?.nearest_road_class)}</span> },
           ]}
         />
       </div>
 
       <div>
-        <SectionTitle>Buildings & units (3D-ready)</SectionTitle>
+        <SectionTitle>{t('drawer.buildingsUnits', 'Buildings & units (3D-ready)')}</SectionTitle>
         {p.buildings.length === 0 ? (
-          <p className="text-sm text-ink-3">No building footprint on record.</p>
+          <p className="text-sm text-ink-3">{t('drawer.noBuildingFootprint', 'No building footprint on record.')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {p.buildings.map((b) => (

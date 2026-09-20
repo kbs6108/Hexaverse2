@@ -17,12 +17,12 @@ import { ApplicationDetail } from './ApplicationDetail';
 import { fmtDate, relTime, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
 import { MechanismExplainerModal } from '@/components/MechanismExplainerModal';
+import { useTranslation } from '@/lib/i18n';
 
 const TYPES = ['mutation', 'building_permission', 'field_review', 'boundary_correction', 'ownership_verification'];
 const DEPTS = ['revenue', 'registration', 'planning'];
 
-/** One queue row, memoized: the 20-second poll returns fresh objects for unchanged
- *  applications, so equality is by the fields the row renders. */
+/** One queue row, memoized */
 const QueueRow = memo(
   function QueueRow({ a, selected, quickPending, onOpen, onQuick }: {
     a: Application;
@@ -70,6 +70,7 @@ const QueueRow = memo(
 
 export function QueuePage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const search = useSearch({ from: '/officer/queue' });
   const navigate = useNavigate();
   const department = search.department ?? (user?.role === 'officer' ? user.department ?? '' : '');
@@ -80,8 +81,7 @@ export function QueuePage() {
 
   const q = useQuery({ queryKey: qk.queue(department), queryFn: () => api.queue(department || undefined), refetchInterval: 20_000 });
   const qc = useQueryClient();
-  // One-click forward step from the queue (auto-remarked, audited). Terminal decisions
-  // (approve / reject / return) still require opening the application and writing a remark.
+
   const quick = useMutation({
     mutationFn: ({ app, action }: { app: Application; action: string }) =>
       api.transition(app.id, action, 'Advanced from the work queue'),
@@ -94,9 +94,9 @@ export function QueuePage() {
   });
 
   const rows = useMemo(() => {
-    const t = text.trim().toLowerCase();
+    const term = text.trim().toLowerCase();
     return (q.data ?? []).filter(
-      (a) => (!type || a.type === type) && (!status || a.status === status) && (!t || a.id.toLowerCase().includes(t) || a.ulpin.toLowerCase().includes(t) || (a.applicant_name ?? '').toLowerCase().includes(t) || (a.survey_no ?? '').toLowerCase().includes(t)),
+      (a) => (!type || a.type === type) && (!status || a.status === status) && (!term || a.id.toLowerCase().includes(term) || a.ulpin.toLowerCase().includes(term) || (a.applicant_name ?? '').toLowerCase().includes(term) || (a.survey_no ?? '').toLowerCase().includes(term)),
     );
   }, [q.data, type, status, text]);
   const statuses = useMemo(() => Array.from(new Set((q.data ?? []).map((a) => a.status))).sort(), [q.data]);
@@ -107,8 +107,8 @@ export function QueuePage() {
   return (
     <>
       <PageTitle
-        title="Work queue"
-        subtitle="Applications awaiting action, oldest first"
+        title={t('officer.queueTitle')}
+        subtitle={t('officer.queueSubtitle')}
         action={
           <Button
             variant="secondary"
@@ -122,26 +122,26 @@ export function QueuePage() {
       />
       <MechanismExplainerModal open={guideOpen} onClose={() => setGuideOpen(false)} initialTab="registration" />
       <Card className="mb-3 flex flex-wrap items-end gap-3 p-3">
-        <Field label="Department" htmlFor="q-dept" className="w-44">
+        <Field label={t('account.department')} htmlFor="q-dept" className="w-44">
           <Select id="q-dept" value={department} onChange={(e) => setDept(e.target.value)} disabled={user?.role === 'officer'}>
             <option value="">All departments</option>
             {DEPTS.map((d) => <option key={d} value={d}>{titleCase(d)}</option>)}
           </Select>
         </Field>
-        <Field label="Type" htmlFor="q-type" className="w-48">
+        <Field label={t('officer.colType')} htmlFor="q-type" className="w-48">
           <Select id="q-type" value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="">All types</option>
-            {TYPES.map((t) => <option key={t} value={t}>{titleCase(t)}</option>)}
+            <option value="">{t('officer.filterAll')}</option>
+            {TYPES.map((it) => <option key={it} value={it}>{titleCase(it)}</option>)}
           </Select>
         </Field>
-        <Field label="Status" htmlFor="q-status" className="w-44">
+        <Field label={t('officer.colStatus')} htmlFor="q-status" className="w-44">
           <Select id="q-status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Any status</option>
+            <option value="">{t('officer.filterAll')}</option>
             {statuses.map((s) => <option key={s} value={s}>{titleCase(s)}</option>)}
           </Select>
         </Field>
-        <Field label="Find" htmlFor="q-text" className="min-w-56 flex-1">
-          <Input id="q-text" placeholder="Application id, ULPIN, survey no or applicant" value={text} onChange={(e) => setText(e.target.value)} />
+        <Field label={t('common.search')} htmlFor="q-text" className="min-w-56 flex-1">
+          <Input id="q-text" placeholder={t('officer.searchQueue')} value={text} onChange={(e) => setText(e.target.value)} />
         </Field>
         <span className="pb-2 text-xs text-ink-3">{rows.length} of {q.data?.length ?? 0}</span>
       </Card>
@@ -155,14 +155,14 @@ export function QueuePage() {
             <table className="w-full text-sm">
               <thead className="bg-ground-2 text-left text-[11px] uppercase tracking-wide text-ink-3">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Application</th>
-                  <th className="px-3 py-2 font-medium">Type</th>
-                  <th className="px-3 py-2 font-medium">Parcel</th>
-                  <th className="px-3 py-2 font-medium">Applicant</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Dept</th>
-                  <th className="px-3 py-2 font-medium">Age</th>
-                  <th className="px-3 py-2 font-medium">Quick action</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colId')}</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colType')}</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colParcel')}</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colApplicant')}</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colStatus')}</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colDept')}</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colCreated')}</th>
+                  <th className="px-3 py-2 font-medium">{t('officer.colAction')}</th>
                 </tr>
               </thead>
               <tbody>

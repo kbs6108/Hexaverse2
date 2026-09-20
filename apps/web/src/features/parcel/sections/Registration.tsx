@@ -4,28 +4,29 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { KV, SectionTitle } from '@/components/Section';
 import { fmtDate, fmtINR, titleCase } from '@/lib/format';
 import { Badge } from '@/components/Badge';
+import { t } from '@/lib/i18n';
 
 export function Registration({ p }: { p: ParcelCDM }) {
   const r = p.rights.registration;
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <SectionTitle right={<ProvenanceBadge source="registration" p={p.provenance.registration} />}>Registration</SectionTitle>
+        <SectionTitle right={<ProvenanceBadge source="registration" p={p.provenance.registration} />}>{t('drawer.registration', 'Registration')}</SectionTitle>
         <KV
           items={[
-            { k: 'Status', v: r ? titleCase(r.status) : '—' },
-            { k: 'Document no.', v: r?.doc_no ?? '—', mono: true },
-            { k: 'Deed type', v: titleCase(r?.deed_type) },
-            { k: 'Registered on', v: fmtDate(r?.registered_on) },
-            { k: 'SRO', v: r?.sro_code ?? '—', mono: true },
+            { k: t('common.status', 'Status'), v: r ? titleCase(r.status) : '—' },
+            { k: t('drawer.docNo', 'Document no.'), v: r?.doc_no ?? '—', mono: true },
+            { k: t('drawer.deedType', 'Deed type'), v: titleCase(r?.deed_type) },
+            { k: t('drawer.registeredOn', 'Registered on'), v: fmtDate(r?.registered_on) },
+            { k: t('drawer.sro', 'SRO'), v: r?.sro_code ?? '—', mono: true },
           ]}
         />
       </div>
 
       <div>
-        <SectionTitle>Encumbrances</SectionTitle>
+        <SectionTitle>{t('drawer.encumbrances', 'Encumbrances')}</SectionTitle>
         {p.restrictions.encumbrances.length === 0 ? (
-          <p className="text-sm text-ink-3">No encumbrance on record.</p>
+          <p className="text-sm text-ink-3">{t('drawer.noEncumbrance', 'No encumbrance on record.')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {p.restrictions.encumbrances.map((e, i) => (
@@ -35,7 +36,7 @@ export function Registration({ p }: { p: ParcelCDM }) {
                   <p className="font-medium">{titleCase(e.kind)} · {e.holder ?? 'Holder n/a'}</p>
                   <p className="text-xs text-ink-3">{fmtINR(e.amount)}{e.from_date ? ` · from ${fmtDate(e.from_date)}` : ''}</p>
                 </div>
-                <Badge tone={e.active ? 'violet' : 'neutral'}>{e.active ? 'Active' : 'Released'}</Badge>
+                <Badge tone={e.active ? 'violet' : 'neutral'}>{e.active ? t('common.active', 'Active') : t('drawer.released', 'Released')}</Badge>
               </li>
             ))}
           </ul>
@@ -43,9 +44,9 @@ export function Registration({ p }: { p: ParcelCDM }) {
       </div>
 
       <div>
-        <SectionTitle right={<ProvenanceBadge source="legal" p={p.provenance.legal} />}>Disputes</SectionTitle>
+        <SectionTitle right={<ProvenanceBadge source="legal" p={p.provenance.legal} />}>{t('drawer.disputes', 'Disputes')}</SectionTitle>
         {p.restrictions.disputes.length === 0 ? (
-          <p className="text-sm text-ink-3">No litigation on record.</p>
+          <p className="text-sm text-ink-3">{t('drawer.noLitigation', 'No litigation on record.')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {p.restrictions.disputes.map((d) => (
@@ -56,7 +57,7 @@ export function Registration({ p }: { p: ParcelCDM }) {
                   <div className="flex-1">
                     <p className="font-medium font-mono text-[13px]">{d.case_no}</p>
                     <p className="text-xs text-ink-2">{d.court ?? ''}{d.nature ? ` · ${d.nature}` : ''}</p>
-                    <p className="text-xs text-ink-3">Filed {fmtDate(d.filed_on)}{d.next_hearing ? ` · next hearing ${fmtDate(d.next_hearing)}` : ''}</p>
+                    <p className="text-xs text-ink-3">{t('drawer.filed', 'Filed')} {fmtDate(d.filed_on)}{d.next_hearing ? ` · ${t('drawer.nextHearing', 'next hearing')} ${fmtDate(d.next_hearing)}` : ''}</p>
                   </div>
                   <Badge tone="brick" hatch>{titleCase(d.status)}</Badge>
                 </div>

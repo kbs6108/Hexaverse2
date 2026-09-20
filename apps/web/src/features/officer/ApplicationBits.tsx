@@ -22,8 +22,10 @@ const STATUS_TONE: Record<string, Tone> = {
   dismissed: 'brick',
 };
 
+import { t } from '@/lib/i18n';
+
 export function StatusBadge({ status }: { status: string }) {
-  return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{titleCase(status)}</Badge>;
+  return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{t(`status.${status}`, titleCase(status))}</Badge>;
 }
 
 /** Fallback when the API does not include `next_actions` (CONTRACTS §8 transitions). */

@@ -17,6 +17,7 @@ import { fallbackActions, StatusBadge, StatusTimeline } from './ApplicationBits'
 import { fmtArea, fmtDate, titleCase } from '@/lib/format';
 import { statusChips } from '@/components/StatusChip';
 import { useAuth } from '@/lib/auth';
+import { t } from '@/lib/i18n';
 
 /** One line of decision evidence, credited to the department that holds the record. */
 type EvidenceRow = { tone: 'ok' | 'warn' | 'bad'; text: string; source: string };
@@ -138,7 +139,7 @@ function StatutoryImpactCard({ app, pending }: { app: { type: string; status: st
   const isTerminalApproval = pending?.to_status === 'approved' || pending?.to_status === 'resolved';
   const toOwner = (app.payload?.to_owner || app.payload?.new_owner_name || app.payload?.nominee_name || app.payload?.applicant_name) as string | undefined;
 
-  let title = 'Statutory Record Impact Upon Approval';
+  let title = t('officer.statutoryImpact', 'Statutory Record Impact Upon Approval');
   let details: { dept: string; impact: string; records: string }[] = [];
 
   if (app.type === 'mutation' || app.type === 'succession') {
@@ -231,7 +232,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
   const [remark, setRemark] = useState('');
   const [pending, setPending] = useState<NextAction | null>(null);
 
-  const t = useMutation({
+  const mutateTransition = useMutation({
     mutationFn: (a: NextAction) => api.transition(id!, a.action, remark.trim()),
     onSuccess: (app) => {
       toast.success(`Moved to ${titleCase(app.status)}`, app.id);
@@ -275,14 +276,14 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
         {app && (
           <>
             <div>
-              <SectionTitle right={<Link to="/map" search={{ ulpin: app.ulpin }} className="flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline">Open on map <ExternalLink size={12} /></Link>}>Parcel</SectionTitle>
+              <SectionTitle right={<Link to="/map" search={{ ulpin: app.ulpin }} className="flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline">{t('common.viewOnMap', 'Open on map')} <ExternalLink size={12} /></Link>}>{t('officer.colParcel', 'Parcel')}</SectionTitle>
               {parcel.data ? (
                 <>
                   <KV items={[
-                    { k: 'Survey no.', v: parcel.data.identifiers.survey_no },
-                    { k: 'ULPIN', v: app.ulpin, mono: true },
-                    { k: 'Owner (RoR)', v: parcel.data.party.owners.map((o) => o.name).join(', ') || '—' },
-                    { k: 'Area / Extent', v: fmtArea(parcel.data.spatial.area_sqm) },
+                    { k: t('common.surveyNo', 'Survey no.'), v: parcel.data.identifiers.survey_no },
+                    { k: t('common.ulpin', 'ULPIN'), v: app.ulpin, mono: true },
+                    { k: t('common.owner', 'Owner (RoR)'), v: parcel.data.party.owners.map((o) => o.name).join(', ') || '—' },
+                    { k: t('common.extent', 'Area / Extent'), v: fmtArea(parcel.data.spatial.area_sqm) },
                   ]} />
                   <div className="mt-2 flex flex-wrap gap-1">{statusChips(parcel.data.status)}</div>
                 </>
@@ -292,10 +293,10 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
             </div>
 
             <div>
-              <SectionTitle>Applicant & payload</SectionTitle>
+              <SectionTitle>{t('officer.applicantPayload', 'Applicant & payload')}</SectionTitle>
               <KV items={[
-                { k: 'Applicant', v: app.applicant_name ?? '—' },
-                { k: 'Submitted', v: fmtDate(app.created_at, true) },
+                { k: t('officer.colApplicant', 'Applicant'), v: app.applicant_name ?? '—' },
+                { k: t('status.submitted', 'Submitted'), v: fmtDate(app.created_at, true) },
                 ...Object.entries(app.payload).filter(([, v]) => v !== null && typeof v !== 'object').map(([k, v]) => ({ k: titleCase(k), v: String(v) })),
               ]} />
               {app.payload.precheck !== undefined && app.payload.precheck !== null && <PrecheckLine pc={app.payload.precheck} />}
@@ -303,14 +304,14 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
 
             {parcel.data && (
               <div>
-                <SectionTitle>Evidence</SectionTitle>
+                <SectionTitle>{t('officer.evidenceTitle', 'Evidence')}</SectionTitle>
                 <EvidencePanel p={parcel.data} appType={app.type} />
               </div>
             )}
 
             {Array.isArray(app.payload.objections) && app.payload.objections.length > 0 && (
               <div>
-                <SectionTitle>Objections ({(app.payload.objections as Objection[]).length})</SectionTitle>
+                <SectionTitle>{t('officer.objectionsTitle', 'Objections')} ({(app.payload.objections as Objection[]).length})</SectionTitle>
                 <ul className="flex flex-col gap-1.5">
                   {(app.payload.objections as Objection[]).map((o, i) => (
                     <li key={i} className="rounded-md border border-amber/40 bg-amber-soft/40 px-2.5 py-2 text-[12.5px]">
@@ -323,19 +324,19 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
             )}
 
             <div>
-              <SectionTitle>History</SectionTitle>
+              <SectionTitle>{t('officer.historyTitle', 'History')}</SectionTitle>
               <StatusTimeline app={app} />
             </div>
 
             {actions.length > 0 && (
               <div className="rounded-lg border border-line bg-panel-2 p-3 space-y-3">
-                <SectionTitle>Next action</SectionTitle>
+                <SectionTitle>{t('officer.nextAction', 'Next action')}</SectionTitle>
                 <StatutoryImpactCard app={app} pending={pending} />
                 {advice.data?.suggested_action && (
                   <div className="mb-2 flex items-start gap-2 rounded-md border border-violet/30 bg-violet-soft/40 px-2.5 py-2 text-[12.5px]">
                     <Sparkles size={14} className="mt-0.5 shrink-0 text-violet" />
                     <span className="text-ink-2">
-                      <span className="font-semibold text-ink">Suggests “{titleCase(advice.data.suggested_action)}”.</span>{' '}
+                      <span className="font-semibold text-ink">{t('officer.suggests', 'Suggests')} “{titleCase(advice.data.suggested_action)}”.</span>{' '}
                       {advice.data.rationale}
                       <span className="ml-1 font-mono text-[10px] text-ink-3">
                         {advice.data.engine === 'rules' ? 'rule engine' : advice.data.engine}
@@ -363,15 +364,15 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (remark.trim().length < 3) return;
-                      t.mutate(pending);
+                      mutateTransition.mutate(pending);
                     }}
                   >
-                    <Field label={`Remark for “${pending.label}” (required)`} htmlFor="tr-remark">
-                      <Textarea id="tr-remark" required minLength={3} value={remark} onChange={(e) => setRemark(e.target.value)} placeholder="Recorded in the audit log and shown to the applicant" />
+                    <Field label={`${t('officer.remarkLabel', 'Remark (required)')} · “${pending.label}”`} htmlFor="tr-remark">
+                      <Textarea id="tr-remark" required minLength={3} value={remark} onChange={(e) => setRemark(e.target.value)} placeholder={t('officer.remarkPlaceholder', 'Recorded in the audit log and shown to the applicant')} />
                     </Field>
                     <div className="flex gap-2">
-                      <Button type="submit" variant={tone(pending)} loading={t.isPending} disabled={remark.trim().length < 3}>Confirm · {pending.label}</Button>
-                      <Button variant="ghost" onClick={() => setPending(null)}>Cancel</Button>
+                      <Button type="submit" variant={tone(pending)} loading={mutateTransition.isPending} disabled={remark.trim().length < 3}>{t('officer.confirmAction', 'Confirm')} · {pending.label}</Button>
+                      <Button variant="ghost" onClick={() => setPending(null)}>{t('common.cancel', 'Cancel')}</Button>
                     </div>
                   </form>
                 )}

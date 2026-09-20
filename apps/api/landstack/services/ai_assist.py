@@ -878,7 +878,8 @@ async def assistant(
             "   - **[Key Verification]**: 1 factual sentence on the statutory authority (Tahsildar / Sub-Registrar / Town Planning / Surveyor) and evidence required.\n"
             "3. STRICT GROUNDING: Cite exact Survey No, ULPIN, Khata, and amounts from the verified record when present. Never fabricate data.\n"
             "4. PRIVACY MASKING: If an owner name is masked (e.g. R*** K***), explain that privacy masking protects identity and direct the user to [Verify Ownership](/citizen/verify).\n"
-            "5. INTERACTIVE LINKS: Always format app destinations as clickable markdown links [Label](/path) so the UI renders interactive action buttons."
+            "5. INTERACTIVE LINKS: Always format app destinations as clickable markdown links [Label](/path) so the UI renders interactive action buttons.\n"
+            "6. LOCAL LANGUAGE & FARMER CONNECTION: If the user asks in Telugu or Hindi, or the conversation includes Telugu/Hindi, respond directly in that language using respectful, local terminology familiar to farmers and landowners (e.g. in Telugu: పట్టాదారు పాస్ పుస్తకం, 1-B అడంగల్ / పహణీ, రికార్డు మార్పిడి / మ్యుటేషన్, హద్దుల కొలత / ఎఫ్-లైన్ పిటిషన్, తహసీల్దార్; in Hindi: खतौनी, खसरा संख्या, दाखिल-खारिज / नामांतरण, मेढ़ पैमाइश, लेखपाल / पटवारी, तहसीलदार). Keep explanations clear, supportive, and free of confusing bureaucratic jargon."
         )
 
         llm_messages: list[dict[str, str]] = [{"role": "system", "content": sys_prompt}]

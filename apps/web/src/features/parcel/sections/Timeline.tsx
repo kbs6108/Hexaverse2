@@ -7,6 +7,7 @@ import { ErrorNote } from '@/components/EmptyState';
 import { Callout } from '@/components/Section';
 import { fmtDate, fmtVal, titleCase } from '@/lib/format';
 import { Badge, type Tone } from '@/components/Badge';
+import { t } from '@/lib/i18n';
 
 const srcTone: Record<string, Tone> = { revenue: 'primary', registration: 'slate', planning: 'amber', fiscal: 'neutral', legal: 'brick', utilities: 'neutral', landstack: 'violet', satellite: 'brick' };
 
@@ -17,15 +18,15 @@ export function Timeline({ ulpin }: { ulpin: string }) {
 
   if (!allowed) {
     return (
-      <Callout tone="slate" title={<span className="flex items-center gap-1"><Lock size={14} /> Officer view</span>}>
-        The cross-department timeline (deeds, mutations, permissions, tax events) is available to officers. Citizens can track their own applications under Citizen → Track.
+      <Callout tone="slate" title={<span className="flex items-center gap-1"><Lock size={14} /> {t('drawer.officerView', 'Officer view')}</span>}>
+        {t('drawer.officerViewNotice', 'The cross-department timeline (deeds, mutations, permissions, tax events) is available to officers. Citizens can track their own applications under Citizen → Track.')}
       </Callout>
     );
   }
   if (q.isLoading) return <Loading />;
   if (q.isError) return <ErrorNote error={q.error} retry={() => void q.refetch()} />;
   const events = q.data ?? [];
-  if (events.length === 0) return <p className="text-sm text-ink-3">No events recorded for this parcel.</p>;
+  if (events.length === 0) return <p className="text-sm text-ink-3">{t('drawer.noEvents', 'No events recorded for this parcel.')}</p>;
   return (
     <ol className="relative ml-2 border-l border-line pl-5">
       {events.map((e, i) => (

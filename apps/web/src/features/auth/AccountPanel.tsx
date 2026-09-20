@@ -7,6 +7,7 @@ import {
   ArrowRight,
   CheckCircle2,
   FileText,
+  Globe,
   HelpCircle,
   Landmark,
   LogOut,
@@ -21,6 +22,7 @@ import { useAuth } from '@/lib/auth';
 import { useUI, type DevUserId } from '@/lib/store';
 import { clearCitizenCinematic } from '@/lib/cinematic';
 import { useMyParcel } from '@/lib/my-parcel';
+import { useTranslation } from '@/lib/i18n';
 
 interface AccountPanelProps {
   isOpen: boolean;
@@ -29,6 +31,7 @@ interface AccountPanelProps {
 
 export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
   const { user, mode, devUsers, setDevUser, signOut } = useAuth();
+  const { t, locale, setLocale, languages } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { parcel, hasOwnedLand, goToMyParcel } = useMyParcel();
@@ -81,7 +84,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                 <span className="flex size-7 items-center justify-center rounded-lg bg-primary-soft text-primary font-bold text-xs">
                   LS
                 </span>
-                <h2 className="font-display text-base font-bold text-ink">Account & Identity</h2>
+                <h2 className="font-display text-base font-bold text-ink">{t('account.title')}</h2>
               </div>
               <button
                 type="button"
@@ -112,33 +115,61 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                 </div>
               </div>
 
+              {/* Language Selection Card */}
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-2.5 flex items-center gap-1.5">
+                  <Globe size={14} className="text-primary" /> {t('account.switchLanguage')}
+                </h4>
+                <div className="grid grid-cols-3 gap-2">
+                  {languages.map((lang) => {
+                    const isSelected = locale === lang.code;
+                    return (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => setLocale(lang.code)}
+                        className={clsx(
+                          'flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer select-none text-center',
+                          isSelected
+                            ? 'bg-primary-soft/80 border-primary text-primary font-bold shadow-xs'
+                            : 'bg-panel border-line text-ink-2 hover:bg-ground-2 hover:border-line-strong',
+                        )}
+                      >
+                        <span className="text-sm font-semibold">{lang.native}</span>
+                        <span className="text-[10.5px] opacity-75">{lang.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Personal Details */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-3">Personal Details</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-3">{t('account.personalDetails')}</h4>
                 <div className="rounded-xl border border-line bg-panel divide-y divide-line overflow-hidden shadow-xs">
                   <div className="flex items-center justify-between px-4 py-3 text-sm">
                     <span className="flex items-center gap-2 text-ink-3">
-                      <UserRound size={15} /> Full Name
+                      <UserRound size={15} /> {t('account.fullName')}
                     </span>
                     <span className="font-medium text-ink">{user.name}</span>
                   </div>
                   {user.email && (
                     <div className="flex items-center justify-between px-4 py-3 text-sm">
                       <span className="flex items-center gap-2 text-ink-3">
-                        <Mail size={15} /> Email
+                        <Mail size={15} /> {t('account.email')}
                       </span>
                       <span className="font-medium text-ink">{user.email}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between px-4 py-3 text-sm">
                     <span className="flex items-center gap-2 text-ink-3">
-                      <Shield size={15} /> Role
+                      <Shield size={15} /> {t('account.role')}
                     </span>
                     <span className="font-medium capitalize text-ink">{user.role}</span>
                   </div>
                   {user.department && (
                     <div className="flex items-center justify-between px-4 py-3 text-sm">
-                      <span className="flex items-center gap-2 text-ink-3">Department</span>
+                      <span className="flex items-center gap-2 text-ink-3">{t('account.department')}</span>
                       <span className="font-medium text-ink">{user.department}</span>
                     </div>
                   )}
@@ -156,13 +187,13 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1.5">
-                      <Landmark size={14} className="text-primary" /> Owned Land &amp; Property
+                      <Landmark size={14} className="text-primary" /> {t('citizen.yourLand')}
                     </h4>
                     <span className={clsx(
                       'text-[11px] font-medium px-2 py-0.5 rounded-full',
                       hasOwnedLand ? 'text-primary bg-primary-soft' : 'text-ink-3 bg-ground-2'
                     )}>
-                      {hasOwnedLand ? 'Linked Title' : 'No Title On Record'}
+                      {hasOwnedLand ? t('citizen.linkedTitle') : t('citizen.noTitle')}
                     </span>
                   </div>
 
@@ -172,7 +203,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-display text-base font-bold text-ink">
-                              Survey {parcel.survey_no}
+                              {t('common.surveyNo')} {parcel.survey_no}
                             </span>
                             <span className="text-xs text-ink-3">·</span>
                             <span className="text-xs font-semibold text-ink-2">
@@ -191,19 +222,19 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
 
                       <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-line/70 text-xs">
                         <div>
-                          <span className="text-ink-3 block text-[11px]">Khata Number</span>
+                          <span className="text-ink-3 block text-[11px]">{t('common.khataNo')}</span>
                           <span className="font-mono font-medium text-ink">{parcel.khata_no}</span>
                         </div>
                         <div>
-                          <span className="text-ink-3 block text-[11px]">Total Extent</span>
+                          <span className="text-ink-3 block text-[11px]">{t('common.extent')}</span>
                           <span className="font-medium text-ink">{parcel.area_sqm} m²</span>
                         </div>
                         <div>
-                          <span className="text-ink-3 block text-[11px]">Land Use</span>
+                          <span className="text-ink-3 block text-[11px]">{t('drawer.planning')}</span>
                           <span className="font-medium text-ink capitalize">{parcel.land_use}</span>
                         </div>
                         <div>
-                          <span className="text-ink-3 block text-[11px]">Tenure / Type</span>
+                          <span className="text-ink-3 block text-[11px]">{t('drawer.rights')}</span>
                           <span className="font-medium text-ink">{parcel.ownership_type}</span>
                         </div>
                       </div>
@@ -217,15 +248,15 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                         className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary text-white py-2.5 px-4 text-xs font-bold shadow-sm hover:bg-primary/90 hover:shadow transition-all cursor-pointer"
                       >
                         <MapPin size={14} />
-                        <span>Go to My Parcel</span>
+                        <span>{t('citizen.goToMyParcel')}</span>
                         <ArrowRight size={14} className="ml-0.5" />
                       </button>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-line bg-panel p-4 text-center">
-                      <p className="text-xs font-medium text-ink">No registered land parcels</p>
+                      <p className="text-xs font-medium text-ink">{t('citizen.noTitle')}</p>
                       <p className="mt-1 text-[11px] text-ink-3 leading-relaxed">
-                        Statutory land records (RoR) do not currently list this citizen as a registered title holder.
+                        {t('citizen.noTitleDesc')}
                       </p>
                     </div>
                   )}
@@ -237,7 +268,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                 <div>
                   <div className="flex items-center justify-between mb-2.5">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1.5">
-                      <Users size={14} /> Dev Identities
+                      <Users size={14} /> {t('account.devIdentities')}
                     </h4>
                     <span className="text-[11px] text-ink-3 font-mono">
                       {devUsers.length} profiles

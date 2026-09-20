@@ -119,6 +119,14 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   - Real-time `useMyParcel()` hook querying `GET /landstack/citizen/my-parcels` backed dynamically by `dept_revenue.ror`.
   - Statutory applicant authority guard in Citizen Apply (`ServiceRequest.tsx`), AI pre-check (`ai_assist.py`), and backend workflow (`workflow.py`): building permission applications require verified title ownership on the RoR, rendering prominent blocker notices and disabling submissions for non-owners.
   - Cross-app cache synchronization: mutation approvals immediately invalidate `['citizen', 'my-parcels']`, `['parcel']`, and `['applications']`.
+- **Authentic Farmer-Connectable Multilingual Localization (Telugu & Hindi)** (Sep 2026):
+  - Comprehensive, non-robotic i18n framework in `apps/web/src/lib/i18n.ts` supporting `en`, `te`, and `hi`.
+  - Built using authentic rural revenue and administrative terminology:
+    - AP / TG Telugu: పట్టాదారు పాస్ పుస్తకం, 1-B అడంగల్/పహణీ, రికార్డు మార్పిడి (మ్యుటేషన్), హద్దుల కొలత/ఎఫ్-లైన్ సర్వే, తహసీల్దార్, సబ్-రిజిస్ట్రార్, ఈసీ (ఎన్‌కంబరెన్స్).
+    - Hindi: अधिकार अभिलेख (खतौनी), खसरा संख्या, दाखिल-खारिज (नामांतरण), फौती / वारिसाना नामांतरण, मेढ़ पैमाइश / मौका मुआयना, लगान बकाया, सर्किल रेट.
+  - 1-click language selector `[ EN | తె | हि ]` integrated into the floating limelight dock and AccountPanel with reactive Zustand + localStorage state (`useUI.locale`).
+  - 100% reactive coverage across Citizen Portal (overview, My Land cards, notice board, objection filing), Service Request wizard (5 service intents with breakdown steps and RoR owner mismatch guard), Track Applications, Verify Ownership, Interactive Map controls & layers, Parcel Drawer (all 8 tabs, 9-point buyer due diligence, and sub-sections), Status Chips, Officer Console & Work Queue, and Alerts.
+  - Bhu-Sahayak AI Assistant: fully multilingual with localized greeting cards, categorical prompt chips, and Rule 6 prompt-tuning in `ai_assist.py` for respectful native vernacular advice.
 Notable fixed first-run issues: asyncpg `substring(id from :n)` typing, MapLibre nested-zoom
 expressions, Vite dep-optimizer maplibre worker, persisted-layers merge bug, web healthcheck.
 Still open: Neon/Firebase/Cloud Run deployment not yet exercised; WeasyPrint deps on Cloud Run
@@ -126,6 +134,7 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-20 authentic farmer-connectable Telugu & Hindi localization: implemented reactive i18n system (apps/web/src/lib/i18n.ts) with authentic revenue terminology (1-B పహణీ, పట్టాదారు, మ్యుటేషన్, హద్దుల కొలత; खतौनी, खसरा, दाखिल-खारिज, मेढ़ पैमाइश, लगान) across Citizen, Map, Parcel Drawer, Officer Console, and Bhu-Sahayak AI with prompt tuning in ai_assist.py.
 - 2026-09-20 demo users expansion: expanded demo identities to 17 users spanning AP, TN, and TG citizens (matching all seeded story parcels in dept_revenue.ror), regional departmental officers (Revenue, Registration, Planning), and system admin, with categorized switcher tabs in AccountPanel and UserMenu.
 - 2026-09-20 dynamic land ownership & statutory building authority: removed static KNOWN_USER_PARCELS, wired useMyParcel to GET /citizen/my-parcels, enforced statutory Pattadar verification in building permissions (UI blocker, AI triage, 403 in workflow), and added comprehensive cross-app query invalidation on mutation approvals.
 - 2026-09-20 AI tuning, responses & compactness: hyperparameter optimization (Assistant max_tokens 650, advice 180, DD summary 200), high-density structured prompt engineering, interactive deep-link action buttons in chat, compact view toggle, copy response utility, and lean fact-sheet pruning.

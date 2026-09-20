@@ -13,6 +13,7 @@ export type ColourBy =
   | 'change_alert';
 
 export type Basemap = 'streets' | 'imagery';
+export type Locale = 'en' | 'te' | 'hi';
 
 /** Layer ids per CONTRACTS §9 tiers. */
 export const TIER_LAYERS = {
@@ -100,6 +101,7 @@ interface UIState {
   usecaseTierOpen: boolean | null;
   /** One-time "click a state to fly in" hint on the national overview. */
   seenOverviewHint: boolean;
+  locale: Locale;
 
   select: (ulpin: string | null) => void;
   setHover: (ulpin: string | null) => void;
@@ -110,6 +112,7 @@ interface UIState {
   setShow3D: (on: boolean) => void;
   setLayerPanelOpen: (open: boolean) => void;
   setDevUser: (u: DevUserId) => void;
+  setLocale: (l: Locale) => void;
   requestFlyTo: (bbox: [number, number, number, number]) => void;
   recordRecentParcel: (p: RecentParcel) => void;
   startBoundaryEdit: (e: BoundaryEdit) => void;
@@ -137,6 +140,7 @@ export const useUI = create<UIState>()(
       boundaryEdit: null,
       usecaseTierOpen: null,
       seenOverviewHint: false,
+      locale: 'en',
 
       select: (ulpin) => set({ selectedUlpin: ulpin, drawerOpen: ulpin !== null }),
       setHover: (ulpin) => set({ hoverUlpin: ulpin }),
@@ -147,6 +151,7 @@ export const useUI = create<UIState>()(
       setShow3D: (show3D) => set({ show3D }),
       setLayerPanelOpen: (layerPanelOpen) => set({ layerPanelOpen }),
       setDevUser: (devUser) => set({ devUser }),
+      setLocale: (locale) => set({ locale }),
       requestFlyTo: (bbox) => set({ flyTo: { bbox, nonce: Date.now() } }),
       recordRecentParcel: (p) =>
         set((s) => ({ recentParcels: [p, ...s.recentParcels.filter((r) => r.ulpin !== p.ulpin)].slice(0, 6) })),
@@ -171,6 +176,7 @@ export const useUI = create<UIState>()(
         recentParcels: s.recentParcels,
         usecaseTierOpen: s.usecaseTierOpen,
         seenOverviewHint: s.seenOverviewHint,
+        locale: s.locale,
       }),
       // Deep-merge persisted layers over the defaults: zustand's persist replaces the
       // whole `layers` object, so a browser that stored it before a new LayerId shipped
@@ -178,7 +184,7 @@ export const useUI = create<UIState>()(
       // can never render (this bit settlement_schemes when it was added).
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<UIState>;
-        return { ...current, ...p, layers: { ...defaultLayers, ...(p.layers ?? {}) } };
+        return { ...current, ...p, layers: { ...defaultLayers, ...(p.layers ?? {}) }, locale: p.locale ?? 'en' };
       },
     },
   ),

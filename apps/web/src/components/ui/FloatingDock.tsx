@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { Maximize2, Minimize2, HelpCircle, Search } from 'lucide-react';
 import { LogoMark } from '@/app/Shell';
 import { useAuth, roleAtLeast } from '@/lib/auth';
+import { useCinematicTransition } from '@/lib/cinematic';
+import { useTranslation } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { SearchBox } from '@/features/map/SearchBox';
-import { CinematicLetterbox, useCinematicTransition } from './CinematicLetterbox';
+import { CinematicLetterbox } from './CinematicLetterbox';
 
 export interface NavItem {
   id: string;
@@ -23,22 +25,23 @@ export interface FloatingDockProps {
 export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, role } = useAuth();
+  const { t, locale, setLocale, languages } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { phase, trigger: triggerCinematic } = useCinematicTransition();
 
-  // Navigation items restored to original user app routes & names
+  // Navigation items restored to original user app routes & names (with multi-language support)
   const navItems: NavItem[] = [
-    { id: 'home', label: 'Home', to: '/', match: (p) => p === '/' },
-    { id: 'map', label: 'Map', to: '/map', match: (p) => p.startsWith('/map') },
-    { id: 'citizen', label: 'Citizen', to: '/citizen', match: (p) => p.startsWith('/citizen') },
+    { id: 'home', label: t('nav.home'), to: '/', match: (p) => p === '/' },
+    { id: 'map', label: t('nav.map'), to: '/map', match: (p) => p.startsWith('/map') },
+    { id: 'citizen', label: t('nav.citizen'), to: '/citizen', match: (p) => p.startsWith('/citizen') },
   ];
 
   if (roleAtLeast(role, 'officer')) {
-    navItems.push({ id: 'officer', label: 'Officer', to: '/officer', match: (p) => p.startsWith('/officer') });
+    navItems.push({ id: 'officer', label: t('nav.officer'), to: '/officer', match: (p) => p.startsWith('/officer') });
   }
   if (roleAtLeast(role, 'admin')) {
-    navItems.push({ id: 'admin', label: 'Admin', to: '/admin', match: (p) => p.startsWith('/admin') });
+    navItems.push({ id: 'admin', label: t('nav.admin'), to: '/admin', match: (p) => p.startsWith('/admin') });
   }
 
   // Global keyboard shortcut to open search (/ or Cmd+K)
@@ -161,6 +164,33 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
 
         {/* Right Action Controls */}
         <div className="relative z-10 flex items-center gap-2 shrink-0 ml-auto">
+          {/* Language Switcher 1-Click Pill (EN | తె | हि) */}
+          <div
+            role="radiogroup"
+            aria-label="Language selector"
+            className="flex items-center rounded-full bg-[#E9E5D8]/70 border border-[#D5D2C7] p-0.5 shadow-2xs"
+          >
+            {languages.map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                role="radio"
+                aria-checked={locale === lang.code}
+                onClick={() => setLocale(lang.code)}
+                title={`Switch language to ${lang.native} (${lang.label})`}
+                aria-label={lang.label}
+                className={cn(
+                  'px-2 py-0.5 text-[10.5px] font-bold rounded-full transition-all cursor-pointer select-none',
+                  locale === lang.code
+                    ? 'bg-[#23483A] text-[#F4F1E7] shadow-xs'
+                    : 'text-[#6F7768] hover:text-[#18231F]',
+                )}
+              >
+                {lang.short}
+              </button>
+            ))}
+          </div>
+
           {/* Search Popdown Toggle Button */}
           <button
             type="button"
@@ -181,18 +211,18 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
           <Link
             to="/help"
             className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#6F7768] hover:text-[#18231F] hover:bg-[#E9E5D8]/70 rounded-full transition-colors cursor-pointer"
-            title="Documentation & Guide"
+            title={t('nav.guide')}
           >
             <HelpCircle size={13} />
-            <span>Guide</span>
+            <span>{t('nav.guide')}</span>
           </Link>
 
           {/* Cinematic Fullscreen Toggle with Expand SVG */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            title={isFullscreen ? 'Exit Fullscreen' : 'Cinematic Fullscreen Experience'}
-            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            title={isFullscreen ? t('nav.exitFullscreen') : t('nav.fullscreen')}
+            aria-label={isFullscreen ? t('nav.exitFullscreen') : t('nav.fullscreen')}
             className="flex size-7 items-center justify-center rounded-full bg-[#E9E5D8]/70 hover:bg-[#E1E6DE] text-[#18231F] border border-[#D5D2C7] transition-colors cursor-pointer"
           >
             {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
@@ -203,7 +233,7 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             type="button"
             onClick={onOpenAccount}
             className="flex items-center gap-2 bg-[#23483A] text-[#F4F1E7] pl-2 pr-3 py-1 rounded-full text-xs font-semibold shadow-xs hover:bg-[#23483A]/90 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#176B52]"
-            aria-label="Account details"
+            aria-label={t('nav.account')}
           >
             <span className="flex size-5 items-center justify-center rounded-full bg-[#176B52] text-[10px] font-bold text-[#F4F1E7]">
               {userInitials}

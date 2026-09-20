@@ -22,7 +22,8 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Field';
 import { api, ApiError } from '@/lib/api';
 import type { AssistantReply } from '@/lib/cdm';
-import { useUI } from '@/lib/store';
+import { useUI, type Locale } from '@/lib/store';
+import { useTranslation } from '@/lib/i18n';
 
 interface Msg {
   who: 'me' | 'bot';
@@ -31,43 +32,119 @@ interface Msg {
   sources?: AssistantReply['sources'];
 }
 
-const GREETING: Msg = {
-  who: 'bot',
-  text:
-    '**[Bhu-Sahayak AI Land Assistant]**\n' +
-    'Select a common land problem or type any survey number to inspect verified records:\n\n' +
-    '• **Encroachment & Demarcation**: [Apply for Boundary Correction](/citizen/request?type=boundary_correction) or check satellite alerts\n' +
-    '• **Deed Registration & Mutation**: [Apply for Mutation](/citizen/request?type=mutation) to update your name in revenue records\n' +
-    '• **Inheritance & Succession**: [Apply for Succession](/citizen/request?type=succession) for legal heir property reallocation\n' +
-    '• **Buyer Due Diligence**: 9-point multi-department clearance audit before purchasing\n' +
-    '• **Application Delay**: [Track Application](/citizen/track) to inspect Tahsildar approval milestones\n\n' +
-    '💡 *Tip: Mention any survey number (e.g. "survey no 123/4") or 14-digit ULPIN anytime!*',
-  engine: 'rules',
+const GREETINGS_BY_LOCALE: Record<Locale, Msg> = {
+  en: {
+    who: 'bot',
+    text:
+      '**[Bhu-Sahayak AI Land Assistant]**\n' +
+      'Select a common land problem or type any survey number to inspect verified records:\n\n' +
+      '• **Encroachment & Demarcation**: [Apply for Boundary Correction](/citizen/request?type=boundary_correction) or check satellite alerts\n' +
+      '• **Deed Registration & Mutation**: [Apply for Mutation](/citizen/request?type=mutation) to update your name in revenue records\n' +
+      '• **Inheritance & Succession**: [Apply for Succession](/citizen/request?type=succession) for legal heir property reallocation\n' +
+      '• **Buyer Due Diligence**: 9-point multi-department clearance audit before purchasing\n' +
+      '• **Application Delay**: [Track Application](/citizen/track) to inspect Tahsildar approval milestones\n\n' +
+      '💡 *Tip: Mention any survey number (e.g. "survey no 123/4") or 14-digit ULPIN anytime!*',
+    engine: 'rules',
+  },
+  te: {
+    who: 'bot',
+    text:
+      '**[భూ-సహాయక్ (మీ డిజిటల్ భూమి సలహాదారు)]**\n' +
+      'నమస్కారం! మీ భూమి హక్కులు, రికార్డులు లేదా సేవలపై సహాయం కోసం ఒక అంశాన్ని ఎంచుకోండి లేదా సర్వే నంబరు టైప్ చేయండి:\n\n' +
+      '• **హద్దుల వివాదం & కొలత**: [హద్దుల సవరణ కొరకు దరఖాస్తు](/citizen/request?type=boundary_correction) లేదా ఉపగ్రహ పర్యవేక్షణ\n' +
+      '• **రిజిస్ట్రేషన్ & మ్యుటేషన్**: పట్టాదారు పాస్ పుస్తకంలో పేరు నమోదు కొరకు [మ్యుటేషన్ దరఖాస్తు](/citizen/request?type=mutation)\n' +
+      '• **వారసత్వ హక్కులు (ఫౌతీ)**: చట్టబద్ధ వారసులకు బదిలీ కొరకు [వారసత్వ దరఖాస్తు](/citizen/request?type=succession)\n' +
+      '• **కొనుగోలు రక్షణ తనిఖీ**: భూమి కొనేముందు 6 శాఖల రికార్డుల సమగ్ర 9-అంశాల తనిఖీ\n' +
+      '• **దరఖాస్తు స్థితి పరిశీలన**: తహసీల్దార్ ఆమోద దశలను పరిశీలించడానికి [దరఖాస్తు ట్రాక్ చేయండి](/citizen/track)\n\n' +
+      '💡 *సూచన: మీ ప్రశ్నలో ఏదైనా సర్వే నంబరు (ఉదా: "సర్వే 123/4") లేదా 14-అంకెల భూ-ఆధార్ (ULPIN) పేర్కొనవచ్చు!*',
+    engine: 'rules',
+  },
+  hi: {
+    who: 'bot',
+    text:
+      '**[भू-सहायक (आपका डिजिटल भूमि मार्गदर्शक)]**\n' +
+      'नमस्ते! भूमि अधिकारों, खतौनी, दाखिल-खारिज अथवा सेवाओं हेतु नीचे दिए गए विकल्पों में से चुनें या खसरा संख्या लिखें:\n\n' +
+      '• **मेढ़ व सीमा विवाद पैमाइश**: [मेढ़ पैमाइश हेतु आवेदन](/citizen/request?type=boundary_correction) अथवा उपग्रह अलर्ट देखें\n' +
+      '• **बैनामा एवं दाखिल-खारिज**: खतौनी में नाम दर्ज कराने हेतु [दाखिल-खारिज आवेदन](/citizen/request?type=mutation)\n' +
+      '• **पैतृक वरासत (फौती)**: कानूनी वारिसों के नाम दर्ज करने हेतु [वरासत आवेदन](/citizen/request?type=succession)\n' +
+      '• **खरीददार सुरक्षा जांच**: ज़मीन खरीदने से पूर्व 6 विभागों की 9-सूत्रीय राजस्व व कानूनी जांच\n' +
+      '• **आवेदन स्थिति जांच**: तहसीलदार स्तर पर प्रगति देखने हेतु [आवेदन ट्रैक करें](/citizen/track)\n\n' +
+      '💡 *सुझाव: सवाल पूछते समय कोई भी खसरा संख्या (उदा: "खसरा 123/4") अथवा 14-अंकों का भू-आधार (ULPIN) लिखें!*',
+    engine: 'rules',
+  },
 };
 
-const PROMPT_CATEGORIES = [
-  {
-    category: 'Problems & Solutions',
-    prompts: [
-      'My neighbor encroached on my boundary or built a fence',
-      'I bought land — how do I transfer ownership (mutation)?',
-      'Can I build a house or shop on this plot? Check zoning',
-      'Father passed away — how to transfer land to legal heirs?',
-      'Is survey no 123/4 safe to buy? Check due diligence',
-      'Why is my application delayed and what is the next step?',
-    ],
-  },
-  {
-    category: 'How to Do Things',
-    prompts: [
-      'How to verify seller ownership without leaking private data?',
-      'How to check if there is an active court stay or mortgage?',
-      'How to download a certified parcel report PDF with QR code?',
-      'How does the public statutory notice board work?',
-      'What is a 14-digit ULPIN and how do I find my land on the map?',
-    ],
-  },
-];
+const PROMPT_CATEGORIES_BY_LOCALE: Record<Locale, { category: string; prompts: string[] }[]> = {
+  en: [
+    {
+      category: 'Problems & Solutions',
+      prompts: [
+        'My neighbor encroached on my boundary or built a fence',
+        'I bought land — how do I transfer ownership (mutation)?',
+        'Can I build a house or shop on this plot? Check zoning',
+        'Father passed away — how to transfer land to legal heirs?',
+        'Is survey no 123/4 safe to buy? Check due diligence',
+        'Why is my application delayed and what is the next step?',
+      ],
+    },
+    {
+      category: 'How to Do Things',
+      prompts: [
+        'How to verify seller ownership without leaking private data?',
+        'How to check if there is an active court stay or mortgage?',
+        'How to download a certified parcel report PDF with QR code?',
+        'How does the public statutory notice board work?',
+        'What is a 14-digit ULPIN and how do I find my land on the map?',
+      ],
+    },
+  ],
+  te: [
+    {
+      category: 'రైతు సమస్యలు & పరిష్కారాలు',
+      prompts: [
+        'పొరుగు రైతు నా పొలం హద్దులు కబ్జా చేశాడు, ఏమి చేయాలి?',
+        'భూమి కొన్నాను — పట్టాదారు పాస్ పుస్తకంలో పేరు ఎలా మార్చాలి (మ్యుటేషన్)?',
+        'ఈ స్థలంలో ఇల్లు లేదా దుకాణం కట్టవచ్చా? జోనింగ్ నిబంధనలు ఏమిటి?',
+        'కుటుంబ పెద్ద మరణించారు — వారసుల పేరిట భూమి ఎలా మార్చాలి?',
+        'సర్వే 123/4 కొనుగోలు చేయడం సురక్షితమేనా? క్లీన్ పట్టానా?',
+        'నా దరఖాస్తు ఎందుకు ఆలస్యమైంది? తదుపరి అధికారి ఎవరు?',
+      ],
+    },
+    {
+      category: 'సేవలు ఎలా పొందాలి',
+      prompts: [
+        'రైతు/విక్రేత అసలైన పట్టాదారు అవునో కాదో ఎలా ధృవీకరించాలి?',
+        'ఈ భూమిపై బ్యాంకు రుణం లేదా కోర్టు స్టే ఉందో ఎలా తనిఖీ చేయాలి?',
+        'ధృవీకృత అధికారిక భూమి నివేదిక (LIR PDF) ఎలా డౌన్‌లోడ్ చేయాలి?',
+        'గ్రామ రెవెన్యూ బహిరంగ నోటీసుల బోర్డు ఎలా పనిచేస్తుంది?',
+        '14-అంకెల భూ-ఆధార్ (ULPIN) అంటే ఏమిటి? భూపటంలో నా పొలం ఎలా చూడాలి?',
+      ],
+    },
+  ],
+  hi: [
+    {
+      category: 'किसान समस्याएं एवं समाधान',
+      prompts: [
+        'पड़ोसी ने मेरे खेत की मेढ़ तोड़ दी अथवा कब्ज़ा कर लिया, क्या करें?',
+        'ज़मीन खरीदी है — खतौनी में नाम कैसे दर्ज कराएं (दाखिल-खारिज)?',
+        'क्या इस भूमि पर मकान या दुकान बना सकते हैं? मास्टर प्लान नियम क्या हैं?',
+        'पिताजी के देहांत के बाद पैतृक भूमि वारिसों के नाम कैसे दर्ज कराएं (वरासत)?',
+        'क्या खसरा 123/4 खरीदना सुरक्षित है? 9-सूत्रीय जांच करें',
+        'मेरा आवेदन क्यों लंबित है और अगला कदम क्या है?',
+      ],
+    },
+    {
+      category: 'सेवाएं कैसे प्राप्त करें',
+      prompts: [
+        'विक्रेता के नाम का खतौनी से सत्यापन कैसे करें?',
+        'भूमि पर बैंक बंधक अथवा न्यायालय स्थगन (Stay) की जांच कैसे करें?',
+        'प्रमाणित भू-अभिलेख रिपोर्ट (QR कोड सहित LIR) कैसे डाउनलोड करें?',
+        'सार्वजनिक नोटिस बोर्ड कैसे कार्य करता है?',
+        '14-अंकों का भू-आधार (ULPIN) क्या है और नक्शे पर खेत कैसे देखें?',
+      ],
+    },
+  ],
+};
 
 function engineBadge(engine?: string) {
   if (!engine) return null;
@@ -90,7 +167,7 @@ function engineBadge(engine?: string) {
   );
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, copyLabel, copiedLabel }: { text: string; copyLabel: string; copiedLabel: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     navigator.clipboard.writeText(text);
@@ -106,7 +183,7 @@ function CopyButton({ text }: { text: string }) {
       className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-ink-3 transition-colors hover:bg-ground-3 hover:text-ink cursor-pointer"
     >
       {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
-      <span>{copied ? 'Copied' : 'Copy'}</span>
+      <span>{copied ? copiedLabel : copyLabel}</span>
     </button>
   );
 }
@@ -124,77 +201,70 @@ function FormattedMessage({
   compact?: boolean;
 }) {
   if (isUser) {
-    return <p className="whitespace-pre-wrap">{text}</p>;
+    return <span className="break-words">{text}</span>;
   }
 
-  const paragraphs = text.split(/\n\n+/);
+  const lines = text.split('\n');
 
   return (
-    <div className={compact ? 'space-y-1.5 text-[12.5px] leading-snug' : 'space-y-2 text-[13.5px] leading-relaxed'}>
-      {paragraphs.map((p, pIdx) => {
-        const lines = p.split('\n');
+    <div className={`space-y-1.5 leading-relaxed break-words ${compact ? 'text-[12.5px]' : 'text-[13px]'}`}>
+      {lines.map((line, lIdx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={lIdx} className={compact ? 'h-0.5' : 'h-1'} />;
+        }
+
+        const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-');
+        const cleanLine = isBullet ? trimmed.replace(/^[•\-]\s*/, '') : trimmed;
+
+        // Parse markdown links [Text](/path) and bold text **Bold**
+        const parts = cleanLine.split(/(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*)/g);
+
+        const renderedLine = parts.map((part, pIdx) => {
+          // Link format: [Label](/url)
+          const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+          if (linkMatch) {
+            const [, label, href] = linkMatch;
+            const isInternal = href.startsWith('/');
+            return (
+              <button
+                key={pIdx}
+                type="button"
+                onClick={() => (isInternal ? onNavigate(href) : window.open(href, '_blank'))}
+                className="inline-flex items-center gap-1 rounded-md bg-primary-soft/80 px-2 py-0.5 font-semibold text-primary underline underline-offset-2 transition-all hover:bg-primary hover:text-white hover:no-underline cursor-pointer shadow-2xs mx-0.5"
+              >
+                <span>{label}</span>
+                <ArrowRight size={10} className="shrink-0 -rotate-45" />
+              </button>
+            );
+          }
+
+          // Bold format: **Text**
+          const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+          if (boldMatch) {
+            return (
+              <strong key={pIdx} className="font-bold text-ink">
+                {boldMatch[1]}
+              </strong>
+            );
+          }
+
+          return <span key={pIdx}>{part}</span>;
+        });
+
+        if (isBullet) {
+          return (
+            <div key={lIdx} className="flex items-start gap-1.5 pl-1 text-ink-2">
+              <span className="text-primary font-bold select-none leading-tight mt-0.5">•</span>
+              <div className="flex-1">{renderedLine}</div>
+            </div>
+          );
+        }
+
         return (
-          <div key={pIdx} className={compact ? 'space-y-0.5' : 'space-y-1'}>
-            {lines.map((line, lIdx) => {
-              const isH3 = line.startsWith('### ');
-              const cleanH3 = isH3 ? line.replace('### ', '') : line;
-              const isBullet = /^\s*[-*•]\s+/.test(cleanH3);
-              const cleanLine = isBullet ? cleanH3.replace(/^\s*[-*•]\s+/, '') : cleanH3;
-
-              // Bold & Link parser
-              const parts = cleanLine.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
-              const content = parts.map((part, partIdx) => {
-                if (part.startsWith('**') && part.endsWith('**')) {
-                  return (
-                    <strong key={partIdx} className="font-semibold text-ink">
-                      {part.slice(2, -2)}
-                    </strong>
-                  );
-                }
-                const linkM = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-                if (linkM && linkM[1] && linkM[2]) {
-                  const label = linkM[1];
-                  const url = linkM[2];
-                  return (
-                    <button
-                      key={partIdx}
-                      type="button"
-                      onClick={() => onNavigate(url)}
-                      className={`inline-flex items-center gap-1 rounded bg-primary/10 font-semibold text-primary underline-offset-2 hover:bg-primary hover:text-white transition-colors cursor-pointer ${
-                        compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-1.5 py-0.5 text-xs'
-                      }`}
-                    >
-                      {label} <ArrowRight size={10} />
-                    </button>
-                  );
-                }
-                return <span key={partIdx}>{part}</span>;
-              });
-
-              if (isH3) {
-                return (
-                  <h4 key={lIdx} className={`font-display font-bold text-ink mt-1 ${compact ? 'text-[13px]' : 'text-[14px]'}`}>
-                    {content}
-                  </h4>
-                );
-              }
-
-              if (isBullet) {
-                return (
-                  <div key={lIdx} className="flex items-start gap-1.5 pl-0.5">
-                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                    <span className="flex-1">{content}</span>
-                  </div>
-                );
-              }
-
-              return (
-                <p key={lIdx} className="whitespace-pre-wrap">
-                  {content}
-                </p>
-              );
-            })}
-          </div>
+          <p key={lIdx} className="text-ink-2">
+            {renderedLine}
+          </p>
         );
       })}
     </div>
@@ -203,13 +273,31 @@ function FormattedMessage({
 
 export default function Assistant() {
   const navigate = useNavigate();
+  const { t, locale } = useTranslation();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
-  const [msgs, setMsgs] = useState<Msg[]>([GREETING]);
+
+  const currentGreeting = GREETINGS_BY_LOCALE[locale] || GREETINGS_BY_LOCALE.en;
+  const currentCategories = PROMPT_CATEGORIES_BY_LOCALE[locale] || PROMPT_CATEGORIES_BY_LOCALE.en;
+
+  const [msgs, setMsgs] = useState<Msg[]>([currentGreeting]);
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [chips, setChips] = useState<string[]>(() =>
-    PROMPT_CATEGORIES[0]?.prompts ? [...PROMPT_CATEGORIES[0].prompts] : [],
+    currentCategories[0]?.prompts ? [...currentCategories[0].prompts] : [],
   );
+
+  // When user switches language, refresh initial greeting and suggestions
+  useEffect(() => {
+    setMsgs((prev) => {
+      if (prev.length <= 1) {
+        return [GREETINGS_BY_LOCALE[locale] || GREETINGS_BY_LOCALE.en];
+      }
+      return prev;
+    });
+    const cats = PROMPT_CATEGORIES_BY_LOCALE[locale] || PROMPT_CATEGORIES_BY_LOCALE.en;
+    setChips(cats[0]?.prompts ? [...cats[0].prompts] : []);
+  }, [locale]);
+
   const [compact, setCompact] = useState<boolean>(() => {
     try {
       return localStorage.getItem('bhu_sahayak_compact') === 'true';
@@ -218,7 +306,6 @@ export default function Assistant() {
     }
   });
 
-  // Position state for movable icon (default bottom-right)
   const [pos, setPos] = useState<{ x: number; y: number }>(() => {
     try {
       const saved = localStorage.getItem('bhu_sahayak_btn_pos');
@@ -245,7 +332,6 @@ export default function Assistant() {
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Resize listener to keep icon on-screen if window resizes
   useEffect(() => {
     const handleResize = () => {
       setPos((p) => ({
@@ -257,7 +343,6 @@ export default function Assistant() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Save position whenever it updates
   useEffect(() => {
     try {
       localStorage.setItem('bhu_sahayak_btn_pos', JSON.stringify(pos));
@@ -266,7 +351,6 @@ export default function Assistant() {
     }
   }, [pos]);
 
-  // Global event listener to open assistant from any page (e.g. Guide page callout)
   useEffect(() => {
     const handleOpen = (e: Event) => {
       const customEvent = e as CustomEvent<{ prompt?: string }>;
@@ -301,26 +385,26 @@ export default function Assistant() {
   });
 
   const send = (message: string) => {
-    const t = message.trim();
-    if (!t || m.isPending) return;
+    const trimmed = message.trim();
+    if (!trimmed || m.isPending) return;
 
-    // Collect past 8 turns for contextual reasoning
     const history = msgs
-      .filter((m) => m !== GREETING)
+      .filter((msg) => msg !== currentGreeting)
       .slice(-8)
-      .map((m) => ({
-        role: m.who === 'me' ? 'user' : 'assistant',
-        content: m.text,
+      .map((msg) => ({
+        role: msg.who === 'me' ? 'user' : 'assistant',
+        content: msg.text,
       }));
 
-    setMsgs((prev) => [...prev, { who: 'me', text: t }]);
+    setMsgs((prev) => [...prev, { who: 'me', text: trimmed }]);
     setText('');
-    m.mutate({ message: t, history });
+    m.mutate({ message: trimmed, history });
   };
 
   const handleReset = () => {
-    setMsgs([GREETING]);
-    setChips(PROMPT_CATEGORIES[0]?.prompts ? [...PROMPT_CATEGORIES[0].prompts] : []);
+    setMsgs([GREETINGS_BY_LOCALE[locale] || GREETINGS_BY_LOCALE.en]);
+    const cats = PROMPT_CATEGORIES_BY_LOCALE[locale] || PROMPT_CATEGORIES_BY_LOCALE.en;
+    setChips(cats[0]?.prompts ? [...cats[0].prompts] : []);
   };
 
   const handleNavigate = (path: string) => {
@@ -336,7 +420,6 @@ export default function Assistant() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  // Compute smart dialog placement relative to the movable button
   const isRightHalf = pos.x > (typeof window !== 'undefined' ? window.innerWidth / 2 : 500);
   const isBottomHalf = pos.y > (typeof window !== 'undefined' ? window.innerHeight / 2 : 400);
 
@@ -363,7 +446,7 @@ export default function Assistant() {
     <>
       {open && (
         <section
-          aria-label="Bhu-Sahayak assistant"
+          aria-label={t('ai.title')}
           style={dialogStyle}
           className="flex flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
         >
@@ -374,13 +457,15 @@ export default function Assistant() {
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h2 className={`font-display font-bold leading-tight text-ink ${compact ? 'text-[14px]' : 'text-[15px]'}`}>Bhu-Sahayak</h2>
+                <h2 className={`font-display font-bold leading-tight text-ink ${compact ? 'text-[14px]' : 'text-[15px]'}`}>
+                  {t('ai.title')}
+                </h2>
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-1.5 py-0.2 text-[10px] font-semibold text-primary">
-                  <Sparkles size={10} /> AI Guide
+                  <Sparkles size={10} /> AI
                 </span>
               </div>
               <p className="truncate text-[11px] text-ink-3">
-                {selectedUlpin ? `Parcel ${selectedUlpin} focused` : 'Problem solver & land governance intelligence'}
+                {selectedUlpin ? `${t('common.surveyNo')} ${selectedUlpin}` : t('ai.subtitle')}
               </p>
             </div>
             <button
@@ -394,8 +479,8 @@ export default function Assistant() {
                   return next;
                 });
               }}
-              title={compact ? 'Switch to normal spacious view' : 'Switch to compact high-density view'}
-              aria-label="Toggle compact view"
+              title={t('ai.compactView')}
+              aria-label={t('ai.compactView')}
               className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
                 compact ? 'bg-primary/15 text-primary' : 'text-ink-3 hover:bg-ground-2 hover:text-ink'
               }`}
@@ -405,15 +490,15 @@ export default function Assistant() {
             </button>
             <button
               onClick={handleReset}
-              title="Reset conversation & load topics"
-              aria-label="New chat"
+              title={t('ai.newChat')}
+              aria-label={t('ai.newChat')}
               className="flex size-7 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink cursor-pointer"
             >
               <RotateCcw size={14} />
             </button>
             <button
               onClick={() => setOpen(false)}
-              aria-label="Close assistant"
+              aria-label={t('common.close')}
               className="flex size-7 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink cursor-pointer"
             >
               <X size={16} />
@@ -449,50 +534,50 @@ export default function Assistant() {
                                     title="Open this parcel in map and profile drawer"
                                     className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-panel px-2 py-0.5 text-[10.5px] font-semibold text-primary transition-colors hover:bg-primary hover:text-white cursor-pointer"
                                   >
-                                    📍 Sy./ULPIN {s.id}
+                                    <span>Sy. {s.label ?? s.id}</span>
                                   </button>
                                 );
                               }
                               return (
-                                <button
-                                  key={`${s.kind}-${s.id}`}
-                                  type="button"
-                                  onClick={() => handleNavigate(s.kind === 'application' ? `/citizen/track` : '/map')}
-                                  className="inline-flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[10.5px] font-medium text-ink-2 hover:border-line-strong hover:text-ink cursor-pointer"
+                                <span
+                                  key={`src-${s.id}`}
+                                  className="rounded-full bg-ground-3 px-2 py-0.5 text-[10.5px] text-ink-3"
                                 >
-                                  {s.kind}: {s.id}
-                                </button>
+                                  {s.label}
+                                </span>
                               );
                             })}
                           </div>
                         )}
-                        <div className="mt-2 flex items-center justify-between border-t border-line/40 pt-1.5">
+
+                        <div className={`mt-2 flex items-center justify-between border-t border-line/40 ${compact ? 'pt-1' : 'pt-1.5'}`}>
                           {engineBadge(msg.engine)}
-                          <CopyButton text={msg.text} />
+                          <CopyButton text={msg.text} copyLabel={t('ai.copyResponse')} copiedLabel={t('ai.copied')} />
                         </div>
                       </>
                     )}
                   </div>
                 </li>
               ))}
+
               {m.isPending && (
                 <li className="flex justify-start">
-                  <div className={`flex items-center gap-2.5 rounded-xl rounded-tl-xs border border-line bg-ground-2 text-ink-2 ${compact ? 'px-3 py-2 text-[12px]' : 'px-4 py-3 text-[13px]'}`}>
-                    <span className="size-2 animate-ping rounded-full bg-primary" />
-                    <span className="font-medium">Diagnosing situation & verified land records…</span>
+                  <div className="flex items-center gap-2 rounded-2xl border border-line bg-ground-2 px-3 py-2 text-xs text-ink-3">
+                    <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+                    <span>{t('common.loading')}</span>
                   </div>
                 </li>
               )}
+              <div ref={endRef} />
             </ul>
-            <div ref={endRef} />
           </div>
 
-          {/* Quick Problem Solvers & Prompt Library */}
-          {!m.isPending && (
-            <div className={`border-t border-line bg-ground-1/60 ${compact ? 'px-2.5 py-1.5' : 'px-3 py-2'}`}>
-              <div className="mb-1 flex items-center justify-between">
-                <div className="flex gap-1">
-                  {PROMPT_CATEGORIES.map((cat, idx) => (
+          {/* Prompt Topics & Quick Suggestions */}
+          {chips.length > 0 && (
+            <div className={`border-t border-line bg-ground-1 ${compact ? 'p-2' : 'p-2.5'}`}>
+              <div className="flex items-center justify-between gap-1 mb-1.5">
+                <div className="flex items-center gap-1 overflow-x-auto scroll-thin">
+                  {currentCategories.map((cat, idx) => (
                     <button
                       key={cat.category}
                       type="button"
@@ -510,7 +595,6 @@ export default function Assistant() {
                     </button>
                   ))}
                 </div>
-                <span className="text-[9.5px] text-ink-3 hidden sm:inline">Tap to ask</span>
               </div>
               <div className={`flex flex-wrap gap-1.5 overflow-y-auto scroll-thin py-0.5 ${compact ? 'max-h-20' : 'max-h-24'}`}>
                 {chips.map((c) => (
@@ -542,8 +626,8 @@ export default function Assistant() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               maxLength={500}
-              placeholder="Describe your land problem or ask a question…"
-              aria-label="Message Bhu-Sahayak"
+              placeholder={t('ai.placeholder')}
+              aria-label={t('ai.title')}
               className={compact ? 'text-xs py-1.5' : 'text-sm'}
             />
             <Button
@@ -551,7 +635,7 @@ export default function Assistant() {
               size="sm"
               variant="primary"
               disabled={!text.trim() || m.isPending}
-              aria-label="Send message"
+              aria-label={t('common.submit')}
               className="shrink-0"
             >
               <Send size={13} />
@@ -560,7 +644,7 @@ export default function Assistant() {
         </section>
       )}
 
-      {/* Movable Floating Launcher Icon (Hardware-Accelerated Framer Motion Drag) */}
+      {/* Movable Floating Launcher Icon */}
       <motion.div
         drag
         dragMomentum={false}
@@ -599,8 +683,8 @@ export default function Assistant() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          aria-label={open ? 'Close Bhu-Sahayak assistant' : 'Open Bhu-Sahayak assistant (drag to move)'}
-          title={open ? 'Close Assistant' : 'Bhu-Sahayak AI Assistant (Drag to move anywhere)'}
+          aria-label={open ? t('common.close') : t('ai.title')}
+          title={open ? t('common.close') : t('ai.title')}
           aria-expanded={open}
           className="flex size-12 items-center justify-center rounded-full bg-primary text-white shadow-2xl ring-4 ring-primary/20 pointer-events-auto cursor-pointer focus:outline-none"
         >

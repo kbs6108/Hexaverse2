@@ -10,6 +10,7 @@ import { Spinner } from '@/components/Spinner';
 import { maskName } from '@/lib/mask';
 import { useAuth, roleAtLeast } from '@/lib/auth';
 import type { SearchHit } from '@/lib/cdm';
+import { useTranslation } from '@/lib/i18n';
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
@@ -72,6 +73,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
   const containerRef = useRef<HTMLDivElement>(null);
   const openParcel = useOpenParcel();
   const { role } = useAuth();
+  const { t } = useTranslation();
   const recentParcels = useUI((s) => s.recentParcels);
 
   const results = useQuery({
@@ -147,7 +149,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
               aria-controls={listId}
               aria-autocomplete="list"
               aria-activedescendant={hits[active] ? `${listId}-${active}` : undefined}
-              placeholder={roleAtLeast(role, 'officer') ? 'Search survey no, ULPIN, khata or owner…' : 'Search survey no, ULPIN or khata…'}
+              placeholder={t('nav.searchPlaceholder')}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => {

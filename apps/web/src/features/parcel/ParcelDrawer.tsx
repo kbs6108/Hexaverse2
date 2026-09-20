@@ -18,25 +18,27 @@ import { FiscalSection } from './sections/Fiscal';
 import { UtilitiesSection } from './sections/Utilities';
 import { Timeline } from './sections/Timeline';
 import { SatelliteSection } from './sections/Satellite';
+import { useTranslation } from '@/lib/i18n';
 
 export type ParcelTab = 'overview' | 'ownership' | 'registration' | 'planning' | 'fiscal' | 'utilities' | 'timeline' | 'satellite';
-
-const TABS: { id: ParcelTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'ownership', label: 'Ownership & RoR' },
-  { id: 'registration', label: 'Registration & Encumbrance' },
-  { id: 'planning', label: 'Planning & Permissions' },
-  { id: 'fiscal', label: 'Fiscal' },
-  { id: 'utilities', label: 'Utilities' },
-  { id: 'timeline', label: 'Timeline' },
-  { id: 'satellite', label: 'Satellite' },
-];
 
 export function ParcelDrawer({ onClose }: { onClose: () => void }) {
   const { selectedUlpin, drawerOpen, recordRecentParcel } = useUI();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<ParcelTab>('overview');
   useEffect(() => setTab('overview'), [selectedUlpin]);
+
+  const tabs: { id: ParcelTab; label: string }[] = [
+    { id: 'overview', label: t('drawer.tabOverview') },
+    { id: 'ownership', label: t('drawer.tabOwnership') },
+    { id: 'registration', label: t('drawer.tabRegistration') },
+    { id: 'planning', label: t('drawer.tabPlanning') },
+    { id: 'fiscal', label: t('drawer.tabFiscal') },
+    { id: 'utilities', label: t('drawer.tabUtilities') },
+    { id: 'timeline', label: t('drawer.tabTimeline') },
+    { id: 'satellite', label: t('drawer.tabSatellite') },
+  ];
 
   const identity = user?.uid ?? 'anon';
   const q = useQuery({
@@ -50,16 +52,17 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (p) recordRecentParcel({ ulpin: p.ulpin, survey_no: p.identifiers.survey_no, village: p.identifiers.village });
   }, [p, recordRecentParcel]);
+
   return (
     <Drawer
       open={drawerOpen && !!selectedUlpin}
       onClose={onClose}
-      ariaLabel="Parcel profile"
+      ariaLabel={t('drawer.parcelProfile')}
       header={
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wide text-ink-3">Parcel profile</p>
+          <p className="text-[11px] uppercase tracking-wide text-ink-3">{t('drawer.parcelProfile')}</p>
           <h2 className="truncate text-lg font-semibold leading-tight">
-            {p ? `Sy. No. ${p.identifiers.survey_no}` : 'Loading…'}
+            {p ? `${t('common.surveyNo')} ${p.identifiers.survey_no}` : t('common.loading')}
             {p && <span className="ml-2 text-sm font-normal text-ink-3">{p.identifiers.village}</span>}
           </h2>
           <UlpinLine ulpin={selectedUlpin ?? ''} />
@@ -74,7 +77,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
         </div>
       }
     >
-      {q.isLoading && <Loading label="Aggregating six department systems…" />}
+      {q.isLoading && <Loading label={t('common.loading')} />}
       {q.isError && (
         <div className="p-4">
           <ErrorNote error={q.error} retry={() => void q.refetch()} />
@@ -82,7 +85,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
       )}
       {p && (
         <>
-          <Tabs ariaLabel="Parcel profile sections" items={TABS} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-[#F4F1E7]/50 backdrop-blur-xl border-b border-[#D5D2C7]/50 px-2" />
+          <Tabs ariaLabel={t('drawer.parcelProfile')} items={tabs} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-[#F4F1E7]/50 backdrop-blur-xl border-b border-[#D5D2C7]/50 px-2" />
           <div className="p-4">
             <TabPanel id="overview" active={tab === 'overview'}><Overview p={p} goTo={setTab} /></TabPanel>
             <TabPanel id="ownership" active={tab === 'ownership'}><Ownership p={p} /></TabPanel>
@@ -113,7 +116,7 @@ export function UlpinLine({ ulpin }: { ulpin: string }) {
             window.setTimeout(() => setCopied(false), 1200);
           });
         }}
-        className="rounded p-0.5 text-ink-3 hover:bg-ground-2 hover:text-ink"
+        className="rounded p-0.5 text-ink-3 hover:bg-ground-2 hover:text-ink cursor-pointer"
       >
         {copied ? <Check size={13} className="text-primary" /> : <Copy size={13} />}
       </button>

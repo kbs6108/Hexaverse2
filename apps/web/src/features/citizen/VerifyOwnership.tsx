@@ -10,9 +10,11 @@ import { Button } from '@/components/Button';
 import { ErrorNote } from '@/components/EmptyState';
 import { PageTitle } from './CitizenHome';
 import { titleCase } from '@/lib/format';
+import { useTranslation } from '@/lib/i18n';
 
 export function VerifyOwnership() {
   const search = useSearch({ from: '/citizen/verify' });
+  const { t } = useTranslation();
   const [ulpin, setUlpin] = useState(search.ulpin ?? '');
   const [name, setName] = useState('');
   const m = useMutation({ mutationFn: () => api.verifyOwnership(ulpin.trim(), name.trim()) });
@@ -24,19 +26,30 @@ export function VerifyOwnership() {
 
   return (
     <>
-      <PageTitle title="Verify ownership" subtitle="Compares a claimed name with the record of rights and the latest registered deed. The result never reveals the actual owner." />
+      <PageTitle
+        title={t('verify.title')}
+        subtitle={t('verify.subtitle')}
+      />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card>
-          <CardHeader title="Claim" />
+          <CardHeader title={t('verify.claimTitle')} />
           <CardBody>
             <form onSubmit={submit} className="flex flex-col gap-3">
-              <Field label="ULPIN" htmlFor="v-ulpin" hint="Pick a recently opened parcel, or select one on the map to prefill.">
+              <Field label={t('common.ulpin')} htmlFor="v-ulpin" hint={t('service.pickParcelHint')}>
                 <ParcelPicker id="v-ulpin" value={ulpin} onChange={setUlpin} />
               </Field>
-              <Field label="Claimed owner name" htmlFor="v-name">
-                <Input id="v-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="As written on the sale deed" />
+              <Field label={t('verify.claimedOwnerName')} htmlFor="v-name">
+                <Input
+                  id="v-name"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('verify.claimedOwnerPlaceholder')}
+                />
               </Field>
-              <Button type="submit" variant="primary" loading={m.isPending} className="self-start">Verify</Button>
+              <Button type="submit" variant="primary" loading={m.isPending} className="self-start">
+                {t('verify.btnVerify')}
+              </Button>
             </form>
           </CardBody>
         </Card>
@@ -49,22 +62,38 @@ export function VerifyOwnership() {
                 <div className="flex items-start gap-3">
                   {m.data.match ? <CheckCircle2 size={36} className="text-primary" /> : <XCircle size={36} className="text-brick" />}
                   <div>
-                    <p className="text-lg font-semibold">{m.data.match ? 'Name matches the record' : 'Name does not match'}</p>
-                    <p className="text-sm text-ink-2">Similarity score {Math.round(m.data.score * 100)}%</p>
+                    <p className="text-lg font-semibold">
+                      {m.data.match ? t('verify.nameMatches') : t('verify.nameDoesNotMatch')}
+                    </p>
+                    <p className="text-sm text-ink-2">
+                      {t('verify.similarityScore')} {Math.round(m.data.score * 100)}%
+                    </p>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-ground-2" role="meter" aria-valuenow={Math.round(m.data.score * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Similarity">
-                    <div className={`h-full ${m.data.match ? 'bg-primary' : 'bg-brick'}`} style={{ width: `${Math.round(m.data.score * 100)}%` }} />
+                  <div
+                    className="h-2 w-full overflow-hidden rounded-full bg-ground-2"
+                    role="meter"
+                    aria-valuenow={Math.round(m.data.score * 100)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Similarity"
+                  >
+                    <div
+                      className={`h-full ${m.data.match ? 'bg-primary' : 'bg-brick'}`}
+                      style={{ width: `${Math.round(m.data.score * 100)}%` }}
+                    />
                   </div>
                 </div>
-                <p className="mt-4 text-xs text-ink-3">Compared against: {m.data.compared.map(titleCase).join(', ')}. The registered owner’s name is not disclosed by this service.</p>
+                <p className="mt-4 text-xs text-ink-3">
+                  {t('verify.comparedAgainst')}
+                </p>
               </CardBody>
             </Card>
           )}
           {!m.data && !m.isError && (
             <div className="rounded-lg border border-dashed border-line p-6 text-sm text-ink-3">
-              Result appears here. A match does not by itself prove title; use it together with the Land Information Report.
+              {t('verify.emptyResult')}
             </div>
           )}
         </div>

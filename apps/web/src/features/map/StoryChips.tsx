@@ -4,10 +4,12 @@ import { qk } from '@/lib/api';
 import type { StoryParcel } from '@/lib/cdm';
 import { useOpenParcel } from './SearchBox';
 import { useMyParcel } from '@/lib/my-parcel';
+import { useTranslation } from '@/lib/i18n';
 
 /** Demo shortcuts for the §10 story parcels. Silent when /data/story_parcels.json is absent. */
 export function StoryChips() {
   const { parcel: myParcel, hasOwnedLand, goToMyParcel } = useMyParcel();
+  const { t } = useTranslation();
   const q = useQuery({
     queryKey: qk.storyParcels(),
     queryFn: async (): Promise<StoryParcel[]> => {
@@ -22,6 +24,7 @@ export function StoryChips() {
   });
   const openParcel = useOpenParcel();
   if (!q.data || q.data.length === 0) return null;
+
   return (
     <div className="pointer-events-none absolute top-3 left-1/2 z-10 flex max-w-[65vw] -translate-x-1/2 items-center gap-1.5 overflow-x-auto scroll-thin py-0.5 px-2">
       {hasOwnedLand && myParcel && (
@@ -32,11 +35,11 @@ export function StoryChips() {
           className="pointer-events-auto shrink-0 flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary-soft/95 px-3 py-1 text-xs font-bold text-primary shadow-sm backdrop-blur-md hover:bg-primary hover:text-white transition-all cursor-pointer"
         >
           <MapPin size={12} className="shrink-0" />
-          <span>My Land ({myParcel.survey_no})</span>
+          <span>{t('map.myLand')} ({myParcel.survey_no})</span>
         </button>
       )}
       <span className="pointer-events-auto shrink-0 flex items-center gap-1.5 rounded-full border border-line bg-panel/95 px-3 py-1 text-[11px] font-semibold text-ink shadow-panel backdrop-blur-md">
-        <Sparkles size={12} className="text-amber" /> Story parcels:
+        <Sparkles size={12} className="text-amber" /> {t('map.storyParcels')}
       </span>
       {q.data.map((s) => (
         <button
@@ -45,7 +48,7 @@ export function StoryChips() {
           disabled={!s.ulpin}
           title={s.note ?? (s.owner_name ? `Owner: ${s.owner_name} (${s.village ?? s.state ?? ''})` : undefined)}
           onClick={() => s.ulpin && void openParcel(s.ulpin, s.bbox ?? null)}
-          className="pointer-events-auto shrink-0 rounded-full border border-line bg-panel/95 px-3 py-1 text-xs font-medium text-ink-2 shadow-panel backdrop-blur-md hover:border-primary hover:text-primary hover:bg-ground-2 transition-all disabled:opacity-50"
+          className="pointer-events-auto shrink-0 rounded-full border border-line bg-panel/95 px-3 py-1 text-xs font-medium text-ink-2 shadow-panel backdrop-blur-md hover:border-primary hover:text-primary hover:bg-ground-2 transition-all disabled:opacity-50 cursor-pointer"
         >
           <span className="font-mono font-semibold text-ink">{s.survey_no}</span> · {s.title ?? (s.key ? s.key.replace(/_/g, ' ') : s.land_use ?? '')}
           {s.state && <span className="ml-1 text-[10px] font-mono font-semibold text-ink-3">[{s.state}]</span>}

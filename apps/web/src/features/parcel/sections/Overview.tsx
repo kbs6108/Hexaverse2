@@ -14,6 +14,7 @@ import { toast } from '@/components/Toast';
 import { Badge } from '@/components/Badge';
 import { AIInsight, parcelNeedsAttention } from '@/components/AIInsight';
 import type { ParcelTab } from '../ParcelDrawer';
+import { useTranslation } from '@/lib/i18n';
 
 /** Readable names for consistency-issue fields (raw keys are backend column names). */
 const ISSUE_LABEL: Record<string, string> = {
@@ -27,16 +28,10 @@ const DD_ICON = {
   fail: { icon: XCircle, cls: 'text-brick' },
 } as const;
 
-const DD_VERDICT = {
-  clear: { label: 'Clear to proceed', cls: 'bg-primary text-primary-ink' },
-  caution: { label: 'Proceed with caution', cls: 'bg-amber text-white' },
-  high_risk: { label: 'High risk', cls: 'bg-brick text-white' },
-} as const;
-
-/** Buyer due-diligence: a 9-point checklist over the same aggregated record (on demand —
- *  most viewers are not buying). Deterministic; the signed report PDF stays the artefact. */
+/** Buyer due-diligence: a 9-point checklist over the same aggregated record */
 function BuyerCheck({ ulpin }: { ulpin: string }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [run, setRun] = useState(false);
   const q = useQuery({
     queryKey: qk.dueDiligence(ulpin, user?.uid ?? 'anon'),
@@ -46,12 +41,20 @@ function BuyerCheck({ ulpin }: { ulpin: string }) {
     retry: false,
   });
   const d = q.data;
-  const verdict = d ? DD_VERDICT[d.verdict as keyof typeof DD_VERDICT] : undefined;
+
+  const ddVerdicts = {
+    clear: { label: t('drawer.verdictClear'), cls: 'bg-primary text-primary-ink' },
+    caution: { label: t('drawer.verdictCaution'), cls: 'bg-amber text-white' },
+    high_risk: { label: t('drawer.verdictHighRisk'), cls: 'bg-brick text-white' },
+  };
+
+  const verdict = d ? ddVerdicts[d.verdict as keyof typeof ddVerdicts] : undefined;
+
   return (
     <section aria-label="Buyer due-diligence" className="rounded-lg border border-line bg-panel-2 p-3">
       <div className="flex flex-wrap items-center gap-2">
         <ClipboardCheck size={15} className="text-ink-3" />
-        <h3 className="text-sm font-semibold">Thinking of buying?</h3>
+        <h3 className="text-sm font-semibold">{t('drawer.dueDiligenceTitle')}</h3>
         {verdict && <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold', verdict.cls)}>{verdict.label}</span>}
         {d && (
           <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10.5px] text-ink-3">
@@ -70,16 +73,16 @@ function BuyerCheck({ ulpin }: { ulpin: string }) {
             </span>
           </span>
         )}
-        {!run && <Button size="sm" className="ml-auto" onClick={() => setRun(true)}>Run 9-point check</Button>}
+        {!run && <Button size="sm" className="ml-auto" onClick={() => setRun(true)}>{t('drawer.runDueDiligence')}</Button>}
       </div>
-      {!run && <p className="mt-1 text-xs text-ink-3">One click checks the deed, court cases, mortgages, tax, pending transfers, record consistency, construction alerts, restriction zones and resurvey status.</p>}
-      {q.isLoading && run && <p className="mt-2 text-[13px] text-ink-2">Checking all six departments…</p>}
+      {!run && <p className="mt-1 text-xs text-ink-3">{t('drawer.dueDiligenceDesc')}</p>}
+      {q.isLoading && run && <p className="mt-2 text-[13px] text-ink-2">{t('drawer.dueDiligenceChecking')}</p>}
       {q.isError && <p className="mt-2 text-[13px] text-brick">The check could not run — open the parcel again or retry.</p>}
       {d && (
         <>
           {d.summary && (
             <div className="mt-2.5 rounded-md border border-line bg-ground-1 px-2.5 py-2 text-xs text-ink-2">
-              <span className="font-semibold text-primary">AI Buyer Summary: </span>
+              <span className="font-semibold text-primary">{t('drawer.aiBuyerSummary')}: </span>
               <span>{d.summary}</span>
             </div>
           )}
@@ -95,7 +98,7 @@ function BuyerCheck({ ulpin }: { ulpin: string }) {
             })}
           </ul>
           <p className="mt-2 border-t border-line pt-2 text-[11px] text-ink-3">
-            {d.estimated_value ? `Indicative value ${fmtINR(d.estimated_value)} at the guideline rate. ` : ''}
+            {d.estimated_value ? `${t('drawer.guidelineValue')}: ${fmtINR(d.estimated_value)}. ` : ''}
             A record summary, not legal advice — download the signed Land Information Report for the formal document.
           </p>
         </>
@@ -114,6 +117,7 @@ interface Cell {
 
 export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => void }) {
   const { role, department } = useAuth();
+  const { t } = useTranslation();
   const startBoundaryEdit = useUI((s) => s.startBoundaryEdit);
   const canEditBoundary = role === 'admin' || (role === 'officer' && department === 'revenue');
   const beginBoundaryEdit = async () => {
@@ -131,12 +135,12 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
   };
   const s = p.status;
   const cells: Cell[] = [
-    { label: 'Registered', value: s.registered ? 'Yes' : 'No', tone: s.registered ? 'ok' : 'muted', icon: BadgeCheck },
-    { label: 'Dispute', value: s.has_dispute ? `${p.restrictions.disputes.length} case(s)` : 'None', tone: s.has_dispute ? 'bad' : 'ok', icon: AlertOctagon, hatch: s.has_dispute },
-    { label: 'Mortgage', value: s.has_mortgage ? 'Active' : 'Clear', tone: s.has_mortgage ? 'warn' : 'ok', icon: Landmark },
-    { label: 'Tax', value: s.tax_arrears > 0 ? `${fmtINR(s.tax_arrears)} due` : 'Paid up', tone: s.tax_arrears > 0 ? 'warn' : 'ok', icon: Receipt },
-    { label: 'Mutation', value: s.pending_mutation ? 'Pending' : 'None pending', tone: s.pending_mutation ? 'warn' : 'ok', icon: Clock },
-    { label: 'Change alert', value: s.change_alert ? 'Flagged' : 'None', tone: s.change_alert ? 'bad' : 'ok', icon: Radar },
+    { label: t('officer.kpiRegistered'), value: s.registered ? 'Yes' : 'No', tone: s.registered ? 'ok' : 'muted', icon: BadgeCheck },
+    { label: t('officer.kpiDisputed'), value: s.has_dispute ? `${p.restrictions.disputes.length} case(s)` : 'None', tone: s.has_dispute ? 'bad' : 'ok', icon: AlertOctagon, hatch: s.has_dispute },
+    { label: t('officer.kpiMortgaged'), value: s.has_mortgage ? 'Active' : 'Clear', tone: s.has_mortgage ? 'warn' : 'ok', icon: Landmark },
+    { label: t('officer.kpiTaxArrears'), value: s.tax_arrears > 0 ? `${fmtINR(s.tax_arrears)} due` : 'Paid up', tone: s.tax_arrears > 0 ? 'warn' : 'ok', icon: Receipt },
+    { label: t('citizen.noticeMutation'), value: s.pending_mutation ? 'Pending' : 'None pending', tone: s.pending_mutation ? 'warn' : 'ok', icon: Clock },
+    { label: t('status.changeAlert'), value: s.change_alert ? 'Flagged' : 'None', tone: s.change_alert ? 'bad' : 'ok', icon: Radar },
   ];
   const tones = {
     ok: 'border-primary/25 bg-primary-soft/60 text-primary',
@@ -148,7 +152,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
   const report = useMutation({
     mutationFn: () => api.issueReport(p.ulpin),
     onSuccess: (r) => {
-      toast.success('Land Information Report issued', r.id);
+      toast.success(t('drawer.downloadLIR'), r.id);
       window.open(r.url.startsWith('http') ? r.url : api.reportPdfUrl(r.id), '_blank', 'noopener');
     },
     onError: (e: Error) => toast.error('Could not issue report', e.message),
@@ -259,16 +263,16 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           )}
           {role === 'citizen' && (
             <>
-              <Link to="/citizen/verify" search={{ ulpin: p.ulpin }}><Button icon={<FileSearch size={15} />}>Verify ownership</Button></Link>
-              <Link to="/citizen/request" search={{ ulpin: p.ulpin }}><Button icon={<ListChecks size={15} />}>Request service</Button></Link>
-              <Button variant="primary" icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>Download report</Button>
+              <Link to="/citizen/verify" search={{ ulpin: p.ulpin }}><Button icon={<FileSearch size={15} />}>{t('citizen.cardVerifyTitle')}</Button></Link>
+              <Link to="/citizen/request" search={{ ulpin: p.ulpin }}><Button icon={<ListChecks size={15} />}>{t('drawer.requestService')}</Button></Link>
+              <Button variant="primary" icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>{t('drawer.downloadReport')}</Button>
             </>
           )}
           {role === 'officer' && (
             <>
               <Link to="/officer/queue" search={{}}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
               <Button variant="primary" icon={<Satellite size={15} />} onClick={() => goTo('satellite')}>Run change detection</Button>
-              <Button icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>Report</Button>
+              <Button icon={<Download size={15} />} loading={report.isPending} onClick={() => report.mutate()}>{t('drawer.downloadReport')}</Button>
             </>
           )}
           {role === 'admin' && (
@@ -285,14 +289,13 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
         <SectionTitle>Parcel</SectionTitle>
         <KV
           items={[
-            { k: 'Area', v: fmtArea(p.spatial.area_sqm) },
+            { k: t('common.extent'), v: fmtArea(p.spatial.area_sqm) },
             { k: 'Land use', v: titleCase(p.planning.land_use) },
             { k: 'Zone', v: p.planning.zone_code ? `${p.planning.zone_code} · ${p.planning.zone_name ?? ''}` : '—' },
-            { k: 'Khata', v: p.identifiers.khata_no ?? '—', mono: true },
-            // AP and Telangana call the sub-district a mandal; Tamil Nadu a taluk.
+            { k: t('common.khataNo'), v: p.identifiers.khata_no ?? '—', mono: true },
             { k: p.identifiers.state === 'TN' ? 'Taluk / District' : 'Mandal / District', v: `${p.identifiers.taluk} · ${p.identifiers.district}` },
             { k: 'Centroid', v: `${p.spatial.centroid[1].toFixed(5)}, ${p.spatial.centroid[0].toFixed(5)}`, mono: true },
-            { k: 'Estimated value', v: fmtINR(p.fiscal.estimated_value) },
+            { k: t('drawer.guidelineValue'), v: fmtINR(p.fiscal.estimated_value) },
             { k: 'Registered on', v: fmtDate(p.rights.registration?.registered_on) },
           ]}
         />

@@ -14,20 +14,23 @@ import { useAuth } from '@/lib/auth';
 import { useMyParcel } from '@/lib/my-parcel';
 import { StatusBadge } from '@/features/officer/ApplicationBits';
 import { relTime, titleCase } from '@/lib/format';
-
-const CITIZEN_SUBNAV = [
-  { to: '/citizen', label: 'Services Overview', exact: true },
-  { to: '/citizen/verify', label: 'Verify Ownership', exact: false },
-  { to: '/citizen/request', label: 'Apply & Request', exact: false },
-  { to: '/citizen/track', label: 'Track Application', exact: false },
-] as const;
+import { useTranslation } from '@/lib/i18n';
 
 export function CitizenLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { t } = useTranslation();
+
+  const navItems = [
+    { to: '/citizen', label: t('citizen.navOverview'), exact: true },
+    { to: '/citizen/verify', label: t('citizen.navVerify'), exact: false },
+    { to: '/citizen/request', label: t('citizen.navApply'), exact: false },
+    { to: '/citizen/track', label: t('citizen.navTrack'), exact: false },
+  ];
+
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-6">
       <nav aria-label="Citizen sections" className="mb-6 flex flex-wrap gap-2 border-b border-line pb-3">
-        {CITIZEN_SUBNAV.map((n) => {
+        {navItems.map((n) => {
           const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
           return (
             <Link
@@ -62,31 +65,20 @@ export function PageTitle({ title, subtitle, action }: { title: string; subtitle
   );
 }
 
-const CARDS = [
-  { to: '/map', label: 'Parcel Search & Explorer', body: 'Find parcels by survey number, ULPIN or khata and inspect aggregated records on the map.', icon: MapPinned },
-  { to: '/citizen/verify', label: 'Verify Ownership', body: 'Compare claimed names against authoritative revenue records and deeds without exposing owner data.', icon: ShieldCheck },
-  { to: '/citizen/request', label: 'Apply & Request Services', body: 'Apply for mutations, record corrections, building permissions or raise objections with AI pre-check.', icon: FileSearch },
-  { to: '/citizen/track', label: 'Track Application', body: 'Follow mutation, building permission, and verification requests live through each department step.', icon: ListChecks },
-] as const;
-
-const NOTICE_LABEL: Record<string, string> = {
-  mutation: 'Ownership transfer',
-  succession: 'Succession',
-  boundary_correction: 'Boundary correction',
-};
-
 /** Village notice board — the statutory board outside the tahsildar office, on the home page.
  *  Pending transfers of rights are published for objection while their window is open. */
 function NoticeBoard() {
+  const { t } = useTranslation();
   const q = useQuery({ queryKey: qk.notices(''), queryFn: () => api.notices(), staleTime: 60_000 });
   const items = q.data?.items ?? [];
   if (items.length === 0) return null;
+
   return (
     <div className="mt-6 rounded-2xl border border-line bg-panel p-5 shadow-panel">
       <div className="mb-3 flex items-center gap-2 border-b border-line pb-2.5">
         <Megaphone size={16} className="text-primary" />
-        <h2 className="font-display text-sm font-bold text-ink">Public statutory notices</h2>
-        <span className="text-xs text-ink-3">· pending transfers open for objection ({q.data?.window_days} day window)</span>
+        <h2 className="font-display text-sm font-bold text-ink">{t('citizen.noticesTitle')}</h2>
+        <span className="text-xs text-ink-3">· {t('citizen.noticesSubtitle')} ({q.data?.window_days} {t('citizen.windowDays')})</span>
       </div>
       <ul className="flex flex-col gap-2">
         {items.slice(0, 6).map((n) => <NoticeRow key={n.id} n={n} />)}
@@ -96,29 +88,37 @@ function NoticeBoard() {
 }
 
 function NoticeRow({ n }: { n: Notice }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const m = useMutation({
     mutationFn: () => api.fileObjection(n.id, reason.trim()),
     onSuccess: (r) => {
-      toast.success('Objection recorded', `${r.objection_count} objection(s) on ${n.id}`);
+      toast.success(t('citizen.objectionSuccess'), `${r.objection_count} ${t('common.objections')} on ${n.id}`);
       setOpen(false);
       setReason('');
       void qc.invalidateQueries({ queryKey: ['notices'] });
     },
     onError: (e) => toast.error('Could not record objection', e instanceof ApiError ? e.message : String(e)),
   });
+
+  const noticeTypeLabels: Record<string, string> = {
+    mutation: t('citizen.noticeMutation'),
+    succession: t('citizen.noticeSuccession'),
+    boundary_correction: t('citizen.noticeBoundary'),
+  };
+
   return (
     <li className="rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-sm shadow-xs">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-bold text-ink">{NOTICE_LABEL[n.type] ?? titleCase(n.type)}</span>
-        <span className="text-ink-2">Sy. No. {n.survey_no ?? '—'} · {n.village ?? '—'}</span>
+        <span className="font-bold text-ink">{noticeTypeLabels[n.type] ?? titleCase(n.type)}</span>
+        <span className="text-ink-2">{t('common.surveyNo')} {n.survey_no ?? '—'} · {n.village ?? '—'}</span>
         <span className="ml-auto text-xs text-ink-3 font-mono">
-          {n.days_left} day{n.days_left === 1 ? '' : 's'} left{n.objection_count > 0 ? ` · ${n.objection_count} objection(s)` : ''}
+          {n.days_left} {t('common.daysLeft')}{n.objection_count > 0 ? ` · ${n.objection_count} ${t('common.objections')}` : ''}
         </span>
         <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-          {open ? 'Cancel' : 'Object'}
+          {open ? t('common.cancel') : t('citizen.btnObject')}
         </Button>
       </div>
       {open && (
@@ -126,10 +126,16 @@ function NoticeRow({ n }: { n: Notice }) {
           className="mt-3 flex flex-col gap-2 border-t border-line pt-2"
           onSubmit={(e) => { e.preventDefault(); if (reason.trim().length >= 10) m.mutate(); }}
         >
-          <Textarea rows={2} required minLength={10} value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Why do you object? (at least 10 characters — recorded with your name and shown to the deciding officer)" />
+          <Textarea
+            rows={2}
+            required
+            minLength={10}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t('citizen.objectionPlaceholder')}
+          />
           <Button type="submit" size="sm" variant="primary" loading={m.isPending} disabled={reason.trim().length < 10} className="self-start">
-            Submit objection
+            {t('citizen.btnSubmitObjection')}
           </Button>
         </form>
       )}
@@ -149,6 +155,7 @@ const CITIZEN_SIGNALS = [
 
 export function CitizenHome() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { parcel, hasOwnedLand, goToMyParcel } = useMyParcel();
   const mine = useQuery({
     queryKey: qk.myApplications(user?.uid ?? 'anon'),
@@ -156,9 +163,20 @@ export function CitizenHome() {
     enabled: !!user,
     staleTime: 30_000,
   });
+
+  const cards = [
+    { to: '/map', label: t('citizen.cardSearchTitle'), body: t('citizen.cardSearchDesc'), icon: MapPinned },
+    { to: '/citizen/verify', label: t('citizen.cardVerifyTitle'), body: t('citizen.cardVerifyDesc'), icon: ShieldCheck },
+    { to: '/citizen/request', label: t('citizen.cardApplyTitle'), body: t('citizen.cardApplyDesc'), icon: FileSearch },
+    { to: '/citizen/track', label: t('citizen.cardTrackTitle'), body: t('citizen.cardTrackDesc'), icon: ListChecks },
+  ];
+
   return (
     <>
-      <PageTitle title={`Namaste${user ? `, ${user.name.split(' ')[0]}` : ''}`} subtitle="Citizen digital land governance portal (AP · TN · TG)" />
+      <PageTitle
+        title={`${t('citizen.welcomeTitle')}${user ? `, ${user.name.split(' ')[0]}` : ''}`}
+        subtitle={t('citizen.portalSubtitle')}
+      />
 
       {/* Live System Status Marquee */}
       <div className="mb-6 overflow-hidden rounded-full border border-line bg-panel py-1.5 shadow-xs">
@@ -182,18 +200,18 @@ export function CitizenHome() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-display text-base font-bold text-ink">
-                  Your Land: Survey {parcel.survey_no}
+                  {t('citizen.yourLand')}: {t('common.surveyNo')} {parcel.survey_no}
                 </span>
                 <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[11px] font-semibold">
                   {parcel.village}, {parcel.state}
                 </span>
                 <span className="text-xs text-ink-3">·</span>
                 <span className="font-mono text-xs text-ink-2 font-medium">
-                  ULPIN: {parcel.ulpin}
+                  {t('common.ulpin')}: {parcel.ulpin}
                 </span>
               </div>
               <p className="mt-1 text-xs text-ink-2">
-                Khata <span className="font-mono font-medium text-ink">{parcel.khata_no}</span> · Extent <span className="font-medium text-ink">{parcel.area_sqm} m²</span> · {parcel.ownership_type}
+                {t('common.khataNo')} <span className="font-mono font-medium text-ink">{parcel.khata_no}</span> · {t('common.extent')} <span className="font-medium text-ink">{parcel.area_sqm} {t('common.sqm')}</span> · {parcel.ownership_type}
               </p>
             </div>
           </div>
@@ -203,7 +221,7 @@ export function CitizenHome() {
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-primary/90 hover:shadow transition-all cursor-pointer"
           >
             <MapPin size={14} />
-            <span>Go to My Land</span>
+            <span>{t('citizen.goToMyLand')}</span>
             <ArrowRight size={14} />
           </button>
         </div>
@@ -216,8 +234,8 @@ export function CitizenHome() {
               <MapPin size={18} />
             </span>
             <div>
-              <p className="text-xs font-medium text-ink">No active land parcels currently registered under this profile</p>
-              <p className="text-[11px] text-ink-3">If you recently transferred or purchased property, track your mutation application below.</p>
+              <p className="text-xs font-medium text-ink">{t('citizen.noActiveLand')}</p>
+              <p className="text-[11px] text-ink-3">{t('citizen.noActiveLandDesc')}</p>
             </div>
           </div>
           <Link
@@ -225,14 +243,14 @@ export function CitizenHome() {
             search={{ type: 'mutation' }}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-ground-2 px-3 py-1.5 text-xs font-semibold text-ink hover:border-primary/50 transition-colors"
           >
-            <span>Register Transfer</span>
+            <span>{t('citizen.registerTransfer')}</span>
             <ArrowRight size={12} />
           </Link>
         </div>
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
-        {CARDS.map((c) => (
+        {cards.map((c) => (
           <Link key={c.to} to={c.to} className="group rounded-2xl focus-visible:outline-2">
             <SpotlightCard className="flex h-full flex-col p-6 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
               <div className="flex items-center justify-between">
@@ -253,8 +271,8 @@ export function CitizenHome() {
       {mine.data && mine.data.length > 0 && (
         <div className="mt-6 rounded-2xl border border-line bg-panel p-5 shadow-panel">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Your applications</h2>
-            <Link to="/citizen/track" className="text-xs font-medium text-primary underline-offset-2 hover:underline">View all</Link>
+            <h2 className="text-sm font-semibold">{t('citizen.yourApplications')}</h2>
+            <Link to="/citizen/track" className="text-xs font-medium text-primary underline-offset-2 hover:underline">{t('common.viewAll')}</Link>
           </div>
           <ul className="flex flex-col gap-1.5">
             {mine.data.slice(0, 4).map((a) => (
@@ -271,7 +289,7 @@ export function CitizenHome() {
         </div>
       )}
       <p className="mt-8 text-xs text-ink-3">
-        Owner names are shown masked unless you are the owner or hold a consent token. Every profile section shows which department it came from and when.
+        {t('citizen.dpdpNotice')}
       </p>
     </>
   );

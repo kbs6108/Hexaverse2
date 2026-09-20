@@ -7,12 +7,14 @@ import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/Badge';
 import type { DevUserId } from '@/lib/store';
 import { useUI } from '@/lib/store';
+import { useTranslation } from '@/lib/i18n';
 
 const roleTone = { citizen: 'neutral', officer: 'slate', admin: 'violet' } as const;
 
 /** Top-right identity control. In dev mode this is the RoleSwitcher (CONTRACTS §3/§10). */
 export function UserMenu() {
   const { user, mode, devUsers, setDevUser, signOut } = useAuth();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
@@ -69,7 +71,7 @@ export function UserMenu() {
           {mode === 'dev' ? (
             <>
               <div className="px-2 pt-1 pb-1.5 border-b border-line/60 flex items-center justify-between">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3">Demo Identities</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3">{t('account.devIdentities')}</p>
                 <span className="text-[10.5px] text-primary font-mono">{devUsers.length} profiles</span>
               </div>
 

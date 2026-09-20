@@ -14,6 +14,7 @@ import { toast } from '@/components/Toast';
 import { fmtDate, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
 import { MechanismExplainerModal } from '@/components/MechanismExplainerModal';
+import { t } from '@/lib/i18n';
 
 const KIND_ICON = { change_detected: Radar, inconsistency: Scale, pending_mutation: Clock } as const;
 const SEV_TONE: Record<string, Tone> = { high: 'brick', medium: 'amber', low: 'slate' };
@@ -60,7 +61,7 @@ export function AlertsPage() {
   return (
     <>
       <PageTitle
-        title="Alerts"
+        title={t('officer.subnavAlerts', 'Alerts')}
         subtitle="Satellite change, cross-department inconsistencies and pending mutations"
         action={
           <Button
@@ -69,7 +70,7 @@ export function AlertsPage() {
             icon={<BookOpen size={14} className="text-primary" />}
             onClick={() => setGuideOpen(true)}
           >
-            How mechanisms work
+            {t('officer.howMechanismsWork', 'How mechanisms work')}
           </Button>
         }
       />
@@ -80,25 +81,31 @@ export function AlertsPage() {
         <div className="flex items-start gap-2.5">
           <Info size={16} className="text-primary mt-0.5 shrink-0" />
           <div>
-            <p className="font-semibold text-ink">Alerts Flag Anomalies · Applications Execute Statutory Changes</p>
+            <p className="font-semibold text-ink">{t('officer.alertFlagAnomalies', 'Alerts Flag Anomalies · Applications Execute Statutory Changes')}</p>
             <p className="text-ink-3 text-[11.5px] leading-relaxed">
-              Alerts are automated detection signals (satellite AI, registry discrepancies, pending mutations). Resolving an alert acknowledges the notice. Official property title and extent records are legally modified by approving applications in the <strong>Work Queue</strong>.
+              {t('officer.alertBannerDesc', 'Alerts are automated detection signals (satellite AI, registry discrepancies, pending mutations). Resolving an alert acknowledges the notice. Official property title and extent records are legally modified by approving applications in the Work Queue.')}
             </p>
           </div>
         </div>
         <Link to="/officer/queue" className="shrink-0">
           <Button size="sm" variant="secondary" icon={<ArrowRight size={13} />}>
-            Open Work Queue
+            {t('officer.openWorkQueue', 'Open Work Queue')}
           </Button>
         </Link>
       </div>
 
       <div className="mb-3 inline-flex rounded-md border border-line bg-panel p-1" role="tablist" aria-label="Alert status">
-        {(['open', 'assigned', 'resolved', ''] as const).map((s) => (
-          <button key={s || 'all'} role="tab" aria-selected={status === s} onClick={() => setStatus(s)} className={clsx('rounded px-3 py-1 text-sm font-medium', status === s ? 'bg-primary text-primary-ink' : 'text-ink-2 hover:text-ink')}>
-            {s ? titleCase(s) : 'All'}
-          </button>
-        ))}
+        {(['open', 'assigned', 'resolved', ''] as const).map((s) => {
+          const tabLabel = s === 'open' ? t('officer.alertStatusOpen', 'Open')
+            : s === 'assigned' ? t('officer.alertStatusAssigned', 'Assigned')
+            : s === 'resolved' ? t('officer.alertStatusResolved', 'Resolved')
+            : t('officer.alertStatusAll', 'All');
+          return (
+            <button key={s || 'all'} role="tab" aria-selected={status === s} onClick={() => setStatus(s)} className={clsx('rounded px-3 py-1 text-sm font-medium', status === s ? 'bg-primary text-primary-ink' : 'text-ink-2 hover:text-ink')}>
+              {tabLabel}
+            </button>
+          );
+        })}
       </div>
       {q.isLoading && <Loading />}
       {q.isError && <ErrorNote error={q.error} retry={() => void q.refetch()} />}
