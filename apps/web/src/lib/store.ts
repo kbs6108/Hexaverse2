@@ -42,12 +42,30 @@ const defaultLayers: LayerToggles = {
 
 /** Dev-mode identities (CONTRACTS §10). Value is the exact X-Dev-User header string. */
 export const DEV_USERS = [
-  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', hint: 'Citizen · Mangalagiri' },
-  { id: 'citizen::Lakshmi Devi', label: 'Lakshmi Devi', role: 'citizen', hint: 'Citizen · Mangalagiri' },
-  { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', hint: 'Tahsildar · Mangalagiri Mandal' },
-  { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', hint: 'Sub-Registrar · SRO Mangalagiri' },
-  { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', hint: 'Town Planning Officer · MTMC' },
-  { id: 'admin::Admin', label: 'Admin', role: 'admin', hint: 'System Administrator · DoLR' },
+  // --- Andhra Pradesh (Mangalagiri) ---
+  { id: 'citizen::Ravi Kumar', label: 'Ravi Kumar', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 123/4 (Clear Title, AP)' },
+  { id: 'citizen::Lakshmi Devi', label: 'Lakshmi Devi', role: 'citizen', state: 'AP', hint: 'Citizen · Buyer / Assignee (AP)' },
+  { id: 'citizen::Nageswara Rao Tenali', label: 'Nageswara Rao Tenali', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 124 (Change Alert, AP)' },
+  { id: 'citizen::Leena Jayaraman', label: 'Leena Jayaraman', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 125/2 (Disputed Title, AP)' },
+  { id: 'citizen::Jatin Baral', label: 'Jatin Baral', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 126 (Mortgaged, AP)' },
+  { id: 'citizen::Sambasiva Rao Mekala', label: 'Sambasiva Rao Mekala', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 127/1 (Tax Arrears, AP)' },
+  { id: 'citizen::Venkata Rao Kandula', label: 'Venkata Rao Kandula', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 128 (Pending Mutation, AP)' },
+  { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', state: 'AP', hint: 'Tahsildar · Mangalagiri (AP)' },
+  { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', state: 'AP', hint: 'Sub-Registrar · SRO Mangalagiri (AP)' },
+  { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', state: 'AP', hint: 'Town Planning Officer · MTMC (AP)' },
+
+  // --- Tamil Nadu (Sriperumbudur) ---
+  { id: 'citizen::Robert Kuruvilla', label: 'Robert Kuruvilla', role: 'citizen', state: 'TN', hint: 'Citizen · Sy 45/2 (Disputed, TN)' },
+  { id: 'officer:revenue:Muthu', label: 'Muthu', role: 'officer', state: 'TN', hint: 'Tahsildar · Sriperumbudur (TN)' },
+  { id: 'officer:registration:Karthik', label: 'Karthik', role: 'officer', state: 'TN', hint: 'Sub-Registrar · SRO Sriperumbudur (TN)' },
+
+  // --- Telangana (Shamshabad) ---
+  { id: 'citizen::Pardhasaradhi Naik', label: 'Pardhasaradhi Naik', role: 'citizen', state: 'TG', hint: 'Citizen · Sy 77 (Change Alert, TG)' },
+  { id: 'officer:revenue:Kavitha', label: 'Kavitha', role: 'officer', state: 'TG', hint: 'Tahsildar · Shamshabad (TG)' },
+  { id: 'officer:planning:Rajesh', label: 'Rajesh', role: 'officer', state: 'TG', hint: 'Town Planning Officer · HMDA (TG)' },
+
+  // --- National Platform Admin ---
+  { id: 'admin::Admin', label: 'Admin', role: 'admin', state: 'National', hint: 'System Administrator · DoLR' },
 ] as const;
 export type DevUserId = (typeof DEV_USERS)[number]['id'];
 

@@ -239,6 +239,36 @@
       "department": null
     },
     {
+      "uid": "dev-nageswara-rao-tenali",
+      "name": "Nageswara Rao Tenali",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-leena-jayaraman",
+      "name": "Leena Jayaraman",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-jatin-baral",
+      "name": "Jatin Baral",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-sambasiva-rao-mekala",
+      "name": "Sambasiva Rao Mekala",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-venkata-rao-kandula",
+      "name": "Venkata Rao Kandula",
+      "role": "citizen",
+      "department": null
+    },
+    {
       "uid": "dev-anitha",
       "name": "Anitha",
       "role": "officer",
@@ -253,6 +283,42 @@
     {
       "uid": "dev-farida",
       "name": "Farida",
+      "role": "officer",
+      "department": "planning"
+    },
+    {
+      "uid": "dev-robert-kuruvilla",
+      "name": "Robert Kuruvilla",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-muthu",
+      "name": "Muthu",
+      "role": "officer",
+      "department": "revenue"
+    },
+    {
+      "uid": "dev-karthik",
+      "name": "Karthik",
+      "role": "officer",
+      "department": "registration"
+    },
+    {
+      "uid": "dev-pardhasaradhi-naik",
+      "name": "Pardhasaradhi Naik",
+      "role": "citizen",
+      "department": null
+    },
+    {
+      "uid": "dev-kavitha",
+      "name": "Kavitha",
+      "role": "officer",
+      "department": "revenue"
+    },
+    {
+      "uid": "dev-rajesh",
+      "name": "Rajesh",
       "role": "officer",
       "department": "planning"
     },

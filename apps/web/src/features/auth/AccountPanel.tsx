@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
@@ -32,6 +32,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { parcel, hasOwnedLand, goToMyParcel } = useMyParcel();
+  const [filter, setFilter] = useState<'all' | 'citizen' | 'officer' | 'admin'>('all');
 
   const switchTo = (id: DevUserId) => {
     setDevUser(id);
@@ -234,30 +235,83 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
               {/* Dev Mode Identity Switcher */}
               {mode === 'dev' && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-3 flex items-center gap-1.5">
-                    <Users size={14} /> Dev Mode · Switch Identity
-                  </h4>
-                  <div className="rounded-xl border border-line bg-panel divide-y divide-line overflow-hidden shadow-xs">
-                    {devUsers.map((d) => {
-                      const isCurrent = d.id === user.uid.replace('dev:', '');
+                  <div className="flex items-center justify-between mb-2.5">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1.5">
+                      <Users size={14} /> Dev Identities
+                    </h4>
+                    <span className="text-[11px] text-ink-3 font-mono">
+                      {devUsers.length} profiles
+                    </span>
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-ground-2 border border-line mb-3">
+                    {(['all', 'citizen', 'officer', 'admin'] as const).map((tab) => {
+                      const count = tab === 'all'
+                        ? devUsers.length
+                        : devUsers.filter((d) => d.role === tab).length;
                       return (
                         <button
-                          key={d.id}
+                          key={tab}
                           type="button"
-                          onClick={() => switchTo(d.id)}
+                          onClick={() => setFilter(tab)}
                           className={clsx(
-                            'flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-ground-2 transition-colors',
-                            isCurrent && 'bg-primary-soft/70 text-primary font-medium',
+                            'flex-1 py-1 px-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer text-center',
+                            filter === tab
+                              ? 'bg-panel text-primary shadow-xs'
+                              : 'text-ink-3 hover:text-ink hover:bg-panel/50',
                           )}
                         >
-                          <div className="flex items-center gap-2">
-                            <span className={clsx('size-2 rounded-full', isCurrent ? 'bg-primary' : 'bg-line-strong')} />
-                            <span>{d.label}</span>
-                          </div>
-                          <span className="text-xs text-ink-3">{d.hint}</span>
+                          {tab === 'all' ? 'All' : tab === 'citizen' ? 'Citizens' : tab === 'officer' ? 'Officers' : 'Admin'}
+                          <span className="ml-1 text-[10px] opacity-70">({count})</span>
                         </button>
                       );
                     })}
+                  </div>
+
+                  {/* Switcher List */}
+                  <div className="rounded-xl border border-line bg-panel divide-y divide-line overflow-hidden shadow-xs max-h-72 overflow-y-auto scroll-thin">
+                    {devUsers
+                      .filter((d) => (filter === 'all' ? true : d.role === filter))
+                      .map((d) => {
+                        const isCurrent = d.id === user.uid.replace('dev:', '');
+                        return (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => switchTo(d.id)}
+                            className={clsx(
+                              'flex w-full items-center justify-between px-3.5 py-2 text-left text-sm hover:bg-ground-2 transition-colors cursor-pointer',
+                              isCurrent && 'bg-primary-soft/70 text-primary font-medium',
+                            )}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <span
+                                className={clsx(
+                                  'size-2 rounded-full shrink-0',
+                                  isCurrent ? 'bg-primary' : 'bg-line-strong',
+                                )}
+                              />
+                              <div className="min-w-0">
+                                <span className="font-medium text-xs block truncate text-ink">{d.label}</span>
+                                <span className="text-[11px] text-ink-3 block truncate">{d.hint}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {'state' in d && (
+                                <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-ground-2 text-ink-3">
+                                  {d.state}
+                                </span>
+                              )}
+                              {isCurrent && (
+                                <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
                   </div>
                 </div>
               )}

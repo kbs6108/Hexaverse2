@@ -126,6 +126,7 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-20 demo users expansion: expanded demo identities to 17 users spanning AP, TN, and TG citizens (matching all seeded story parcels in dept_revenue.ror), regional departmental officers (Revenue, Registration, Planning), and system admin, with categorized switcher tabs in AccountPanel and UserMenu.
 - 2026-09-20 dynamic land ownership & statutory building authority: removed static KNOWN_USER_PARCELS, wired useMyParcel to GET /citizen/my-parcels, enforced statutory Pattadar verification in building permissions (UI blocker, AI triage, 403 in workflow), and added comprehensive cross-app query invalidation on mutation approvals.
 - 2026-09-20 AI tuning, responses & compactness: hyperparameter optimization (Assistant max_tokens 650, advice 180, DD summary 200), high-density structured prompt engineering, interactive deep-link action buttons in chat, compact view toggle, copy response utility, and lean fact-sheet pruning.
 - 2026-09-20 workflow clarity & governance: visual lifecycle pipeline in Admin, linked queue applications in Alerts, upfront statutory record impact preview in Queue, citizen parcel linkage (Sy 123/4 fly-to), dead-center limelight dock, and MechanismExplainerModal.
@@ -190,6 +191,12 @@ unverified.
   Bricolage Grotesque / IBM Plex Sans / IBM Plex Mono).
 - Dev auth: header `X-Dev-User: <role>[:<department>][:<name>]` (e.g. `officer:revenue:Anitha`,
   `citizen::Ravi Kumar`, `admin::Admin`). Dev uids are `dev-<slug>`; the seed uses the same.
+  Demo profiles span all 3 pilot states (17 identities across AP, TN, TG):
+  - AP Citizens: Ravi Kumar (Sy 123/4), Lakshmi Devi (Buyer/Assignee), Nageswara Rao Tenali (Sy 124), Leena Jayaraman (Sy 125/2), Jatin Baral (Sy 126), Sambasiva Rao Mekala (Sy 127/1), Venkata Rao Kandula (Sy 128).
+  - AP Officers: Anitha (Revenue / Tahsildar), Suresh (Registration / Sub-Registrar), Farida (Planning / TPO).
+  - TN Citizens & Officers: Robert Kuruvilla (Sy 45/2, Sriperumbudur), Muthu (Revenue / Tahsildar), Karthik (Registration / Sub-Registrar).
+  - TG Citizens & Officers: Pardhasaradhi Naik (Sy 77, Shamshabad), Kavitha (Revenue / Tahsildar), Rajesh (Planning / TPO).
+  - National: Admin (DoLR System Administrator).
 - Tests: `cd apps/api && pytest -q`; with `DATABASE_URL` set the integration tests also run.
   `make test` runs both lanes. Keep them green before every commit.
 - Commit on `sampath`. Never commit `.env`, `data/s2/*.tif`, `serviceAccount*.json`.

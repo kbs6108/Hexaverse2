@@ -127,11 +127,27 @@ AP_STORY = {
 TN_STORY = {"45/2": ("disputed", "residential", 3, 1)}
 TG_STORY = {"77": ("change_alert", "agricultural", 1, 0)}
 DEMO_USERS = [
+    # AP Citizens
     ("dev-ravi-kumar", "ravi.kumar@example.com", "Ravi Kumar", "citizen", None),
     ("dev-lakshmi-devi", "lakshmi.devi@example.com", "Lakshmi Devi", "citizen", None),
+    ("dev-nageswara-rao-tenali", "nageswara.rao@example.com", "Nageswara Rao Tenali", "citizen", None),
+    ("dev-leena-jayaraman", "leena.jayaraman@example.com", "Leena Jayaraman", "citizen", None),
+    ("dev-jatin-baral", "jatin.baral@example.com", "Jatin Baral", "citizen", None),
+    ("dev-sambasiva-rao-mekala", "sambasiva.rao@example.com", "Sambasiva Rao Mekala", "citizen", None),
+    ("dev-venkata-rao-kandula", "venkata.rao@example.com", "Venkata Rao Kandula", "citizen", None),
+    # AP Officers
     ("dev-anitha", "anitha@revenue.ap.example", "Anitha", "officer", "revenue"),
     ("dev-suresh", "suresh@igrs.ap.example", "Suresh", "officer", "registration"),
     ("dev-farida", "farida@planning.ap.example", "Farida", "officer", "planning"),
+    # TN Citizens & Officers
+    ("dev-robert-kuruvilla", "robert.kuruvilla@example.com", "Robert Kuruvilla", "citizen", None),
+    ("dev-muthu", "muthu@revenue.tn.example", "Muthu", "officer", "revenue"),
+    ("dev-karthik", "karthik@igrs.tn.example", "Karthik", "officer", "registration"),
+    # TG Citizens & Officers
+    ("dev-pardhasaradhi-naik", "pardhasaradhi.naik@example.com", "Pardhasaradhi Naik", "citizen", None),
+    ("dev-kavitha", "kavitha@revenue.tg.example", "Kavitha", "officer", "revenue"),
+    ("dev-rajesh", "rajesh@planning.tg.example", "Rajesh", "officer", "planning"),
+    # Platform Admin
     ("dev-admin", "admin@landstack.example", "Admin", "admin", None),
 ]
 

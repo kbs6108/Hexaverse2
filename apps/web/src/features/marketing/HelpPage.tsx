@@ -203,16 +203,24 @@ export function HelpPage() {
                 : 'In dev mode (AUTH_MODE=dev) these appear in the role switcher. You are currently in Firebase mode.'
             }
           />
-          <CardBody className="grid gap-2 sm:grid-cols-2">
+          <CardBody className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {devUsers.map((d) => (
               <div
                 key={d.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-sm shadow-xs"
+                className="flex flex-col justify-between gap-1.5 rounded-xl border border-line bg-panel-2 p-3 text-sm shadow-xs"
               >
-                <span className="font-bold text-ink">{d.label}</span>
-                <span className="flex items-center gap-2 text-xs text-ink-3">
-                  {d.hint} <Badge mono tone="primary">{d.id}</Badge>
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-ink truncate">{d.label}</span>
+                  {'state' in d && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-ground-2 text-ink-3">
+                      {d.state}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs text-ink-3">
+                  <span className="truncate">{d.hint}</span>
+                  <Badge mono tone="primary">{d.role}</Badge>
+                </div>
               </div>
             ))}
           </CardBody>

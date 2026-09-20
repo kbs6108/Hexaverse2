@@ -65,28 +65,106 @@ export function UserMenu() {
         <ChevronDown size={14} className="text-ink-3" />
       </button>
       {open && (
-        <div role="menu" className="fade-up absolute right-0 mt-1 w-64 rounded-lg border border-line bg-panel p-1 shadow-panel">
+        <div role="menu" className="fade-up absolute right-0 mt-1 w-80 max-h-[420px] overflow-y-auto scroll-thin rounded-xl border border-line bg-panel p-1.5 shadow-panel">
           {mode === 'dev' ? (
             <>
-              <p className="px-2 pt-1 pb-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-3">Dev mode · switch identity</p>
-              {devUsers.map((d) => (
-                <button
-                  key={d.id}
-                  role="menuitemradio"
-                  aria-checked={d.id === user.uid.replace('dev:', '')}
-                  onClick={() => switchTo(d.id)}
-                  className={clsx(
-                    'flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm hover:bg-ground-2',
-                    d.id === user.uid.replace('dev:', '') && 'bg-primary-soft text-primary',
-                  )}
-                >
-                  <span>{d.label}</span>
-                  <span className="text-xs text-ink-3">{d.hint}</span>
-                </button>
-              ))}
-              <p className="mt-1 border-t border-line px-2 pt-1.5 pb-1 font-mono text-[10.5px] text-ink-3">
-                X-Dev-User: {user.uid.replace('dev:', '')}
-              </p>
+              <div className="px-2 pt-1 pb-1.5 border-b border-line/60 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3">Demo Identities</p>
+                <span className="text-[10.5px] text-primary font-mono">{devUsers.length} profiles</span>
+              </div>
+
+              {/* Citizens */}
+              <div className="pt-2">
+                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">Citizens & Land Owners</p>
+                {devUsers.filter((d) => d.role === 'citizen').map((d) => {
+                  const isCurrent = d.id === user.uid.replace('dev:', '');
+                  return (
+                    <button
+                      key={d.id}
+                      role="menuitemradio"
+                      aria-checked={isCurrent}
+                      onClick={() => switchTo(d.id)}
+                      className={clsx(
+                        'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs hover:bg-ground-2 transition-colors',
+                        isCurrent && 'bg-primary-soft text-primary font-medium',
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                        <span className={clsx('size-1.5 rounded-full shrink-0', isCurrent ? 'bg-primary' : 'bg-line-strong')} />
+                        <span className="truncate font-medium">{d.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[11px] text-ink-3 truncate max-w-[130px]">{d.hint.split('·')[1]?.trim() || d.hint}</span>
+                        {'state' in d && (
+                          <span className="text-[9.5px] font-mono px-1 py-0.2 rounded bg-ground-2 text-ink-3">{d.state}</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Officers */}
+              <div className="pt-2 border-t border-line/50 mt-1.5">
+                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">Departmental Officers</p>
+                {devUsers.filter((d) => d.role === 'officer').map((d) => {
+                  const isCurrent = d.id === user.uid.replace('dev:', '');
+                  return (
+                    <button
+                      key={d.id}
+                      role="menuitemradio"
+                      aria-checked={isCurrent}
+                      onClick={() => switchTo(d.id)}
+                      className={clsx(
+                        'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs hover:bg-ground-2 transition-colors',
+                        isCurrent && 'bg-primary-soft text-primary font-medium',
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                        <span className={clsx('size-1.5 rounded-full shrink-0', isCurrent ? 'bg-primary' : 'bg-line-strong')} />
+                        <span className="truncate font-medium">{d.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[11px] text-ink-3 truncate max-w-[130px]">{d.hint.split('·')[0]?.trim() || d.hint}</span>
+                        {'state' in d && (
+                          <span className="text-[9.5px] font-mono px-1 py-0.2 rounded bg-ground-2 text-ink-3">{d.state}</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Admin */}
+              <div className="pt-2 border-t border-line/50 mt-1.5">
+                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">Administration</p>
+                {devUsers.filter((d) => d.role === 'admin').map((d) => {
+                  const isCurrent = d.id === user.uid.replace('dev:', '');
+                  return (
+                    <button
+                      key={d.id}
+                      role="menuitemradio"
+                      aria-checked={isCurrent}
+                      onClick={() => switchTo(d.id)}
+                      className={clsx(
+                        'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs hover:bg-ground-2 transition-colors',
+                        isCurrent && 'bg-primary-soft text-primary font-medium',
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                        <span className={clsx('size-1.5 rounded-full shrink-0', isCurrent ? 'bg-primary' : 'bg-line-strong')} />
+                        <span className="truncate font-medium">{d.label}</span>
+                      </div>
+                      <span className="text-[11px] text-ink-3">{d.hint}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-2 border-t border-line pt-1.5 px-2 font-mono text-[10px] text-ink-3 flex items-center justify-between">
+                <span>Active:</span>
+                <span className="truncate max-w-[180px]">{user.uid.replace('dev:', '')}</span>
+              </div>
             </>
           ) : (
             <>

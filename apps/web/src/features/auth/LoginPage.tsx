@@ -67,7 +67,7 @@ export function LoginPage() {
       {mode === 'dev' ? (
         <Card>
           <CardHeader title="Development identities" subtitle="AUTH_MODE=dev · identity is sent as X-Dev-User" />
-          <CardBody className="flex flex-col gap-1">
+          <CardBody className="flex flex-col gap-1.5 max-h-[480px] overflow-y-auto scroll-thin">
             {devUsers.map((d) => (
               <button
                 key={d.id}
@@ -77,11 +77,19 @@ export function LoginPage() {
                   qc.clear();
                   done(d.label);
                 }}
-                className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-left text-sm hover:border-primary hover:bg-primary-soft/40 disabled:pointer-events-none disabled:opacity-60"
+                className="flex items-center justify-between rounded-lg border border-line px-3 py-2 text-left text-sm hover:border-primary hover:bg-primary-soft/40 disabled:pointer-events-none disabled:opacity-60 transition-colors cursor-pointer"
               >
-                <span className="font-medium">{d.label}</span>
-                <span className="flex items-center gap-2 text-xs text-ink-3">
-                  {d.hint} <Badge mono>{d.id}</Badge>
+                <div className="flex items-center gap-2 min-w-0 pr-2">
+                  <span className="font-medium truncate">{d.label}</span>
+                  {'state' in d && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-ground-2 text-ink-3">
+                      {d.state}
+                    </span>
+                  )}
+                </div>
+                <span className="flex items-center gap-2 text-xs text-ink-3 shrink-0">
+                  <span className="truncate max-w-[170px]">{d.hint}</span>
+                  <Badge mono>{d.id.split(':')[0]}</Badge>
                 </span>
               </button>
             ))}
