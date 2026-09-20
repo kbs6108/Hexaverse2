@@ -3,6 +3,7 @@ import { ArrowDown, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShaderAnimation } from './ShaderAnimation';
+import { FluidStrings } from './FluidStrings';
 import { MapLaunch } from './MapLaunch';
 import { GovBadge } from '@/features/marketing/GovStrip';
 import { BorderBeam } from '@/components/BorderBeam';
@@ -72,11 +73,11 @@ export function HeroSection() {
         </motion.header>
       </div>
 
-      <section className="relative flex min-h-screen w-full overflow-hidden bg-ground">
-        {/* Background Shader Lines animation: Living topographic contours & elevation waves */}
-        <ShaderAnimation />
-        {/* Subtle atmospheric veil ensuring high contrast and legibility for foreground text */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ground/15 via-transparent to-ground/80" />
+      <section className="relative flex min-h-screen w-full overflow-hidden bg-white">
+        {/* Interactive Fluid Strings: liquid black strings over white reacting to cursor movements */}
+        <FluidStrings />
+        {/* Very soft bottom gradient transition into subsequent content */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ground to-transparent" />
 
       <div id="top" className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1400px] items-center px-6 pb-16 pt-32 sm:px-10 lg:px-16">
         <div className="max-w-5xl">
