@@ -37,7 +37,7 @@ export function UserMenu() {
   if (!user) {
     return (
       <Link to="/login" className="rounded-md border border-line px-3 py-1.5 text-sm font-medium hover:bg-ground-2">
-        Sign in
+        {t('account.signIn')}
       </Link>
     );
   }
@@ -109,7 +109,7 @@ export function UserMenu() {
 
               {/* Citizens */}
               <div className="pt-2">
-                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">Citizens & Land Owners</p>
+                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">{t('account.citizensLandOwners')}</p>
                 {devUsers.filter((d) => d.role === 'citizen').map((d) => {
                   const isCurrent = d.id === user.uid.replace('dev:', '');
                   return (
@@ -128,7 +128,7 @@ export function UserMenu() {
                         <span className="truncate font-medium">{d.label}</span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[11px] text-ink-3 truncate max-w-[130px]">{d.hint.split('·')[1]?.trim() || d.hint}</span>
+                        <span className="text-[11px] text-ink-3 truncate max-w-[130px]">{d.hint.split('·')[0]?.trim() || d.hint}</span>
                         {'state' in d && (
                           <span className="text-[9.5px] font-mono px-1 py-0.2 rounded bg-ground-2 text-ink-3">{d.state}</span>
                         )}
@@ -140,7 +140,7 @@ export function UserMenu() {
 
               {/* Officers */}
               <div className="pt-2 border-t border-line/50 mt-1.5">
-                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">Departmental Officers</p>
+                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">{t('account.filterOfficers')}</p>
                 {devUsers.filter((d) => d.role === 'officer').map((d) => {
                   const isCurrent = d.id === user.uid.replace('dev:', '');
                   return (
@@ -171,7 +171,7 @@ export function UserMenu() {
 
               {/* Admin */}
               <div className="pt-2 border-t border-line/50 mt-1.5">
-                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">Administration</p>
+                <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-ink-4">{t('account.administration')}</p>
                 {devUsers.filter((d) => d.role === 'admin').map((d) => {
                   const isCurrent = d.id === user.uid.replace('dev:', '');
                   return (
@@ -196,7 +196,7 @@ export function UserMenu() {
               </div>
 
               <div className="mt-2 border-t border-line pt-1.5 px-2 font-mono text-[10px] text-ink-3 flex items-center justify-between">
-                <span>Active:</span>
+                <span>{t('account.activeColon')}</span>
                 <span className="truncate max-w-[180px]">{user.uid.replace('dev:', '')}</span>
               </div>
             </>
@@ -208,7 +208,7 @@ export function UserMenu() {
                 onClick={() => void signOut()}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-ground-2"
               >
-                <LogOut size={14} /> Sign out
+                <LogOut size={14} /> {t('account.signOut')}
               </button>
             </>
           )}

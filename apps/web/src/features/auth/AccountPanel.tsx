@@ -111,7 +111,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                       {user.role}
                     </span>
                   </div>
-                  <p className="text-xs text-ink-3 truncate mt-0.5">{user.email || 'Authenticated Citizen'}</p>
+                  <p className="text-xs text-ink-3 truncate mt-0.5">{user.email || t('account.authCitizen')}</p>
                 </div>
               </div>
 
@@ -182,9 +182,9 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                   )}
                   <div className="flex items-center justify-between px-4 py-3 text-sm">
                     <span className="flex items-center gap-2 text-ink-3">
-                      <CheckCircle2 size={15} className="text-primary" /> Account Status
+                      <CheckCircle2 size={15} className="text-primary" /> {t('account.status')}
                     </span>
-                    <span className="font-medium text-primary">Active</span>
+                    <span className="font-medium text-primary">{t('account.active')}</span>
                   </div>
                 </div>
               </div>
@@ -278,7 +278,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                       <Users size={14} /> {t('account.devIdentities')}
                     </h4>
                     <span className="text-[11px] text-ink-3 font-mono">
-                      {devUsers.length} profiles
+                      {devUsers.length} {t('account.profilesCount')}
                     </span>
                   </div>
 
@@ -300,7 +300,13 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                               : 'text-ink-3 hover:text-ink hover:bg-panel/50',
                           )}
                         >
-                          {tab === 'all' ? 'All' : tab === 'citizen' ? 'Citizens' : tab === 'officer' ? 'Officers' : 'Admin'}
+                          {tab === 'all'
+                            ? t('account.filterAll')
+                            : tab === 'citizen'
+                              ? t('account.filterCitizens')
+                              : tab === 'officer'
+                                ? t('account.filterOfficers')
+                                : t('account.filterAdmin')}
                           <span className="ml-1 text-[10px] opacity-70">({count})</span>
                         </button>
                       );
@@ -326,9 +332,9 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                             <div className="flex items-center gap-2 min-w-0 pr-2">
                               <span
                                 className={clsx(
-                                  'size-2 rounded-full shrink-0',
-                                  isCurrent ? 'bg-primary' : 'bg-line-strong',
-                                )}
+                                   'size-2 rounded-full shrink-0',
+                                   isCurrent ? 'bg-primary' : 'bg-line-strong',
+                                 )}
                               />
                               <div className="min-w-0">
                                 <span className="font-medium text-xs block truncate text-ink">{d.label}</span>
@@ -343,7 +349,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                               )}
                               {isCurrent && (
                                 <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                                  Active
+                                  {t('account.activeUser')}
                                 </span>
                               )}
                             </div>
@@ -356,7 +362,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
 
               {/* Applications Shortcut */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-3">Applications & Records</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-3">{t('account.applicationsRecords')}</h4>
                 <button
                   type="button"
                   onClick={() => {
@@ -370,8 +376,8 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                       <FileText size={18} />
                     </div>
                     <div>
-                      <p className="font-medium text-sm text-ink group-hover:text-primary transition-colors">Applications</p>
-                      <p className="text-xs text-ink-3">View your submitted applications & status</p>
+                      <p className="font-medium text-sm text-ink group-hover:text-primary transition-colors">{t('account.applicationsTitle')}</p>
+                      <p className="text-xs text-ink-3">{t('account.applicationsDesc')}</p>
                     </div>
                   </div>
                   <ArrowRight size={16} className="text-ink-3 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -380,7 +386,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
 
               {/* Help & Support Shortcut */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-3">Assistance</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3 mb-3">{t('account.assistance')}</h4>
                 <button
                   type="button"
                   onClick={() => {
@@ -394,8 +400,8 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                       <HelpCircle size={18} />
                     </div>
                     <div>
-                      <p className="font-medium text-sm text-ink group-hover:text-primary transition-colors">Help & Guidance</p>
-                      <p className="text-xs text-ink-3">Explore user guides and system documentation</p>
+                      <p className="font-medium text-sm text-ink group-hover:text-primary transition-colors">{t('account.helpGuidance')}</p>
+                      <p className="text-xs text-ink-3">{t('account.helpDesc')}</p>
                     </div>
                   </div>
                   <ArrowRight size={16} className="text-ink-3 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -419,7 +425,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                 className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-line bg-panel text-brick hover:bg-brick-soft/40 hover:border-brick/30 font-medium text-sm transition-colors shadow-xs cursor-pointer"
               >
                 <LogOut size={16} />
-                Sign out
+                {t('account.signOut')}
               </button>
             </div>
           </motion.aside>

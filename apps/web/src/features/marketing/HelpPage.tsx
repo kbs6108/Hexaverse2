@@ -4,8 +4,18 @@ import { ArrowRight, Bot, Home, Sparkles, Users } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { GovStrip } from './GovStrip';
-import { FAQ, GLOSSARY, MAP_READING, PROFILE_TABS, QUICK_START, ROLES, STORY_PARCELS, WORKFLOWS } from './pitch';
+import {
+  getFaq,
+  getGlossary,
+  getMapReading,
+  getProfileTabs,
+  getQuickStart,
+  getRoles,
+  getStoryParcels,
+  getWorkflows,
+} from './pitch';
 
 function H2({ children, kicker }: { children: ReactNode; kicker?: string }) {
   return (
@@ -16,23 +26,10 @@ function H2({ children, kicker }: { children: ReactNode; kicker?: string }) {
   );
 }
 
-/** On-page tracker */
-const SECTIONS: { id: string; label: string }[] = [
-  { id: 'quickstart', label: 'Quick start' },
-  { id: 'roles', label: 'Roles' },
-  { id: 'reading-map', label: 'Reading the map' },
-  { id: 'profile-tabs', label: 'Profile tabs' },
-  { id: 'walkthroughs', label: 'Walkthroughs' },
-  { id: 'identities', label: 'Identities' },
-  { id: 'story-parcels', label: 'Story parcels' },
-  { id: 'glossary', label: 'Glossary' },
-  { id: 'faq', label: 'FAQ' },
-];
-
-function OnThisPage() {
+function OnThisPage({ sections }: { sections: { id: string; label: string }[] }) {
   return (
     <nav aria-label="On this page" className="mt-6 flex flex-wrap gap-2">
-      {SECTIONS.map((s) => (
+      {sections.map((s) => (
         <a
           key={s.id}
           href={`#${s.id}`}
@@ -47,33 +44,55 @@ function OnThisPage() {
 
 export function HelpPage() {
   const { devUsers, mode } = useAuth();
+  const { t, locale } = useTranslation();
+
+  const quickStart = getQuickStart(locale);
+  const roles = getRoles(locale);
+  const mapReading = getMapReading(locale);
+  const profileTabs = getProfileTabs(locale);
+  const workflows = getWorkflows(locale);
+  const storyParcels = getStoryParcels(locale);
+  const glossary = getGlossary(locale);
+  const faq = getFaq(locale);
+
+  const sections: { id: string; label: string }[] = [
+    { id: 'quickstart', label: t('guide.sec.quickstart') },
+    { id: 'roles', label: t('guide.sec.roles') },
+    { id: 'reading-map', label: t('guide.sec.readingMap') },
+    { id: 'profile-tabs', label: t('guide.sec.profileTabs') },
+    { id: 'walkthroughs', label: t('guide.sec.walkthroughs') },
+    { id: 'identities', label: t('guide.sec.identities') },
+    { id: 'story-parcels', label: t('guide.sec.storyParcels') },
+    { id: 'glossary', label: t('guide.sec.glossary') },
+    { id: 'faq', label: t('guide.sec.faq') },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-6">
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Guide &amp; Walkthrough</h1>
-          <p className="mt-1 text-base text-ink-2">How Land Stack works, and how to drive the interactive demo.</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">{t('guide.title')}</h1>
+          <p className="mt-1 text-base text-ink-2">{t('guide.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-4 py-2 text-xs font-semibold text-ink-2 shadow-xs transition hover:bg-ground-2 hover:text-ink"
           >
-            <Home size={14} /> Home
+            <Home size={14} /> {t('guide.home')}
           </Link>
           <Link
             to="/map"
             className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-95"
           >
-            Open live map <ArrowRight size={14} />
+            {t('guide.openMap')} <ArrowRight size={14} />
           </Link>
           <Link
             to="/citizen"
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-4 py-2 text-xs font-semibold text-ink-2 shadow-xs transition hover:bg-ground-2 hover:text-ink"
           >
-            <Users size={14} /> Citizen Portal
+            <Users size={14} /> {t('guide.citizenPortal')}
           </Link>
         </div>
       </header>
@@ -85,26 +104,26 @@ export function HelpPage() {
             <Bot size={20} />
           </div>
           <div>
-            <h3 className="font-display text-sm font-bold text-ink">Have a specific question or land problem?</h3>
-            <p className="text-xs text-ink-2">Bhu-Sahayak AI can diagnose your situation and guide you directly to the solution in Land Stack.</p>
+            <h3 className="font-display text-sm font-bold text-ink">{t('guide.aiQuestion')}</h3>
+            <p className="text-xs text-ink-2">{t('guide.aiDesc')}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('open-assistant', { detail: { prompt: 'How does Land Stack help me resolve a land problem?' } }))}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:brightness-105 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:brightness-105 active:scale-95 cursor-pointer"
         >
-          <Sparkles size={13} /> Ask Bhu-Sahayak
+          <Sparkles size={13} /> {t('guide.askAssistant')}
         </button>
       </div>
 
-      <OnThisPage />
+      <OnThisPage sections={sections} />
 
       {/* Quick start */}
       <section id="quickstart" className="mt-12 scroll-mt-20">
-        <H2 kicker="Orientation">Quick start in 5 steps</H2>
+        <H2 kicker={t('guide.quickstart.kicker')}>{t('guide.quickstart.title')}</H2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {QUICK_START.map((s, i) => (
+          {quickStart.map((s, i) => (
             <div key={s.title} className="flex flex-col rounded-2xl border border-line bg-panel p-5 shadow-panel">
               <span className="flex size-8 items-center justify-center rounded-xl bg-primary-soft font-mono text-sm font-bold text-primary">
                 {i + 1}
@@ -118,9 +137,9 @@ export function HelpPage() {
 
       {/* Roles */}
       <section id="roles" className="mt-14 scroll-mt-20">
-        <H2 kicker="Access Matrix">Roles &amp; what each can do</H2>
+        <H2 kicker={t('guide.roles.kicker')}>{t('guide.roles.title')}</H2>
         <div className="grid gap-4 sm:grid-cols-3">
-          {ROLES.map((r) => (
+          {roles.map((r) => (
             <div key={r.role} className="flex flex-col rounded-2xl border border-line bg-panel p-6 shadow-panel">
               <div className="flex items-center gap-3">
                 <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -139,10 +158,10 @@ export function HelpPage() {
 
       {/* Reading the map */}
       <section id="reading-map" className="mt-14 scroll-mt-20">
-        <H2 kicker="Visual Cues">Reading the map</H2>
-        <p className="mb-4 text-sm text-ink-2">Every visual cue on the map means something specific — and none of them relies on colour alone.</p>
+        <H2 kicker={t('guide.readingMap.kicker')}>{t('guide.readingMap.title')}</H2>
+        <p className="mb-4 text-sm text-ink-2">{t('guide.readingMap.subtitle')}</p>
         <div className="grid gap-3 sm:grid-cols-2">
-          {MAP_READING.map((m) => (
+          {mapReading.map((m) => (
             <div key={m.cue} className="flex flex-col rounded-2xl border border-line bg-panel p-5 shadow-panel">
               <p className="font-display text-sm font-bold text-ink">{m.cue}</p>
               <p className="mt-1 text-sm leading-6 text-ink-2">{m.meaning}</p>
@@ -153,12 +172,12 @@ export function HelpPage() {
 
       {/* Parcel profile tabs */}
       <section id="profile-tabs" className="mt-14 scroll-mt-20">
-        <H2 kicker="Aggregated Profile">The parcel profile, tab by tab</H2>
+        <H2 kicker={t('guide.profileTabs.kicker')}>{t('guide.profileTabs.title')}</H2>
         <p className="mb-4 text-sm text-ink-2">
-          Click any parcel on the map to open its profile. Each tab is answered live by a different department system with verifiable provenance.
+          {t('guide.profileTabs.subtitle')}
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PROFILE_TABS.map((t) => (
+          {profileTabs.map((t) => (
             <div key={t.tab} className="flex flex-col rounded-2xl border border-line bg-panel p-5 shadow-panel">
               <span className="font-mono text-xs font-bold uppercase tracking-wider text-primary">{t.source}</span>
               <h3 className="mt-2 font-display text-base font-bold text-ink">{t.tab}</h3>
@@ -170,10 +189,10 @@ export function HelpPage() {
 
       {/* Workflows walkthrough */}
       <section id="walkthroughs" className="mt-14 scroll-mt-20">
-        <H2 kicker="End-to-end Demonstration">Walkthroughs: three cross-department workflows</H2>
-        <p className="mb-4 text-sm text-ink-2">These run end to end in the demo — follow the steps exactly and you’ll see each one happen live.</p>
+        <H2 kicker={t('guide.walkthroughs.kicker')}>{t('guide.walkthroughs.title')}</H2>
+        <p className="mb-4 text-sm text-ink-2">{t('guide.walkthroughs.subtitle')}</p>
         <div className="grid gap-4 lg:grid-cols-3">
-          {WORKFLOWS.map((w) => (
+          {workflows.map((w) => (
             <div key={w.title} className="flex flex-col rounded-2xl border border-line bg-panel p-6 shadow-panel">
               <h3 className="font-display text-base font-bold text-ink">{w.title}</h3>
               <p className="mt-1 text-xs text-ink-3">{w.tagline}</p>
@@ -196,11 +215,11 @@ export function HelpPage() {
       <section id="identities" className="mt-14 scroll-mt-20">
         <Card className="rounded-2xl border border-line shadow-panel">
           <CardHeader
-            title="Demo identities"
+            title={t('guide.identities.title')}
             subtitle={
               mode === 'dev'
-                ? 'These appear in the role switcher — pick one to become that user instantly.'
-                : 'In dev mode (AUTH_MODE=dev) these appear in the role switcher. You are currently in Firebase mode.'
+                ? t('guide.identities.subtitleDev')
+                : t('guide.identities.subtitleProd')
             }
           />
           <CardBody className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -230,15 +249,15 @@ export function HelpPage() {
       {/* Story parcels */}
       <section id="story-parcels" className="mt-14 scroll-mt-20">
         <div className="flex items-baseline justify-between">
-          <H2 kicker="Pre-seeded Scenarios">Story parcels</H2>
+          <H2 kicker={t('guide.storyParcels.kicker')}>{t('guide.storyParcels.title')}</H2>
           <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[11px] text-ink-3">
-            Scroll horizontally <ArrowRight size={12} />
+            {t('guide.scrollHorizontal')} <ArrowRight size={12} />
           </span>
         </div>
-        <p className="mb-4 text-sm text-ink-2">Each demonstrates a different workflow. Scroll horizontally across all 8 parcels, or click to open on the live map.</p>
+        <p className="mb-4 text-sm text-ink-2">{t('guide.storyParcels.subtitle')}</p>
         <div className="relative -mx-4 px-4 sm:-mx-6 sm:px-6">
           <div className="flex gap-4 overflow-x-auto pb-4 pt-1 scroll-thin snap-x snap-mandatory">
-            {STORY_PARCELS.map((p) => (
+            {storyParcels.map((p) => (
               <Link
                 key={p.ulpin}
                 to="/map"
@@ -264,9 +283,9 @@ export function HelpPage() {
 
       {/* Glossary */}
       <section id="glossary" className="mt-14 scroll-mt-20">
-        <H2 kicker="Vocabulary">Glossary</H2>
+        <H2 kicker={t('guide.glossary.kicker')}>{t('guide.glossary.title')}</H2>
         <dl className="grid gap-3 sm:grid-cols-2">
-          {GLOSSARY.map((t) => (
+          {glossary.map((t) => (
             <div key={t.term} className="rounded-2xl border border-line bg-panel p-4 shadow-panel">
               <dt className="font-display text-sm font-bold text-ink">{t.term}</dt>
               <dd className="mt-1 text-sm leading-6 text-ink-2">{t.def}</dd>
@@ -277,9 +296,9 @@ export function HelpPage() {
 
       {/* FAQ */}
       <section id="faq" className="mt-14 scroll-mt-20">
-        <H2 kicker="Common Questions">FAQ</H2>
+        <H2 kicker={t('guide.faq.kicker')}>{t('guide.faq.title')}</H2>
         <div className="flex flex-col gap-3">
-          {FAQ.map((f) => (
+          {faq.map((f) => (
             <details key={f.q} className="group rounded-2xl border border-line bg-panel px-5 py-4 shadow-panel">
               <summary className="cursor-pointer list-none text-base font-bold text-ink marker:hidden">
                 <span className="flex items-center justify-between gap-3">
@@ -299,3 +318,5 @@ export function HelpPage() {
     </div>
   );
 }
+
+export default HelpPage;
