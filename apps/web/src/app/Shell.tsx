@@ -43,7 +43,7 @@ export function Shell() {
   // The cinematic landing at `/` renders full-bleed without app chrome.
   if (pathname === '/') {
     return (
-      <main ref={mainRef} className="min-h-screen w-full bg-ground">
+      <main className="min-h-screen w-full bg-ground">
         <Outlet />
       </main>
     );

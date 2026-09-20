@@ -299,7 +299,7 @@ code, kbd, .mono { font-family: var(--font-mono); }
   flex-shrink: 0;
 }
 
-.atd-modern__bar { position: relative; z-index: 9999; }
+.atd-modern__bar { position: relative; z-index: 99999 !important; }
 
 .atd-modern__dock {
   background: rgba(252, 250, 246, 0.85);
