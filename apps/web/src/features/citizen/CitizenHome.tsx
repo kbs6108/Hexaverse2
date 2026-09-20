@@ -41,7 +41,7 @@ export function CitizenLayout() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-6">
       <nav aria-label="Citizen sections" className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-        <div className="w-full sm:w-auto max-w-md">
+        <div className="w-auto max-w-full overflow-x-auto">
           <SlidingTabs
             items={navItems}
             value={currentTab}
