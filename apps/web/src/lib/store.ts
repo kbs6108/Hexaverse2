@@ -99,8 +99,6 @@ interface UIState {
   boundaryEdit: BoundaryEdit | null;
   /** Tier-3 "Use-case" section: null = role default (officers/admin open, citizens closed). */
   usecaseTierOpen: boolean | null;
-  /** One-time "click a state to fly in" hint on the national overview. */
-  seenOverviewHint: boolean;
   locale: Locale;
 
   select: (ulpin: string | null) => void;
@@ -120,7 +118,6 @@ interface UIState {
   setBoundaryRing: (ring: [number, number][]) => void;
   cancelBoundaryEdit: () => void;
   setUsecaseTierOpen: (open: boolean) => void;
-  dismissOverviewHint: () => void;
 }
 
 export const useUI = create<UIState>()(
@@ -139,7 +136,6 @@ export const useUI = create<UIState>()(
       recentParcels: [],
       boundaryEdit: null,
       usecaseTierOpen: null,
-      seenOverviewHint: false,
       locale: 'en',
 
       select: (ulpin) => set({ selectedUlpin: ulpin, drawerOpen: ulpin !== null }),
@@ -163,7 +159,6 @@ export const useUI = create<UIState>()(
       setBoundaryRing: (ring) => set((s) => (s.boundaryEdit ? { boundaryEdit: { ...s.boundaryEdit, ring } } : {})),
       cancelBoundaryEdit: () => set({ boundaryEdit: null }),
       setUsecaseTierOpen: (open) => set({ usecaseTierOpen: open }),
-      dismissOverviewHint: () => set({ seenOverviewHint: true }),
     }),
     {
       name: 'landstack-ui',
@@ -175,7 +170,6 @@ export const useUI = create<UIState>()(
         layerPanelOpen: s.layerPanelOpen,
         recentParcels: s.recentParcels,
         usecaseTierOpen: s.usecaseTierOpen,
-        seenOverviewHint: s.seenOverviewHint,
         locale: s.locale,
       }),
       // Deep-merge persisted layers over the defaults: zustand's persist replaces the

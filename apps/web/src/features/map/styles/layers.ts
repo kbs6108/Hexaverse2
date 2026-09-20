@@ -27,9 +27,8 @@ export const tileUrl = (layer: string) => `${env.apiUrl}/landstack/tiles/${layer
 
 /* ---------- Basemaps ---------- */
 export const STREETS_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
-export const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
-export const FONT = ['Noto Sans Regular'];
-export const FONT_BOLD = ['Noto Sans Bold'];
+const GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
+const FONT_BOLD = ['Noto Sans Bold'];
 
 export function imageryStyle(key?: string): StyleSpecification {
   // With an ArcGIS Location Platform key: the metered basemap service (2M tiles/mo free).
@@ -67,7 +66,7 @@ const matchOn = (input: ExpressionSpecification, pairs: { value: string; colour:
 const matchStr = (prop: string, pairs: { value: string; colour: string }[], fallback: string): ExpressionSpecification =>
   matchOn(str(prop), pairs, fallback);
 
-export function fillColour(colourBy: ColourBy): ExpressionSpecification {
+function fillColour(colourBy: ColourBy): ExpressionSpecification {
   switch (colourBy) {
     case 'land_use':
       return matchStr('land_use', LAND_USE, C.neutral);

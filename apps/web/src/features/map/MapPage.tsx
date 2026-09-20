@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { MapView } from './MapView';
 import { LayerPanel } from './LayerPanel';
+import { RegionsPanel } from './RegionsPanel';
 import { BoundaryPanel } from './BoundaryEditor';
 import { ParcelDrawer } from '@/features/parcel/ParcelDrawer';
 import { useUI } from '@/lib/store';
@@ -23,6 +24,7 @@ export function MapPage() {
       <MapView />
 
       <LayerPanel />
+      <RegionsPanel />
 
       <BoundaryPanel />
       <ParcelDrawer onClose={() => select(null)} />

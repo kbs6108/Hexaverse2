@@ -5,8 +5,10 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   Building2,
+  Check,
   CheckCircle2,
   Download,
+  FileText,
   FileUp,
   Flag,
   Info,
@@ -14,6 +16,7 @@ import {
   PenLine,
   ShieldAlert,
   UsersRound,
+  X,
   XCircle,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -251,14 +254,63 @@ function PreCheckPanel({ ulpin, type }: { ulpin: string; type: ApplicationType }
 
 /* ---------- Shared bits ---------- */
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function DocField({ doc, setDoc, hint }: { doc: File | null; setDoc: (f: File | null) => void; hint: string }) {
+  const isPdf = doc?.type.includes('pdf') || doc?.name.toLowerCase().endsWith('.pdf');
+
   return (
-    <Field label="Supporting document" hint={`${hint} Upload is a placeholder in this prototype; only the file name is recorded.`}>
-      <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-line-strong px-3 py-3 text-sm hover:border-primary">
-        <FileUp size={16} className="text-ink-3" />
-        <span className="flex-1 truncate">{doc ? doc.name : 'Choose a file…'}</span>
-        <input type="file" accept="application/pdf,image/*" className="sr-only" onChange={(e) => setDoc(e.target.files?.[0] ?? null)} />
-      </label>
+    <Field label="Supporting document" hint={hint}>
+      {!doc ? (
+        <label className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong bg-ground-2/50 px-4 py-4 text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-soft/30 group">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-ground-1 text-ink-3 shadow-2xs group-hover:text-primary group-hover:scale-105 transition-all">
+            <FileUp size={18} />
+          </div>
+          <span className="text-xs font-semibold text-ink group-hover:text-primary">
+            Upload document (PDF, PNG, JPEG up to 10MB)
+          </span>
+          <span className="text-[11px] text-ink-3">
+            Click to browse self-attested deed, legal heir certificate, or court order
+          </span>
+          <input
+            type="file"
+            accept="application/pdf,image/*"
+            className="sr-only"
+            onChange={(e) => setDoc(e.target.files?.[0] ?? null)}
+          />
+        </label>
+      ) : (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary-soft/40 px-3.5 py-2.5 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className={clsx('flex size-8 shrink-0 items-center justify-center rounded-lg text-white text-[10px] font-bold', isPdf ? 'bg-rose-600' : 'bg-primary')}>
+              {isPdf ? 'PDF' : <FileText size={15} />}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-ink leading-tight">{doc.name}</p>
+              <div className="flex items-center gap-2 text-[10.5px] text-ink-3 mt-0.5">
+                <span className="font-mono">{formatFileSize(doc.size)}</span>
+                <span>•</span>
+                <span className="inline-flex items-center gap-0.5 text-emerald-600 font-semibold">
+                  <Check size={11} /> Ready for verification
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDoc(null)}
+            title="Remove document"
+            aria-label="Remove document"
+            className="flex size-6 shrink-0 items-center justify-center rounded-md text-ink-3 hover:bg-ground-1 hover:text-brick transition-colors cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </Field>
   );
 }

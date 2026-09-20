@@ -2,7 +2,7 @@ import { CheckCircle2, CloudOff } from 'lucide-react';
 import type { Provenance, SourceKey } from '@/lib/cdm';
 import { fmtTime } from '@/lib/format';
 
-export const SOURCE_LABEL: Record<SourceKey, string> = {
+const SOURCE_LABEL: Record<SourceKey, string> = {
   revenue: 'Revenue · RoR',
   registration: 'Registration · SRO',
   planning: 'Planning · UDA',

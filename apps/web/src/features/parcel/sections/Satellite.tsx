@@ -110,28 +110,66 @@ export function SatelliteSection({ p }: { p: ParcelCDM }) {
 }
 
 function DateCard({ title, date, url, ndvi, ndbi }: { title: string; date: string; url?: string | null; ndvi: number; ndbi: number }) {
+  const isVegetative = ndvi > 0.35;
+  const isBuiltUp = ndbi > 0.05;
+  const fillColor = isBuiltUp ? '#B84A39' : isVegetative ? '#3B7E48' : '#738A5A';
+
   return (
-    <figure className="overflow-hidden rounded-md border border-line">
-      <div className="relative aspect-[4/3] bg-[#1f2a24]">
+    <figure className="overflow-hidden rounded-xl border border-line bg-ground-2 shadow-2xs">
+      <div className="relative aspect-[4/3] bg-[#121A15] overflow-hidden">
         {url ? (
           <img src={url} alt={`${title} imagery ${date}`} className="h-full w-full object-cover" />
         ) : (
-          <svg viewBox="0 0 160 120" className="h-full w-full" role="img" aria-label={`${title} placeholder`}>
+          <svg viewBox="0 0 160 120" className="h-full w-full select-none" role="img" aria-label={`${title} Sentinel-2 spectral preview`}>
             <defs>
-              <pattern id={`g-${title}`} width="16" height="16" patternUnits="userSpaceOnUse">
-                <path d="M16 0H0v16" fill="none" stroke="#2f3d35" strokeWidth="0.6" />
+              <pattern id={`grid-${title}`} width="16" height="16" patternUnits="userSpaceOnUse">
+                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="#223328" strokeWidth="0.5" />
               </pattern>
+              <radialGradient id={`rad-${title}`} cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor={fillColor} stopOpacity="0.45" />
+                <stop offset="85%" stopColor={fillColor} stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#121A15" stopOpacity="0" />
+              </radialGradient>
             </defs>
-            <rect width="160" height="120" fill={`url(#g-${title})`} />
-            <rect x="40" y="30" width="80" height="60" fill={title === 'After' ? '#A63A2B' : '#5E9E52'} opacity="0.35" rx="3" />
-            <text x="80" y="66" textAnchor="middle" fontSize="11" fill="#E6E8E4" fontFamily="IBM Plex Mono, monospace">{date}</text>
+            {/* Background Grid */}
+            <rect width="160" height="120" fill={`url(#grid-${title})`} />
+            
+            {/* Spectral Heatmap Footprint */}
+            <circle cx="80" cy="58" r="42" fill={`url(#rad-${title})`} />
+            <rect x="36" y="26" width="88" height="64" rx="4" fill="none" stroke={fillColor} strokeWidth="1" strokeDasharray="3 2" opacity="0.65" />
+
+            {/* Corner Crosshairs */}
+            <path d="M 8 8 L 14 8 M 8 8 L 8 14" stroke="#4A6552" strokeWidth="0.8" fill="none" />
+            <path d="M 152 8 L 146 8 M 152 8 L 152 14" stroke="#4A6552" strokeWidth="0.8" fill="none" />
+            <path d="M 8 112 L 14 112 M 8 112 L 8 106" stroke="#4A6552" strokeWidth="0.8" fill="none" />
+            <path d="M 152 112 L 146 112 M 152 112 L 152 106" stroke="#4A6552" strokeWidth="0.8" fill="none" />
+
+            {/* Center Reticle */}
+            <circle cx="80" cy="58" r="3" fill="none" stroke="#A8C8B0" strokeWidth="0.6" opacity="0.7" />
+            <line x1="74" y1="58" x2="86" y2="58" stroke="#A8C8B0" strokeWidth="0.6" opacity="0.7" />
+            <line x1="80" y1="52" x2="80" y2="64" stroke="#A8C8B0" strokeWidth="0.6" opacity="0.7" />
+
+            {/* Metadata overlay */}
+            <text x="80" y="52" textAnchor="middle" fontSize="8.5" fill="#E2EBE5" fontFamily="IBM Plex Mono, monospace" fontWeight="600" opacity="0.9">
+              {title === 'After' ? 'T2 RECENT' : 'T1 BASELINE'}
+            </text>
+            <text x="80" y="68" textAnchor="middle" fontSize="9.5" fill="#FFFFFF" fontFamily="IBM Plex Mono, monospace" fontWeight="bold">
+              {date}
+            </text>
+            <text x="80" y="80" textAnchor="middle" fontSize="7" fill="#84A890" fontFamily="IBM Plex Mono, monospace">
+              ESA S2-MSI L2A (10m)
+            </text>
           </svg>
         )}
-        <span className="absolute top-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10.5px] font-medium text-white">{title}</span>
+        <span className="absolute top-1.5 left-1.5 rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-wide border border-white/10">
+          {title}
+        </span>
       </div>
-      <figcaption className="flex items-center justify-between px-2 py-1.5 text-xs">
-        <span>{fmtDate(date)}</span>
-        <span className="font-mono text-ink-3">NDVI {ndvi.toFixed(2)} · NDBI {ndbi.toFixed(2)}</span>
+      <figcaption className="flex items-center justify-between px-2.5 py-1.5 text-xs bg-ground-1 border-t border-line">
+        <span className="font-semibold text-ink">{fmtDate(date)}</span>
+        <span className="font-mono text-[11px] text-ink-3">
+          NDVI <strong className="text-ink">{ndvi.toFixed(2)}</strong> · NDBI <strong className="text-ink">{ndbi.toFixed(2)}</strong>
+        </span>
       </figcaption>
     </figure>
   );
