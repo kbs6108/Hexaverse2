@@ -57,8 +57,20 @@ export function AIInsight({ p, auto }: { p: ParcelCDM; auto: boolean }) {
         <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold text-white', meter)}>
           Risk {b.risk_level} · {b.risk_score}/100
         </span>
-        <span className="ml-auto font-mono text-[10px] text-ink-3" title="How this insight was produced">
-          {b.engine === 'rules' ? 'rule engine (no AI key)' : b.engine}
+        <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10px] text-ink-3" title="How this insight was produced">
+          <span
+            className={clsx(
+              'size-1.5 rounded-full',
+              b.engine.startsWith('gemini') ? 'bg-emerald-500' : b.engine.startsWith('nvidia') ? 'bg-primary' : 'bg-ink-3'
+            )}
+          />
+          <span>
+            {b.engine.startsWith('gemini')
+              ? `Gemini (${b.engine.split(':')[1] || 'Flash'})`
+              : b.engine.startsWith('nvidia')
+                ? 'NVIDIA Nemotron'
+                : 'rule engine'}
+          </span>
         </span>
       </div>
       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-ground-2" role="meter" aria-valuenow={b.risk_score} aria-valuemin={0} aria-valuemax={100} aria-label="Risk score">

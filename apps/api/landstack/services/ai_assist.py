@@ -30,7 +30,7 @@ CHAT_TIMEOUT_S = 18.0
 
 
 # ----------------------------------------------------------------------------- LLM client (Gemini / NVIDIA / rules)
-async def chat(messages: list[dict[str, str]], *, max_tokens: int = 3000, temperature: float = 0.2) -> str | None:
+async def chat(messages: list[dict[str, str]], *, max_tokens: int = 800, temperature: float = 0.2) -> str | None:
     """One chat completion against Gemini or NVIDIA Build; None when unconfigured or failing (callers fall back)."""
     s = get_settings()
     if s.gemini_api_key:
@@ -322,13 +322,13 @@ async def due_diligence_report(cdm: dict[str, Any]) -> dict[str, Any]:
         sys_prompt = (
             "You are an expert AI land records analyst on Land Stack.\n"
             "Given the 9-point due diligence checklist below for an Indian land parcel, "
-            "write a crisp 1 to 2 sentence executive buyer summary highlighting the main clearance or risk. "
-            "Be direct, neutral, and concise. Do not write filler greetings or introductions."
+            "write a crisp 1 to 2 sentence executive buyer summary highlighting the main clearance or primary risk. "
+            "Be direct, neutral, and compact. Output strictly 1-2 sentences; never write greetings, preamble, or disclaimers."
         )
         user_content = f"Overall Verdict: {res['verdict']}\n\n9-Point Checks:\n" + "\n".join(lines)
         ai_summary = await chat(
             [{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_content}],
-            max_tokens=600,
+            max_tokens=200,
             temperature=0.2,
         )
         if ai_summary:
@@ -660,145 +660,135 @@ async def assistant(
 
     elif intent == "notice":
         reply = (
-            "### Public Statutory Notice Board\n\n"
-            "Pending transfers of rights (mutation, succession, boundary corrections) are published on the "
-            "public notice board on the **Citizen Home page** (`/citizen`) for 15 days.\n\n"
-            "• **Statutory Window**: Anyone may inspect pending transfers and file an objection during this 15-day window.\n"
-            "• **Filing Objections**: When you file an objection, it is permanently linked to the file and shown to the revenue officer before they can approve the transfer.\n"
-            "• **Tracking**: You can track whether objections have been filed against any parcel directly in the parcel drawer."
+            "**[Public Statutory Notice Board]**\n"
+            "Pending transfers of rights (mutations, successions, boundary adjustments) are published for 15 days on the "
+            "[Public Notice Board](/citizen).\n\n"
+            "• **Statutory Window**: Any citizen or legal heir may inspect pending transfers and file an objection within 15 days.\n"
+            "• **Quasi-Judicial Link**: Filed objections automatically lock the workflow until the Tahsildar reviews merit.\n"
+            "• **Tracking**: You can track active objections directly on [Map Explorer](/map) in the parcel drawer."
         )
-        suggestions = ["How do I file an objection?", "Show my application status", "Track application"]
+        suggestions = ["How do I file an objection?", "Track application status", "Open public notice board"]
 
     elif intent == "report":
         reply = (
-            "### Certified Parcel Report & Verification\n\n"
-            "• **Certified PDF**: A signed legal parcel report with a cryptographic QR code can be generated directly from any parcel's drawer on **Map Explorer** (`/map`).\n"
-            "• **Instant Verification**: Anyone (banks, buyers, advocates) can verify an issued certificate by scanning the QR code or visiting `/verify/<report-id>`.\n"
-            "• **Included Records**: Summarizes ownership, registered deeds, encumbrances, court disputes, tax status, and satellite change detection."
+            "**[Certified Parcel Land Information Report]**\n"
+            "Download an authoritative, digitally signed Land Information Report (LIR) for legal, banking, or registry use:\n\n"
+            "• **Generate PDF**: Select your parcel on [Map Explorer](/map) and click **Download Certified Report**.\n"
+            "• **QR Verification**: Every report includes a cryptographic tamper-evident QR code verifiable at `/verify/<id>`.\n"
+            "• **Comprehensive Audit**: Aggregates RoR ownership, registered deeds, active mortgages, court stays, and satellite alerts."
         )
         suggestions = ["How to download report?", "Buyer due diligence", "Survey no 123/4"]
 
     elif intent == "complaint":
         reply = (
-            "### Problem: Boundary Dispute, Encroachment, or Illegal Possession\n\n"
-            "If your neighbor built a fence/wall over your property line, or someone is occupying your land:\n\n"
-            "1. **File for Boundary Correction or Field Review**: Go to **Citizen Services → Apply & Request** "
-            "(`/citizen/request?type=boundary_correction`) and select **Boundary correction** or **Field review**. "
-            "A government surveyor is officially dispatched to measure your plot against the registered survey tippan/FMB.\n"
-            "2. **Inspect Satellite Change Alerts**: Open your parcel on **Map Explorer** (`/map`) and inspect the "
-            "**Satellite tab** and **Change Alerts layer** to see automated Sentinel-2 detection of unrecorded earthworks, walls, or construction.\n"
-            "3. **Statutory Objection**: If your neighbor has a pending transfer or mutation, you can file a public objection on the **Notice Board** (`/citizen`) within the statutory 15-day window.\n\n"
-            "💡 *Tell me your survey number (e.g. \"survey no 123/4\") or 14-digit ULPIN to analyze your specific boundaries directly.*"
+            "**[Boundary Encroachment & Illegal Occupation]**\n"
+            "If a neighbor built over your property line or someone is occupying your land:\n\n"
+            "• **1. Official Field Demarcation**: [Apply for Boundary Correction](/citizen/request?type=boundary_correction) "
+            "or [Field Review](/citizen/request?type=field_review). A government surveyor is officially dispatched with total-station DGPS to measure against the registered FMB/Tippan.\n"
+            "• **2. Satellite Change Alerts**: Open [Map Explorer](/map) to inspect Sentinel-2 detection of unrecorded earthworks, walls, or structures.\n"
+            "• **3. Statutory Hold**: If a transfer is pending on the disputed parcel, file an objection on the [Notice Board](/citizen) within the 15-day statutory window.\n\n"
+            "💡 *Share your survey number (e.g. \"survey no 123/4\") to inspect your boundary geometry directly.*"
         )
         suggestions = ["Survey no 123/4", "Apply for boundary correction", "Check satellite alerts"]
 
     elif intent == "transfer":
         reply = (
-            "### Problem: Change Owner Name / Mutation after Buying Property\n\n"
-            "If you recently bought land and need your name updated on government revenue records (Pahani/RoR/Patta/Khata):\n\n"
-            "1. **Apply for Mutation (Ownership Transfer)**: Open **Citizen Services → Apply & Request** (`/citizen/request?type=mutation`).\n"
-            "2. **Automated Cross-Check**: Enter the ULPIN or survey number. Land Stack checks your registered deed against the Sub-Registrar records and verifies there are no court stays or unrecorded mortgages.\n"
-            "3. **Track Live Progress**: Follow the file as it transitions from verification to statutory notice publication and final Tahsildar approval on **Track Application** (`/citizen/track`).\n\n"
-            "💡 *Share your parcel's survey number or ULPIN to check if any prior deed or transfer is already on record.*"
+            "**[Ownership Mutation after Property Purchase]**\n"
+            "To update your name on government revenue records (Pahani / RoR / Patta / Khata) after deed registration:\n\n"
+            "• **1. File Mutation Application**: [Apply for Mutation](/citizen/request?type=mutation) under Citizen Services.\n"
+            "• **2. Automated Cross-Check**: Land Stack instantly reconciles your Sub-Registrar deed against the Revenue RoR and validates mortgage clearance.\n"
+            "• **3. 15-Day Notice & Tahsildar Approval**: Follow real-time milestone transitions on [Track Application](/citizen/track).\n\n"
+            "💡 *Provide your survey number or ULPIN to verify if your registered deed is already on record.*"
         )
         suggestions = ["Survey no 123/4", "Apply for mutation", "Track application"]
 
     elif intent == "succession":
         reply = (
-            "### Problem: Inheriting Property After a Family Member's Demise\n\n"
-            "When land needs to be transferred to legal heirs following a death in the family:\n\n"
-            "1. **Apply for Succession**: Open **Citizen Services → Apply & Request** (`/citizen/request?type=succession`).\n"
-            "2. **Nominee Verification**: If the deceased owner had recorded nominees in the revenue RoR, Land Stack matches them immediately for expedited transfer.\n"
-            "3. **Legal Heir Certificate**: If no nominee was recorded, attach the family succession / legal heir certificate during submission.\n\n"
-            "💡 *Tell me the survey number to check whether nominees are already on record for this parcel.*"
+            "**[Inheritance & Family Succession]**\n"
+            "To transfer agricultural or urban property following a family member's demise:\n\n"
+            "• **1. File Succession Request**: [Apply for Succession](/citizen/request?type=succession) under Citizen Services.\n"
+            "• **2. Recorded Nominee Verification**: If the deceased owner registered nominees on the RoR, ownership is expedited automatically.\n"
+            "• **3. Legal Heir Certificate**: If no nominee was recorded, attach the Tahsildar succession certificate or family tree affidavit.\n\n"
+            "💡 *Share your survey number to verify whether nominees are recorded on this parcel.*"
         )
         suggestions = ["Survey no 123/4", "Apply for succession", "Who are the nominees?"]
 
     elif intent == "build":
         reply = (
-            "### Problem: Constructing a House, Building, or Commercial Project\n\n"
+            "**[Building Permission & Master Plan Zoning]**\n"
             "Before starting construction or obtaining layout/building sanctions:\n\n"
-            "1. **Check Master Plan Zoning**: Find the parcel on **Map Explorer** (`/map`) and view the **Planning & Permissions tab**. "
-            "It shows the designated master plan zone (Residential, Commercial, Industrial, Agricultural) and permissible uses.\n"
-            "2. **Apply for Building Permission**: Go to **Citizen Services → Apply & Request** (`/citizen/request?type=building_permission`). "
-            "Land Stack's AI triage tests your proposed floors and setbacks against local building bylaws before submission.\n"
-            "3. **Unrecorded Work Warning**: Sentinel-2 satellites monitor active construction. Getting your permit approved first protects you from demolition notices.\n\n"
-            "💡 *Share your survey number or ULPIN to check permissible uses and zoning immediately.*"
+            "• **1. Check Master Plan Zone**: Open [Map Explorer](/map) (Planning tab) to check residential/commercial zoning, FAR, and setback rules.\n"
+            "• **2. Apply for Permission**: [Apply for Building Permission](/citizen/request?type=building_permission). Pre-submission AI triage checks your proposed floors and setbacks against local bylaws.\n"
+            "• **3. Unrecorded Work Warning**: Sentinel-2 satellites detect unapproved construction automatically. An approved permit prevents demolition notices."
         )
         suggestions = ["Survey no 123/4", "Check zoning on map", "Apply for building permission"]
 
     elif intent == "buy":
         reply = (
-            "### Problem: Due Diligence Before Buying Land (Checking for Frauds & Loans)\n\n"
-            "To safeguard your investment and confirm a seller's title is genuine:\n\n"
-            "1. **9-Point Due Diligence**: Look up the parcel on **Map Explorer** (`/map`). It audits title continuity, dispute filings, mortgage encumbrances, tax arrears, and satellite change alerts.\n"
-            "2. **Verify Seller Ownership**: Use **Citizen Services → Verify Ownership** (`/citizen/verify`). Type the seller's name to confirm it matches the confidential revenue record without exposing personal data.\n"
-            "3. **Download Certified Report**: Generate a digitally signed PDF with QR verification to share with your bank or legal counsel.\n\n"
-            "💡 *Tell me the survey number (e.g. \"survey no 123/4\") to run an instant buyer check.*"
+            "**[Buyer 9-Point Due Diligence & Fraud Check]**\n"
+            "To safeguard your investment and confirm title continuity before buying:\n\n"
+            "• **1. 9-Point Multi-Dept Audit**: Inspect the parcel on [Map Explorer](/map) to audit court stays, bank mortgages, tax arrears, and deed consistency.\n"
+            "• **2. Verify Seller Ownership**: Use [Verify Ownership](/citizen/verify) to confirm the seller's name against confidential records without exposing personal data.\n"
+            "• **3. Certified LIR**: Generate a signed [Certified Report PDF](/map) with QR verification to share with your bank or legal counsel.\n\n"
+            "💡 *Tell me your survey number (e.g. \"survey no 123/4\") to run an instant buyer clearance check.*"
         )
         suggestions = ["Is survey no 123/4 safe to buy?", "Verify seller ownership", "Check bank loan / mortgage"]
 
     elif intent == "correction":
         reply = (
-            "### Problem: Spelling Error, Wrong Area Extent, or Typo in Land Passbook\n\n"
-            "If your name, father's name, survey number, or area extent is wrongly printed in the RoR or patta:\n\n"
-            "1. **Apply for Record Correction**: Go to **Citizen Services → Apply & Request** (`/citizen/request?type=record_correction`).\n"
-            "2. **Cross-Department Reconciliation**: Land Stack compares the Sub-Registrar registered deed extent with the Revenue RoR extent to pinpoint the discrepancy.\n"
-            "3. **Officer Review**: A revenue officer examines the registered deed copy and updates the khata record upon verification.\n\n"
-            "💡 *Share the survey number or ULPIN to inspect any recorded extent discrepancies right now.*"
+            "**[Clerical Error & Extent Record Correction]**\n"
+            "If your name, father's name, survey number, or area extent is wrongly recorded in the RoR or passbook:\n\n"
+            "• **1. Apply for Correction**: [Apply for Record Correction](/citizen/request?type=record_correction) under Citizen Services.\n"
+            "• **2. Cross-Department Reconciliation**: The system flags the exact difference between the Sub-Registrar registered deed extent and Revenue RoR.\n"
+            "• **3. Officer Order**: The Revenue Officer verifies the registered deed copy and updates the digital khata upon field verification."
         )
         suggestions = ["Survey no 123/4", "Apply for record correction", "Extent mismatch check"]
 
     elif intent == "dispute":
         reply = (
-            "### Checking Court Disputes, Stay Orders & Litigation\n\n"
-            "1. **Restrictions & Disputes Tab**: Open any parcel on **Map Explorer** (`/map`) and inspect the **Restrictions** section. "
-            "Active court disputes, suit numbers, courts, and next hearing dates are aggregated live from e-Courts.\n"
-            "2. **Impact on Transfers**: Any parcel with active litigation has automated transfer holds to protect buyers.\n\n"
-            "💡 *Tell me your survey number to check if court cases are active on your plot.*"
+            "**[Court Litigation, Stay Orders & Injunctions]**\n"
+            "• **Restrictions Tab**: Open the parcel on [Map Explorer](/map) and check the **Restrictions** section. Active civil suits, stay orders, and next hearing dates are aggregated from e-Courts.\n"
+            "• **Transfer Hold**: Parcels with active litigation carry automated statutory holds preventing new mutations or encumbrances.\n\n"
+            "💡 *Share your survey number to check whether court disputes are active on your plot.*"
         )
         suggestions = ["Survey no 123/4", "Is survey no 123/4 safe to buy?", "Check court dispute"]
 
     elif intent == "tax":
         reply = (
-            "### Checking Property Tax Status & Dues\n\n"
-            "1. **Fiscal Tab**: Click on the parcel on **Map Explorer** (`/map`) and select the **Fiscal** tab.\n"
-            "2. **Arrears & Valuation**: View recorded property tax arrears, the year through which tax is paid, and the indicative government guideline valuation.\n"
-            "3. **Application Acceleration**: Clearing tax arrears prior to applying for mutation or building permits prevents holds.\n\n"
-            "💡 *Share your survey number or ULPIN to check tax arrears.*"
+            "**[Property Tax Status & Guideline Valuation]**\n"
+            "• **Fiscal Tab**: Check the parcel on [Map Explorer](/map) under the **Fiscal** tab to see property tax dues and guideline valuation.\n"
+            "• **Application Hold**: Unpaid property tax delays mutation and building permission approvals. Clearing dues speeds up processing."
         )
         suggestions = ["Survey no 123/4", "Check tax status", "Guideline valuation"]
 
     elif intent == "owner":
         reply = (
-            "### How to Verify Land Ownership on Land Stack\n\n"
-            "1. **Privacy-Preserving Verification**: Open **Citizen Services → Verify Ownership** (`/citizen/verify`). "
-            "Enter the parcel ULPIN/survey number and the seller's claimed name. The system confirms a match (Yes/No) without leaking confidential personal data.\n"
-            "2. **RoR on Map**: The parcel drawer displays the registered khata number, ownership classification (Pattadar, Joint, Government), and masked owner name.\n\n"
-            "💡 *Tell me your survey number to check the registered RoR classification.*"
+            "**[Privacy-Preserving Land Ownership Verification]**\n"
+            "• **Verify Ownership**: Go to [Verify Ownership](/citizen/verify). Type the parcel number and claimed owner name to receive an instant Yes/No match without leaking sensitive personal records.\n"
+            "• **RoR on Map**: The parcel drawer on [Map Explorer](/map) shows registered khata, classification, and masked pattadar name."
         )
         suggestions = ["Verify ownership", "Survey no 123/4", "Is survey no 123/4 safe to buy?"]
 
     elif intent == "locate":
         reply = (
-            "### How to Locate Any Land Parcel on Land Stack\n\n"
-            "1. **Global Search**: Type your survey number (e.g. `123/4` or `Sy 101/2`), 14-character ULPIN, or village name into the search bar at the top or on **Map Explorer** (`/map`).\n"
-            "2. **Interactive Map**: Pan and click on any parcel polygon to view its full profile drawer (RoR ownership, deeds, encumbrances, tax, zoning, satellite alerts).\n"
-            "3. **State Filter**: Choose your state (AP, TN, TG) on the map to jump directly to your district and mandal."
+            "**[Locate Parcel on Map Explorer]**\n"
+            "• **Search**: Type your survey number (e.g. `123/4`), 14-digit ULPIN, or village name into the top search bar or on [Map Explorer](/map).\n"
+            "• **Polygon Inspection**: Click any parcel boundary to inspect ownership, registered deeds, encumbrances, and satellite alerts.\n"
+            "• **State Switcher**: Toggle between AP, TN, and TG to jump directly to regional cadastre maps."
         )
         suggestions = ["Survey no 123/4", "Survey no 125/2", "Open live map"]
 
     else:
         reply = (
-            "Namaste! I am **Bhu-Sahayak**, your AI land governance assistant.\n\n"
-            "Tell me what problem you are facing or what you want to do:\n"
-            "• **Boundary / Encroachment**: Neighbor built a fence or occupying your land\n"
-            "• **Ownership / Mutation**: Bought land and need to transfer the name in revenue records\n"
-            "• **Inheritance / Succession**: Transfer property after a family member passed away\n"
-            "• **Construction / Zoning**: Want to build a house or shop and check permissions\n"
-            "• **Safety Before Buying**: Check 9-point due diligence, bank loans, and court disputes\n"
-            "• **Track Application**: Check why your file is delayed and which officer holds it\n\n"
-            "You can also share any survey number (e.g. \"survey no 123/4\") to inspect it directly!"
+            "**[Bhu-Sahayak AI Assistant]**\n"
+            "Select a problem or share a survey number to inspect verified land records:\n\n"
+            "• **Boundary / Encroachment**: [Apply for Boundary Correction](/citizen/request?type=boundary_correction) or check satellite alerts\n"
+            "• **Ownership / Mutation**: [Apply for Mutation](/citizen/request?type=mutation) to update passbook after buying\n"
+            "• **Inheritance / Succession**: [Apply for Succession](/citizen/request?type=succession) for family property transfer\n"
+            "• **Construction / Zoning**: [Apply for Building Permission](/citizen/request?type=building_permission) & check bylaws\n"
+            "• **Buyer Due Diligence**: 9-point multi-department audit before purchasing land\n"
+            "• **Track Applications**: [Track Application](/citizen/track) to inspect file status and officer timeline\n\n"
+            "💡 *Tip: Mention any survey number (e.g. \"survey no 123/4\") or ULPIN to diagnose records directly!*"
         )
         suggestions = ["Is survey no 123/4 safe to buy?", "How do I transfer ownership?", "Neighbor built a fence on my land"]
 
@@ -845,35 +835,26 @@ async def assistant(
     engine = "rules"
     if s.gemini_api_key or s.nvidia_api_key:
         sys_prompt = (
-            "You are Bhu-Sahayak, the intelligent, warm, and highly practical AI land governance assistant on Land Stack.\n\n"
-            "CORE MISSION: DIAGNOSE PROBLEMS & PRESCRIBE ACTIONABLE APP SOLUTIONS:\n"
-            "1. SEMANTIC PROBLEM DIAGNOSIS: Interpret queries by meaning, intent, and synonyms, not just exact keywords. "
-            "Citizens describe problems in informal, vernacular, or colloquial language:\n"
-            "   - 'neighbor built a fence / wall on my plot' or 'someone occupying my land / kabza / trespass' → Boundary encroachment. Solution: Citizen Services → Apply & Request → Boundary Correction or Field Review, plus satellite change detection.\n"
-            "   - 'bought land want name in papers / registry done but name not in passbook / patta transfer' → Mutation. Solution: Citizen Services → Apply & Request → Mutation.\n"
-            "   - 'father passed away / family death / ancestral property' → Succession. Solution: Citizen Services → Apply & Request → Succession.\n"
-            "   - 'want to build a house / construct 2 floors / naksha pass / commercial shop' → Building permission & zoning. Solution: Map Explorer (Planning tab) and Citizen Services → Apply & Request → Building Permission.\n"
-            "   - 'is it safe to buy / check for fraud / double registry / bank loan' → Due diligence. Solution: Map Explorer (Due Diligence 9-point checks), Encumbrance tab, and Citizen Services → Verify Ownership.\n"
-            "   - 'spelling mistake in name / extent wrong' → Record correction. Solution: Citizen Services → Apply & Request → Record Correction.\n"
-            "   - 'my file is delayed / stuck for weeks' → Tracking. Solution: Citizen Services → Track Application.\n"
-            "2. CLEAR STEP-BY-STEP GUIDANCE: Whenever answering a problem, provide:\n"
-            "   a) Problem Diagnosis: Brief, empathetic identification of the situation.\n"
-            "   b) Exact Solution in Land Stack: Explicit navigation path (e.g. Citizen Services → Apply & Request → Boundary Correction).\n"
-            "   c) What to Expect: Necessary documents, automated checks, and revenue officer next steps.\n"
-            "3. NO REPETITIVE GREETINGS OR FLUFF: Jump straight to the helpful diagnosis and solution.\n"
-            "4. Ground all factual assertions strictly in verified records when a parcel is in context. Never invent fake parcel numbers or names.\n"
-            "5. If an owner's name is masked (e.g. R*** K***), explain that privacy masking protects identities and advise using 'Verify ownership' to confirm a specific name.\n"
-            "6. Use **bold** for key survey numbers, statuses, and navigation routes so citizens can scan answers in seconds."
+            "You are Bhu-Sahayak, the intelligent, authoritative, and compact AI land governance assistant on Land Stack.\n\n"
+            "STRICT TUNING & COMPACTNESS RULES:\n"
+            "1. MAXIMUM COMPACTNESS: Keep total response under 150 words. Zero pleasantry fluff (NO 'Hello!', 'Certainly!', 'I would be happy to help'). Jump straight into the diagnostic assessment.\n"
+            "2. HIGH INFORMATION DENSITY STRUCTURE:\n"
+            "   - **[Assessment]**: 1-2 sharp sentences identifying the legal, cadastral, or administrative root cause.\n"
+            "   - **[Actionable Steps]**: 2-3 concise bullets with explicit markdown navigation links, e.g. [Apply for Mutation](/citizen/request?type=mutation), [Apply for Boundary Correction](/citizen/request?type=boundary_correction), [Track Application](/citizen/track), [Verify Ownership](/citizen/verify), [Map Explorer](/map).\n"
+            "   - **[Key Verification]**: 1 factual sentence on the statutory authority (Tahsildar / Sub-Registrar / Town Planning / Surveyor) and evidence required.\n"
+            "3. STRICT GROUNDING: Cite exact Survey No, ULPIN, Khata, and amounts from the verified record when present. Never fabricate data.\n"
+            "4. PRIVACY MASKING: If an owner name is masked (e.g. R*** K***), explain that privacy masking protects identity and direct the user to [Verify Ownership](/citizen/verify).\n"
+            "5. INTERACTIVE LINKS: Always format app destinations as clickable markdown links [Label](/path) so the UI renders interactive action buttons."
         )
 
         llm_messages: list[dict[str, str]] = [{"role": "system", "content": sys_prompt}]
 
-        # Include prior conversation history for multi-turn awareness
+        # Include prior conversation history for multi-turn awareness (trimmed for compact token usage)
         if history:
             for h in history[-6:]:
                 role = "assistant" if h.get("role") in ("assistant", "bot") else "user"
                 content = (h.get("content") or "").strip()
-                if content:
+                if content and not content.startswith("**[Bhu-Sahayak AI Assistant]**"):
                     llm_messages.append({"role": role, "content": content})
 
         user_content = f"User Question: {message}\n\n"
@@ -883,7 +864,7 @@ async def assistant(
 
         llm_messages.append({"role": "user", "content": user_content})
 
-        llm_reply = await chat(llm_messages, max_tokens=3000, temperature=0.2)
+        llm_reply = await chat(llm_messages, max_tokens=650, temperature=0.2)
         if llm_reply:
             reply = llm_reply
             engine = engine_name()
@@ -893,18 +874,29 @@ async def assistant(
 
 def _fact_sheet(cdm: dict[str, Any], findings: list[dict[str, Any]]) -> str:
     ids = cdm.get("identifiers") or {}
-    keep = {
+    st = cdm.get("status") or {}
+    restr = cdm.get("restrictions") or {}
+    enc = [e for e in restr.get("encumbrances") or [] if e.get("active")]
+    disputes = restr.get("disputes") or []
+    ror = (cdm.get("rights") or {}).get("ror") or {}
+    raw = {
+        "ulpin": ids.get("ulpin"),
         "survey_no": ids.get("survey_no"),
-        "state": ids.get("state"),
         "village": ids.get("village"),
-        "land_use": (cdm.get("planning") or {}).get("land_use"),
-        "zone": (cdm.get("planning") or {}).get("zone_code"),
+        "state": ids.get("state"),
         "area_sqm": (cdm.get("spatial") or {}).get("area_sqm"),
-        "status": cdm.get("status"),
+        "owner": ror.get("owner_name"),
+        "land_use": (cdm.get("planning") or {}).get("land_use"),
+        "tax_arrears": st.get("tax_arrears"),
+        "active_mortgage": bool(enc),
+        "court_disputes": len(disputes),
+        "change_alert": st.get("change_alert"),
         "resurvey": (cdm.get("status_flags") or {}).get("resurvey"),
         "findings": [f["text"] for f in findings],
     }
-    return json.dumps(keep, default=str)
+    # Keep only truthy / high-signal entries for token compactness
+    compact = {k: v for k, v in raw.items() if v not in (None, False, 0, [])}
+    return json.dumps(compact, default=str)
 
 
 # ----------------------------------------------------------------------------- features
@@ -921,12 +913,13 @@ async def parcel_brief(db: DBLike, ulpin: str, principal: Principal) -> dict[str
     text = await chat(
         [
             {"role": "system",
-             "content": "You are a land-records analyst for an Indian land-governance platform. "
-                        "Write for a revenue officer. Be factual, concise and neutral; do not invent "
-                        "facts beyond the sheet. Output JSON only: "
-                        '{"narrative": "<3-4 sentences>", "recommendations": ["<max 3 short imperative actions>"]}'},
+             "content": "You are an expert land records analyst on Land Stack. Write for a revenue officer. "
+                        "Be factual, ultra-compact, and neutral. Do not invent facts beyond the sheet. Output JSON only: "
+                        '{"narrative": "<max 2 compact sentences highlighting primary risk or clean clearance>", "recommendations": ["<max 3 short imperative actions under 8 words each>"]}'},
             {"role": "user", "content": "Parcel fact sheet:\n" + _fact_sheet(cdm, findings)},
-        ]
+        ],
+        max_tokens=350,
+        temperature=0.2,
     )
     if text:
         import re
@@ -999,7 +992,7 @@ async def application_advice(db: DBLike, app_id: str, principal: Principal) -> d
             {"role": "system",
              "content": "You advise an Indian land-records officer on one pending application. "
                         "Choose ONLY from the allowed actions. Output JSON only: "
-                        '{"action": "<one allowed action or null>", "rationale": "<2 sentences>"}'},
+                        '{"action": "<one allowed action or null>", "rationale": "<strictly 1-2 factual sentences explaining why>"}'},
             {"role": "user",
              "content": json.dumps({
                  "application": {"id": app["id"], "type": app["type"], "status": app["status"],
@@ -1008,7 +1001,8 @@ async def application_advice(db: DBLike, app_id: str, principal: Principal) -> d
                  "parcel_findings": [f["text"] for f in brief["findings"]],
              })},
         ],
-        max_tokens=1200,
+        max_tokens=180,
+        temperature=0.1,
     )
     engine = "rules"
     if text:

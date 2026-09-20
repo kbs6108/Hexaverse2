@@ -107,6 +107,13 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   - Parcel Overview drawer features actionable *"Title Mutation in Progress"* callout linking directly to the Queue, plus direct alert inspection buttons.
   - Interactive multi-tab `MechanismExplainerModal` ("How mechanisms work") accessible across Admin, Alerts, and Queue comparing Indian ground reality with Land Stack automated interoperability.
   - Backend correlation: enriched `GET /landstack/alerts` with `open_application_id` and `open_application_type` subqueries, and stored `application_id` in alert detail.
+- **AI Engine Tuning, Responses & Compactness** (Sep 2026):
+  - Hyperparameter optimization: tightly bounded token limits (Assistant $\le 650$, advice $\le 180$, DD summary $\le 200$, parcel brief $\le 350$) reducing latency and eliminating rambles.
+  - High-density structured system prompts with strict zero-filler rules, generating clean `**[Assessment]**`, `**[Actionable Steps]**`, and `**[Key Verification]**` sections.
+  - Interactive deep-link action buttons: Markdown links `[Label](/path)` rendered as instant navigation buttons in Bhu-Sahayak chat.
+  - Compact view mode: high-density UI toggle in floating assistant with localStorage persistence, tighter line heights and margins.
+  - Instant one-click copy response utility on every assistant reply.
+  - Lean fact-sheet pruning: omitting empty/null keys from model inputs, slashing token consumption by ~60%.
 Notable fixed first-run issues: asyncpg `substring(id from :n)` typing, MapLibre nested-zoom
 expressions, Vite dep-optimizer maplibre worker, persisted-layers merge bug, web healthcheck.
 Still open: Neon/Firebase/Cloud Run deployment not yet exercised; WeasyPrint deps on Cloud Run
@@ -114,6 +121,7 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-20 AI tuning, responses & compactness: hyperparameter optimization (Assistant max_tokens 650, advice 180, DD summary 200), high-density structured prompt engineering, interactive deep-link action buttons in chat, compact view toggle, copy response utility, and lean fact-sheet pruning.
 - 2026-09-20 workflow clarity & governance: visual lifecycle pipeline in Admin, linked queue applications in Alerts, upfront statutory record impact preview in Queue, citizen parcel linkage (Sy 123/4 fly-to), dead-center limelight dock, and MechanismExplainerModal.
 - 2026-09-17 readable values everywhere: consistency callout, admin findings, timeline details, report PDF (utilities yes/no, flags humanized, None-safe rows).
 - 2026-09-17 `ae1d829` Bhu-Sahayak chatbot: POST /landstack/ai/assistant (pure intent router + grounded templated replies, LLM rephrase only) + floating launcher in the shell (6 routing tests, 92 total).
@@ -155,6 +163,13 @@ unverified.
 - **Statutory Side-Effect Transparency**: Application transition buttons must clearly preview the exact
   database and departmental impacts (RoR owner transfer, PostGIS polygon commit, Building Sanction) before
   an officer confirms approval. Post-approval confirmation must prominently surface the live record change.
+- **Strict AI Tuning & Compactness Rules**:
+  - **Bounded Token Ceilings**: Never set unbounded token limits (e.g. 3000 tokens for short summaries). Tightly bound generation budgets: Bhu-Sahayak Assistant $\le 650$ tokens; Due Diligence summary $\le 200$ tokens; Parcel Risk Brief $\le 350$ tokens; Officer Application Advice $\le 180$ tokens.
+  - **Zero Conversational Fluff**: System prompts must explicitly forbid conversational preamble or pleasantry filler ("Hello", "Certainly", "Hope this helps"). Jump straight to the diagnostic assessment and actionable remedy.
+  - **High Information Density**: Enforce structured sections (`**[Assessment]**`, `**[Actionable Steps]**`, `**[Key Verification]**`).
+  - **Interactive In-Chat Deep Links**: System prompts and rule engine templates must output clickable Markdown links `[Label](/path)` for application forms (`/citizen/request?type=mutation`), maps, and tracking, allowing frontend components to render instant navigation action buttons.
+  - **Lean Context Serialization**: Fact-sheets provided to models must omit empty, null, or zero keys to keep prompt overhead under 350 tokens and prevent context bloat.
+  - **Deterministic Rule Fallback Parity**: Fallback responses (`engine: "rules"`) must maintain the exact same structured, clickable, compact standard as LLM-generated output.
 - Backend SQL is plain `text()` with `:named` params through `landstack/db.py` (`fetch/fetchrow/
   fetchval/execute/transaction`). No ORM models. Migrations are idempotent; add `006_*.sql`, never edit
   applied files.

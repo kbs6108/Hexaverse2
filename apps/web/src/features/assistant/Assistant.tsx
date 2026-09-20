@@ -9,6 +9,10 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight,
   Bot,
+  Check,
+  Copy,
+  Maximize2,
+  Minimize2,
   RotateCcw,
   Send,
   Sparkles,
@@ -30,15 +34,14 @@ interface Msg {
 const GREETING: Msg = {
   who: 'bot',
   text:
-    'Namaste! I am **Bhu-Sahayak**, your AI land governance assistant.\n\n' +
-    'Tell me what problem you are facing or what you want to do:\n' +
-    '• **Boundary Encroachment**: Neighbor built a fence or occupying your land\n' +
-    '• **Ownership / Mutation**: Bought land and need name updated in revenue records (Pahani/RoR)\n' +
-    '• **Inheritance / Succession**: Transfer property after a family member passed away\n' +
-    '• **Construction / Zoning**: Check if you can build a house or shop on your plot\n' +
-    '• **Buyer Due Diligence**: Check court stays, bank mortgages, and title risks before buying\n' +
-    '• **Application Delay**: Track why your file is delayed and which officer holds it\n\n' +
-    'You can also share any survey number (e.g. "survey no 123/4") or 14-digit ULPIN to inspect it directly!',
+    '**[Bhu-Sahayak AI Land Assistant]**\n' +
+    'Select a common land problem or type any survey number to inspect verified records:\n\n' +
+    '• **Encroachment & Demarcation**: [Apply for Boundary Correction](/citizen/request?type=boundary_correction) or check satellite alerts\n' +
+    '• **Deed Registration & Mutation**: [Apply for Mutation](/citizen/request?type=mutation) to update your name in revenue records\n' +
+    '• **Inheritance & Succession**: [Apply for Succession](/citizen/request?type=succession) for legal heir property reallocation\n' +
+    '• **Buyer Due Diligence**: 9-point multi-department clearance audit before purchasing\n' +
+    '• **Application Delay**: [Track Application](/citizen/track) to inspect Tahsildar approval milestones\n\n' +
+    '💡 *Tip: Mention any survey number (e.g. "survey no 123/4") or 14-digit ULPIN anytime!*',
   engine: 'rules',
 };
 
@@ -80,15 +83,46 @@ function engineBadge(engine?: string) {
   }
 
   return (
-    <div className="mt-2.5 flex items-center gap-1.5 text-[10.5px] text-ink-3">
+    <div className="flex items-center gap-1.5 text-[10px] text-ink-3">
       <span className={`inline-block size-1.5 rounded-full ${isGemini ? 'bg-emerald-500' : 'bg-primary'}`} />
       <span>{label}</span>
     </div>
   );
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title="Copy response to clipboard"
+      aria-label="Copy response"
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-ink-3 transition-colors hover:bg-ground-3 hover:text-ink cursor-pointer"
+    >
+      {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+      <span>{copied ? 'Copied' : 'Copy'}</span>
+    </button>
+  );
+}
+
 /** Formats text with markdown bold, bullet points, and actionable app links */
-function FormattedMessage({ text, isUser, onNavigate }: { text: string; isUser: boolean; onNavigate: (path: string) => void }) {
+function FormattedMessage({
+  text,
+  isUser,
+  onNavigate,
+  compact = false,
+}: {
+  text: string;
+  isUser: boolean;
+  onNavigate: (path: string) => void;
+  compact?: boolean;
+}) {
   if (isUser) {
     return <p className="whitespace-pre-wrap">{text}</p>;
   }
@@ -96,11 +130,11 @@ function FormattedMessage({ text, isUser, onNavigate }: { text: string; isUser: 
   const paragraphs = text.split(/\n\n+/);
 
   return (
-    <div className="space-y-2 text-[13.5px] leading-relaxed">
+    <div className={compact ? 'space-y-1.5 text-[12.5px] leading-snug' : 'space-y-2 text-[13.5px] leading-relaxed'}>
       {paragraphs.map((p, pIdx) => {
         const lines = p.split('\n');
         return (
-          <div key={pIdx} className="space-y-1">
+          <div key={pIdx} className={compact ? 'space-y-0.5' : 'space-y-1'}>
             {lines.map((line, lIdx) => {
               const isH3 = line.startsWith('### ');
               const cleanH3 = isH3 ? line.replace('### ', '') : line;
@@ -126,9 +160,11 @@ function FormattedMessage({ text, isUser, onNavigate }: { text: string; isUser: 
                       key={partIdx}
                       type="button"
                       onClick={() => onNavigate(url)}
-                      className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary underline-offset-2 hover:bg-primary hover:text-white transition-colors"
+                      className={`inline-flex items-center gap-1 rounded bg-primary/10 font-semibold text-primary underline-offset-2 hover:bg-primary hover:text-white transition-colors cursor-pointer ${
+                        compact ? 'px-1.5 py-0.5 text-[11px]' : 'px-1.5 py-0.5 text-xs'
+                      }`}
                     >
-                      {label} <ArrowRight size={11} />
+                      {label} <ArrowRight size={10} />
                     </button>
                   );
                 }
@@ -137,7 +173,7 @@ function FormattedMessage({ text, isUser, onNavigate }: { text: string; isUser: 
 
               if (isH3) {
                 return (
-                  <h4 key={lIdx} className="font-display text-[14px] font-bold text-ink mt-1">
+                  <h4 key={lIdx} className={`font-display font-bold text-ink mt-1 ${compact ? 'text-[13px]' : 'text-[14px]'}`}>
                     {content}
                   </h4>
                 );
@@ -145,7 +181,7 @@ function FormattedMessage({ text, isUser, onNavigate }: { text: string; isUser: 
 
               if (isBullet) {
                 return (
-                  <div key={lIdx} className="flex items-start gap-1.5 pl-1">
+                  <div key={lIdx} className="flex items-start gap-1.5 pl-0.5">
                     <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
                     <span className="flex-1">{content}</span>
                   </div>
@@ -174,6 +210,13 @@ export default function Assistant() {
   const [chips, setChips] = useState<string[]>(() =>
     PROMPT_CATEGORIES[0]?.prompts ? [...PROMPT_CATEGORIES[0].prompts] : [],
   );
+  const [compact, setCompact] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('bhu_sahayak_compact') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Position state for movable icon (default bottom-right)
   const [pos, setPos] = useState<{ x: number; y: number }>(() => {
@@ -300,8 +343,8 @@ export default function Assistant() {
   const dialogStyle: React.CSSProperties = {
     position: 'fixed',
     zIndex: 50,
-    width: 'min(28rem, calc(100vw - 2rem))',
-    maxHeight: 'min(78vh, 620px)',
+    width: compact ? 'min(26rem, calc(100vw - 2rem))' : 'min(28rem, calc(100vw - 2rem))',
+    maxHeight: compact ? 'min(72vh, 560px)' : 'min(78vh, 620px)',
   };
 
   if (isRightHalf) {
@@ -325,56 +368,76 @@ export default function Assistant() {
           className="flex flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header */}
-          <header className="flex items-center gap-2 border-b border-line bg-ground-1 px-4 py-3">
-            <span className="grid size-8 place-items-center rounded-xl bg-primary text-white shadow-xs">
-              <Bot size={18} />
+          <header className={`flex items-center gap-2 border-b border-line bg-ground-1 ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>
+            <span className={`grid place-items-center rounded-xl bg-primary text-white shadow-xs ${compact ? 'size-7' : 'size-8'}`}>
+              <Bot size={compact ? 16 : 18} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h2 className="font-display text-[15px] font-bold leading-tight text-ink">Bhu-Sahayak</h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[10.5px] font-semibold text-primary">
-                  <Sparkles size={11} /> AI Guide
+                <h2 className={`font-display font-bold leading-tight text-ink ${compact ? 'text-[14px]' : 'text-[15px]'}`}>Bhu-Sahayak</h2>
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-1.5 py-0.2 text-[10px] font-semibold text-primary">
+                  <Sparkles size={10} /> AI Guide
                 </span>
               </div>
-              <p className="truncate text-[11.5px] text-ink-3">
+              <p className="truncate text-[11px] text-ink-3">
                 {selectedUlpin ? `Parcel ${selectedUlpin} focused` : 'Problem solver & land governance intelligence'}
               </p>
             </div>
             <button
+              type="button"
+              onClick={() => {
+                setCompact((c) => {
+                  const next = !c;
+                  try {
+                    localStorage.setItem('bhu_sahayak_compact', String(next));
+                  } catch {}
+                  return next;
+                });
+              }}
+              title={compact ? 'Switch to normal spacious view' : 'Switch to compact high-density view'}
+              aria-label="Toggle compact view"
+              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                compact ? 'bg-primary/15 text-primary' : 'text-ink-3 hover:bg-ground-2 hover:text-ink'
+              }`}
+            >
+              {compact ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              <span className="hidden sm:inline">{compact ? 'Compact' : 'Normal'}</span>
+            </button>
+            <button
               onClick={handleReset}
               title="Reset conversation & load topics"
               aria-label="New chat"
-              className="flex size-7 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
+              className="flex size-7 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink cursor-pointer"
             >
               <RotateCcw size={14} />
             </button>
             <button
               onClick={() => setOpen(false)}
               aria-label="Close assistant"
-              className="flex size-7 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink"
+              className="flex size-7 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-ground-2 hover:text-ink cursor-pointer"
             >
               <X size={16} />
             </button>
           </header>
 
           {/* Messages list */}
-          <div className="scroll-thin flex-1 overflow-y-auto px-4 py-3.5">
-            <ul className="flex flex-col gap-3.5">
+          <div className={`scroll-thin flex-1 overflow-y-auto ${compact ? 'px-3 py-2.5' : 'px-4 py-3.5'}`}>
+            <ul className={`flex flex-col ${compact ? 'gap-2' : 'gap-3.5'}`}>
               {msgs.map((msg, i) => (
                 <li key={i} className={msg.who === 'me' ? 'flex justify-end' : 'flex justify-start'}>
                   <div
                     className={
                       msg.who === 'me'
-                        ? 'max-w-[88%] rounded-2xl rounded-br-xs bg-primary px-4 py-2.5 text-[13.5px] text-white shadow-xs'
-                        : 'max-w-[92%] rounded-2xl rounded-tl-xs border border-line bg-ground-2 px-4 py-3 text-ink-2 shadow-xs'
+                        ? `${compact ? 'max-w-[88%] rounded-xl rounded-br-xs px-3 py-1.5 text-[12.5px]' : 'max-w-[88%] rounded-2xl rounded-br-xs px-4 py-2.5 text-[13.5px]'} bg-primary text-white shadow-xs`
+                        : `${compact ? 'max-w-[94%] rounded-xl rounded-tl-xs px-3 py-2 text-[12.5px]' : 'max-w-[92%] rounded-2xl rounded-tl-xs px-4 py-3 text-[13.5px]'} border border-line bg-ground-2 text-ink-2 shadow-xs`
                     }
                   >
-                    <FormattedMessage text={msg.text} isUser={msg.who === 'me'} onNavigate={handleNavigate} />
+                    <FormattedMessage text={msg.text} isUser={msg.who === 'me'} onNavigate={handleNavigate} compact={compact} />
 
                     {msg.who === 'bot' && (
                       <>
                         {msg.sources && msg.sources.length > 0 && (
-                          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-2.5">
+                          <div className={`mt-2 flex flex-wrap items-center gap-1.5 border-t border-line/60 ${compact ? 'pt-1.5' : 'pt-2.5'}`}>
                             <span className="text-[10px] font-semibold uppercase text-ink-3 tracking-wider">Grounding:</span>
                             {msg.sources.map((s) => {
                               if (s.kind === 'parcel') {
@@ -384,9 +447,9 @@ export default function Assistant() {
                                     type="button"
                                     onClick={() => select(s.id)}
                                     title="Open this parcel in map and profile drawer"
-                                    className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-panel px-2 py-0.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
+                                    className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-panel px-2 py-0.5 text-[10.5px] font-semibold text-primary transition-colors hover:bg-primary hover:text-white cursor-pointer"
                                   >
-                                    📍 Parcel {s.id}
+                                    📍 Sy./ULPIN {s.id}
                                   </button>
                                 );
                               }
@@ -395,7 +458,7 @@ export default function Assistant() {
                                   key={`${s.kind}-${s.id}`}
                                   type="button"
                                   onClick={() => handleNavigate(s.kind === 'application' ? `/citizen/track` : '/map')}
-                                  className="inline-flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[11px] font-medium text-ink-2 hover:border-line-strong hover:text-ink"
+                                  className="inline-flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-0.5 text-[10.5px] font-medium text-ink-2 hover:border-line-strong hover:text-ink cursor-pointer"
                                 >
                                   {s.kind}: {s.id}
                                 </button>
@@ -403,7 +466,10 @@ export default function Assistant() {
                             })}
                           </div>
                         )}
-                        {engineBadge(msg.engine)}
+                        <div className="mt-2 flex items-center justify-between border-t border-line/40 pt-1.5">
+                          {engineBadge(msg.engine)}
+                          <CopyButton text={msg.text} />
+                        </div>
                       </>
                     )}
                   </div>
@@ -411,7 +477,7 @@ export default function Assistant() {
               ))}
               {m.isPending && (
                 <li className="flex justify-start">
-                  <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-xs border border-line bg-ground-2 px-4 py-3 text-[13px] text-ink-2">
+                  <div className={`flex items-center gap-2.5 rounded-xl rounded-tl-xs border border-line bg-ground-2 text-ink-2 ${compact ? 'px-3 py-2 text-[12px]' : 'px-4 py-3 text-[13px]'}`}>
                     <span className="size-2 animate-ping rounded-full bg-primary" />
                     <span className="font-medium">Diagnosing situation & verified land records…</span>
                   </div>
@@ -423,8 +489,8 @@ export default function Assistant() {
 
           {/* Quick Problem Solvers & Prompt Library */}
           {!m.isPending && (
-            <div className="border-t border-line bg-ground-1/60 px-3 py-2">
-              <div className="mb-1.5 flex items-center justify-between">
+            <div className={`border-t border-line bg-ground-1/60 ${compact ? 'px-2.5 py-1.5' : 'px-3 py-2'}`}>
+              <div className="mb-1 flex items-center justify-between">
                 <div className="flex gap-1">
                   {PROMPT_CATEGORIES.map((cat, idx) => (
                     <button
@@ -434,7 +500,7 @@ export default function Assistant() {
                         setActiveCategory(idx);
                         setChips(cat.prompts ? [...cat.prompts] : []);
                       }}
-                      className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold transition-colors ${
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors cursor-pointer ${
                         activeCategory === idx
                           ? 'bg-primary text-white shadow-xs'
                           : 'text-ink-3 hover:bg-ground-2 hover:text-ink'
@@ -444,15 +510,17 @@ export default function Assistant() {
                     </button>
                   ))}
                 </div>
-                <span className="text-[10px] text-ink-3 hidden sm:inline">Tap to ask</span>
+                <span className="text-[9.5px] text-ink-3 hidden sm:inline">Tap to ask</span>
               </div>
-              <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto scroll-thin py-0.5">
+              <div className={`flex flex-wrap gap-1.5 overflow-y-auto scroll-thin py-0.5 ${compact ? 'max-h-20' : 'max-h-24'}`}>
                 {chips.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => send(c)}
-                    className="rounded-full border border-line bg-panel px-2.5 py-1 text-left text-[11.5px] font-medium text-ink-2 transition-all hover:border-primary hover:bg-primary-soft/40 hover:text-primary shadow-xs active:scale-[0.98]"
+                    className={`rounded-full border border-line bg-panel text-left font-medium text-ink-2 transition-all hover:border-primary hover:bg-primary-soft/40 hover:text-primary shadow-xs active:scale-[0.98] cursor-pointer ${
+                      compact ? 'px-2 py-0.5 text-[10.5px]' : 'px-2.5 py-1 text-[11.5px]'
+                    }`}
                   >
                     {c}
                   </button>
@@ -463,7 +531,7 @@ export default function Assistant() {
 
           {/* Input Form */}
           <form
-            className="flex items-center gap-2 border-t border-line bg-panel px-3 py-2.5"
+            className={`flex items-center gap-2 border-t border-line bg-panel ${compact ? 'px-2.5 py-2' : 'px-3 py-2.5'}`}
             onSubmit={(e) => {
               e.preventDefault();
               send(text);
@@ -476,7 +544,7 @@ export default function Assistant() {
               maxLength={500}
               placeholder="Describe your land problem or ask a question…"
               aria-label="Message Bhu-Sahayak"
-              className="text-sm"
+              className={compact ? 'text-xs py-1.5' : 'text-sm'}
             />
             <Button
               type="submit"
@@ -486,7 +554,7 @@ export default function Assistant() {
               aria-label="Send message"
               className="shrink-0"
             >
-              <Send size={14} />
+              <Send size={13} />
             </Button>
           </form>
         </section>

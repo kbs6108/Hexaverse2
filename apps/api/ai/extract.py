@@ -31,10 +31,14 @@ FIELDS = [
 ]
 
 PROMPT = (
-    "You are extracting fields from an Indian land record (Record of Rights / patta / pahani / sale deed). "
-    "Return ONLY a JSON object with the keys: " + ", ".join(FIELDS) + ". Use null when a field is not present. "
-    "Extent must be a number and extent_unit one of sqm, hectare, acre, cent, sqft, sqyd, gunta. "
-    "Add a key 'confidence' between 0 and 1 for the overall extraction."
+    "You are an expert Indian land document extraction analyst. Extract all fields from this scanned "
+    "Record of Rights / Patta / Pahani / Adangal / 7-12 / Registered Sale Deed.\n"
+    "Return ONLY a compact JSON object with keys: " + ", ".join(FIELDS) + ".\n"
+    "Rules:\n"
+    "- Use null if a field is not present.\n"
+    "- Extent must be a valid numeric number (e.g. 1.25, 500, 0.40).\n"
+    "- Extent_unit must strictly be one of: sqm, hectare, acre, cent, sqft, sqyd, gunta.\n"
+    "- Add 'confidence': float between 0.0 and 1.0 reflecting document legibility and extraction certainty."
 )
 
 
