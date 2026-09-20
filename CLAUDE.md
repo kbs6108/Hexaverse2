@@ -127,6 +127,17 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   - 1-click language selector `[ EN | తె | हि ]` integrated into the floating limelight dock and AccountPanel with reactive Zustand + localStorage state (`useUI.locale`).
   - 100% reactive coverage across Citizen Portal (overview, My Land cards, notice board, objection filing), Service Request wizard (5 service intents with breakdown steps and RoR owner mismatch guard), Track Applications, Verify Ownership, Interactive Map controls & layers, Parcel Drawer (all 8 tabs, 9-point buyer due diligence, and sub-sections), Status Chips, Officer Console & Work Queue, and Alerts.
   - Bhu-Sahayak AI Assistant: fully multilingual with localized greeting cards, categorical prompt chips, and Rule 6 prompt-tuning in `ai_assist.py` for respectful native vernacular advice.
+- **Architectural Landing Page & Anti-AI-Slop Refinement** (Sep 2026):
+  - Eradicated all gimmicky AI-slop visual tropes: stripped `<BorderBeam />` laser loops, animated text gradients (`shimmer-text`), `cta-glow`, and bouncing arrow animations.
+  - Replaced bubbly `rounded-full` pills across cards, buttons, badges, and metrics with crisp architectural cadastre styling (`rounded-sm`, `rounded-xs`, and `rounded-none`).
+  - Restructured landing statistics into an official land registry ledger layout (`divide-x divide-line`) and parcel quick-links into technical survey register chips (`[ Sy. 123/4 · Mangalagiri | CLEAN TITLE ]`).
+  - Unnested fixed top navigation dock from `HeroSection`'s `isolate` stacking context, ensuring it floats permanently above all scrolling content and cards without clipping.
+- **Balanced 3-Column Header & Navigation Routing Integrity** (Sep 2026):
+  - Transitioned `FloatingDock.tsx` to a balanced 3-column CSS Grid (`grid-cols-[1fr_auto_1fr]`), dead-centering the navigation dock (`Home`, `Map`, `Citizen`) inside an elevated, frosted segmented pill (`bg-[#E9E5D8]/75 border border-[#D5D2C7] rounded-full`).
+  - Preserved the signature gold streetlight accent line (`#B38A4C`) while maintaining equal visual breathing room between left branding and right utilities.
+  - Stripped inherited query parameters (`search={() => ({})}`) when navigating to Home from logo, nav tabs, and AccountPanel, preventing accidental `/map?ulpin=...` redirect loops.
+- **React Rules of Hooks Order Enforcement in RegionsPanel** (Sep 2026):
+  - Moved unconditional `useUI` store hook invocation above `regions.data` early return checks in `RegionsPanel.tsx`, eliminating runtime error boundary crashes during region cluster loading.
 Notable fixed first-run issues: asyncpg `substring(id from :n)` typing, MapLibre nested-zoom
 expressions, Vite dep-optimizer maplibre worker, persisted-layers merge bug, web healthcheck.
 Still open: Neon/Firebase/Cloud Run deployment not yet exercised; WeasyPrint deps on Cloud Run
@@ -134,6 +145,9 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-21 landing page architectural redesign & anti-AI-slop: stripped BorderBeam and text shimmers, replaced rounded pills with crisp architectural cadastre edges (`rounded-sm`/`rounded-xs`), unnested top dock from section isolate stacking context.
+- 2026-09-21 header dock 3-column center alignment & home route fix: restructured FloatingDock with balanced `grid-cols-[1fr_auto_1fr]` centering nav tabs inside a dedicated segmented pill; added `search={() => ({})}` on Home links to prevent `/map` redirect loops.
+- 2026-09-21 React rules of hooks fix in RegionsPanel: moved `useUI` call above early returns in RegionsPanel to prevent order-of-hooks crash.
 - 2026-09-20 authentic farmer-connectable Telugu & Hindi localization: implemented reactive i18n system (apps/web/src/lib/i18n.ts) with authentic revenue terminology (1-B పహణీ, పట్టాదారు, మ్యుటేషన్, హద్దుల కొలత; खतौनी, खसरा, दाखिल-खारिज, मेढ़ पैमाइश, लगान) across Citizen, Map, Parcel Drawer, Officer Console, and Bhu-Sahayak AI with prompt tuning in ai_assist.py.
 - 2026-09-20 demo users expansion: expanded demo identities to 17 users spanning AP, TN, and TG citizens (matching all seeded story parcels in dept_revenue.ror), regional departmental officers (Revenue, Registration, Planning), and system admin, with categorized switcher tabs in AccountPanel and UserMenu.
 - 2026-09-20 dynamic land ownership & statutory building authority: removed static KNOWN_USER_PARCELS, wired useMyParcel to GET /citizen/my-parcels, enforced statutory Pattadar verification in building permissions (UI blocker, AI triage, 403 in workflow), and added comprehensive cross-app query invalidation on mutation approvals.
