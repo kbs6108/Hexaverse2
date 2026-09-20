@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, BookOpen } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Application } from '@/lib/cdm';
@@ -16,6 +16,7 @@ import { quickAdvanceAction, StatusBadge } from './ApplicationBits';
 import { ApplicationDetail } from './ApplicationDetail';
 import { fmtDate, relTime, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
+import { MechanismExplainerModal } from '@/components/MechanismExplainerModal';
 
 const TYPES = ['mutation', 'building_permission', 'field_review', 'boundary_correction', 'ownership_verification'];
 const DEPTS = ['revenue', 'registration', 'planning'];
@@ -75,6 +76,7 @@ export function QueuePage() {
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
   const [text, setText] = useState('');
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const q = useQuery({ queryKey: qk.queue(department), queryFn: () => api.queue(department || undefined), refetchInterval: 20_000 });
   const qc = useQueryClient();
@@ -104,7 +106,21 @@ export function QueuePage() {
 
   return (
     <>
-      <PageTitle title="Work queue" subtitle="Applications awaiting action, oldest first" />
+      <PageTitle
+        title="Work queue"
+        subtitle="Applications awaiting action, oldest first"
+        action={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<BookOpen size={14} className="text-primary" />}
+            onClick={() => setGuideOpen(true)}
+          >
+            How mechanisms work
+          </Button>
+        }
+      />
+      <MechanismExplainerModal open={guideOpen} onClose={() => setGuideOpen(false)} initialTab="registration" />
       <Card className="mb-3 flex flex-wrap items-end gap-3 p-3">
         <Field label="Department" htmlFor="q-dept" className="w-44">
           <Select id="q-dept" value={department} onChange={(e) => setDept(e.target.value)} disabled={user?.role === 'officer'}>

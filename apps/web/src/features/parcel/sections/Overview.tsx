@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertOctagon, AlertTriangle, BadgeCheck, CheckCircle2, ClipboardCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2, XCircle } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, ArrowRight, BadgeCheck, CheckCircle2, ClipboardCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2, XCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ParcelCDM } from '@/lib/cdm';
 import { api, qk } from '@/lib/api';
@@ -183,6 +183,25 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
         </div>
       )}
 
+      {p.status.pending_mutation && (
+        <div className="rounded-xl border border-amber/40 bg-amber-soft/40 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start gap-2">
+            <Clock size={16} className="text-amber mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-ink">Title Mutation in Progress</p>
+              <p className="text-ink-3 text-[11.5px]">
+                An upstream deed registration has triggered a pending mutation application awaiting Revenue Officer review.
+              </p>
+            </div>
+          </div>
+          <Link to="/officer/queue" search={{}}>
+            <Button size="sm" variant="secondary" icon={<ArrowRight size={13} />} className="border-amber/50 text-amber hover:bg-amber-soft shrink-0">
+              Review in Work Queue
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {(!p.consistency.area_match || !p.consistency.owner_match || issues.length > 0) && (
         <Callout tone="amber" title={`Cross-department inconsistency${issues.length > 1 ? ' · ' + issues.length + ' fields' : ''}`}>
           <ul className="list-disc pl-4">
@@ -206,15 +225,24 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
 
       {p.alerts.filter((a) => a.status !== 'resolved').length > 0 && (
         <div>
-          <SectionTitle>Open alerts</SectionTitle>
-          <ul className="flex flex-col gap-1">
+          <div className="flex items-center justify-between mb-1.5">
+            <SectionTitle>Open alerts</SectionTitle>
+            <Link to="/officer/alerts" className="text-xs text-primary underline-offset-2 hover:underline">
+              View all alerts →
+            </Link>
+          </div>
+          <ul className="flex flex-col gap-1.5">
             {p.alerts.filter((a) => a.status !== 'resolved').map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-2 rounded-md border border-line px-2.5 py-1.5 text-sm">
+              <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-line bg-panel p-2 text-xs">
                 <span className="flex items-center gap-2">
                   <Badge tone={a.severity === 'high' ? 'brick' : 'amber'}>{titleCase(a.kind)}</Badge>
-                  {a.title}
+                  <span className="font-medium text-ink">{a.title}</span>
                 </span>
-                <span className="text-xs text-ink-3">{a.status}</span>
+                <Link to="/officer/alerts">
+                  <Button size="sm" variant="ghost" className="text-xs text-primary py-0.5 px-2 shrink-0">
+                    Inspect →
+                  </Button>
+                </Link>
               </li>
             ))}
           </ul>

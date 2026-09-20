@@ -1,55 +1,55 @@
 @import 'tailwindcss';
 @import 'maplibre-gl/dist/maplibre-gl.css';
 
-/* ---------- Design tokens (light theme matched to Karthik's template) ---------- */
+/* ---------- Design tokens (Warm Sandstone & Heritage Forest Green) ---------- */
 :root {
-  --ground: #f5f5f7;
-  --ground-2: #e8e8ed;
-  --panel: #ffffff;
-  --panel-2: #fafafc;
-  --line: #d2d2d7;
-  --line-strong: #aeaeb2;
-  --ink: #1d1d1f;
-  --ink-2: #515154;
-  --ink-3: #86868b;
-  --primary: #0e6b54;
-  --primary-ink: #ffffff;
-  --primary-soft: #dff0e9;
-  --amber: #9a6b12;
-  --amber-soft: #f6ead0;
-  --brick: #a63a2b;
-  --brick-soft: #f5dcd7;
-  --violet: #6b4e9a;
-  --violet-soft: #e8e0f3;
-  --slate: #2f5d9e;
-  --slate-soft: #dbe5f4;
-  --focus: #0e6b54;
-  --shadow: 0 1px 2px rgb(29 35 32 / 0.06), 0 8px 24px -12px rgb(29 35 32 / 0.18);
+  --ground: #F5F2EB;
+  --ground-2: #EBE6DC;
+  --panel: #FCFAF6;
+  --panel-2: #F2ECE2;
+  --line: #E2DDD3;
+  --line-strong: #CDC5B4;
+  --ink: #1A1D1A;
+  --ink-2: #525853;
+  --ink-3: #7D857F;
+  --primary: #183B2B;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #E3ECE6;
+  --amber: #B0781C;
+  --amber-soft: #FAF1DE;
+  --brick: #A83C2F;
+  --brick-soft: #FBE8E5;
+  --violet: #5F4B7D;
+  --violet-soft: #F0EBF8;
+  --slate: #2C4C64;
+  --slate-soft: #E5EEF5;
+  --focus: #183B2B;
+  --shadow: 0 2px 4px rgb(40 36 28 / 0.04), 0 12px 28px -8px rgb(40 36 28 / 0.08);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --ground: #0f172a;
-    --ground-2: #16203a;
-    --panel: #1b2437;
-    --panel-2: #202b42;
-    --line: #2b3547;
-    --line-strong: #46536b;
-    --ink: #f8fafc;
-    --ink-2: #b8c0cc;
-    --ink-3: #8b94a3;
-    --primary: #4fc39f;
-    --primary-ink: #0d1f19;
-    --primary-soft: #173a31;
-    --amber: #d9a441;
-    --amber-soft: #3a2f16;
-    --brick: #e0705f;
-    --brick-soft: #3f1f1a;
-    --violet: #ab93d6;
-    --violet-soft: #2c2440;
-    --slate: #7ea6e0;
-    --slate-soft: #1c2a3d;
-    --focus: #4fc39f;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    --ground: #121714;
+    --ground-2: #18201B;
+    --panel: #1D2621;
+    --panel-2: #242E28;
+    --line: #2D3932;
+    --line-strong: #425248;
+    --ink: #F5F3EF;
+    --ink-2: #B6C0B9;
+    --ink-3: #839188;
+    --primary: #52B788;
+    --primary-ink: #0A1C13;
+    --primary-soft: #1B3B2B;
+    --amber: #D9A441;
+    --amber-soft: #3A2F16;
+    --brick: #E0705F;
+    --brick-soft: #3F1F1A;
+    --violet: #AB93D6;
+    --violet-soft: #2C2440;
+    --slate: #7EA6E0;
+    --slate-soft: #1C2A3D;
+    --focus: #52B788;
+    --shadow: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.6);
   }
 }
 
@@ -78,11 +78,20 @@
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'IBM Plex Sans', Inter, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --shadow-panel: var(--shadow);
-  --radius-lg: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 }
 
 /* ---------- Base ---------- */
+html, body { min-height: 100%; }
 html, body, #root { height: 100%; }
+/* Allow natural window scrolling when on the cinematic landing page */
+html:has(.landing-scope),
+body:has(.landing-scope),
+body:has(.landing-scope) #root {
+  height: auto;
+  min-height: 100%;
+}
 body {
   margin: 0;
   background: var(--ground);
@@ -92,12 +101,12 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.015em; }
 code, kbd, .mono { font-family: var(--font-mono); }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
-::selection { background: var(--primary-soft); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+::selection { background: var(--primary-soft); color: var(--primary); }
 
-/* subtle topographic grain on the ground */
+/* subtle warm grain */
 .ground-texture {
   background-color: var(--ground);
   background-image:
@@ -105,9 +114,7 @@ code, kbd, .mono { font-family: var(--font-mono); }
     linear-gradient(90deg, var(--line) 1px, transparent 1px);
   background-size: 32px 32px;
   background-position: -1px -1px;
-  background-blend-mode: multiply;
 }
-.ground-texture::before { content: ''; }
 
 /* hatch for disputed status (never colour-only) */
 .hatch-brick {
@@ -117,11 +124,68 @@ code, kbd, .mono { font-family: var(--font-mono); }
   background-image: repeating-linear-gradient(45deg, var(--violet) 0 2px, transparent 2px 7px);
 }
 
-/* maplibre chrome overrides */
-.maplibregl-ctrl-group { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.maplibregl-ctrl-group button + button { border-top-color: var(--line); }
-.maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--ink-2); font-size: 11px; }
-.maplibregl-ctrl-attrib a { color: var(--ink); }
+/* Map Controls (Zoom +/- and Attribution) */
+.maplibregl-ctrl-bottom-right {
+  position: absolute !important;
+  bottom: 2rem !important; /* bottom-8 */
+  right: 1rem !important;  /* right-4 */
+  z-index: 40 !important;
+  pointer-events: auto !important;
+  margin: 0 !important;
+}
+
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+  margin: 0 !important;
+}
+
+.maplibregl-ctrl-group {
+  background: rgba(244, 241, 231, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid #D5D2C7 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(24, 35, 31, 0.08) !important;
+  overflow: hidden !important;
+}
+
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+  color: #18231F !important;
+  border-bottom: 1px solid rgba(213, 210, 199, 0.6) !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background-color: #E9E5D8 !important;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgba(244, 241, 231, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid #D5D2C7 !important;
+  border-radius: 8px !important;
+  color: #4B5345 !important;
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  margin: 4px !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #176B52 !important;
+}
+
+.maplibregl-ctrl-scale {
+  background: rgba(244, 241, 231, 0.85) !important;
+  border-color: #18231F !important;
+  color: #18231F !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+}
+
 .maplibregl-canvas:focus-visible { outline: none; }
 
 /* thin scrollbars for panels */
@@ -131,42 +195,114 @@ code, kbd, .mono { font-family: var(--font-mono); }
   0% { transform: scale(0.8); opacity: 0.9; }
   100% { transform: scale(1.8); opacity: 0; }
 }
-@keyframes fade-up { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none; } }
-.fade-up { animation: fade-up 160ms ease-out both; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none; } }
+.fade-up { animation: fade-up 180ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* ---------- Cinematic landing (Karthik's template, light) ---------- */
+/* 21st.dev Border Beam Animation */
+@keyframes border-beam {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+.animate-border-beam {
+  animation: border-beam var(--duration, 8s) infinite linear;
+}
+
+/* 21st.dev Shimmer Text Animation */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--primary) 0%,
+    var(--primary) 35%,
+    #D1A654 50%,
+    var(--primary) 65%,
+    var(--primary) 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer 6s ease-in-out infinite;
+}
+
+/* 21st.dev Marquee Horizontal Scroll Animation */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--gap, 1.25rem)));
+  }
+}
+
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - var(--gap, 1.25rem)));
+  }
+}
+
+.animate-marquee {
+  animation: marquee var(--duration, 30s) linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical var(--duration, 30s) linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-vertical {
+    animation-play-state: paused;
+  }
+}
+
+/* ---------- Brand & Top Dock ---------- */
 .brand-wordmark {
-  font-family: 'Monument Extended', 'Akira Expanded', 'Druk Wide', var(--font-display), sans-serif;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.04em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
 [data-dock-item] {
-  transition: none !important;
-  will-change: width, height, transform;
+  transition: all 180ms ease !important;
+  will-change: transform;
   flex-shrink: 0;
 }
 
 .atd-modern__bar { position: relative; z-index: 9999; }
 
 .atd-modern__dock {
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(252, 250, 246, 0.85);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--line);
   border-radius: 100px;
-  box-shadow: 0 24px 48px -18px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: 0 16px 36px -12px rgba(40, 36, 28, 0.1);
   align-items: center;
-  padding: 6px;
+  padding: 4px;
   margin: 0 auto;
 }
 
 .atd-modern__item {
-  transition: none !important;
-  will-change: width, height, transform;
-  flex-shrink: 0;
   border-radius: 100px;
   display: inline-flex;
   align-items: center;
@@ -174,70 +310,41 @@ code, kbd, .mono { font-family: var(--font-mono); }
 }
 
 .atd-modern__item:hover {
-  background: rgba(0, 0, 0, 0.04);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  background: var(--ground-2);
+  color: var(--ink);
 }
 
 @media (max-width: 767px) {
   .atd-modern__dock { display: none; }
 }
 
-/* Highlighted "enter the app" CTA — soft emerald pulse ring. */
+/* Highlighted "enter the app" CTA */
 @keyframes cta-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(14 107 84 / 0.38); }
-  55% { box-shadow: 0 0 0 12px rgb(14 107 84 / 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgb(24 59 43 / 0.35); }
+  55% { box-shadow: 0 0 0 10px rgb(24 59 43 / 0); }
 }
-.cta-glow { animation: cta-pulse 2.6s ease-out infinite; }
+.cta-glow { animation: cta-pulse 3s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .cta-glow { animation: none; }
 }
 
 /* Anchored landing sections stop below the floating dock. */
-.landing-section { scroll-margin-top: 96px; }
+.landing-section { scroll-margin-top: 88px; }
 
-/* The cinematic landing is committed-light (the "poster"); the app is the "tool".
-   This scope pins the shared tokens to their light values so landing components can
-   use the same token vocabulary (text-ink, bg-panel, border-line, bg-primary…)
-   without picking up dark mode. One palette, two temperaments. */
+/* Warm Sandstone & Forest Green landing scope */
 .landing-scope {
-  --ground: #f5f5f7;
-  --ground-2: #ececf0;
-  --panel: #ffffff;
-  --panel-2: #fbfbfd;
-  --line: #e5e5ea;
-  --line-strong: #c7c7cc;
-  --ink: #1d1d1f;
-  --ink-2: #515154;
-  --ink-3: #6e6e73;
-  --primary: #0e6b54;
-  --primary-ink: #ffffff;
-  --primary-soft: #dff0e9;
-}
-
-/* Landing bento micro-animations — tiny, contained, and off under reduced motion. */
-@keyframes bento-scan {
-  0% { top: 8%; opacity: 0; }
-  12% { opacity: 1; }
-  88% { opacity: 1; }
-  100% { top: 88%; opacity: 0; }
-}
-.bento-scanline { animation: bento-scan 3.2s ease-in-out infinite; }
-@keyframes bento-meter {
-  0%, 100% { width: 22%; }
-  50% { width: 68%; }
-}
-.bento-meter { animation: bento-meter 3.6s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .bento-scanline, .bento-meter { animation: none; }
-  .bento-meter { width: 45%; }
-}
-
-/* Map-launch transition overlay: strong page blur + a small centred loader. */
-@keyframes launch-in { from { opacity: 0; } to { opacity: 1; } }
-.map-launch-overlay { animation: launch-in 220ms ease-out both; }
-@keyframes launch-bar {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
+  --ground: #F5F2EB;
+  --ground-2: #EBE6DC;
+  --panel: #FCFAF6;
+  --panel-2: #F2ECE2;
+  --line: #E2DDD3;
+  --line-strong: #CDC5B4;
+  --ink: #1A1D1A;
+  --ink-2: #525853;
+  --ink-3: #7D857F;
+  --primary: #183B2B;
+  --primary-ink: #FFFFFF;
+  --primary-soft: #E3ECE6;
 }
 
 /* Gentle cross-page transition: re-applied on every route change (no remount). */
@@ -245,13 +352,14 @@ code, kbd, .mono { font-family: var(--font-mono); }
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
-.route-fade { animation: route-fade 240ms ease-out both; }
+.route-fade { animation: route-fade 200ms ease-out both; }
 @media (prefers-reduced-motion: reduce) {
   .route-fade { animation: none; }
 }
 
-/* Dock scrollspy: the section currently in view gets a quiet filled pill. */
+/* Dock scrollspy */
 .atd-modern__item[data-active='true'] {
-  background: rgba(14, 107, 84, 0.1);
-  color: #0e6b54;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
 }

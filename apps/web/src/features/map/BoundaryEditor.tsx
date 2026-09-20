@@ -96,27 +96,27 @@ export function BoundaryPanel() {
   };
 
   return (
-    <div className="absolute bottom-4 left-1/2 z-20 w-[420px] max-w-[92vw] -translate-x-1/2 rounded-lg border border-violet/40 bg-panel/95 shadow-panel backdrop-blur">
-      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
-        <PenLine size={15} className="text-violet" />
-        <p className="text-sm font-semibold">Boundary correction · {edit.survey_no ? `Sy. ${edit.survey_no}` : edit.ulpin}</p>
-        <button type="button" aria-label="Cancel boundary edit" onClick={() => { cancel(); setResult(null); }} className="ml-auto rounded p-1 text-ink-3 hover:bg-ground-2 hover:text-ink">
+    <div className="absolute bottom-4 left-1/2 z-20 w-[420px] max-w-[92vw] -translate-x-1/2 rounded-2xl border border-[#D5D2C7]/50 bg-[#F4F1E7]/40 text-[#18231F] shadow-[0_8px_32px_rgba(24,35,31,0.08)] backdrop-blur-xl">
+      <div className="flex items-center gap-2 border-b border-[#D5D2C7]/50 px-3 py-2.5">
+        <PenLine size={15} className="text-[#176B52]" />
+        <p className="text-sm font-semibold text-[#18231F]">Boundary correction · {edit.survey_no ? `Sy. ${edit.survey_no}` : edit.ulpin}</p>
+        <button type="button" aria-label="Cancel boundary edit" onClick={() => { cancel(); setResult(null); }} className="ml-auto rounded-lg p-1 text-[#6F7768] hover:bg-[#E9E5D8]/60 hover:text-[#18231F] transition-colors cursor-pointer">
           <X size={15} />
         </button>
       </div>
       <div className="flex flex-col gap-2.5 p-3">
-        <p className="text-[12px] text-ink-2">
+        <p className="text-[12px] text-[#6F7768]">
           Drag the violet vertices to the corrected boundary. Bounded edit: ±15% area, no overlaps, inside the village limit. Approval by a second officer applies it.
         </p>
         {result && (
-          <ul className="flex flex-col gap-1 rounded-md border border-line bg-panel-2 p-2">
+          <ul className="flex flex-col gap-1 rounded-xl border border-[#D5D2C7]/50 bg-[#E9E5D8]/40 p-2 text-[#18231F]">
             {result.checks.map((c) => (
               <li key={c.name} className="flex items-start gap-1.5 text-[12px]">
-                {c.ok ? <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-primary" /> : <XCircle size={13} className="mt-0.5 shrink-0 text-brick" />}
+                {c.ok ? <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-[#176B52]" /> : <XCircle size={13} className="mt-0.5 shrink-0 text-brick" />}
                 <span><span className="font-medium">{c.name.replace(/_/g, ' ')}</span> — {c.detail}</span>
               </li>
             ))}
-            <li className="mt-0.5 text-[11.5px] text-ink-3">
+            <li className="mt-0.5 text-[11.5px] text-[#6F7768]">
               Area {result.metrics.old_area_sqm.toFixed(0)} → {result.metrics.new_area_sqm.toFixed(0)} m² ({result.metrics.delta_pct > 0 ? '+' : ''}{result.metrics.delta_pct}%)
             </li>
           </ul>

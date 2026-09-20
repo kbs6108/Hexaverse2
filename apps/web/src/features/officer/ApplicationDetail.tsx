@@ -8,12 +8,13 @@ import type { NextAction, Objection, ParcelCDM } from '@/lib/cdm';
 import { Drawer } from '@/components/Drawer';
 import { Button } from '@/components/Button';
 import { Field, Textarea } from '@/components/Field';
+import { Badge } from '@/components/Badge';
 import { Loading } from '@/components/Spinner';
 import { ErrorNote } from '@/components/EmptyState';
 import { KV, SectionTitle } from '@/components/Section';
 import { toast } from '@/components/Toast';
 import { fallbackActions, StatusBadge, StatusTimeline } from './ApplicationBits';
-import { fmtDate, titleCase } from '@/lib/format';
+import { fmtArea, fmtDate, titleCase } from '@/lib/format';
 import { statusChips } from '@/components/StatusChip';
 import { useAuth } from '@/lib/auth';
 
@@ -23,7 +24,7 @@ type EvidenceRow = { tone: 'ok' | 'warn' | 'bad'; text: string; source: string }
 const fmtINR = (n: number) => `₹${n.toLocaleString('en-IN')}`;
 
 /** Auto-assembled decision evidence: everything the aggregated CDM already knows,
- *  flattened to per-source lines so the officer never has to open six systems. */
+ *  assembled without the officer chasing six paper files. */
 function evidenceRows(p: ParcelCDM, appType: string): EvidenceRow[] {
   const rows: EvidenceRow[] = [];
   const reg = p.rights.registration;
@@ -33,7 +34,7 @@ function evidenceRows(p: ParcelCDM, appType: string): EvidenceRow[] {
   if (ror) {
     rows.push({
       tone: 'ok',
-      text: `RoR: khata ${ror.khata_no ?? '—'} · ${ror.classification ?? '—'} · ${ror.extent_sqm ?? '—'} m² (${ror.ownership_type ?? '—'})`,
+      text: `RoR: khata ${ror.khata_no ?? '—'} · ${ror.classification ?? '—'} · ${fmtArea(ror.extent_sqm)} (${ror.ownership_type ?? '—'})`,
       source: 'revenue',
     });
   }
@@ -133,6 +134,95 @@ function PrecheckLine({ pc }: { pc: unknown }) {
   return <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-ground-2 p-2 font-mono text-[11px] text-ink-2">{JSON.stringify(pc, null, 2)}</pre>;
 }
 
+function StatutoryImpactCard({ app, pending }: { app: { type: string; status: string; payload: Record<string, unknown>; assigned_department: string; id: string }; pending: NextAction | null }) {
+  const isTerminalApproval = pending?.to_status === 'approved' || pending?.to_status === 'resolved';
+  const toOwner = (app.payload?.to_owner || app.payload?.new_owner_name || app.payload?.nominee_name || app.payload?.applicant_name) as string | undefined;
+
+  let title = 'Statutory Record Impact Upon Approval';
+  let details: { dept: string; impact: string; records: string }[] = [];
+
+  if (app.type === 'mutation' || app.type === 'succession') {
+    details = [
+      {
+        dept: 'Revenue Department (RoR / Jamabandi / Patta)',
+        impact: `Confers legal ownership title to ${toOwner ? `“${toOwner}”` : 'the claimant'}`,
+        records: 'dept_revenue.ror · Updates owner_name, issues new mutation entry, clears pending mutation flag',
+      },
+      {
+        dept: 'Cadastral & Common Data Model',
+        impact: 'Synchronizes Master Parcel Registry across all state portals',
+        records: 'landstack.parcels & CDM cache invalidated and updated in real-time',
+      },
+    ];
+  } else if (app.type === 'boundary_correction') {
+    details = [
+      {
+        dept: 'Survey & Land Records (GIS)',
+        impact: 'Commits high-precision PostGIS polygon coordinates to official Cadastral map',
+        records: 'landstack.parcels.geom · Replaces boundary vertices after 5 spatial topology checks',
+      },
+      {
+        dept: 'Revenue Department (Extent)',
+        impact: 'Synchronizes updated land area with revenue Record of Rights',
+        records: 'dept_revenue.ror.extent_sqm updated via POST /revenue/extent',
+      },
+    ];
+  } else if (app.type === 'building_permission') {
+    details = [
+      {
+        dept: 'Urban Planning / Local Body',
+        impact: 'Issues official Building Sanction & construction permission',
+        records: `dept_planning.permissions · Sanctions ${app.payload?.floors ?? 1} floor(s), ${app.payload?.built_up_sqm ?? 0} m²`,
+      },
+    ];
+  } else if (app.type === 'field_review') {
+    details = [
+      {
+        dept: 'Ground Enforcement & Satellite AI',
+        impact: 'Concludes site inspection and dismisses satellite change detection alert',
+        records: 'landstack.alerts marked resolved with officer inspection remarks',
+      },
+    ];
+  } else {
+    details = [
+      {
+        dept: titleCase(app.assigned_department),
+        impact: `Resolves application #${app.id} and records statutory order`,
+        records: 'Audit log & department registers updated',
+      },
+    ];
+  }
+
+  return (
+    <div
+      className={clsx(
+        'rounded-xl border p-3 text-xs space-y-2 transition-all',
+        isTerminalApproval ? 'border-primary/50 bg-primary-soft/40 shadow-xs ring-1 ring-primary/30' : 'border-line bg-ground-1'
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 font-semibold text-ink">
+          <Sparkles size={14} className="text-primary" />
+          {title}
+        </span>
+        <Badge tone={isTerminalApproval ? 'primary' : 'neutral'}>
+          {isTerminalApproval ? 'Approval Target' : 'Record Impact'}
+        </Badge>
+      </div>
+
+      <div className="space-y-1.5">
+        {details.map((d, i) => (
+          <div key={i} className="rounded-lg bg-panel p-2 border border-line/60 space-y-0.5">
+            <span className="font-semibold text-ink text-[11.5px] block">{d.dept}</span>
+            <p className="text-ink-2 font-medium text-[11px]">{d.impact}</p>
+            <p className="font-mono text-[10px] text-ink-3">{d.records}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ApplicationDetail({ id, onClose }: { id: string | null; onClose: () => void }) {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -168,7 +258,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
   });
 
   return (
-    <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-12"
+    <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-14 bottom-0"
       header={
         <div>
           <p className="text-[11px] uppercase tracking-wide text-ink-3">Application</p>
@@ -190,7 +280,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                     { k: 'Survey no.', v: parcel.data.identifiers.survey_no },
                     { k: 'ULPIN', v: app.ulpin, mono: true },
                     { k: 'Owner (RoR)', v: parcel.data.party.owners.map((o) => o.name).join(', ') || '—' },
-                    { k: 'Area', v: `${parcel.data.spatial.area_sqm} m²` },
+                    { k: 'Area / Extent', v: fmtArea(parcel.data.spatial.area_sqm) },
                   ]} />
                   <div className="mt-2 flex flex-wrap gap-1">{statusChips(parcel.data.status)}</div>
                 </>
@@ -236,8 +326,9 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
             </div>
 
             {actions.length > 0 && (
-              <div className="rounded-lg border border-line bg-panel-2 p-3">
+              <div className="rounded-lg border border-line bg-panel-2 p-3 space-y-3">
                 <SectionTitle>Next action</SectionTitle>
+                <StatutoryImpactCard app={app} pending={pending} />
                 {advice.data?.suggested_action && (
                   <div className="mb-2 flex items-start gap-2 rounded-md border border-violet/30 bg-violet-soft/40 px-2.5 py-2 text-[12.5px]">
                     <Sparkles size={14} className="mt-0.5 shrink-0 text-violet" />

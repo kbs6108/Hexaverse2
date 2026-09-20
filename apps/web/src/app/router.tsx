@@ -15,7 +15,6 @@ import { AlertsPage } from '@/features/officer/Alerts';
 import { AdminConsole } from '@/features/admin/AdminConsole';
 import { VerifyPage } from '@/features/verify/VerifyPage';
 import { LoginPage } from '@/features/auth/LoginPage';
-import { LandingPage } from '@/features/marketing/LandingPage';
 import { HelpPage } from '@/features/marketing/HelpPage';
 // Lazy: the cinematic landing carries three.js + framer-motion — keep them out of the
 // first-load chunk for every app page; the landing shows the pending veil while it loads.
@@ -55,7 +54,13 @@ const mapRoute = createRoute({
   validateSearch: (s: Record<string, unknown>): MapSearch => (typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
 });
 
-const welcomeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/welcome', component: LandingPage });
+const welcomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/welcome',
+  beforeLoad: () => {
+    throw redirect({ to: '/' });
+  },
+});
 const helpRoute = createRoute({ getParentRoute: () => rootRoute, path: '/help', component: HelpPage });
 
 const loginRoute = createRoute({

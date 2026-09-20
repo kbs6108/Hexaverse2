@@ -15,10 +15,20 @@ export const fmtVal = (v: unknown): string =>
       : typeof v === 'number'
         ? num.format(v)
         : String(v);
-export const fmtArea = (sqm: number | null | undefined) => {
+export const fmtAcres = (sqm: number | null | undefined): string => {
   if (sqm === null || sqm === undefined) return '—';
+  const acres = sqm / 4046.8564;
+  const str = acres >= 10 ? acres.toFixed(1) : acres >= 0.05 ? acres.toFixed(2) : acres.toFixed(3);
+  return `${str} ${str === '1' || str === '1.0' || str === '1.00' ? 'acre' : 'acres'}`;
+};
+
+export const fmtArea = (sqm: number | null | undefined): string => {
+  if (sqm === null || sqm === undefined) return '—';
+  const acres = sqm / 4046.8564;
   const cents = sqm / 40.4686;
-  return `${num.format(sqm)} m² · ${num.format(cents)} cents`;
+  const acreStr = acres >= 10 ? acres.toFixed(1) : acres >= 0.05 ? acres.toFixed(2) : acres.toFixed(3);
+  const acreLabel = acreStr === '1' || acreStr === '1.0' || acreStr === '1.00' ? 'acre' : 'acres';
+  return `${num.format(sqm)} m² · ${acreStr} ${acreLabel} · ${num.format(cents)} cents`;
 };
 
 export function fmtDate(iso: string | null | undefined, withTime = false): string {

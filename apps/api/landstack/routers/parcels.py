@@ -25,6 +25,46 @@ async def parcel_cdm(
     return await aggregator.get_parcel_cdm(db, ulpin, principal)
 
 
+@router.get("/citizen/my-parcels")
+async def my_parcels(
+    principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Retrieve owned land parcels linked to the authenticated citizen's profile."""
+    name = (principal.name or "").strip()
+    if not name:
+        return {"items": []}
+
+    sql = """
+        SELECT p.ulpin, p.survey_no, p.village, p.state, p.district, p.land_use, p.area_sqm,
+               r.khata_no, r.owner_name, r.ownership_type,
+               ST_X(ST_PointOnSurface(p.geom)) AS lon, ST_Y(ST_PointOnSurface(p.geom)) AS lat,
+               ST_XMin(p.geom) AS minx, ST_YMin(p.geom) AS miny,
+               ST_XMax(p.geom) AS maxx, ST_YMax(p.geom) AS maxy
+        FROM dept_revenue.ror r
+        JOIN landstack.parcels p ON p.ulpin = r.ulpin
+        WHERE r.owner_name ILIKE :like OR similarity(r.owner_name, :name) > 0.5
+        LIMIT 10
+    """
+    rows = await db.fetch(sql, like=f"%{name}%", name=name)
+    items = []
+    for r in rows:
+        items.append({
+            "ulpin": r["ulpin"],
+            "survey_no": r["survey_no"],
+            "village": r["village"],
+            "state": r["state"],
+            "district": r["district"],
+            "land_use": r["land_use"],
+            "area_sqm": float(r["area_sqm"] or 0),
+            "khata_no": r["khata_no"],
+            "owner_name": r["owner_name"],
+            "ownership_type": r["ownership_type"],
+            "centroid": [r["lon"], r["lat"]],
+            "bbox": [r["minx"], r["miny"], r["maxx"], r["maxy"]],
+        })
+    return {"items": items}
+
+
 def _iso(v: Any) -> Any:
     return v.isoformat() if isinstance(v, dt.datetime | dt.date) else v
 

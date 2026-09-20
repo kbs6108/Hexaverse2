@@ -19,7 +19,7 @@ const MAX_BOUNDS: [number, number, number, number] = [55.0, 0.0, 110.0, 40.0];
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
-  const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, drawerOpen, select, setHover } = useUI();
+  const { layers, colourBy, basemap, show3D, selectedUlpin, hoverUlpin, flyTo, select, setHover } = useUI();
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
   const imagery = basemap === 'imagery';
@@ -62,19 +62,22 @@ export function MapView() {
   }, [selectedUlpin, mapStyle]);
 
   /* ---- fly-to requests (search, story chips, deep links) ---- */
+  const lastFlyToNonce = useRef<number | null>(null);
   useEffect(() => {
-    if (!flyTo) return;
+    if (!flyTo || flyTo.nonce === lastFlyToNonce.current) return;
+    lastFlyToNonce.current = flyTo.nonce;
     const m = mapRef.current?.getMap();
     if (!m) return;
     const [w, s, e, n] = flyTo.bbox;
+    const isDrawerOpen = useUI.getState().drawerOpen;
     m.fitBounds(
       [
         [w, s],
         [e, n],
       ],
-      { padding: { top: 80, bottom: 80, left: 380, right: drawerOpen ? 520 : 80 }, maxZoom: 18.5, duration: 900 },
+      { padding: { top: 80, bottom: 80, left: 380, right: isDrawerOpen ? 520 : 80 }, maxZoom: 18.5, duration: 900 },
     );
-  }, [flyTo, drawerOpen]);
+  }, [flyTo]);
 
   /* ---- 3D preview pitch ---- */
   useEffect(() => {

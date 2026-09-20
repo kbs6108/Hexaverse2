@@ -21,12 +21,21 @@ const SUBNAV = [
 export function OfficerLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-5">
-      <nav aria-label="Officer sections" className="mb-4 flex gap-1 border-b border-line">
+    <div className="mx-auto w-full max-w-7xl px-6 py-6">
+      <nav aria-label="Officer sections" className="mb-6 flex gap-2 border-b border-line pb-3">
         {SUBNAV.map((n) => {
           const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
           return (
-            <Link key={n.to} to={n.to} search={{}} aria-current={active ? 'page' : undefined} className={clsx('-mb-px border-b-2 px-3 py-2 text-sm font-medium', active ? 'border-primary text-ink' : 'border-transparent text-ink-3 hover:text-ink')}>
+            <Link
+              key={n.to}
+              to={n.to}
+              search={{}}
+              aria-current={active ? 'page' : undefined}
+              className={clsx(
+                'rounded-full px-4 py-1.5 text-xs font-semibold transition-all shadow-xs',
+                active ? 'bg-primary text-white shadow-sm' : 'border border-line bg-panel text-ink-2 hover:bg-ground-2 hover:text-ink',
+              )}
+            >
               {n.label}
             </Link>
           );
@@ -56,7 +65,7 @@ export function OfficerConsole() {
         { label: 'Disputed', value: fmtNum(s.disputed), icon: Scale, tone: 'text-brick' },
         { label: 'Mortgaged', value: fmtNum(s.mortgaged), icon: Landmark, tone: 'text-violet' },
         { label: 'Tax arrears', value: fmtNum(s.tax_arrears), icon: Receipt, tone: 'text-amber' },
-        { label: 'Pending applications', value: fmtNum(s.pending_applications), icon: Inbox, tone: 'text-slate' },
+        { label: 'Pending apps', value: fmtNum(s.pending_applications), icon: Inbox, tone: 'text-slate' },
         { label: 'Open alerts', value: fmtNum(s.open_alerts), icon: Radar, tone: 'text-brick' },
       ]
     : [];
@@ -79,7 +88,7 @@ export function OfficerConsole() {
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'value', splitLine: { lineStyle: { color: t.line } }, axisLabel: { color: t.ink3 } },
     yAxis: { type: 'category', data: Object.keys(s.applications_by_status).map(titleCase), axisLabel: { color: t.ink }, axisLine: { lineStyle: { color: t.line } } },
-    series: [{ type: 'bar', barMaxWidth: 18, data: Object.entries(s.applications_by_status).map(([k, v]) => ({ value: v, itemStyle: { color: statusColour(k), borderRadius: [0, 3, 3, 0] } })) }],
+    series: [{ type: 'bar', barMaxWidth: 18, data: Object.entries(s.applications_by_status).map(([k, v]) => ({ value: v, itemStyle: { color: statusColour(k), borderRadius: [0, 4, 4, 0] } })) }],
   };
   const alertColour: Record<string, string> = { change_detected: t.brick, inconsistency: t.amber, pending_mutation: t.slate };
   const alerts = s && {
@@ -88,7 +97,7 @@ export function OfficerConsole() {
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: Object.keys(s.alerts_by_kind).map(titleCase), axisLabel: { color: t.ink, interval: 0 }, axisLine: { lineStyle: { color: t.line } } },
     yAxis: { type: 'value', splitLine: { lineStyle: { color: t.line } }, axisLabel: { color: t.ink3 } },
-    series: [{ type: 'bar', barMaxWidth: 36, data: Object.entries(s.alerts_by_kind).map(([k, v]) => ({ value: v, itemStyle: { color: alertColour[k] ?? t.violet, borderRadius: [3, 3, 0, 0] } })) }],
+    series: [{ type: 'bar', barMaxWidth: 36, data: Object.entries(s.alerts_by_kind).map(([k, v]) => ({ value: v, itemStyle: { color: alertColour[k] ?? t.violet, borderRadius: [4, 4, 0, 0] } })) }],
   };
 
   return (
@@ -98,18 +107,20 @@ export function OfficerConsole() {
       {q.isError && <ErrorNote error={q.error} retry={() => void q.refetch()} />}
       {s && (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {kpis.map((k) => (
-              <Card key={k.label} className="px-4 py-3">
-                <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-ink-3"><k.icon size={12} /> {k.label}</div>
-                <p className={clsx('mt-1 font-display text-2xl font-semibold', k.tone)}>{k.value}</p>
-              </Card>
+              <div key={k.label} className="flex flex-col justify-between rounded-2xl border border-line bg-panel p-4 shadow-panel transition hover:border-line-strong">
+                <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-ink-3">
+                  <k.icon size={13} className="text-primary" /> {k.label}
+                </div>
+                <p className={clsx('mt-2 font-display text-2xl font-bold', k.tone)}>{k.value}</p>
+              </div>
             ))}
           </div>
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
-            <Card><CardHeader title="Land use" subtitle="Parcels by current use" /><CardBody><ReactECharts option={donut} style={{ height: 260 }} notMerge /></CardBody></Card>
-            <Card><CardHeader title="Applications by status" /><CardBody><ReactECharts option={bars} style={{ height: 260 }} notMerge /></CardBody></Card>
-            <Card><CardHeader title="Alerts by kind" subtitle="Open + assigned" /><CardBody><ReactECharts option={alerts} style={{ height: 260 }} notMerge /></CardBody></Card>
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <Card className="rounded-2xl border border-line shadow-panel"><CardHeader title="Land use" subtitle="Parcels by current use" /><CardBody><ReactECharts option={donut} style={{ height: 260 }} notMerge /></CardBody></Card>
+            <Card className="rounded-2xl border border-line shadow-panel"><CardHeader title="Applications by status" /><CardBody><ReactECharts option={bars} style={{ height: 260 }} notMerge /></CardBody></Card>
+            <Card className="rounded-2xl border border-line shadow-panel"><CardHeader title="Alerts by kind" subtitle="Open + assigned" /><CardBody><ReactECharts option={alerts} style={{ height: 260 }} notMerge /></CardBody></Card>
           </div>
           {s.open_alerts > 0 && (
             <p className="mt-4 flex items-center gap-2 text-sm text-ink-2">

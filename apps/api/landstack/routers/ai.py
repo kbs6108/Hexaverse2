@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile
 from pydantic import BaseModel, model_validator
 
-from landstack.auth import Principal, require_officer, require_user
+from landstack.auth import Principal, current_principal, require_officer, require_user
 from landstack.config import get_settings
 from landstack.db import DBLike, get_db
 from landstack.errors import AppError
@@ -73,10 +73,12 @@ async def pre_check(
 
 @router.post("/assistant")
 async def assistant(
-    body: AssistantBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+    body: AssistantBody, principal: Principal | None = Depends(current_principal), db: DBLike = Depends(get_db)
 ) -> dict[str, Any]:
     """Bhu-Sahayak chatbot: deterministic intent routing grounded on the caller's own view of
     the records (masked CDM, own applications); the LLM rephrases and answers dynamically with multi-turn context."""
+    if principal is None:
+        principal = Principal(uid="guest", name="Guest Citizen", role="citizen")
     hist = [{"role": h.role, "content": h.content} for h in body.history]
     return await ai_assist.assistant(db, body.message, body.ulpin, principal, history=hist)
 

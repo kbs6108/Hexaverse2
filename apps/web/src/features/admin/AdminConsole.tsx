@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { Activity, CircleCheck, CircleX, RefreshCcw, RotateCcw, Wand2 } from 'lucide-react';
+import { Activity, CircleCheck, CircleX, RefreshCcw, RotateCcw, Wand2, BookOpen, ArrowRight, Clock, Info, CheckCircle2 } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Button } from '@/components/Button';
@@ -14,23 +14,78 @@ import { Badge } from '@/components/Badge';
 import { toast } from '@/components/Toast';
 import { fmtDate, fmtVal, relTime, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
+import { MechanismExplainerModal } from '@/components/MechanismExplainerModal';
+
+const TABS = [
+  { id: 'all', label: 'All sections' },
+  { id: 'connectors', label: 'Connectors' },
+  { id: 'consistency', label: 'Consistency audit' },
+  { id: 'adapters', label: 'Adapter mappings' },
+  { id: 'tools', label: 'Simulate & Reset' },
+] as const;
 
 export function AdminConsole() {
   const search = useSearch({ strict: false }) as { ulpin?: string };
+  const [tab, setTab] = useState<'all' | 'connectors' | 'consistency' | 'adapters' | 'tools'>('all');
+  const [guideOpen, setGuideOpen] = useState(false);
+
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-5">
-      <PageTitle title="Admin & integration console" subtitle="Connector health, adapter mappings, consistency findings and demo controls" />
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-4">
-          <Connectors />
-          <Consistency />
-          <Adapters />
+    <div className="mx-auto w-full max-w-7xl px-6 py-6">
+      <PageTitle
+        title="Admin & integration console"
+        subtitle="Connector health, adapter mappings, consistency findings and demo controls"
+        action={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<BookOpen size={14} className="text-primary" />}
+            onClick={() => setGuideOpen(true)}
+          >
+            How mechanisms work
+          </Button>
+        }
+      />
+      <MechanismExplainerModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+      
+      <nav aria-label="Admin console sections" className="mb-6 flex flex-wrap gap-2 border-b border-line pb-3">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={clsx(
+              'rounded-full px-4 py-1.5 text-xs font-semibold transition-all shadow-xs',
+              tab === t.id ? 'bg-primary text-white shadow-sm' : 'border border-line bg-panel text-ink-2 hover:bg-ground-2 hover:text-ink',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      {tab === 'all' && (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-5">
+            <Connectors />
+            <Consistency />
+            <Adapters />
+          </div>
+          <div className="flex flex-col gap-5">
+            <SimulateDeed initialUlpin={search.ulpin ?? ''} />
+            <DemoReset />
+          </div>
         </div>
-        <div className="flex flex-col gap-4">
+      )}
+
+      {tab === 'connectors' && <div className="max-w-4xl"><Connectors /></div>}
+      {tab === 'consistency' && <Consistency />}
+      {tab === 'adapters' && <Adapters />}
+      {tab === 'tools' && (
+        <div className="grid max-w-4xl gap-5 sm:grid-cols-2">
           <SimulateDeed initialUlpin={search.ulpin ?? ''} />
           <DemoReset />
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -130,18 +185,29 @@ function Adapters() {
 function SimulateDeed({ initialUlpin }: { initialUlpin: string }) {
   const [ulpin, setUlpin] = useState(initialUlpin);
   const [claimant, setClaimant] = useState('');
+  const [showRaw, setShowRaw] = useState(false);
   const qc = useQueryClient();
+  const queueQ = useQuery({ queryKey: qk.queue(), queryFn: () => api.queue(), staleTime: 10_000 });
   const m = useMutation({
     mutationFn: () => api.simulateDeed(ulpin.trim(), claimant.trim()),
     onSuccess: () => {
       toast.success('Deed registered upstream', 'Registration → outbox → gateway event → system-initiated mutation');
       void qc.invalidateQueries({ queryKey: ['queue'] });
+      void qc.invalidateQueries({ queryKey: ['alerts'] });
       void qc.invalidateQueries({ queryKey: ['parcel', ulpin.trim()] });
       void qc.invalidateQueries({ queryKey: qk.consistency() });
     },
     onError: (e: Error) => toast.error('Simulation failed', e.message),
   });
   const submit = (e: FormEvent) => { e.preventDefault(); m.mutate(); };
+
+  const simResult = m.data as { item?: { doc_no?: string; executant?: string; claimant?: string; ulpin?: string } } | undefined;
+  const item = simResult?.item;
+  const docNo = item?.doc_no || 'DOC-registered';
+  const executantName = item?.executant || 'Previous Owner';
+  const claimantName = item?.claimant || claimant.trim();
+  const activeApp = queueQ.data?.find((a) => a.ulpin === ulpin.trim() && a.type === 'mutation');
+
   return (
     <Card>
       <CardHeader title="Simulate upstream change" subtitle="Registers a sale deed in the Registration system for a new claimant; watch the event create a pending mutation and an owner-mismatch finding." />
@@ -151,7 +217,98 @@ function SimulateDeed({ initialUlpin }: { initialUlpin: string }) {
           <Field label="Claimant (new owner)" htmlFor="sim-claimant"><Input id="sim-claimant" required value={claimant} onChange={(e) => setClaimant(e.target.value)} placeholder="Lakshmi Devi" /></Field>
           {m.isError && <ErrorNote error={m.error} />}
           <Button type="submit" variant="primary" icon={<Wand2 size={15} />} loading={m.isPending} className="self-start">Register deed</Button>
-          {m.data && <pre className="max-h-40 overflow-auto rounded-md bg-ground-2 p-2 font-mono text-[11px] text-ink-2">{JSON.stringify(m.data, null, 2)}</pre>}
+          
+          {m.data && (
+            <div className="mt-2 rounded-xl border border-primary/30 bg-ground-1 p-3.5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <CheckCircle2 size={15} />
+                  <span>Upstream Event Pipeline Triggered</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRaw(!showRaw)}
+                  className="text-[11px] text-ink-3 hover:text-ink underline cursor-pointer"
+                >
+                  {showRaw ? 'Hide raw JSON' : 'Raw JSON'}
+                </button>
+              </div>
+
+              {/* Step 1: Sub-Registrar Deed */}
+              <div className="flex items-start gap-2.5 text-xs">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-panel border border-line text-ink font-semibold text-[10.5px]">1</span>
+                <div>
+                  <p className="font-semibold text-ink">Sale Deed Registered (IGRS Sub-Registrar)</p>
+                  <p className="text-ink-3 text-[11px]">
+                    Document <span className="font-mono text-ink font-medium">{docNo}</span> recorded for claimant <span className="font-medium text-ink">{claimantName}</span> from seller <span className="font-medium text-ink">{executantName}</span>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2: Gateway Event */}
+              <div className="flex items-start gap-2.5 text-xs">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-panel border border-line text-ink font-semibold text-[10.5px]">2</span>
+                <div>
+                  <p className="font-semibold text-ink">Land Stack Gateway Ingestion & RoR Mismatch</p>
+                  <p className="text-ink-3 text-[11px]">
+                    Event <span className="font-mono text-violet font-medium">registration.deed_registered</span> ingested. Title divergence confirmed: RoR shows <span className="font-medium text-ink">{executantName}</span> ≠ Deed shows <span className="font-medium text-ink">{claimantName}</span>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3: Alert Raised */}
+              <div className="flex items-start gap-2.5 text-xs">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-amber-soft border border-amber/40 text-amber font-semibold text-[10.5px]">3</span>
+                <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-ink">Pending Mutation Alert Raised</p>
+                    <p className="text-ink-3 text-[11px]">Alert notification placed in Officer console.</p>
+                  </div>
+                  <Link to="/officer/alerts">
+                    <Button size="sm" variant="secondary" icon={<Clock size={13} />}>
+                      View in Alerts
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Step 4: System-Initiated Mutation Application */}
+              <div className="flex items-start gap-2.5 text-xs">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary-soft border border-primary/40 text-primary font-semibold text-[10.5px]">4</span>
+                <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-ink">
+                      Mutation Application Created in Queue
+                      {activeApp && <span className="ml-1 font-mono text-[11px] text-primary">({activeApp.id})</span>}
+                    </p>
+                    <p className="text-ink-3 text-[11px]">Awaiting Revenue Officer scrutiny & statutory approval.</p>
+                  </div>
+                  <Link to="/officer/queue" search={{ ...(activeApp ? { app: activeApp.id } : {}) }}>
+                    <Button size="sm" variant="primary" icon={<ArrowRight size={13} />}>
+                      Open in Work Queue
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Mechanism Explanation Callout */}
+              <div className="rounded-lg border border-amber/30 bg-amber-soft/30 p-2.5 text-[11.5px] text-ink-2 space-y-1">
+                <p className="font-semibold text-ink flex items-center gap-1.5">
+                  <Info size={13} className="text-amber" /> Real-World Mechanism Context
+                </p>
+                <p className="text-ink-3 leading-relaxed">
+                  Notice that the deed is registered, but the <strong>Record of Rights (RoR) title has not mutated yet</strong>. In statutory land administration, only the Revenue Department can confer legal title.
+                  Click <strong>“Open in Work Queue”</strong> above, review the evidence, and click <strong>Approve</strong> to mutate the title to <strong>{claimantName}</strong>!
+                </p>
+              </div>
+
+              {showRaw && (
+                <pre className="max-h-40 overflow-auto rounded-md bg-ground-2 p-2 font-mono text-[11px] text-ink-2">
+                  {JSON.stringify(m.data, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
         </form>
       </CardBody>
     </Card>

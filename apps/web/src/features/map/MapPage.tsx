@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { MapView } from './MapView';
 import { LayerPanel } from './LayerPanel';
-import { StoryChips } from './StoryChips';
-import { RegionsPanel } from './RegionsPanel';
 import { BoundaryPanel } from './BoundaryEditor';
 import { ParcelDrawer } from '@/features/parcel/ParcelDrawer';
 import { useUI } from '@/lib/store';
@@ -21,11 +19,11 @@ export function MapPage() {
   }, [ulpin]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full overflow-hidden">
       <MapView />
+
       <LayerPanel />
-      <StoryChips />
-      <RegionsPanel />
+
       <BoundaryPanel />
       <ParcelDrawer onClose={() => select(null)} />
     </div>

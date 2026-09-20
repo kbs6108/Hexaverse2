@@ -91,6 +91,22 @@ tests; web tsc + build). Since the original hand-off the platform gained, in ord
   tokens via `.landing-scope`), landing bento grid + FaintTelemetry hero, docs/help made current
   (8 parcels · 3 states everywhere), performance (landing + OfficerConsole lazy routes: index
   chunk 343→164 kB gz, echarts out of first load; LayerPanel useShallow; queue rows memoized).
+- **Cinematic Header & Limelight Dock** (Sep 2026): Frosted Light Parchment (`#F4F1E7/85`, `backdrop-blur-2xl`),
+  3-tier volumetric limelight spotlight navigation (`#B38A4C` top glow + trapezoidal volumetric beam + text floor glow)
+  mathematically dead-centered (`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`) strictly preserving
+  core routes (`Home`, `Map`, `Citizen`, `Officer`, `Admin`). Smooth popdown fixed search attached under header dock (`⌘K` or `/`),
+  15vh cinematic retraction wipe letterbox toggle, high-contrast Forest Green (`#23483A`) profile pill.
+- **Citizen Owned Parcel Linkage** (Sep 2026): `useMyParcel` hook and `GET /landstack/citizen/my-parcels` mapping
+  citizen accounts (e.g. Ravi Kumar) to their registered land (Sy 123/4, Khata K-0421, ULPIN `TFCM91641E6C82`,
+  Mangalagiri AP). 1-click **"Go to My Parcel"** with animated camera fly-to and drawer auto-open across AccountPanel,
+  CitizenHome quick-launch banner, and pinned green `📍 My Land (123/4)` story chip on `/map`.
+- **Workflow Transparency & Governance Integrity** (Sep 2026):
+  - Admin Console simulation upgraded from raw JSON dump to a 4-stage visual progress pipeline (`Deed Registered` $\to$ `Event Dispatched & Mismatch Caught` $\to$ `Alert Raised` $\to$ `Queue Application Created`) with direct 1-click buttons.
+  - Alerts console enhanced with mechanism clarification banner, explicit microcopy on "Resolve" (dismisses notice), and direct `[Review in Queue (APP-XXXX) →]` buttons on all linked cards.
+  - Work Queue enhanced with upfront `StatutoryImpactCard` previewing exact database table modifications (`dept_revenue.ror`, Khata transfer, PostGIS boundary commit, Planning building sanction) before approval, plus rich post-approval confirmation and live map link.
+  - Parcel Overview drawer features actionable *"Title Mutation in Progress"* callout linking directly to the Queue, plus direct alert inspection buttons.
+  - Interactive multi-tab `MechanismExplainerModal` ("How mechanisms work") accessible across Admin, Alerts, and Queue comparing Indian ground reality with Land Stack automated interoperability.
+  - Backend correlation: enriched `GET /landstack/alerts` with `open_application_id` and `open_application_type` subqueries, and stored `application_id` in alert detail.
 Notable fixed first-run issues: asyncpg `substring(id from :n)` typing, MapLibre nested-zoom
 expressions, Vite dep-optimizer maplibre worker, persisted-layers merge bug, web healthcheck.
 Still open: Neon/Firebase/Cloud Run deployment not yet exercised; WeasyPrint deps on Cloud Run
@@ -98,6 +114,7 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-20 workflow clarity & governance: visual lifecycle pipeline in Admin, linked queue applications in Alerts, upfront statutory record impact preview in Queue, citizen parcel linkage (Sy 123/4 fly-to), dead-center limelight dock, and MechanismExplainerModal.
 - 2026-09-17 readable values everywhere: consistency callout, admin findings, timeline details, report PDF (utilities yes/no, flags humanized, None-safe rows).
 - 2026-09-17 `ae1d829` Bhu-Sahayak chatbot: POST /landstack/ai/assistant (pure intent router + grounded templated replies, LLM rephrase only) + floating launcher in the shell (6 routing tests, 92 total).
 - 2026-09-17 `b187cb3` public notices: GET /notices (15-day statutory window over pending transfers) + POST objections into payload.objections; notice board on the citizen home, objections in the officer drawer.
@@ -125,6 +142,19 @@ unverified.
 
 - **CONTRACTS first.** If you change a column, endpoint, CDM field, header, layer name or env var,
   edit `docs/CONTRACTS.md` in the same commit. Three components depend on it staying true.
+- **Strict Navigation & Routing Rules**: Never alter or rename core application routes (`/`, `/map`,
+  `/citizen`, `/officer`, `/admin`). Visual animations (limelight spotlights, docks) must sit ON TOP
+  of existing authentic routes, never replace them with dummy or unrouted tabs. Header navigation tabs
+  must maintain true dynamic mathematical center alignment (`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`).
+- **Strict Governance Layer Separation (Alerts vs. Applications)**:
+  - **Alerts** are automated detection/sensor flags (`landstack.alerts`). Resolving an alert merely dismisses
+    the notification notice; it has NO statutory authority to modify property titles, extents, or land records.
+  - **Applications** (`landstack.applications`) are legally binding quasi-judicial administrative workflows.
+    Official title mutation and boundary alterations strictly require reviewing and approving applications
+    in the Officer **Work Queue**. UI components must never imply that resolving an alert alters the RoR.
+- **Statutory Side-Effect Transparency**: Application transition buttons must clearly preview the exact
+  database and departmental impacts (RoR owner transfer, PostGIS polygon commit, Building Sanction) before
+  an officer confirms approval. Post-approval confirmation must prominently surface the live record change.
 - Backend SQL is plain `text()` with `:named` params through `landstack/db.py` (`fetch/fetchrow/
   fetchval/execute/transaction`). No ORM models. Migrations are idempotent; add `006_*.sql`, never edit
   applied files.

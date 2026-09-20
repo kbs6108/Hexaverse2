@@ -166,6 +166,10 @@ export interface Alert {
   status: AlertStatus;
   created_at?: string | null;
   assigned_to?: string | null;
+  survey_no?: string | null;
+  village?: string | null;
+  open_application_id?: string | null;
+  open_application_type?: string | null;
 }
 
 export interface ProvenanceOk {

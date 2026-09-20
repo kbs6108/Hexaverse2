@@ -8,6 +8,7 @@ import { ErrorNote } from '@/components/EmptyState';
 import { api, qk } from '@/lib/api';
 import { useUI } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
+import { fmtArea, titleCase } from '@/lib/format';
 import { statusChips } from '@/components/StatusChip';
 import { Overview } from './sections/Overview';
 import { Ownership } from './sections/Ownership';
@@ -62,6 +63,13 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
             {p && <span className="ml-2 text-sm font-normal text-ink-3">{p.identifiers.village}</span>}
           </h2>
           <UlpinLine ulpin={selectedUlpin ?? ''} />
+          {p && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-2">
+              <span className="font-semibold text-primary">{fmtArea(p.spatial.area_sqm)}</span>
+              <span className="text-line-strong">·</span>
+              <span>{titleCase(p.planning.land_use)}</span>
+            </div>
+          )}
           {p && <div className="mt-2 flex flex-wrap gap-1">{statusChips(p.status)}</div>}
         </div>
       }
@@ -74,7 +82,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
       )}
       {p && (
         <>
-          <Tabs ariaLabel="Parcel profile sections" items={TABS} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-panel px-2" />
+          <Tabs ariaLabel="Parcel profile sections" items={TABS} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-[#F4F1E7]/50 backdrop-blur-xl border-b border-[#D5D2C7]/50 px-2" />
           <div className="p-4">
             <TabPanel id="overview" active={tab === 'overview'}><Overview p={p} goTo={setTab} /></TabPanel>
             <TabPanel id="ownership" active={tab === 'ownership'}><Ownership p={p} /></TabPanel>

@@ -24,7 +24,7 @@ export function FiscalSection({ p }: { p: ParcelCDM }) {
         <SectionTitle>Valuation</SectionTitle>
         <KV
           items={[
-            { k: 'Guideline value', v: p.fiscal.guideline_value_per_sqm ? `${fmtINR(p.fiscal.guideline_value_per_sqm)} / m²` : '—' },
+            { k: 'Guideline value', v: p.fiscal.guideline_value_per_sqm ? `${fmtINR(p.fiscal.guideline_value_per_sqm)} / m² (${fmtINR(Math.round(p.fiscal.guideline_value_per_sqm * 4046.8564))} / acre)` : '—' },
             { k: 'Estimated parcel value', v: fmtINR(p.fiscal.estimated_value) },
           ]}
         />

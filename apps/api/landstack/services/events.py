@@ -68,28 +68,13 @@ async def _on_deed_registered(db: DBLike, ulpin: str, payload: dict[str, Any]) -
         "doc_no": payload.get("doc_no"),
         "deed_type": payload.get("deed_type"),
     }
-    existing = await db.fetchval(
-        "SELECT id FROM landstack.alerts WHERE ulpin = :u AND kind = 'pending_mutation' AND status <> 'resolved' LIMIT 1",
-        u=ulpin,
-    )
-    actions = []
-    if not existing:
-        await db.execute(
-            """
-            INSERT INTO landstack.alerts (ulpin, kind, severity, title, detail, status, created_at)
-            VALUES (:u, 'pending_mutation', 'medium', :title, CAST(:detail AS jsonb), 'open', now())
-            """,
-            u=ulpin,
-            title=f"Deed registered to {claimant}; RoR still shows {owner or 'no owner'}",
-            detail=json_dumps(detail),
-        )
-        actions.append("alert_created")
     open_app = await db.fetchval(
         "SELECT id FROM landstack.applications WHERE ulpin = :u AND type = 'mutation' "
         "AND status NOT IN ('approved','rejected') LIMIT 1",
         u=ulpin,
     )
     app_id = open_app
+    actions = []
     if not open_app:
         app = await workflow.create_application(
             db,
@@ -102,6 +87,22 @@ async def _on_deed_registered(db: DBLike, ulpin: str, payload: dict[str, Any]) -
         )
         app_id = app.get("id")
         actions.append("mutation_application_created")
+    detail["application_id"] = app_id
+    existing = await db.fetchval(
+        "SELECT id FROM landstack.alerts WHERE ulpin = :u AND kind = 'pending_mutation' AND status <> 'resolved' LIMIT 1",
+        u=ulpin,
+    )
+    if not existing:
+        await db.execute(
+            """
+            INSERT INTO landstack.alerts (ulpin, kind, severity, title, detail, status, created_at)
+            VALUES (:u, 'pending_mutation', 'medium', :title, CAST(:detail AS jsonb), 'open', now())
+            """,
+            u=ulpin,
+            title=f"Deed registered to {claimant}; RoR still shows {owner or 'no owner'}",
+            detail=json_dumps(detail),
+        )
+        actions.append("alert_created")
     return {
         "claimant_checked": True,
         "ror_owner": owner,
