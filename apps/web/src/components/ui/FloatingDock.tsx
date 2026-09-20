@@ -100,17 +100,17 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
 
       <header
         className={cn(
-          'fixed top-4 left-4 right-4 z-50 mx-auto max-w-5xl flex items-center justify-between px-5 py-2 rounded-full bg-[#F4F1E7]/85 backdrop-blur-2xl border border-[#D5D2C7] shadow-[0_8px_32px_rgba(24,35,31,0.08)] text-[#18231F]',
+          'fixed top-4 left-4 right-4 z-50 mx-auto max-w-5xl grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 rounded-full bg-[#F4F1E7]/85 backdrop-blur-2xl border border-[#D5D2C7] shadow-[0_8px_32px_rgba(24,35,31,0.08)] text-[#18231F]',
           className,
         )}
       >
         {/* Left Branding */}
-        <div className="relative z-10 flex items-center gap-2.5 shrink-0">
+        <div className="relative z-10 flex items-center gap-2.5 justify-start min-w-0">
           <Link
             to="/"
             search={() => ({})}
             onClick={() => useUI.getState().select(null)}
-            className="flex items-center gap-2 hover:opacity-90 transition-opacity select-none"
+            className="flex items-center gap-2 hover:opacity-90 transition-opacity select-none shrink-0"
             aria-label="Land Stack home"
           >
             <LogoMark size={24} />
@@ -120,55 +120,44 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
           </Link>
         </div>
 
-        {/* Dynamic Dead-Center Navigation Dock with 3-Tier Volumetric Limelight Spotlight */}
-        <nav
-          aria-label="Main navigation"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 py-1 z-20 pointer-events-auto"
-        >
-          {navItems.map((item) => {
-            const isActive = currentActiveId === item.id;
-            return (
-              <Link
-                key={item.id}
-                to={item.to as any}
-                search={item.to === '/' ? () => ({}) : undefined}
-                onClick={item.to === '/' ? () => useUI.getState().select(null) : undefined}
-                className={cn(
-                  'relative z-20 px-3.5 py-1.5 text-xs font-bold select-none transition-colors duration-200 outline-none focus-visible:ring-1 focus-visible:ring-[#176B52] rounded-md',
-                  isActive ? 'text-[#18231F]' : 'text-[#6F7768] hover:text-[#18231F]',
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="active-streetlight"
-                    className="absolute inset-0 pointer-events-none -my-2"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  >
-                    {/* 1. Top Lamp Fixture: Sharp Glowing Edge */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-[3px] bg-[#B38A4C] shadow-[0_0_12px_#B38A4C] rounded-full z-20" />
-
-                    {/* 2. Spreading Streetlight Light Cone (Trapezoidal clip-path polygon) */}
-                    <div
-                      className="absolute inset-0 z-10"
-                      style={{
-                        background:
-                          'radial-gradient(ellipse 90% 100% at 50% 0%, rgba(179,138,76,0.42) 0%, rgba(23,107,82,0.18) 60%, transparent 100%)',
-                        clipPath: 'polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%)',
-                      }}
-                    />
-
-                    {/* 3. Soft Bottom Floor & Text Glow */}
-                    <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-[#B38A4C]/35 to-transparent blur-[2px] z-10" />
-                  </motion.div>
-                )}
-                <span className="relative z-30">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Dynamic Dead-Center Navigation Dock */}
+        <div className="flex items-center justify-center">
+          <nav
+            aria-label="Main navigation"
+            className="flex items-center gap-0.5 p-1 rounded-full bg-[#E9E5D8]/75 border border-[#D5D2C7] shadow-2xs"
+          >
+            {navItems.map((item) => {
+              const isActive = currentActiveId === item.id;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.to as any}
+                  search={item.to === '/' ? () => ({}) : undefined}
+                  onClick={item.to === '/' ? () => useUI.getState().select(null) : undefined}
+                  className={cn(
+                    'relative z-20 px-3.5 py-1 text-xs font-bold select-none transition-colors duration-200 outline-none focus-visible:ring-1 focus-visible:ring-[#176B52] rounded-full',
+                    isActive ? 'text-[#18231F]' : 'text-[#6F7768] hover:text-[#18231F]',
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-streetlight"
+                      className="absolute inset-0 bg-[#F4F1E7] border border-[#D5D2C7] shadow-xs rounded-full -z-10"
+                      transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    >
+                      {/* Top Lamp Fixture */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[2px] bg-[#B38A4C] shadow-[0_0_8px_#B38A4C] rounded-full" />
+                    </motion.div>
+                  )}
+                  <span className="relative z-30">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* Right Action Controls */}
-        <div className="relative z-10 flex items-center gap-2 shrink-0 ml-auto">
+        <div className="relative z-10 flex items-center gap-2 justify-end shrink-0">
           {/* Search Popdown Toggle Button with Kbd shortcut */}
           <button
             type="button"
