@@ -28,7 +28,6 @@ import { SectionHeading } from '@/features/marketing/components';
 import { MapLaunch } from './MapLaunch';
 import { SpotlightCard } from '@/components/SpotlightCard';
 import { NumberTicker } from '@/components/NumberTicker';
-import { BorderBeam } from '@/components/BorderBeam';
 import { Marquee } from '@/components/Marquee';
 
 /* =========================================================================
@@ -44,22 +43,22 @@ const STATS_DATA = [
 
 function StatsStrip() {
   return (
-    <section className="border-y border-line bg-panel px-6 py-12 sm:px-12">
-      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 sm:grid-cols-4">
+    <section className="border-y border-line bg-panel py-10">
+      <div className="mx-auto grid max-w-5xl grid-cols-2 divide-x divide-line sm:grid-cols-4 px-4 sm:px-6">
         {STATS_DATA.map((s) => (
           <motion.div
             key={s.label}
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.5 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
+            transition={{ duration: 0.4 }}
+            className="text-center px-3 py-2"
           >
             <p className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-primary">
               <NumberTicker value={s.value} />
               {s.suffix}
             </p>
-            <p className="mt-1.5 text-xs sm:text-sm font-medium text-ink-2">{s.label}</p>
+            <p className="mt-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-ink-3">{s.label}</p>
           </motion.div>
         ))}
       </div>
@@ -82,17 +81,17 @@ const STANDARDS = [
 
 function StandardsMarqueeStrip() {
   return (
-    <div className="border-b border-line bg-panel-2/60 py-3 overflow-hidden">
-      <Marquee duration={28} pauseOnHover={true} gap="1rem">
+    <div className="border-b border-line bg-panel-2/50 py-2.5 overflow-hidden">
+      <Marquee duration={28} pauseOnHover={true} gap="0.75rem">
         {STANDARDS.map((s) => (
           <div
             key={s.title}
-            className="flex items-center gap-2 rounded-full border border-line bg-panel px-3.5 py-1.5 shadow-2xs transition hover:border-primary/40 hover:bg-ground-2"
+            className="flex items-center gap-2 rounded-xs border border-line bg-panel px-3 py-1 text-xs font-mono shadow-2xs transition hover:border-primary/40 hover:bg-ground-2"
           >
-            <span className="size-1.5 rounded-full bg-primary" />
-            <span className="font-display text-xs font-bold text-ink">{s.title}</span>
-            <span className="text-xs text-ink-3">· {s.sub}</span>
-            <span className="rounded-full bg-primary-soft px-1.5 py-0.2 font-mono text-[9.5px] font-semibold text-primary">
+            <span className="size-1.5 rounded-none bg-primary" />
+            <span className="font-bold text-ink">{s.title}</span>
+            <span className="text-ink-3">· {s.sub}</span>
+            <span className="border border-primary/20 bg-primary-soft/50 px-1.5 py-0.5 text-[9.5px] font-bold text-primary uppercase">
               {s.badge}
             </span>
           </div>
@@ -192,57 +191,55 @@ function InteractiveParcelCard() {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-line bg-panel p-6 sm:p-7 shadow-panel">
-      <BorderBeam size={220} duration={8} colorFrom="#176B52" colorTo="#B38A4C" />
-
+    <div className="relative overflow-hidden rounded-sm border border-line bg-panel p-6 sm:p-7 shadow-xs">
       {/* Header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-primary animate-pulse" />
+            <span className="size-2 rounded-none bg-primary" />
             <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-              Live Assembled Cadastral Record
+              Authoritative Cadastral Record · Assembled Live
             </span>
           </div>
           <h3 className="mt-1 font-display text-xl sm:text-2xl font-bold text-ink">
             Survey No. 123/4 · Mangalagiri
           </h3>
-          <p className="text-xs text-ink-3">Village: Mangalagiri · Guntur District · Andhra Pradesh</p>
+          <p className="font-mono text-xs text-ink-3">Village: Mangalagiri · Guntur District · Andhra Pradesh</p>
         </div>
 
         {/* ULPIN Key with copy */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary-soft/40 px-3 py-1.5 shadow-2xs">
+        <div className="flex items-center gap-1.5 rounded-xs border border-primary/30 bg-primary-soft/50 px-2.5 py-1 shadow-2xs">
           <span className="font-mono text-xs font-bold text-primary">TFCM91641E6C82</span>
           <button
             type="button"
             onClick={handleCopy}
-            className="rounded p-1 text-primary/70 hover:text-primary transition-colors cursor-pointer"
+            className="p-1 text-primary/70 hover:text-primary transition-colors cursor-pointer"
             title="Copy 14-digit ULPIN"
             aria-label="Copy ULPIN"
           >
-            {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+            {copied ? <Check size={13} className="text-emerald-700" /> : <Copy size={13} />}
           </button>
         </div>
       </div>
 
       {/* Metrics Row */}
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 font-mono text-xs">
-        <div className="rounded-xl border border-line bg-panel-2/60 p-2.5">
+        <div className="rounded-xs border border-line bg-panel-2/50 p-2.5">
           <span className="text-[10px] uppercase tracking-wide text-ink-3">Total Area</span>
           <p className="font-bold text-ink text-[13px] mt-0.5">13,929.1 m²</p>
           <p className="text-[10.5px] text-ink-2">3.44 acres · 344 cents</p>
         </div>
-        <div className="rounded-xl border border-line bg-panel-2/60 p-2.5">
+        <div className="rounded-xs border border-line bg-panel-2/50 p-2.5">
           <span className="text-[10px] uppercase tracking-wide text-ink-3">Classification</span>
           <p className="font-bold text-ink text-[13px] mt-0.5">Dry Agricultural</p>
           <p className="text-[10.5px] text-ink-2">Passbook Khata #412</p>
         </div>
-        <div className="rounded-xl border border-line bg-panel-2/60 p-2.5">
+        <div className="rounded-xs border border-line bg-panel-2/50 p-2.5">
           <span className="text-[10px] uppercase tracking-wide text-ink-3">DPDP Privacy</span>
           <p className="font-bold text-ink text-[13px] mt-0.5">R*** K***</p>
           <p className="text-[10.5px] text-primary">Masked by default</p>
         </div>
-        <div className="rounded-xl border border-line bg-panel-2/60 p-2.5">
+        <div className="rounded-xs border border-line bg-panel-2/50 p-2.5">
           <span className="text-[10px] uppercase tracking-wide text-ink-3">Overall Status</span>
           <p className="font-bold text-emerald-700 text-[13px] mt-0.5">Clean Title</p>
           <p className="text-[10.5px] text-ink-2">9/9 checks passed</p>
@@ -252,7 +249,7 @@ function InteractiveParcelCard() {
       {/* 6 Department Check Pills */}
       <div className="mt-5">
         <p className="font-mono text-[10.5px] font-bold uppercase tracking-wider text-ink-3 mb-2">
-          Click any department to inspect live source provenance:
+          Click department to inspect source provenance:
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {LIVE_PARCEL_CHECKS.map((c) => {
@@ -264,15 +261,15 @@ function InteractiveParcelCard() {
                 type="button"
                 onClick={() => setActiveCheckId(c.id)}
                 className={clsx(
-                  'flex items-center gap-2 rounded-xl border p-2.5 text-left transition-all cursor-pointer select-none',
+                  'flex items-center gap-2 rounded-xs border p-2.5 text-left transition-all cursor-pointer select-none',
                   isSelected
-                    ? 'border-primary bg-primary-soft/60 shadow-xs ring-1 ring-primary/40'
+                    ? 'border-primary bg-primary-soft/70 shadow-2xs'
                     : 'border-line bg-panel-2/40 hover:bg-panel-2 hover:border-line-strong'
                 )}
               >
                 <span
                   className={clsx(
-                    'flex size-7 shrink-0 items-center justify-center rounded-lg',
+                    'flex size-7 shrink-0 items-center justify-center rounded-xs',
                     isSelected ? 'bg-primary text-white' : 'bg-ground-2 text-ink-2'
                   )}
                 >
@@ -292,15 +289,15 @@ function InteractiveParcelCard() {
       <AnimatePresence mode="wait">
         <motion.div
           key={activeCheck.id}
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.18 }}
-          className="mt-4 rounded-2xl border border-primary/25 bg-panel-2/80 p-4"
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.15 }}
+          className="mt-4 rounded-xs border border-primary/30 bg-panel-2/90 p-4"
         >
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] font-bold text-white">
+              <span className="rounded-xs bg-primary px-2 py-0.5 font-mono text-[10px] font-bold text-white uppercase">
                 {activeCheck.dept}
               </span>
               <span className="text-xs font-bold text-ink">{activeCheck.label}</span>
@@ -312,13 +309,13 @@ function InteractiveParcelCard() {
       </AnimatePresence>
 
       {/* Direct launch link */}
-      <div className="mt-5 flex items-center justify-between pt-2">
-        <span className="text-xs text-ink-3 font-medium">Ready to inspect on the map?</span>
+      <div className="mt-5 flex items-center justify-between border-t border-line/60 pt-3">
+        <span className="font-mono text-xs text-ink-3">Inspect live PostGIS vector:</span>
         <MapLaunch
           ulpin="TFCM91641E6C82"
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-white shadow-2xs hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-xs bg-primary px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-primary/90 active:scale-98 transition-all cursor-pointer"
         >
-          Open Sy. 123/4 in Map Explorer <ArrowRight size={14} />
+          Open Sy. 123/4 in Map Explorer <ArrowRight size={13} />
         </MapLaunch>
       </div>
     </div>
@@ -364,20 +361,20 @@ function ProblemBreakthroughSection() {
               <div
                 key={item.head}
                 className={clsx(
-                  'rounded-2xl border p-4 transition-all',
-                  item.bad ? 'border-line/70 bg-panel/50' : 'border-primary/40 bg-primary-soft/30 shadow-2xs'
+                  'rounded-sm border p-4 transition-all',
+                  item.bad ? 'border-line bg-panel/60' : 'border-primary/40 bg-primary-soft/30 shadow-2xs'
                 )}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={clsx(
-                      'flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                      item.bad ? 'bg-amber-100 text-amber-800' : 'bg-primary text-white'
+                      'flex size-5 shrink-0 items-center justify-center rounded-xs font-mono text-xs font-bold',
+                      item.bad ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-primary text-white'
                     )}
                   >
                     {item.bad ? '✕' : '✓'}
                   </span>
-                  <p className="text-xs font-bold uppercase tracking-wider text-ink">{item.head}</p>
+                  <p className="font-mono text-xs font-bold uppercase tracking-wider text-ink">{item.head}</p>
                 </div>
                 <p className="mt-1.5 pl-7 text-xs sm:text-sm text-ink-2 leading-relaxed">{item.sub}</p>
               </div>
@@ -420,13 +417,13 @@ function DepartmentsSection() {
           {DEPARTMENTS.map((d) => (
             <SpotlightCard
               key={d.key}
-              className="p-6 rounded-2xl border border-line bg-panel shadow-panel hover:border-primary/40 hover:shadow-md transition-all duration-200"
+              className="p-6 rounded-sm border border-line bg-panel shadow-xs hover:border-primary/50 transition-all duration-200"
             >
               <div className="flex items-center justify-between">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                  <d.icon size={20} strokeWidth={1.8} />
+                <span className="flex size-9 items-center justify-center rounded-xs bg-primary-soft text-primary">
+                  <d.icon size={18} strokeWidth={1.8} />
                 </span>
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-soft/60 px-2 py-0.5 rounded-full">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-soft/70 px-2 py-0.5 rounded-xs border border-primary/20">
                   {d.vocab}
                 </span>
               </div>
@@ -614,8 +611,8 @@ function StickyHorizontalScroll() {
                 <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
                   03 / Platform Capabilities
                 </p>
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold text-primary">
-                  Sticky Horizontal Showcase
+                <span className="rounded-xs border border-primary/20 bg-primary-soft/60 px-2 py-0.5 font-mono text-[10px] font-bold text-primary uppercase">
+                  Technical Architecture
                 </span>
               </div>
               <h2 className="mt-1.5 font-display text-2xl font-bold tracking-tight text-ink sm:text-4xl lg:text-5xl">
@@ -633,30 +630,30 @@ function StickyHorizontalScroll() {
                   type="button"
                   onClick={() => handleNav('prev')}
                   disabled={activeIdx === 0}
-                  className="flex size-9 items-center justify-center rounded-full border border-line bg-panel text-ink transition hover:border-line-strong hover:bg-ground active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs cursor-pointer"
+                  className="flex size-8 items-center justify-center rounded-xs border border-line bg-panel text-ink transition hover:border-line-strong hover:bg-ground active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-2xs cursor-pointer"
                   aria-label="Scroll left"
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={15} />
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNav('next')}
                   disabled={activeIdx >= totalCardCount - 1}
-                  className="flex size-9 items-center justify-center rounded-full border border-line bg-panel text-ink transition hover:border-line-strong hover:bg-ground active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs cursor-pointer"
+                  className="flex size-8 items-center justify-center rounded-xs border border-line bg-panel text-ink transition hover:border-line-strong hover:bg-ground active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-2xs cursor-pointer"
                   aria-label="Scroll right"
                 >
-                  <ChevronRight size={16} />
+                  <ChevronRight size={15} />
                 </button>
               </div>
 
               <div className="flex flex-col items-end gap-1.5">
                 <span className="font-mono text-[11px] font-bold text-primary">
-                  Card {activeIdx + 1} of {totalCardCount}
+                  Module {activeIdx + 1} of {totalCardCount}
                 </span>
-                <div className="h-2 w-36 sm:w-44 overflow-hidden rounded-full bg-line/80">
+                <div className="h-1.5 w-32 sm:w-40 overflow-hidden rounded-xs bg-line">
                   <motion.div
                     style={{ width: progressPercent }}
-                    className="h-full rounded-full bg-primary"
+                    className="h-full rounded-xs bg-primary"
                   />
                 </div>
               </div>
@@ -673,15 +670,14 @@ function StickyHorizontalScroll() {
               transform: 'translate3d(0, 0, 0)',
               willChange: 'transform',
             }}
-            className="flex gap-6 px-6 sm:px-12 lg:px-20 w-max"
+            className="flex gap-5 px-6 sm:px-12 lg:px-20 w-max"
           >
             {/* Intro Lead Card */}
             <div
               style={{ transform: 'translate3d(0, 0, 0)' }}
               className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 h-[400px] sm:h-[440px] lg:h-[460px]"
             >
-              <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-3xl border border-primary/30 bg-primary p-7 sm:p-8 text-white shadow-panel">
-                <BorderBeam size={200} duration={8} colorFrom="#52B788" colorTo="#D1A654" />
+              <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-sm border border-primary/40 bg-primary p-7 sm:p-8 text-white shadow-xs">
                 <div>
                   <span className="font-mono text-xs font-semibold uppercase tracking-widest text-primary-soft">
                     Six Systems · One Cadastre
@@ -695,12 +691,12 @@ function StickyHorizontalScroll() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-xs">
+                  <div className="rounded-xs border border-white/20 bg-white/10 p-3.5 backdrop-blur-xs">
                     <p className="font-mono text-[11px] font-bold text-primary-soft uppercase tracking-wider">
-                      Vertical Scroll Activated
+                      Horizontal Stream Active
                     </p>
                     <p className="mt-1 text-xs text-white/90">
-                      Continue scrolling down your mouse or trackpad to pan through all 8 system pillars.
+                      Scroll down to review each foundational public infrastructure module.
                     </p>
                   </div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-primary-soft">
@@ -718,15 +714,15 @@ function StickyHorizontalScroll() {
                 style={{ transform: 'translate3d(0, 0, 0)' }}
                 className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 h-[400px] sm:h-[440px] lg:h-[460px]"
               >
-                <SpotlightCard className="h-full p-7 sm:p-8 shadow-panel flex flex-col justify-between rounded-3xl border border-line bg-panel hover:border-line-strong hover:shadow-md transition-all">
+                <SpotlightCard className="h-full p-7 sm:p-8 shadow-xs flex flex-col justify-between rounded-sm border border-line bg-panel hover:border-primary/50 transition-all">
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-xs">
-                        <card.icon size={22} strokeWidth={1.8} />
+                      <span className="inline-flex size-10 items-center justify-center rounded-xs bg-primary-soft text-primary shadow-2xs">
+                        <card.icon size={19} strokeWidth={1.8} />
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-ink-3">#{card.num}</span>
-                        <span className="rounded-full border border-line bg-panel-2 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-primary">
+                        <span className="rounded-xs border border-line bg-panel-2 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
                           {card.tag}
                         </span>
                       </div>
@@ -735,7 +731,7 @@ function StickyHorizontalScroll() {
                     <h3 className="mt-5 font-display text-xl sm:text-2xl font-bold text-ink">
                       {card.title}
                     </h3>
-                    <p className="mt-2 text-xs font-semibold text-primary uppercase tracking-wide">
+                    <p className="mt-2 font-mono text-xs font-bold text-primary uppercase tracking-wider">
                       {card.lead}
                     </p>
                     <p className="mt-3 text-xs sm:text-sm leading-relaxed text-ink-2">
@@ -743,9 +739,9 @@ function StickyHorizontalScroll() {
                     </p>
                   </div>
 
-                  <div className="border-t border-line/60 pt-4 flex items-center justify-between">
+                  <div className="border-t border-line pb-1 pt-3 flex items-center justify-between">
                     <span className="font-mono text-xs font-semibold text-primary">{card.engine}</span>
-                    <span className="rounded-md bg-panel-2 px-2.5 py-1 font-mono text-[10px] font-bold text-ink-2">
+                    <span className="rounded-xs bg-panel-2 px-2.5 py-1 font-mono text-[10px] font-bold text-ink-2 border border-line">
                       {card.metric}
                     </span>
                   </div>
@@ -758,10 +754,10 @@ function StickyHorizontalScroll() {
               style={{ transform: 'translate3d(0, 0, 0)' }}
               className="w-[320px] sm:w-[380px] lg:w-[420px] shrink-0 h-[400px] sm:h-[440px] lg:h-[460px]"
             >
-              <div className="flex h-full flex-col justify-between rounded-3xl border border-primary/40 bg-panel p-7 sm:p-8 shadow-panel">
+              <div className="flex h-full flex-col justify-between rounded-sm border border-line bg-panel p-7 sm:p-8 shadow-xs">
                 <div>
                   <span className="font-mono text-xs font-semibold uppercase tracking-widest text-primary">
-                    Live Demo Ready
+                    Live Cadastre Engine
                   </span>
                   <h3 className="mt-4 font-display text-2xl sm:text-3xl font-bold text-ink leading-tight">
                     Experience it on the ground.
@@ -772,18 +768,18 @@ function StickyHorizontalScroll() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-line bg-ground p-4">
+                  <div className="rounded-xs border border-line bg-ground p-4">
                     <div className="flex items-center gap-2 font-mono text-xs font-bold text-ink">
-                      <span className="size-2 rounded-full bg-primary animate-pulse" />
-                      <span>Ready for exploration</span>
+                      <span className="size-2 rounded-none bg-primary" />
+                      <span>Ready for live exploration</span>
                     </div>
                     <p className="mt-1 text-xs text-ink-2">
                       Inspect 3D layers, AI risk scoring, and verified Land Information Reports in one click.
                     </p>
                   </div>
 
-                  <MapLaunch className="w-full justify-center inline-flex items-center gap-2.5 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-white transition hover:brightness-110 active:scale-95 shadow-sm cursor-pointer">
-                    Launch Interactive Map <ArrowRight size={16} />
+                  <MapLaunch className="w-full justify-center inline-flex items-center gap-2.5 rounded-xs bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 active:scale-98 shadow-xs cursor-pointer">
+                    Launch Interactive Map <ArrowRight size={15} />
                   </MapLaunch>
                 </div>
               </div>
@@ -793,7 +789,7 @@ function StickyHorizontalScroll() {
 
         {/* Footer info & clickable dots indicator */}
         <div className="mx-auto w-full max-w-[1400px] px-6 sm:px-12 lg:px-20">
-          <div className="flex items-center justify-between border-t border-line/60 pt-3 sm:pt-4">
+          <div className="flex items-center justify-between border-t border-line pt-3 sm:pt-4">
             <div className="flex items-center gap-1.5">
               {Array.from({ length: totalCardCount }).map((_, i) => (
                 <button
@@ -803,7 +799,7 @@ function StickyHorizontalScroll() {
                   title={`Jump to card ${i + 1}`}
                   aria-label={`Jump to card ${i + 1}`}
                   className={clsx(
-                    'h-1.5 rounded-full transition-all duration-300 cursor-pointer',
+                    'h-1 rounded-xs transition-all duration-300 cursor-pointer',
                     i === activeIdx ? 'w-6 bg-primary' : 'w-2 bg-line hover:bg-ink-3'
                   )}
                 />
@@ -873,14 +869,14 @@ function PilotClustersSection() {
           {PILOT_CLUSTERS.map((c) => (
             <div
               key={c.code}
-              className="flex flex-col justify-between rounded-3xl border border-line bg-panel p-6 sm:p-7 shadow-panel hover:border-primary/40 hover:shadow-md transition-all"
+              className="flex flex-col justify-between rounded-sm border border-line bg-panel p-6 sm:p-7 shadow-xs hover:border-primary/40 transition-all"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex size-9 items-center justify-center rounded-xl bg-primary font-mono text-xs font-bold text-white shadow-2xs">
+                  <span className="flex size-8 items-center justify-center rounded-xs bg-primary font-mono text-xs font-bold text-white shadow-2xs">
                     {c.code}
                   </span>
-                  <span className="rounded-full bg-primary-soft/60 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-primary">
+                  <span className="rounded-xs bg-primary-soft/70 border border-primary/20 px-2 py-0.5 font-mono text-[10.5px] font-bold text-primary">
                     {c.parcels}
                   </span>
                 </div>
@@ -897,9 +893,9 @@ function PilotClustersSection() {
                 </div>
                 <MapLaunch
                   ulpin={c.sampleUlpin}
-                  className="mt-3 w-full justify-center inline-flex items-center gap-2 rounded-full bg-primary-soft px-4 py-2.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-white cursor-pointer active:scale-95 shadow-2xs"
+                  className="mt-3 w-full justify-center inline-flex items-center gap-2 rounded-xs bg-primary-soft border border-primary/20 px-4 py-2 text-xs font-bold text-primary transition hover:bg-primary hover:text-white cursor-pointer active:scale-98 shadow-2xs"
                 >
-                  Explore {c.state} Cluster <ArrowRight size={14} />
+                  Explore {c.state} Cluster <ArrowRight size={13} />
                 </MapLaunch>
               </div>
             </div>
@@ -932,12 +928,12 @@ function HowItWorksSection() {
             return (
               <div
                 key={r.role}
-                className="rounded-2xl border border-line bg-panel p-6 shadow-panel flex flex-col justify-between"
+                className="rounded-sm border border-line bg-panel p-6 shadow-xs flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center gap-3">
-                    <span className="flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                      <Icon size={20} strokeWidth={1.8} />
+                    <span className="flex size-9 items-center justify-center rounded-xs bg-primary-soft text-primary">
+                      <Icon size={19} strokeWidth={1.8} />
                     </span>
                     <div>
                       <h3 className="font-display text-base font-bold text-ink">{r.role}</h3>
@@ -950,7 +946,7 @@ function HowItWorksSection() {
                 <div className="mt-6 pt-3 border-t border-line/60">
                   <Link
                     to={r.role === 'Citizen' ? '/citizen' : r.role === 'Officer' ? '/officer' : '/admin'}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+                    className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-primary hover:underline"
                   >
                     Open {r.role} Workspace <ChevronRight size={13} />
                   </Link>
@@ -967,7 +963,6 @@ function HowItWorksSection() {
 function FinalCTASection() {
   return (
     <section className="relative overflow-hidden bg-primary px-6 py-20 text-center text-white sm:px-12">
-      <BorderBeam size={260} duration={8} colorFrom="#52B788" colorTo="#D1A654" />
       <div className="mx-auto max-w-3xl relative z-10">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-primary-soft">
           Digital Public Infrastructure for Land
@@ -980,12 +975,12 @@ function FinalCTASection() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-          <MapLaunch className="relative overflow-hidden inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-primary transition hover:bg-ground active:scale-95 shadow-sm cursor-pointer">
-            Explore Interactive Map <ArrowRight size={16} />
+          <MapLaunch className="inline-flex items-center gap-2 rounded-sm bg-white px-6 py-3 text-sm font-semibold text-primary transition hover:bg-ground active:scale-[0.99] shadow-xs cursor-pointer">
+            Explore Interactive Map <ArrowRight size={15} />
           </MapLaunch>
           <Link
             to="/help"
-            className="inline-flex items-center gap-2.5 rounded-full border border-white/30 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-sm border border-white/40 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.99]"
           >
             User Guide & Documentation
           </Link>
