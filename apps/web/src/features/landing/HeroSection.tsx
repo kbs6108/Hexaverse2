@@ -74,6 +74,9 @@ export function HeroSection() {
         <div className="pointer-events-none absolute inset-0 z-0 size-full">
           <GLSLHills width="100%" height="100%" cameraZ={125} speed={0.35} />
         </div>
+        {/* Ambient atmospheric radiance mirroring the soft sage & warm sandstone landscape */}
+        <div className="pointer-events-none absolute -left-24 top-1/3 h-[500px] w-[500px] rounded-full bg-emerald-600/[0.03] blur-[140px] z-0" />
+        <div className="pointer-events-none absolute -right-24 top-1/4 h-[550px] w-[550px] rounded-full bg-amber-500/[0.035] blur-[140px] z-0" />
         {/* Subtle atmospheric veil ensuring high contrast and legibility for foreground text */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ground to-transparent z-1" />
 

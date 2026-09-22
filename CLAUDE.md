@@ -134,6 +134,7 @@ unverified.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-22 hero mountain gradient & colors: upgraded GLSLHills (glsl-hills.tsx) with a dual-mesh multi-chromatic elevation gradient (Forest Green #183B2B -> Radiant Emerald -> Alpine Teal -> Golden Amber #D1A654) on wireframe contour lines and an ethereal translucent topographic relief surface over the mountain body with atmospheric radial glows.
 - 2026-09-21 landing numbering sequence fixed: harmonized landing narrative chapters into strict sequential order 01 to 09 (01 Cadastral GIS, 02 Core Breakthrough, 03 Federated Systems, 04 Capabilities, 05 Unified Search, 06 Pilot Corridors, 07 Interoperability Engine, 08 Operational Architecture, 09 Final CTA), converted LandScenes to non-numeric interludes, eliminating duplicates and gaps.
 - 2026-09-21 landing narrative full restoration: restored all cinematic scenes below hero (SystemScene 01 ParcelMap 3 GIS tiers, ProblemBreakthrough 6-office maze with live interactive parcel check, LandScene farmer livelihood, 6-dept matrix, hardware-accelerated 10-card horizontal scroll with zero-render useScroll binding, ULPIN search scene, 3-state pilot corridors, state adapter flowchart, operational architecture, family dispute scene, final CTA, and GovStrip).
 - 2026-09-21 landing dock fixed stacking context: lifted floating dock outside hero section and isolate boundary with z-index 99999 so it remains above all downstream cards when scrolling.
