@@ -59,6 +59,13 @@ async def _auto_checks(db: DBLike, body: CreateApplication, principal: Principal
         )
         best = max(name_score(ror_owner, claimed), name_score(deed, claimed))
         payload["result"] = {"claimed_name": claimed, "match": best >= OWNER_THRESHOLD, "score": round(best, 1)}
+
+    if "document" in payload and isinstance(payload["document"], dict) and payload["document"].get("id"):
+        try:
+            from landstack.services.document_verify import verify_application_document
+            payload["document_verification"] = await verify_application_document(db, body.ulpin, payload["document"])
+        except Exception as exc:
+            payload["document_verification"] = {"status": "error", "error": str(exc)[:200]}
     return payload
 
 

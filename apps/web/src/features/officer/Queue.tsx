@@ -24,14 +24,18 @@ const DEPTS = ['revenue', 'registration', 'planning'];
 
 /** One queue row, memoized */
 const QueueRow = memo(
-  function QueueRow({ a, selected, quickPending, onOpen, onQuick }: {
+  function QueueRow({ a, selected, quickPending, onOpen, onQuick, userDesignation, isAdmin }: {
     a: Application;
     selected: boolean;
     quickPending: boolean;
     onOpen: (a: Application | null) => void;
     onQuick: (a: Application, action: string) => void;
+    userDesignation?: string | null;
+    isAdmin: boolean;
   }) {
     const next = quickAdvanceAction(a);
+    const isNextAllowed = isAdmin || (Boolean(next?.allowed_designation) && Boolean(userDesignation) && userDesignation!.toLowerCase() === next!.allowed_designation!.toLowerCase());
+
     return (
       <tr
         tabIndex={0}
@@ -49,10 +53,14 @@ const QueueRow = memo(
         <td className="px-3 py-2 text-ink-2">{titleCase(a.assigned_department)}</td>
         <td className="px-3 py-2 text-ink-3" title={fmtDate(a.created_at, true)}>{relTime(a.created_at)}</td>
         <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-          {next ? (
+          {next && isNextAllowed ? (
             <Button size="sm" icon={<ChevronRight size={13} />} loading={quickPending} onClick={() => onQuick(a, next.action)}>
               {next.label}
             </Button>
+          ) : next?.allowed_designation ? (
+            <span className="inline-flex items-center gap-1 rounded bg-amber/10 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">
+              Awaiting {next.allowed_designation.toUpperCase()}
+            </span>
           ) : (
             <span className="text-xs text-ink-3">open to decide</span>
           )}
@@ -65,6 +73,8 @@ const QueueRow = memo(
     prev.a.status === next.a.status &&
     prev.a.updated_at === next.a.updated_at &&
     prev.selected === next.selected &&
+    prev.userDesignation === next.userDesignation &&
+    prev.isAdmin === next.isAdmin &&
     prev.quickPending === next.quickPending,
 );
 
@@ -174,6 +184,8 @@ export function QueuePage() {
                     quickPending={quick.isPending && quick.variables?.app.id === a.id}
                     onOpen={openApp}
                     onQuick={(app, action) => quick.mutate({ app, action })}
+                    userDesignation={user?.designation}
+                    isAdmin={user?.role === 'admin'}
                   />
                 ))}
               </tbody>

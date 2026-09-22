@@ -305,6 +305,6 @@ async def get_parcel_cdm(db: DBLike, ulpin: str, principal: Principal | None) ->
     cdm = copy.deepcopy(cdm)
     if principal is not None and not principal.is_officer:
         await has_consent(db, principal, ulpin)
-    if should_mask(principal, ulpin):
+    if should_mask(principal, ulpin, cdm):
         cdm = mask_cdm(cdm)
     return cdm

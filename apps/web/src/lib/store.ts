@@ -51,9 +51,12 @@ export const DEV_USERS = [
   { id: 'citizen::Jatin Baral', label: 'Jatin Baral', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 126 (Mortgaged, AP)' },
   { id: 'citizen::Sambasiva Rao Mekala', label: 'Sambasiva Rao Mekala', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 127/1 (Tax Arrears, AP)' },
   { id: 'citizen::Venkata Rao Kandula', label: 'Venkata Rao Kandula', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 128 (Pending Mutation, AP)' },
-  { id: 'officer:revenue:Anitha', label: 'Anitha', role: 'officer', state: 'AP', hint: 'Tahsildar · Mangalagiri (AP)' },
-  { id: 'officer:registration:Suresh', label: 'Suresh', role: 'officer', state: 'AP', hint: 'Sub-Registrar · SRO Mangalagiri (AP)' },
-  { id: 'officer:planning:Farida', label: 'Farida', role: 'officer', state: 'AP', hint: 'Town Planning Officer · MTMC (AP)' },
+  { id: 'officer:revenue:vro:Ramesh', label: 'Ramesh (VRO)', role: 'officer', state: 'AP', hint: 'Village Revenue Officer · Field Panchanama (AP)' },
+  { id: 'officer:revenue:surveyor:Swathi', label: 'Swathi (Surveyor)', role: 'officer', state: 'AP', hint: 'Cadastral Surveyor · FMB & Demarcation (AP)' },
+  { id: 'officer:revenue:ri:Chaitanya', label: 'Chaitanya (RI)', role: 'officer', state: 'AP', hint: 'Revenue Inspector · Scrutiny & Endorsement (AP)' },
+  { id: 'officer:revenue:tahsildar:Anitha', label: 'Anitha (Tahsildar)', role: 'officer', state: 'AP', hint: 'Tahsildar / MRO · Statutory Final Order (AP)' },
+  { id: 'officer:registration:Suresh', label: 'Suresh (Sub-Registrar)', role: 'officer', state: 'AP', hint: 'Sub-Registrar · SRO Mangalagiri (AP)' },
+  { id: 'officer:planning:Farida', label: 'Farida (Town Planner)', role: 'officer', state: 'AP', hint: 'Town Planning Officer · MTMC (AP)' },
 
   // --- Tamil Nadu (Sriperumbudur) ---
   { id: 'citizen::Robert Kuruvilla', label: 'Robert Kuruvilla', role: 'citizen', state: 'TN', hint: 'Citizen · Sy 45/2 (Disputed, TN)' },

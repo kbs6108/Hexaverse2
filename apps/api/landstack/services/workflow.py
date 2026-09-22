@@ -72,7 +72,7 @@ def find_transition(rows: list[dict[str, Any]], app_type: str, from_status: str,
 
 
 def is_allowed(row: dict[str, Any], principal: Principal, app: dict[str, Any]) -> bool:
-    """Role + department check; admin bypasses; citizens may only act on their own applications."""
+    """Role + department + designation check; admin bypasses; citizens may only act on their own applications."""
     if principal.is_admin:
         return True
     role = row.get("allowed_role")
@@ -81,6 +81,16 @@ def is_allowed(row: dict[str, Any], principal: Principal, app: dict[str, Any]) -
     dept = row.get("allowed_department")
     if dept and principal.role == "officer" and principal.department != dept:
         return False
+    desig = row.get("allowed_designation")
+    if desig and principal.role == "officer":
+        p_desig = (getattr(principal, "designation", None) or "").strip().lower()
+        if not p_desig or p_desig != desig.strip().lower():
+            return False
+    if principal.role == "officer" and principal.department == "revenue":
+        if row.get("to_status") in ("approved", "rejected"):
+            p_desig = (getattr(principal, "designation", None) or "").strip().lower()
+            if p_desig != "tahsildar":
+                return False
     if principal.role == "citizen" and app.get("applicant_uid") not in (None, principal.uid):
         return False
     return True
@@ -99,6 +109,7 @@ def next_actions(rows: list[dict[str, Any]], app: dict[str, Any], principal: Pri
                 "action": row["to_status"],
                 "label": row.get("action_label") or row["to_status"].replace("_", " ").title(),
                 "to_status": row["to_status"],
+                "allowed_designation": row.get("allowed_designation"),
                 "is_terminal": bool(row.get("is_terminal")),
             }
         )
@@ -106,7 +117,7 @@ def next_actions(rows: list[dict[str, Any]], app: dict[str, Any], principal: Pri
 
 
 def history_view(app: dict[str, Any]) -> list[dict[str, Any]]:
-    """`payload.history` (ts/from/status/by/role/remark) in the shape the web HistoryEntry type reads."""
+    """`payload.history` (ts/from/status/by/role/designation/remark) in the shape the web HistoryEntry type reads."""
     payload = app.get("payload") or {}
     if isinstance(payload, str):  # jsonb returned as text (some drivers / test fakes)
         try:
@@ -125,6 +136,7 @@ def history_view(app: dict[str, Any]) -> list[dict[str, Any]]:
                 "action": h.get("remark") if h.get("remark") == "created" else None,
                 "actor_name": h.get("by"),
                 "actor_role": h.get("role"),
+                "actor_designation": h.get("designation"),
                 "remark": h.get("remark") if h.get("remark") != "created" else None,
             }
         )
@@ -139,10 +151,16 @@ def is_terminal(rows: list[dict[str, Any]], app_type: str, status: str) -> bool:
 async def load_transitions(db: DBLike, force: bool = False) -> list[dict[str, Any]]:
     rows = None if force else _transitions_cache.get("all")
     if rows is None:
-        rows = await db.fetch(
-            "SELECT type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal "
-            "FROM landstack.transitions ORDER BY type, from_status, to_status"
-        )
+        try:
+            rows = await db.fetch(
+                "SELECT type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal "
+                "FROM landstack.transitions ORDER BY type, from_status, to_status"
+            )
+        except Exception:
+            rows = await db.fetch(
+                "SELECT type, from_status, to_status, allowed_role, allowed_department, NULL AS allowed_designation, action_label, is_terminal "
+                "FROM landstack.transitions ORDER BY type, from_status, to_status"
+            )
         _transitions_cache.set("all", rows)
     return rows
 
@@ -314,10 +332,12 @@ async def transition(
             allowed = [r["to_status"] for r in rows if r["type"] == app["type"] and r["from_status"] == app["status"]]
             raise AppError(409, "invalid_transition", f"cannot '{action}' from '{app['status']}'", {"allowed": allowed})
         if not is_allowed(row, principal, app):
-            raise forbidden(
-                f"'{action}' requires {row.get('allowed_role')}"
-                + (f" ({row['allowed_department']})" if row.get("allowed_department") else "")
-            )
+            req = f"'{action}' requires {row.get('allowed_role')}"
+            if row.get("allowed_department"):
+                req += f" ({row['allowed_department']})"
+            if row.get("allowed_designation"):
+                req += f" [Designation: {row['allowed_designation']}]"
+            raise forbidden(req)
         payload = dict(app.get("payload") or {})
         if app["type"] == "boundary_correction" and row["to_status"] == "approved":
             # Re-validate at approval time (neighbours may have changed since filing);
@@ -339,6 +359,7 @@ async def transition(
                 "status": row["to_status"],
                 "by": principal.name,
                 "role": principal.role,
+                "designation": principal.designation,
                 "remark": remark,
             }
         )

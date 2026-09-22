@@ -177,6 +177,19 @@ export const api = {
     request<ChangeDetectionResult>('/landstack/ai/change-detection', { method: 'POST', body }),
   parcelBrief: (ulpin: string) => request<ParcelBrief>('/landstack/ai/parcel-brief', { method: 'POST', body: { ulpin } }),
   applicationAdvice: (id: string) => request<ApplicationAdvice>('/landstack/ai/application-advice', { method: 'POST', body: { id } }),
+  uploadDocument: (file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return request<{
+      id: string;
+      filename: string;
+      mime: string;
+      size: number;
+      sha256: string;
+      url: string;
+    }>('/landstack/documents/upload', { method: 'POST', body: fd });
+  },
+  documentUrl: (docId: string) => `${env.apiUrl}/landstack/documents/${encodeURIComponent(docId)}`,
   extractDocument: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);

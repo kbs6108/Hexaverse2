@@ -317,6 +317,7 @@ export interface PreCheck {
   warnings: PreCheckItem[];
   notes: PreCheckItem[];
   ok_to_submit: boolean;
+  ror_owner?: string | null;
 }
 
 export interface DueDiligenceCheck {
@@ -370,6 +371,7 @@ export interface HistoryEntry {
   action?: string | null;
   actor_name?: string | null;
   actor_role?: string | null;
+  actor_designation?: string | null;
   remark?: string | null;
 }
 
@@ -378,6 +380,7 @@ export interface NextAction {
   label: string;
   to_status: string;
   is_terminal?: boolean;
+  allowed_designation?: string | null;
 }
 
 export interface Application {

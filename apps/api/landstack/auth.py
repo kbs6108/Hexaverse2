@@ -28,6 +28,16 @@ log = logging.getLogger("landstack.auth")
 
 ROLES = ("citizen", "officer", "admin")
 DEPARTMENTS = ("revenue", "registration", "planning")
+DESIGNATIONS = (
+    "vro",           # Village Revenue Officer / Field Inspector
+    "surveyor",      # Mandal / Cadastral Surveyor
+    "ri",            # Revenue Inspector / Supervisor
+    "tahsildar",     # Tahsildar / Mandal Revenue Officer (Quasi-Judicial Approver)
+    "rdo",           # Revenue Divisional Officer / Sub-Collector (Appellate)
+    "sub_registrar", # Registration Department (SRO)
+    "town_planner",  # Assistant City Planner / Town Planning Inspector
+    "commissioner",  # Municipal Commissioner / Authority
+)
 
 
 class Principal(BaseModel):
@@ -37,6 +47,7 @@ class Principal(BaseModel):
     name: str = ""
     role: str = "citizen"
     department: str | None = None
+    designation: str | None = None
     email: str | None = None
     consents: set[str] = Field(default_factory=set)
 
@@ -48,19 +59,21 @@ class Principal(BaseModel):
     def is_officer(self) -> bool:
         return self.role in ("officer", "admin")
 
-    def can(self, *roles: str, department: str | None = None) -> bool:
-        """Role check with admin bypass; department only constrains officers."""
+    def can(self, *roles: str, department: str | None = None, designation: str | None = None) -> bool:
+        """Role check with admin bypass; department and designation constrain officers."""
         if self.is_admin:
             return True
         if roles and self.role not in roles:
             return False
         if department and self.role == "officer" and self.department != department:
             return False
+        if designation and self.role == "officer" and self.designation and self.designation != designation:
+            return False
         return True
 
 
 def parse_dev_header(value: str | None) -> Principal | None:
-    """`officer:revenue:Anitha` → Principal; None for missing/blank header."""
+    """`officer:revenue:vro:Ramesh` or `officer:revenue:Anitha` → Principal; None for missing/blank header."""
     if not value or not value.strip():
         return None
     parts = [p.strip() for p in value.split(":")]
@@ -68,24 +81,45 @@ def parse_dev_header(value: str | None) -> Principal | None:
     if role not in ROLES:
         raise unauthorized(f"unknown dev role '{role}'")
     department: str | None = None
+    designation: str | None = None
     name = ""
-    if len(parts) >= 2 and parts[1]:
+
+    if len(parts) >= 4:
+        department = parts[1].lower() if parts[1] else None
+        designation = parts[2].lower() if parts[2] else None
+        name = parts[3]
+    elif len(parts) == 3:
         if role == "officer" or parts[1].lower() in DEPARTMENTS:
             department = parts[1].lower()
+            name = parts[2]
+            # Infer realistic default designation
+            if department == "revenue":
+                designation = "tahsildar"
+            elif department == "planning":
+                designation = "town_planner"
+            elif department == "registration":
+                designation = "sub_registrar"
+        else:
+            name = parts[2] or parts[1]
+    elif len(parts) == 2:
+        if role == "officer":
+            department = parts[1].lower()
+            designation = "tahsildar" if department == "revenue" else "town_planner"
         else:
             name = parts[1]
-    if len(parts) >= 3 and parts[2]:
-        name = parts[2]
+
     if not name:
         name = f"{role.title()}" + (f" ({department})" if department else "")
     if role == "officer" and department not in DEPARTMENTS:
         raise unauthorized("officer dev header needs a department: officer:<revenue|registration|planning>")
     if role != "officer":
         department = None
+        designation = None
+
     # Deterministic, human-readable uid that matches tools/seed.py DEMO_USERS (dev-ravi-kumar, dev-anitha, dev-admin).
     slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or role
     uid = f"dev-{slug}"
-    return Principal(uid=uid, name=name, role=role, department=department, email=None)
+    return Principal(uid=uid, name=name, role=role, department=department, designation=designation, email=None)
 
 
 _firebase_lock = threading.Lock()
@@ -117,11 +151,14 @@ def principal_from_claims(claims: dict[str, Any]) -> Principal:
         role = "citizen"
     department = claims.get("department")
     department = str(department).lower() if department and role == "officer" else None
+    designation = claims.get("designation")
+    designation = str(designation).lower() if designation and role == "officer" else None
     return Principal(
         uid=str(claims.get("uid") or claims.get("sub") or claims.get("user_id")),
         name=str(claims.get("name") or claims.get("email") or "User"),
         role=role,
         department=department,
+        designation=designation,
         email=claims.get("email"),
     )
 

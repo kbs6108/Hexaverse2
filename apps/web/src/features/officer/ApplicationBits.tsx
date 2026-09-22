@@ -10,8 +10,12 @@ const STATUS_TONE: Record<string, Tone> = {
   submitted: 'slate',
   document_check: 'amber',
   field_verification: 'amber',
+  field_inspection: 'amber',
+  boundary_demarcation: 'amber',
+  scrutiny_review: 'amber',
   planning_check: 'amber',
   site_inspection: 'amber',
+  statutory_sanction: 'violet',
   open: 'slate',
   assigned: 'amber',
   in_review: 'amber',
@@ -30,25 +34,39 @@ export function StatusBadge({ status }: { status: string }) {
 
 /** Fallback when the API does not include `next_actions` (CONTRACTS §8 transitions). */
 export function fallbackActions(type: string, status: string): NextAction[] {
-  const mk = (pairs: [string, string][]): NextAction[] =>
-    pairs.map(([to, label]) => ({ action: to, label, to_status: to, is_terminal: ['approved', 'rejected', 'resolved', 'dismissed'].includes(to) }));
+  const mk = (pairs: [string, string, string?][]): NextAction[] =>
+    pairs.map(([to, label, des]) => ({
+      action: to,
+      label,
+      to_status: to,
+      is_terminal: ['approved', 'rejected', 'resolved', 'dismissed'].includes(to),
+      allowed_designation: des ?? null,
+    }));
   if (type === 'mutation') {
-    if (status === 'submitted') return mk([['document_check', 'Start document check']]);
-    if (status === 'document_check') return mk([['field_verification', 'Send for field verification'], ['returned', 'Return to applicant']]);
-    if (status === 'field_verification') return mk([['approved', 'Approve'], ['returned', 'Return'], ['rejected', 'Reject']]);
+    if (status === 'submitted') return mk([['document_check', 'VRO Document Scrutiny', 'vro'], ['field_inspection', 'Conduct VRO Panchanama', 'vro']]);
+    if (status === 'document_check') return mk([['field_inspection', 'Submit VRO Panchanama & Forward', 'vro'], ['boundary_demarcation', 'Request Demarcation', 'vro']]);
+    if (status === 'field_inspection') return mk([['boundary_demarcation', 'Submit Field Panchanama to Surveyor', 'vro']]);
+    if (status === 'boundary_demarcation') return mk([['scrutiny_review', 'Submit Survey & Demarcation (Surveyor)', 'surveyor']]);
+    if (status === 'field_verification') return mk([['scrutiny_review', 'Submit Cadastral Survey Report', 'surveyor'], ['approved', 'Pass Statutory Approval (Tahsildar)', 'tahsildar'], ['rejected', 'Pass Statutory Rejection (Tahsildar)', 'tahsildar']]);
+    if (status === 'scrutiny_review') return mk([['statutory_sanction', 'RI Endorsement to Tahsildar', 'ri'], ['approved', 'Pass Statutory Approval (Tahsildar)', 'tahsildar'], ['rejected', 'Pass Statutory Rejection (Tahsildar)', 'tahsildar']]);
+    if (status === 'statutory_sanction') return mk([['approved', 'Pass Statutory Approval (Tahsildar)', 'tahsildar'], ['rejected', 'Pass Statutory Rejection (Tahsildar)', 'tahsildar'], ['returned', 'Return to Applicant (Tahsildar)', 'tahsildar']]);
   }
   if (type === 'building_permission') {
-    if (status === 'submitted') return mk([['planning_check', 'Run planning check']]);
-    if (status === 'planning_check') return mk([['site_inspection', 'Schedule site inspection'], ['rejected', 'Reject']]);
-    if (status === 'site_inspection') return mk([['approved', 'Approve'], ['rejected', 'Reject']]);
+    if (status === 'submitted') return mk([['planning_check', 'Run Planning Scrutiny', 'town_planner']]);
+    if (status === 'planning_check') return mk([['site_inspection', 'Schedule Site Measurement', 'town_planner'], ['rejected', 'Reject', 'town_planner']]);
+    if (status === 'site_inspection') return mk([['scrutiny_review', 'Submit Measurement Report', 'surveyor'], ['approved', 'Approve Permission', 'town_planner'], ['rejected', 'Reject', 'town_planner']]);
+    if (status === 'scrutiny_review') return mk([['approved', 'Grant Building Permit', 'town_planner'], ['rejected', 'Reject Permit', 'town_planner']]);
   }
   if (type === 'field_review') {
-    if (status === 'open') return mk([['assigned', 'Assign']]);
-    if (status === 'assigned') return mk([['resolved', 'Resolve']]);
+    if (status === 'open') return mk([['assigned', 'Assign', 'admin']]);
+    if (status === 'assigned') return mk([['resolved', 'Resolve', 'vro']]);
   }
   if (type === 'record_correction' || type === 'succession') {
-    if (status === 'submitted') return mk([['document_check', 'Start document check']]);
-    if (status === 'document_check') return mk([['approved', type === 'succession' ? 'Approve succession' : 'Approve correction'], ['returned', 'Return to applicant'], ['rejected', 'Reject']]);
+    if (status === 'submitted') return mk([['field_inspection', 'VRO Field Enquiry', 'vro'], ['document_check', 'VRO Scrutiny', 'vro']]);
+    if (status === 'document_check') return mk([['field_inspection', 'Refer to VRO for Field Enquiry', 'vro']]);
+    if (status === 'field_inspection') return mk([['scrutiny_review', 'Submit Ground Report to RI', 'vro']]);
+    if (status === 'scrutiny_review') return mk([['statutory_sanction', 'RI Endorsement to Tahsildar', 'ri'], ['approved', 'Pass Statutory Order (Tahsildar)', 'tahsildar'], ['rejected', 'Reject (Tahsildar)', 'tahsildar']]);
+    if (status === 'statutory_sanction') return mk([['approved', 'Pass Statutory Order (Tahsildar)', 'tahsildar'], ['rejected', 'Reject (Tahsildar)', 'tahsildar'], ['returned', 'Return to Applicant (Tahsildar)', 'tahsildar']]);
   }
   if (type === 'land_complaint') {
     if (status === 'submitted') return mk([['in_review', 'Take up for review']]);
@@ -56,7 +74,7 @@ export function fallbackActions(type: string, status: string): NextAction[] {
   }
   if (type === 'boundary_correction') {
     if (status === 'submitted') return mk([['geometry_check', 'Start geometry check']]);
-    if (status === 'geometry_check') return mk([['approved', 'Approve & apply'], ['returned', 'Return to proposer'], ['rejected', 'Reject']]);
+    if (status === 'geometry_check') return mk([['approved', 'Approve & apply (Surveyor / Tahsildar)'], ['returned', 'Return to proposer'], ['rejected', 'Reject']]);
   }
   return [];
 }
@@ -64,7 +82,8 @@ export function fallbackActions(type: string, status: string): NextAction[] {
 /** The one-click queue action: the next FORWARD, non-terminal step (terminal decisions —
  *  approve/reject/return — deliberately require the detail drawer and a written remark). */
 export function quickAdvanceAction(app: Application): NextAction | null {
-  const forward = fallbackActions(app.type, app.status).filter((a) => !a.is_terminal && a.to_status !== 'returned');
+  const actions = app.next_actions && app.next_actions.length > 0 ? app.next_actions : fallbackActions(app.type, app.status);
+  const forward = actions.filter((a) => !a.is_terminal && a.to_status !== 'returned');
   return forward[0] ?? null;
 }
 
@@ -81,7 +100,14 @@ export function StatusTimeline({ app }: { app: Application }) {
   if (entries.length === 0 && tl.data) {
     entries = tl.data
       .filter((e) => JSON.stringify(e.detail ?? {}).includes(app.id) || e.title.includes(app.id))
-      .map((e) => ({ ts: e.ts, to_status: String(e.detail?.to_status ?? e.kind), actor_name: e.actor ?? null, remark: typeof e.detail?.remark === 'string' ? e.detail.remark : null, action: e.title }));
+      .map((e) => ({
+        ts: e.ts,
+        to_status: String(e.detail?.to_status ?? e.kind),
+        actor_name: e.actor ?? null,
+        actor_designation: typeof e.detail?.designation === 'string' ? e.detail.designation : null,
+        remark: typeof e.detail?.remark === 'string' ? e.detail.remark : null,
+        action: e.title,
+      }));
   }
   if (entries.length === 0) {
     entries = [{ ts: app.created_at, to_status: 'submitted', actor_name: app.applicant_name ?? null }];
@@ -99,7 +125,12 @@ export function StatusTimeline({ app }: { app: Application }) {
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={h.to_status} />
               <span className="text-xs text-ink-3">{fmtDate(h.ts, true)}</span>
-              {h.actor_name && <span className="text-xs text-ink-3">· {h.actor_name}{h.actor_role ? ` (${h.actor_role})` : ''}</span>}
+              {h.actor_name && (
+                <span className="text-xs text-ink-3">
+                  · {h.actor_name}
+                  {h.actor_designation ? ` (${titleCase(h.actor_designation)})` : h.actor_role ? ` (${h.actor_role})` : ''}
+                </span>
+              )}
             </div>
             {h.remark && <p className="mt-0.5 text-sm text-ink-2">“{h.remark}”</p>}
           </li>

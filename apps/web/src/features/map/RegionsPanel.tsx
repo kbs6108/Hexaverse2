@@ -3,13 +3,11 @@ import { ChevronDown, Globe2, MapPin, Check } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useUI } from '@/lib/store';
 import { INDIA_BBOX, useDemoRegions, type DemoRegion } from './regions';
-import { useTranslation } from '@/lib/i18n';
 
 /** Minimalist, compact dropdown for jumping between the 3 pilot state clusters or All India */
 export function RegionsPanel() {
   const regions = useDemoRegions();
   const requestFlyTo = useUI((s) => s.requestFlyTo);
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [activeCode, setActiveCode] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);

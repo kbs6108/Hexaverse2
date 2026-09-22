@@ -8,6 +8,7 @@ import {
   Check,
   CheckCircle2,
   Download,
+  FileCheck,
   FileText,
   FileUp,
   Flag,
@@ -15,6 +16,7 @@ import {
   MapPin,
   PenLine,
   ShieldAlert,
+  ShieldCheck,
   UsersRound,
   X,
   XCircle,
@@ -154,6 +156,7 @@ export function ServiceRequest() {
           {intent === 'land_complaint' && <ComplaintForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'succession' && <SuccessionForm ulpin={ulpin} onDone={setDone} />}
           <aside className="flex flex-col gap-3 text-sm text-ink-2">
+            <RequiredDocumentsCard intent={intent} />
             <PreCheckPanel ulpin={ulpin} type={intent} />
             <Card className="p-4">
               <h3 className="font-semibold">{t('service.stepsTitle')}</h3>
@@ -252,6 +255,388 @@ function PreCheckPanel({ ulpin, type }: { ulpin: string; type: ApplicationType }
   );
 }
 
+/* ---------- Statutory Document Checklist Requirements ---------- */
+
+export interface StatutoryDoc {
+  title: string;
+  requirement: 'mandatory' | 'conditional';
+  issuingAuthority: string;
+  description: string;
+  legalRef?: string;
+  conditionNote?: string;
+}
+
+export const STATUTORY_DOCUMENTS: Record<Intent, StatutoryDoc[]> = {
+  mutation: [
+    {
+      title: 'Registered Sale / Gift / Partition / Settlement Deed',
+      requirement: 'mandatory',
+      issuingAuthority: 'Sub-Registrar Office (SRO)',
+      description: 'Original registered deed bearing registration number, volume/page number, official stamp duty seal, and executant signatures.',
+      legalRef: 'Registration Act, 1908 · Sec 17',
+    },
+    {
+      title: 'Encumbrance Certificate (EC Form 15)',
+      requirement: 'mandatory',
+      issuingAuthority: 'Registration & Stamps Dept (IGRS)',
+      description: 'Continuous 13–30 year non-encumbrance search confirming the parcel is free from prior mortgages, liens, or court attachments.',
+      legalRef: 'Transfer of Property Act, 1882 · Sec 55',
+    },
+    {
+      title: 'Latest Land Revenue / Property Tax Challan',
+      requirement: 'mandatory',
+      issuingAuthority: 'Revenue Dept / Gram Panchayat / ULB',
+      description: 'Current fiscal year tax receipt (Khajana challan or municipal tax) showing zero pending arrears on the parcel.',
+      legalRef: 'State Land Revenue Code',
+    },
+    {
+      title: 'Transferee & Transferor Identity Verification',
+      requirement: 'mandatory',
+      issuingAuthority: 'UIDAI / Election Commission',
+      description: 'Aadhaar / Voter ID / PAN cards matching exact party names and addresses as executed on the registered instrument.',
+      legalRef: 'DILRMP Citizen KYC Guidelines',
+    },
+    {
+      title: 'Certified Civil Court Decree & Execution Order',
+      requirement: 'conditional',
+      issuingAuthority: 'Competent Civil / High Court',
+      description: 'Certified copy of civil court judgment, decree sheet, and Order XXI execution order.',
+      conditionNote: 'Mandatory if title transfer arises from a civil suit or court auction decree rather than a voluntary deed.',
+      legalRef: 'Code of Civil Procedure, 1908 · Order XXI',
+    },
+    {
+      title: 'Prior Title Link Deeds (Chain of Title)',
+      requirement: 'conditional',
+      issuingAuthority: 'Sub-Registrar Office (SRO)',
+      description: 'Chain of prior title deeds establishing unbroken ownership trail for 30 years.',
+      conditionNote: 'Required if Tahsildar / Revenue Officer flags parent title discontinuities during scrutiny.',
+    },
+    {
+      title: 'Agricultural Land Ceiling Self-Declaration',
+      requirement: 'conditional',
+      issuingAuthority: 'Notary Public / Oath Commissioner',
+      description: 'Sworn affidavit affirming the purchaser’s aggregate landholding does not exceed statutory ceiling limits.',
+      conditionNote: 'Required for agricultural parcel transfers exceeding state statutory ceiling limits.',
+      legalRef: 'Land Reforms (Ceiling on Agricultural Holdings) Act',
+    },
+  ],
+
+  succession: [
+    {
+      title: 'Official Death Certificate of Registered Owner',
+      requirement: 'mandatory',
+      issuingAuthority: 'Municipal Corp / Gram Panchayat / Registrar of Births & Deaths',
+      description: 'Certified death certificate containing official registration number, date of demise, and deceased name matching the Record of Rights.',
+      legalRef: 'Registration of Births and Deaths Act, 1969',
+    },
+    {
+      title: 'Legal Heir Certificate / Surviving Member Certificate',
+      requirement: 'mandatory',
+      issuingAuthority: 'Tahsildar / Revenue Divisional Officer (RDO)',
+      description: 'Statutory certificate formally listing all Class-I and lawful surviving legal heirs of the deceased landholder.',
+      legalRef: 'Hindu Succession Act / Indian Succession Act',
+    },
+    {
+      title: 'Genealogy / Family Tree Affidavit (Vamshavruksha)',
+      requirement: 'mandatory',
+      issuingAuthority: 'Notary Public / Executive Magistrate',
+      description: 'Notarized sworn affidavit on non-judicial stamp paper depicting the full lineage and family hierarchy.',
+      legalRef: 'Revenue Department Citizen Charter',
+    },
+    {
+      title: 'Government Identity Proof of All Surviving Heirs',
+      requirement: 'mandatory',
+      issuingAuthority: 'UIDAI / Election Commission',
+      description: 'Aadhaar Card or Voter ID for every surviving legal heir specified in the Legal Heir Certificate.',
+      legalRef: 'DILRMP KYC Norms',
+    },
+    {
+      title: 'Registered Relinquishment / Release Deed (Hakku Sodapatra)',
+      requirement: 'conditional',
+      issuingAuthority: 'Sub-Registrar Office (SRO)',
+      description: 'Registered release deed where co-heirs formally relinquish their inherited shares in favour of a single applicant.',
+      conditionNote: 'Mandatory if mutating the parcel into a single heir’s name when multiple surviving heirs exist.',
+      legalRef: 'Registration Act, 1908 · Sec 17(1)(b)',
+    },
+    {
+      title: 'Registered Will & Probate / Letters of Administration',
+      requirement: 'conditional',
+      issuingAuthority: 'Sub-Registrar Office / District Civil Court',
+      description: 'Registered testamentary will along with certified civil court probate order.',
+      conditionNote: 'Mandatory if succession claim is predicated on a Testamentary Will rather than natural legal heirship.',
+      legalRef: 'Indian Succession Act, 1925 · Sec 213',
+    },
+    {
+      title: 'Deceased Owner’s Patta Passbook / RoR-1B Extract',
+      requirement: 'conditional',
+      issuingAuthority: 'Revenue Department',
+      description: 'Original or certified copy of the deceased pattadar’s passbook to verify khata continuity.',
+      conditionNote: 'Recommended to expedite revenue account linkage and avoid manual survey delays.',
+    },
+  ],
+
+  record_correction: [
+    {
+      title: 'Parent Registered Title Deed / Grant Order',
+      requirement: 'mandatory',
+      issuingAuthority: 'Sub-Registrar Office (SRO) / Revenue Department',
+      description: 'Primary legal instrument verifying authentic particulars (spelling of name, parentage, survey number, or boundary extents).',
+      legalRef: 'Registration Act, 1908',
+    },
+    {
+      title: 'Government Photo Identity Proof (Aadhaar / Passport)',
+      requirement: 'mandatory',
+      issuingAuthority: 'UIDAI / Passport Office / Income Tax',
+      description: 'Official photo identity confirming the correct legal name and personal identifiers.',
+      legalRef: 'National Identity Standards',
+    },
+    {
+      title: 'Current Erroneous Record of Rights / Patta Extract',
+      requirement: 'mandatory',
+      issuingAuthority: 'Land Revenue Portal (Dharani / Bhulekh / Meebhoomi)',
+      description: 'Certified digital copy of Pahani, RoR-1B, or Khata extract highlighting the clerical error.',
+      legalRef: 'State Record of Rights Act',
+    },
+    {
+      title: 'Notarized Discrepancy & Indemnity Affidavit',
+      requirement: 'mandatory',
+      issuingAuthority: 'Notary Public / Executive Magistrate',
+      description: 'Sworn affidavit explaining how the clerical or data-entry mistake occurred and indemnifying the revenue department.',
+      legalRef: 'Indian Oaths Act, 1969',
+    },
+    {
+      title: 'Field Measurement Book (FMB) / Survey Sketch / Tippan',
+      requirement: 'conditional',
+      issuingAuthority: 'Survey & Land Records Department (ADSLR)',
+      description: 'Cadastral survey sketch showing original boundary offsets, sub-division lines, and measurements.',
+      conditionNote: 'Mandatory if the requested correction involves land extent (area in sqm/acres) or boundary dimensions.',
+      legalRef: 'Survey and Boundaries Act',
+    },
+    {
+      title: 'Registered Rectification Deed (Tatimmma / Correction Deed)',
+      requirement: 'conditional',
+      issuingAuthority: 'Sub-Registrar Office (SRO)',
+      description: 'Bilateral registered instrument amending errors contained in the original registered transfer document.',
+      conditionNote: 'Mandatory if the error originated in the registered deed itself rather than revenue portal data entry.',
+      legalRef: 'Specific Relief Act, 1963 · Sec 26',
+    },
+  ],
+
+  building_permission: [
+    {
+      title: 'Registered Title Deed / Patta Passbook (Ownership Proof)',
+      requirement: 'mandatory',
+      issuingAuthority: 'Sub-Registrar Office (SRO) / Revenue Dept',
+      description: 'Clear freehold title deed or pattadar passbook proving undisputed parcel ownership.',
+      legalRef: 'Transfer of Property Act, 1882',
+    },
+    {
+      title: 'Architectural Working Drawings & Sanction Dossier',
+      requirement: 'mandatory',
+      issuingAuthority: 'Council of Architecture (COA) Registered Architect',
+      description: 'Complete drawings (Site Plan, Key Plan, Floor Plans, Cross-Sections, Elevations, Parking Layout) bearing COA registration stamp and digital signature.',
+      legalRef: 'National Building Code (NBC) · Part 2',
+    },
+    {
+      title: 'Site Plan with Abutting Road Width & Setback Layout',
+      requirement: 'mandatory',
+      issuingAuthority: 'Licensed Town Planning Surveyor / Architect',
+      description: 'Site plan indicating existing abutting public road width, proposed ground coverage, FAR/FSI calculations, and statutory setbacks.',
+      legalRef: 'Unified Building Bye-Laws (UBBL)',
+    },
+    {
+      title: 'Structural Stability Certificate',
+      requirement: 'mandatory',
+      issuingAuthority: 'Empanelled Structural Engineer',
+      description: 'Structural calculation endorsement certifying seismic zone resistance, wind load compliance, and foundation stability.',
+      legalRef: 'IS 1893 & IS 456 Seismic Codes',
+    },
+    {
+      title: 'Encumbrance Certificate (EC Form 15)',
+      requirement: 'mandatory',
+      issuingAuthority: 'Registration & Stamps Dept (IGRS)',
+      description: 'Current nil-encumbrance certificate up to date of application confirming no active mortgages or liens.',
+    },
+    {
+      title: 'Latest Municipal Property Tax Clearance Challan',
+      requirement: 'mandatory',
+      issuingAuthority: 'Urban Local Body / Municipal Corporation',
+      description: 'Paid challan evidencing zero pending municipal property tax, development charges, or vacant land tax dues.',
+    },
+    {
+      title: 'Non-Agricultural Land Conversion (NALA / CLU) Order',
+      requirement: 'conditional',
+      issuingAuthority: 'Revenue Divisional Officer (RDO) / Collector',
+      description: 'Statutory order regularizing conversion of agricultural land into non-agricultural / residential / commercial use.',
+      conditionNote: 'Mandatory if the parcel was originally categorized as agricultural in the revenue register.',
+      legalRef: 'Non-Agricultural Land Assessment (NALA) Act',
+    },
+    {
+      title: 'Fire Department & Environmental NOC',
+      requirement: 'conditional',
+      issuingAuthority: 'State Disaster Response & Fire Services / SPCB',
+      description: 'Provisional Fire Safety NOC and Pollution Control Board consent to establish.',
+      conditionNote: 'Mandatory for high-rise buildings (height > 15m), commercial developments, or industrial complexes.',
+      legalRef: 'Fire Prevention and Life Safety Measures Act',
+    },
+  ],
+
+  land_complaint: [
+    {
+      title: 'Proof of Lawful Title & Possession',
+      requirement: 'mandatory',
+      issuingAuthority: 'Revenue Department / Sub-Registrar Office',
+      description: 'Registered Title Deed, Patta Passbook, or certified latest Record of Rights (RoR-1B) proving lawful ownership and possession.',
+      legalRef: 'State Land Revenue Code',
+    },
+    {
+      title: 'Cadastral Survey Map / Field Measurement Book (FMB) Extract',
+      requirement: 'mandatory',
+      issuingAuthority: 'Survey & Land Records Department',
+      description: 'Official survey sketch marking parcel boundaries and clearly delineating the disputed or encroached area.',
+      legalRef: 'Survey and Boundaries Act',
+    },
+    {
+      title: 'Geotagged & Timestamped Ground Photographs',
+      requirement: 'mandatory',
+      issuingAuthority: 'Complainant / Site Inspection Camera',
+      description: 'High-resolution photographs showing boundary stone destruction, unauthorized construction, wall building, or illegal fencing.',
+      legalRef: 'Bharatiya Sakshya Adhiniyam / Evidence Act',
+    },
+    {
+      title: 'Police Complaint Acknowledgment (CSR / FIR Copy)',
+      requirement: 'conditional',
+      issuingAuthority: 'Local Police Station',
+      description: 'Certified copy of Community Service Register (CSR) or First Information Report (FIR) for trespass or criminal breach.',
+      conditionNote: 'Recommended if the dispute involves criminal trespass, threats of violence, or counterfeit documents.',
+      legalRef: 'BNS / Code of Criminal Procedure · Sec 145/146',
+    },
+    {
+      title: 'Prior Legal Notice / Village Panchayat Resolution Copy',
+      requirement: 'conditional',
+      issuingAuthority: 'Advocate / Gram Panchayat',
+      description: 'Copies of previously issued legal notices, postal delivery track reports, or Panchayat settlement attempts.',
+      conditionNote: 'Attach if legal notices have already been served to the opposing party.',
+    },
+  ],
+};
+
+/* ---------- Statutory Document Checklist Sidebar Card ---------- */
+
+function RequiredDocumentsCard({ intent }: { intent: Intent }) {
+  const [filter, setFilter] = useState<'all' | 'mandatory' | 'conditional'>('all');
+  const docs = STATUTORY_DOCUMENTS[intent] || [];
+  const mandatory = docs.filter((d) => d.requirement === 'mandatory');
+  const conditional = docs.filter((d) => d.requirement === 'conditional');
+
+  const displayed = filter === 'all' ? docs : filter === 'mandatory' ? mandatory : conditional;
+
+  return (
+    <Card className="p-4 overflow-hidden">
+      <div className="flex items-start justify-between gap-2 pb-3 border-b border-line">
+        <div className="flex items-start gap-2.5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 mt-0.5">
+            <FileCheck size={16} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-ink text-sm leading-snug">Statutory Document Checklist</h3>
+            <p className="text-[11.5px] text-ink-3">Required under Indian Land Revenue & Registration Acts</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex items-center gap-1.5 p-1 rounded-lg bg-ground-2 border border-line text-xs">
+        <button
+          type="button"
+          onClick={() => setFilter('all')}
+          className={clsx(
+            'flex-1 py-1 rounded-md font-medium text-center transition-all cursor-pointer text-[11.5px]',
+            filter === 'all' ? 'bg-panel text-ink shadow-2xs font-semibold' : 'text-ink-3 hover:text-ink'
+          )}
+        >
+          All ({docs.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter('mandatory')}
+          className={clsx(
+            'flex-1 py-1 rounded-md font-medium text-center transition-all cursor-pointer text-[11.5px]',
+            filter === 'mandatory' ? 'bg-panel text-emerald-600 dark:text-emerald-400 shadow-2xs font-bold' : 'text-ink-3 hover:text-ink'
+          )}
+        >
+          Mandatory ({mandatory.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter('conditional')}
+          className={clsx(
+            'flex-1 py-1 rounded-md font-medium text-center transition-all cursor-pointer text-[11.5px]',
+            filter === 'conditional' ? 'bg-panel text-amber-600 dark:text-amber-400 shadow-2xs font-semibold' : 'text-ink-3 hover:text-ink'
+          )}
+        >
+          As Applicable ({conditional.length})
+        </button>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+        {displayed.map((d, i) => (
+          <div
+            key={i}
+            className="group rounded-lg border border-line bg-panel p-3 text-xs transition-all hover:border-line-strong hover:shadow-2xs"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-1.5 min-w-0">
+                {d.requirement === 'mandatory' ? (
+                  <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <Info size={14} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                )}
+                <span className="font-bold text-ink leading-tight text-[12.5px]">{d.title}</span>
+              </div>
+              <span
+                className={clsx(
+                  'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide',
+                  d.requirement === 'mandatory'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
+                    : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
+                )}
+              >
+                {d.requirement === 'mandatory' ? 'Mandatory' : 'As Applicable'}
+              </span>
+            </div>
+
+            <p className="mt-1.5 text-ink-2 text-[11.5px] leading-relaxed pl-5">{d.description}</p>
+
+            <div className="mt-2 flex items-center justify-between gap-2 flex-wrap pl-5 pt-1.5 border-t border-line/60 text-[10.5px]">
+              <span className="inline-flex items-center gap-1 font-mono text-ink-3">
+                <Building2 size={11} className="text-ink-4 shrink-0" /> {d.issuingAuthority}
+              </span>
+              {d.legalRef && (
+                <span className="text-ink-3 italic font-medium">
+                  § {d.legalRef}
+                </span>
+              )}
+            </div>
+
+            {d.conditionNote && (
+              <div className="mt-2 ml-5 rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-1 text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
+                <strong className="font-semibold">When required:</strong> {d.conditionNote}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 pt-2.5 border-t border-line flex items-start gap-2 text-[11px] text-ink-3">
+        <ShieldCheck size={14} className="text-primary shrink-0 mt-0.5" />
+        <span>
+          Upload single or multi-page documents (PDF, PNG, JPG). Hexaverse AI auto-extracts parties and boundaries and cross-verifies with the Spatial Cadastre.
+        </span>
+      </div>
+    </Card>
+  );
+}
+
 /* ---------- Shared bits ---------- */
 
 function formatFileSize(bytes: number): string {
@@ -260,11 +645,55 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function DocField({ doc, setDoc, hint }: { doc: File | null; setDoc: (f: File | null) => void; hint: string }) {
+function DocField({
+  intent,
+  doc,
+  setDoc,
+  hint,
+}: {
+  intent?: Intent;
+  doc: File | null;
+  setDoc: (f: File | null) => void;
+  hint: string;
+}) {
   const isPdf = doc?.type.includes('pdf') || doc?.name.toLowerCase().endsWith('.pdf');
+  const checklist = intent ? STATUTORY_DOCUMENTS[intent] : [];
+  const mandatoryDocs = checklist.filter((d) => d.requirement === 'mandatory');
 
   return (
     <Field label="Supporting document" hint={hint}>
+      {mandatoryDocs.length > 0 && (
+        <div className="mb-2 rounded-lg border border-line bg-ground-2/70 p-2.5 text-xs">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="font-semibold text-ink text-[11.5px] flex items-center gap-1">
+              <FileCheck size={12} className="text-primary" /> Required Documents Checklist
+            </span>
+            <span className="text-[10.5px] text-ink-3">Must be clear & uncropped</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {checklist.map((d, i) => (
+              <span
+                key={i}
+                title={`${d.title} (${d.issuingAuthority}) - ${d.description}`}
+                className={clsx(
+                  'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border cursor-help transition-colors',
+                  d.requirement === 'mandatory'
+                    ? 'bg-panel border-emerald-300/80 text-emerald-800 dark:border-emerald-700/60 dark:text-emerald-300 font-semibold'
+                    : 'bg-ground-1 border-line text-ink-3'
+                )}
+              >
+                {d.requirement === 'mandatory' ? (
+                  <Check size={10} className="text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <Info size={10} className="text-ink-4" />
+                )}
+                {(d.title.split('(')[0] ?? d.title).trim()}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {!doc ? (
         <label className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong bg-ground-2/50 px-4 py-4 text-center cursor-pointer transition-all hover:border-primary hover:bg-primary-soft/30 group">
           <div className="flex size-9 items-center justify-center rounded-lg bg-ground-1 text-ink-3 shadow-2xs group-hover:text-primary group-hover:scale-105 transition-all">
@@ -274,7 +703,7 @@ function DocField({ doc, setDoc, hint }: { doc: File | null; setDoc: (f: File | 
             Upload document (PDF, PNG, JPEG up to 10MB)
           </span>
           <span className="text-[11px] text-ink-3">
-            Click to browse self-attested deed, legal heir certificate, or court order
+            Click to browse self-attested deed, certificate, drawings, or affidavit
           </span>
           <input
             type="file"
@@ -333,10 +762,26 @@ function MutationForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicatio
   const [reason, setReason] = useState('sale');
   const [newOwner, setNewOwner] = useState('');
   const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const m = useMutation({
-    mutationFn: () => api.createApplication(ulpin.trim(), 'mutation', { reason, new_owner_name: newOwner.trim(), document_name: doc?.name ?? null }),
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'mutation', {
+          reason,
+          new_owner_name: newOwner.trim(),
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
     onSuccess: (a) => { toast.success(t('service.successTitle'), a.id); onDone(a); },
   });
+
   return (
     <FormCard title={t('service.intentMutation')} subtitle="Revenue department · mutation of the Record of Rights" onSubmit={(e) => { e.preventDefault(); m.mutate(); }}>
       <Field label="Reason for transfer" htmlFor="sr-reason">
@@ -351,10 +796,10 @@ function MutationForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicatio
       <Field label="New owner name" htmlFor="sr-owner" hint="Exactly as on the deed">
         <Input id="sr-owner" required value={newOwner} onChange={(e) => setNewOwner(e.target.value)} />
       </Field>
-      <DocField doc={doc} setDoc={setDoc} hint="Deed / succession certificate (PDF or image)." />
+      <DocField intent="mutation" doc={doc} setDoc={setDoc} hint="Registered deed, Encumbrance Certificate (EC), and tax receipt (PDF or image dossier)." />
       {m.isError && <ErrorNote error={m.error} />}
-      <Button type="submit" variant="primary" loading={m.isPending} className="self-start" disabled={ulpin.trim().length < 8}>
-        {t('service.btnSubmit')}
+      <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
+        {uploading ? 'Uploading document...' : t('service.btnSubmit')}
       </Button>
     </FormCard>
   );
@@ -374,16 +819,27 @@ function CorrectionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
   const [corrected, setCorrected] = useState('');
   const [description, setDescription] = useState('');
   const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const m = useMutation({
-    mutationFn: () =>
-      api.createApplication(ulpin.trim(), 'record_correction', {
-        field,
-        corrected_value: corrected.trim(),
-        description: description.trim(),
-        document_name: doc?.name ?? null,
-      }),
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'record_correction', {
+          field,
+          corrected_value: corrected.trim(),
+          description: description.trim(),
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
     onSuccess: (a) => { toast.success(t('service.successTitle'), a.id); onDone(a); },
   });
+
   return (
     <FormCard title={t('service.intentCorrection')} subtitle="Revenue department · record correction" onSubmit={(e) => { e.preventDefault(); m.mutate(); }}>
       <Field label="What is wrong?" htmlFor="sr-field">
@@ -397,10 +853,10 @@ function CorrectionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       <Field label="Tell us more" htmlFor="sr-corr-desc" hint="How the mistake happened, if you know">
         <Textarea id="sr-corr-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
-      <DocField doc={doc} setDoc={setDoc} hint="Anything that proves the correct value (old patta, deed, Aadhaar…)." />
+      <DocField intent="record_correction" doc={doc} setDoc={setDoc} hint="Parent deed, photo ID, FMB survey sketch, or affidavit proving the correct value." />
       {m.isError && <ErrorNote error={m.error} />}
-      <Button type="submit" variant="primary" loading={m.isPending} className="self-start" disabled={ulpin.trim().length < 8}>
-        {t('service.btnSubmit')}
+      <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
+        {uploading ? 'Uploading document...' : t('service.btnSubmit')}
       </Button>
     </FormCard>
   );
@@ -419,6 +875,8 @@ function PermissionForm({ ulpin, setUlpin, onDone }: { ulpin: string; setUlpin: 
   const [builtUp, setBuiltUp] = useState(150);
   const [use, setUse] = useState('residential');
   const [checked, setChecked] = useState(false);
+  const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const preCheck = useQuery({
     queryKey: qk.preCheck(ulpin.trim(), 'building_permission', user?.uid ?? 'anon'),
@@ -441,13 +899,22 @@ function PermissionForm({ ulpin, setUlpin, onDone }: { ulpin: string; setUlpin: 
   const registeredOwnerName = preCheck.data?.ror_owner;
 
   const m = useMutation({
-    mutationFn: () =>
-      api.createApplication(ulpin.trim(), 'building_permission', {
-        floors,
-        built_up_sqm: builtUp,
-        proposed_use: use,
-        precheck: check.data ?? null,
-      }),
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'building_permission', {
+          floors,
+          built_up_sqm: builtUp,
+          proposed_use: use,
+          precheck: check.data ?? null,
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
     onSuccess: (a) => { toast.success(t('service.successTitle'), a.id); onDone(a); },
   });
 
@@ -525,15 +992,16 @@ function PermissionForm({ ulpin, setUlpin, onDone }: { ulpin: string; setUlpin: 
         {!check.data && !check.isError && <p className="mt-1 text-xs text-ink-3">Calls the planning department’s <code>/planning/check</code> before you submit.</p>}
       </div>
       {check.data && !check.data.permissible && <Callout tone="amber" title="You can still submit">The application will be scrutinised by a planning officer, but expect it to be rejected unless the proposal changes.</Callout>}
+      <DocField intent="building_permission" doc={doc} setDoc={setDoc} hint="Architectural drawings, site plan, structural stability certificate (PDF or image dossier)." />
       {m.isError && <ErrorNote error={m.error} />}
       <Button
         type="submit"
         variant="primary"
-        loading={m.isPending}
+        loading={m.isPending || uploading}
         className="self-start"
         disabled={!checked || !check.data || isOwnershipDenied}
       >
-        {isOwnershipDenied ? t('service.onlyOwnerCanApply') : t('service.btnSubmit')}
+        {isOwnershipDenied ? t('service.onlyOwnerCanApply') : uploading ? 'Uploading document...' : t('service.btnSubmit')}
       </Button>
     </FormCard>
   );
@@ -552,13 +1020,23 @@ function ComplaintForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicati
   const [category, setCategory] = useState('encroachment');
   const [description, setDescription] = useState('');
   const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const m = useMutation({
-    mutationFn: () =>
-      api.createApplication(ulpin.trim(), 'land_complaint', {
-        category,
-        description: description.trim(),
-        document_name: doc?.name ?? null,
-      }),
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'land_complaint', {
+          category,
+          description: description.trim(),
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
     onSuccess: (a) => { toast.success(t('service.successTitle'), a.id); onDone(a); },
   });
   return (
@@ -571,10 +1049,10 @@ function ComplaintForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicati
       <Field label="Describe what happened" htmlFor="sr-comp-desc" hint="When it started, who is involved, what you want done">
         <Textarea id="sr-comp-desc" rows={4} required value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
-      <DocField doc={doc} setDoc={setDoc} hint="Photos or papers that support the complaint." />
+      <DocField intent="land_complaint" doc={doc} setDoc={setDoc} hint="Title proof, cadastral FMB extract, timestamped photos, or police acknowledgment." />
       {m.isError && <ErrorNote error={m.error} />}
-      <Button type="submit" variant="primary" loading={m.isPending} className="self-start" disabled={ulpin.trim().length < 8}>
-        {t('service.btnSubmit')}
+      <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
+        {uploading ? 'Uploading document...' : t('service.btnSubmit')}
       </Button>
     </FormCard>
   );
@@ -588,14 +1066,24 @@ function SuccessionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
   const [heir, setHeir] = useState('');
   const [relation, setRelation] = useState('spouse');
   const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const m = useMutation({
-    mutationFn: () =>
-      api.createApplication(ulpin.trim(), 'succession', {
-        deceased_name: deceased.trim(),
-        nominee_name: heir.trim(),
-        relation,
-        document_name: doc?.name ?? null,
-      }),
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'succession', {
+          deceased_name: deceased.trim(),
+          nominee_name: heir.trim(),
+          relation,
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
     onSuccess: (a) => { toast.success(t('service.successTitle'), a.id); onDone(a); },
   });
   return (
@@ -613,10 +1101,10 @@ function SuccessionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
           </Select>
         </Field>
       </div>
-      <DocField doc={doc} setDoc={setDoc} hint="Death certificate and legal-heir certificate (or nominee record)." />
+      <DocField intent="succession" doc={doc} setDoc={setDoc} hint="Death Certificate, Legal Heir Certificate, and Family Tree Affidavit." />
       {m.isError && <ErrorNote error={m.error} />}
-      <Button type="submit" variant="primary" loading={m.isPending} className="self-start" disabled={ulpin.trim().length < 8}>
-        {t('service.btnSubmit')}
+      <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
+        {uploading ? 'Uploading document...' : t('service.btnSubmit')}
       </Button>
     </FormCard>
   );

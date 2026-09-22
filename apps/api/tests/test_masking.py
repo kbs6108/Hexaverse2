@@ -20,6 +20,12 @@ def test_should_mask_by_role_and_consent() -> None:
     assert not should_mask(Principal(uid="o", role="officer", department="revenue"), "U1")
     assert not should_mask(Principal(uid="a", role="admin"), "U1")
 
+    # Owner of parcel sees their own land unmasked
+    cdm_owned = {"party": {"owners": [{"name": "Ravi Kumar"}]}}
+    assert not should_mask(Principal(uid="c1", name="Ravi Kumar", role="citizen"), "U1", cdm_owned)
+    # Other citizen sees masked
+    assert should_mask(Principal(uid="c2", name="Leena Jayaraman", role="citizen"), "U1", cdm_owned)
+
 
 def test_mask_cdm_shape() -> None:
     cdm = {

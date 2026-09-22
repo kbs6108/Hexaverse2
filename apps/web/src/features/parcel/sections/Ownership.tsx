@@ -1,5 +1,6 @@
-import { EyeOff, UserRound } from 'lucide-react';
+import { CheckCircle2, EyeOff, UserRound } from 'lucide-react';
 import type { ParcelCDM } from '@/lib/cdm';
+import { useAuth } from '@/lib/auth';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { KV, SectionTitle, Callout } from '@/components/Section';
 import { fmtArea, titleCase } from '@/lib/format';
@@ -7,7 +8,14 @@ import { Badge } from '@/components/Badge';
 import { t } from '@/lib/i18n';
 
 export function Ownership({ p }: { p: ParcelCDM }) {
+  const { user } = useAuth();
   const ror = p.rights.ror;
+  const isMyLand = !p.party.masked && user?.role === 'citizen' && p.party.owners.some((o) => {
+    const pName = (user.name || '').trim().toLowerCase();
+    const oName = (o.name || '').trim().toLowerCase();
+    return pName && oName && (pName === oName || pName.includes(oName) || oName.includes(pName));
+  });
+
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -15,6 +23,11 @@ export function Ownership({ p }: { p: ParcelCDM }) {
         {p.party.masked && (
           <Callout tone="slate" title={<span className="flex items-center gap-1"><EyeOff size={14} /> {t('drawer.namesMasked', 'Names are masked')}</span>}>
             {t('drawer.maskedNotice', 'Full owner details require consent from the owner or officer access. Use “Verify ownership” to check a name without revealing it.')}
+          </Callout>
+        )}
+        {!p.party.masked && isMyLand && (
+          <Callout tone="primary" title={<span className="flex items-center gap-1.5 font-semibold text-primary"><CheckCircle2 size={15} /> Verified Title Holder (Your Parcel)</span>}>
+            You are the registered title owner of this parcel under the statutory Record of Rights (RoR). Full title records, nominee allocations, and unmasked identifiers are unlocked for your profile.
           </Callout>
         )}
         <ul className="mt-3 flex flex-col gap-2">
@@ -26,7 +39,7 @@ export function Ownership({ p }: { p: ParcelCDM }) {
                 <p className="font-medium">{o.name}</p>
                 <p className="text-xs text-ink-3">{o.father_name ? `S/o ${o.father_name} · ` : ''}{titleCase(o.type)}</p>
               </div>
-              <Badge>{Math.round(o.share * 100)}{t('drawer.share', '% share')}</Badge>
+              <Badge>{Math.round(o.share * 100)}{t('drawer.sharePercent', '% share')}</Badge>
             </li>
           ))}
         </ul>

@@ -25,6 +25,7 @@ export interface AuthUser {
   email?: string | null;
   role: Role;
   department: Department | null;
+  designation?: string | null;
 }
 
 let app: FirebaseApp | null = null;
@@ -58,7 +59,8 @@ async function toAuthUser(u: User): Promise<AuthUser> {
   const token = await u.getIdTokenResult();
   const role = (token.claims.role as Role | undefined) ?? 'citizen';
   const department = (token.claims.department as Department | undefined) ?? null;
-  return { uid: u.uid, name: u.displayName ?? u.email ?? 'Signed in', email: u.email, role, department };
+  const designation = (token.claims.designation as string | undefined) ?? null;
+  return { uid: u.uid, name: u.displayName ?? u.email ?? 'Signed in', email: u.email, role, department, designation };
 }
 
 function start() {
@@ -80,12 +82,35 @@ function subscribe(cb: () => void) {
 
 /* ---------- Dev identities ---------- */
 export function parseDevUser(id: DevUserId): AuthUser {
-  const [role, department, name] = id.split(':') as [Role, string, string];
+  const parts = id.split(':');
+  if (parts.length >= 4) {
+    const [role, department, designation, name] = parts;
+    return {
+      uid: `dev:${id}`,
+      name: String(name || role),
+      role: role as Role,
+      department: (department || null) as Department | null,
+      designation: designation || null,
+      email: null,
+    };
+  }
+  const [role, department, name] = parts as [Role, string, string];
+  let designation: string | null = null;
+  const lowerName = (name || '').toLowerCase();
+  if (lowerName === 'anitha' || lowerName === 'muthu' || lowerName === 'kavitha') {
+    designation = 'tahsildar';
+  } else if (lowerName === 'suresh' || lowerName === 'karthik') {
+    designation = 'sub_registrar';
+  } else if (lowerName === 'farida' || lowerName === 'rajesh') {
+    designation = 'town_planner';
+  }
+
   return {
     uid: `dev:${id}`,
     name: name || role,
     role,
     department: (department || null) as Department | null,
+    designation,
     email: null,
   };
 }

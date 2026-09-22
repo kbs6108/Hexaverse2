@@ -25,13 +25,38 @@ def mask_doc_no(doc_no: str | None) -> str | None:
     return "****" + s[-4:] if len(s) > 4 else "****"
 
 
-def should_mask(principal: Principal | None, ulpin: str) -> bool:
-    """Officers/admins see everything; citizens only with a consent for the parcel."""
+def is_parcel_owner(principal: Principal | None, cdm: dict[str, Any] | None) -> bool:
+    """True if the authenticated principal is the registered title owner of this parcel."""
+    if principal is None or not principal.name or not cdm:
+        return False
+    p_name = principal.name.strip().lower()
+    owners = (cdm.get("party") or {}).get("owners") or []
+    for o in owners:
+        o_name = (o.get("name") or "").strip().lower()
+        if not o_name:
+            continue
+        if p_name == o_name or p_name in o_name or o_name in p_name:
+            return True
+        try:
+            from landstack.services.consistency import name_score
+            if name_score(p_name, o_name) >= 60:
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def should_mask(principal: Principal | None, ulpin: str, cdm: dict[str, Any] | None = None) -> bool:
+    """Officers/admins see everything; title owners see their own land; other citizens require consent."""
     if principal is None:
         return True
     if principal.is_officer:
         return False
-    return ulpin not in principal.consents
+    if ulpin in principal.consents:
+        return False
+    if is_parcel_owner(principal, cdm):
+        return False
+    return True
 
 
 def mask_cdm(cdm: dict[str, Any]) -> dict[str, Any]:

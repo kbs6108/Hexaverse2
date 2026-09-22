@@ -14,9 +14,15 @@ def test_parse_dev_header_variants() -> None:
     assert parse_dev_header(None) is None
     assert parse_dev_header("   ") is None
     p = parse_dev_header("officer:revenue:Anitha")
-    assert (p.role, p.department, p.name) == ("officer", "revenue", "Anitha")
+    assert (p.role, p.department, p.name, p.designation) == ("officer", "revenue", "Anitha", "tahsildar")
+    vro = parse_dev_header("officer:revenue:vro:Ramesh")
+    assert (vro.role, vro.department, vro.name, vro.designation) == ("officer", "revenue", "Ramesh", "vro")
+    surv = parse_dev_header("officer:revenue:surveyor:Swathi")
+    assert (surv.role, surv.department, surv.name, surv.designation) == ("officer", "revenue", "Swathi", "surveyor")
+    ri = parse_dev_header("officer:revenue:ri:Chaitanya")
+    assert (ri.role, ri.department, ri.name, ri.designation) == ("officer", "revenue", "Chaitanya", "ri")
     c = parse_dev_header("citizen:Ravi Kumar")
-    assert (c.role, c.department, c.name) == ("citizen", None, "Ravi Kumar")
+    assert (c.role, c.department, c.name, c.designation) == ("citizen", None, "Ravi Kumar", None)
     a = parse_dev_header("admin")
     assert a.role == "admin" and a.department is None and a.uid.startswith("dev-")
     assert parse_dev_header("citizen:Ravi Kumar").uid == parse_dev_header("citizen:Ravi Kumar").uid
