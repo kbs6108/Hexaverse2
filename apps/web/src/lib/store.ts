@@ -48,7 +48,7 @@ export const DEV_USERS = [
   { id: 'citizen::Lakshmi Devi', label: 'Lakshmi Devi', role: 'citizen', state: 'AP', hint: 'Citizen · Buyer / Assignee (AP)' },
   { id: 'citizen::Nageswara Rao Tenali', label: 'Nageswara Rao Tenali', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 124 (Change Alert, AP)' },
   { id: 'citizen::Leena Jayaraman', label: 'Leena Jayaraman', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 125/2 (Disputed Title, AP)' },
-  { id: 'citizen::Jatin Baral', label: 'Jatin Baral', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 126 (Mortgaged, AP)' },
+  { id: 'citizen::Jatin Baral', label: 'Jatin barali', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 126 (Mortgaged, AP)' },
   { id: 'citizen::Sambasiva Rao Mekala', label: 'Sambasiva Rao Mekala', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 127/1 (Tax Arrears, AP)' },
   { id: 'citizen::Venkata Rao Kandula', label: 'Venkata Rao Kandula', role: 'citizen', state: 'AP', hint: 'Citizen · Sy 128 (Pending Mutation, AP)' },
   { id: 'officer:revenue:vro:Ramesh', label: 'Ramesh (VRO)', role: 'officer', state: 'AP', hint: 'Village Revenue Officer · Field Panchanama (AP)' },

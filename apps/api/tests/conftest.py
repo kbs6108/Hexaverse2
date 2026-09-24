@@ -68,6 +68,16 @@ def fake_db() -> Any:
     dbmod.use_db(None)
 
 
+@pytest.fixture
+def client(fake_db: Any) -> Any:
+    from fastapi.testclient import TestClient
+    from landstack.main import create_app
+
+    app = create_app()
+    with TestClient(app, raise_server_exceptions=False) as c:
+        yield c
+
+
 def pytest_collection_modifyitems(config: Any, items: list[Any]) -> None:
     if os.environ.get("DATABASE_URL"):
         return

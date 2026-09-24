@@ -76,11 +76,15 @@ landstack_api.egg-info/dependency_links.txt
 landstack_api.egg-info/requires.txt
 landstack_api.egg-info/top_level.txt
 tests/test_aggregator_merge.py
+tests/test_assistant_and_order.py
 tests/test_assistant_routing.py
 tests/test_auth.py
 tests/test_change_detection.py
 tests/test_due_diligence.py
+tests/test_dynamic_pricing.py
 tests/test_events.py
+tests/test_extract_pdf.py
+tests/test_full_transfer.py
 tests/test_mappings.py
 tests/test_masking.py
 tests/test_rules_misc.py

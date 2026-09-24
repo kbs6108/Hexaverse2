@@ -59,28 +59,54 @@ def should_mask(principal: Principal | None, ulpin: str, cdm: dict[str, Any] | N
     return True
 
 
-def mask_cdm(cdm: dict[str, Any]) -> dict[str, Any]:
-    """Return a masked deep copy of a CDM dict."""
+def mask_cdm(cdm: dict[str, Any], prefs: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Return a masked deep copy of a CDM dict according to statutory privacy and owner preferences."""
     out = copy.deepcopy(cdm)
-    party = out.setdefault("party", {})
-    for owner in party.get("owners", []) or []:
-        owner["name"] = mask_name(owner.get("name"))
-        owner.pop("father_name", None)
-    party["masked"] = True
+    prefs = prefs or {}
+    public_owner_name = bool(prefs.get("public_owner_name", False))
+    public_nominees = bool(prefs.get("public_nominees", False))
+    public_deed_details = bool(prefs.get("public_deed_details", False))
+    public_building_units = bool(prefs.get("public_building_units", True))
+    public_utilities = bool(prefs.get("public_utilities", True))
 
-    for nom in out.get("rights", {}).get("ror", {}).get("nominees", []) or []:
-        nom["name"] = mask_name(nom.get("name"))
+    party = out.setdefault("party", {})
+    if not public_owner_name:
+        for owner in party.get("owners", []) or []:
+            owner["name"] = mask_name(owner.get("name"))
+            owner.pop("father_name", None)
+        party["masked"] = True
+    else:
+        party["masked"] = False
+
+    # Nominees: if owner turned off public_nominees, completely hide from public viewers
+    ror = out.get("rights", {}).get("ror", {})
+    if not public_nominees:
+        if "nominees" in ror:
+            ror["nominees"] = []
+    else:
+        for nom in ror.get("nominees", []) or []:
+            nom["name"] = mask_name(nom.get("name"))
 
     reg = out.setdefault("rights", {}).setdefault("registration", {})
     if reg:
-        reg["doc_no"] = mask_doc_no(reg.get("doc_no"))
-        for key in ("claimant", "executant"):
-            if reg.get(key):
-                reg[key] = mask_name(reg[key])
+        if not public_deed_details:
+            reg["doc_no"] = mask_doc_no(reg.get("doc_no"))
+            for key in ("claimant", "executant"):
+                if reg.get(key):
+                    reg[key] = mask_name(reg[key])
 
-    for building in out.get("buildings", []) or []:
-        for unit in building.get("units", []) or []:
-            unit["owner_name"] = mask_name(unit.get("owner_name"))
+    # Buildings & Units
+    if not public_building_units:
+        for building in out.get("buildings", []) or []:
+            building["units"] = []
+    else:
+        for building in out.get("buildings", []) or []:
+            for unit in building.get("units", []) or []:
+                unit["owner_name"] = mask_name(unit.get("owner_name"))
+
+    # Utilities
+    if not public_utilities:
+        out["utilities"] = None
 
     for enc in out.get("restrictions", {}).get("encumbrances", []) or []:
         if enc.get("holder") and enc.get("kind") not in ("mortgage", "lien", "charge"):

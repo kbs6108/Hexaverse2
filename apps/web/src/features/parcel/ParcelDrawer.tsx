@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, ShieldCheck } from 'lucide-react';
 import { Drawer } from '@/components/Drawer';
 import { Tabs, TabPanel } from '@/components/Tabs';
 import { Loading } from '@/components/Spinner';
@@ -19,6 +19,7 @@ import { UtilitiesSection } from './sections/Utilities';
 import { Timeline } from './sections/Timeline';
 import { SatelliteSection } from './sections/Satellite';
 import { useTranslation } from '@/lib/i18n';
+import { OwnerPrivacyModal } from './OwnerPrivacyModal';
 
 export type ParcelTab = 'overview' | 'ownership' | 'registration' | 'planning' | 'fiscal' | 'utilities' | 'timeline' | 'satellite';
 
@@ -27,6 +28,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [tab, setTab] = useState<ParcelTab>('overview');
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   useEffect(() => setTab('overview'), [selectedUlpin]);
 
   const tabs: { id: ParcelTab; label: string }[] = [
@@ -48,6 +50,15 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
   });
 
   const p = q.data;
+  const isOwner = !!p && (
+    !!p.viewer_is_owner ||
+    (!p.party.masked && user?.role === 'citizen' && p.party.owners.some((o) => {
+      const pName = (user.name || '').trim().toLowerCase();
+      const oName = (o.name || '').trim().toLowerCase();
+      return pName && oName && (pName === oName || pName.includes(oName) || oName.includes(pName));
+    }))
+  );
+
   // Feed the "recently opened" list used by the parcel pickers (forms, admin tools).
   useEffect(() => {
     if (p) recordRecentParcel({ ulpin: p.ulpin, survey_no: p.identifiers.survey_no, village: p.identifiers.village });
@@ -73,7 +84,22 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
               <span>{titleCase(p.planning.land_use)}</span>
             </div>
           )}
-          {p && <div className="mt-2 flex flex-wrap gap-1">{statusChips(p.status)}</div>}
+          {p && (
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1.5">
+              <div className="flex flex-wrap gap-1">{statusChips(p.status)}</div>
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => setPrivacyOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary-soft hover:bg-primary-soft/80 text-primary px-2.5 py-1 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                  title="Owner Privacy & Public Disclosure Settings"
+                >
+                  <ShieldCheck size={13} />
+                  <span>Privacy Settings</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       }
     >
@@ -98,6 +124,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
           </div>
         </>
       )}
+      {p && <OwnerPrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} parcel={p} />}
     </Drawer>
   );
 }

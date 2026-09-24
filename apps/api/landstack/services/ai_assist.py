@@ -402,6 +402,36 @@ _INTENT_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "privacy",
+        (
+            "privacy", "mask", "masked", "masking", "hide my details", "dpdp", "hide name", "public view",
+            "unmask", "privacy settings", "private details", "confidential", "hide details",
+        ),
+    ),
+    (
+        "hierarchy",
+        (
+            "vro", "surveyor", "ri", "revenue inspector", "tahsildar", "hierarchy", "officer levels",
+            "who approves", "who checks", "mro", "desk authority", "stages", "workflow hierarchy",
+            "approval levels", "officer queue",
+        ),
+    ),
+    (
+        "transfer_7d",
+        (
+            "full transfer", "what gets transferred", "rights transfer", "does everything transfer",
+            "building units transfer", "nominee reset", "7 dimensions", "everything transferred",
+            "all rights transferred", "transfer everything",
+        ),
+    ),
+    (
+        "threed_cadastre",
+        (
+            "3d", "3d cadastre", "3d units", "3d parcel", "vertical cadastre", "spatial unit",
+            "spatial units", "strata", "air rights", "sub-parcel",
+        ),
+    ),
+    (
         "build",
         (
             "build", "building", "construct", "construction", "permit", "permission", "floors",
@@ -502,10 +532,19 @@ def route_intent(message: str) -> dict[str, Any]:
     survey_m = _SURVEY_RE.search(text)
     intent = None
     for name, keywords in _INTENT_KEYWORDS:
-        if any(k in low for k in keywords):
+        matched = False
+        for k in keywords:
+            if len(k) <= 3:
+                if re.search(r"\b" + re.escape(k) + r"\b", low):
+                    matched = True
+                    break
+            elif k in low:
+                matched = True
+                break
+        if matched:
             intent = name
             break
-    if app_m and intent is None:
+    if app_m and (intent is None or intent == "locate"):
         intent = "status"
     return {
         "intent": intent or "help",
@@ -656,20 +695,26 @@ async def assistant(
         if warn:
             reply += " Caution: " + "; ".join(f"{c['name']} — {c['text']}" for c in warn[:2])
         if dd.get("estimated_value"):
-            reply += f" Indicative value ₹{float(dd['estimated_value']):,.0f} at the guideline rate."
+            est_val = float(dd['estimated_value'])
+            est_mv = float(dd.get('estimated_market_value') or (est_val * 1.35))
+            reply += f" Indicative value: ₹{est_val:,.0f} (guideline circle rate), estimated market price: ₹{est_mv:,.0f}."
         reply += " This is a record summary, not legal advice — the certified report PDF is the signed artefact."
         suggestions = ["Any court disputes?", "How do I get the certified report?"]
 
     elif intent == "tax" and cdm is not None:
         st = cdm.get("status") or {}
-        tax = (cdm.get("fiscal") or {}).get("tax") or {}
+        fsc = cdm.get("fiscal") or {}
+        tax = fsc.get("tax") or {}
         arrears = float(st.get("tax_arrears") or 0)
         if arrears > 0:
             reply = f"Property tax on this parcel has arrears of ₹{arrears:,.0f}. Clearing dues first usually speeds up any application."
         else:
             reply = "Property tax on this parcel is paid up" + (f" till {tax['paid_till']}" if tax.get("paid_till") else "") + "."
-        if (cdm.get("fiscal") or {}).get("estimated_value"):
-            reply += f" Indicative value: ₹{float(cdm['fiscal']['estimated_value']):,.0f} at the guideline rate."
+        if fsc.get("estimated_value"):
+            est_val = float(fsc['estimated_value'])
+            est_mv = float(fsc.get('estimated_market_value') or (est_val * 1.35))
+            tier = f" ({fsc['location_tier']})" if fsc.get("location_tier") else ""
+            reply += f" Indicative circle valuation: ₹{est_val:,.0f}{tier}, estimated fair market value: ~₹{est_mv:,.0f}."
         suggestions = ["Is it safe to buy?", "How do I pay tax dues?"]
 
     elif intent == "dispute" and cdm is not None:
@@ -803,6 +848,51 @@ async def assistant(
         )
         suggestions = ["Verify ownership", "Survey no 123/4", "Is survey no 123/4 safe to buy?"]
 
+    elif intent == "privacy":
+        reply = (
+            "**[Landowner Privacy Controls & DPDP Act 2023]**\n"
+            "• **Permanent Masking Protection**: Under the Digital Personal Data Protection (DPDP) Act, your **Full Legal Name** (masked as R*** K***), **Family Nominees** (hidden), and **Registered Deed Number** (masked as ****0001) are permanently protected. Toggling them on is disabled to prevent accidental public disclosure.\n"
+            "• **Statutory Public Disclosures**: Under Section 3 of the Transfer of Property Act, land boundaries, zoning, active bank mortgages, court disputes, and property tax demand are statutory public notices that protect innocent purchasers against fraud and cannot be concealed.\n"
+            "• **Verified Ownership**: Third parties can confirm ownership using [Verify Ownership](/citizen/verify), which returns an instant Yes/No match without exposing your identity.\n"
+            "• **Officer Access**: Authorized revenue officers (VRO, Surveyor, RI, Tahsildar) retain full unmasked access during official duties."
+        )
+        suggestions = ["Verify ownership against a name", "Open live map", "Check buyer due diligence"]
+
+    elif intent == "hierarchy":
+        reply = (
+            "**[4-Tier Statutory Revenue Officer Hierarchy]**\n"
+            "Under the AP Rights in Land and Pattadar Pass Books Act, revenue workflows follow strict desk separation:\n\n"
+            "1. **Village Revenue Officer (VRO)**: First-line ground verification, physical possession check, and field panchanama with neighboring farmers.\n"
+            "2. **Cadastral / Mandal Surveyor**: Total-station / DGPS measurement against village FMB & Tippan, sub-division and corner stone positioning.\n"
+            "3. **Revenue Inspector (RI)**: Reconciles VRO panchanama and survey traverse; audits link deeds & 30-year EC; submits formal endorsement.\n"
+            "4. **Tahsildar / MRO**: Sole quasi-judicial authority empowered by law to grant or reject mutations, issue digital Pattadar Passbooks, and sign statutory orders."
+        )
+        suggestions = ["Track application status", "Apply for mutation", "What is VRO panchanama?"]
+
+    elif intent == "transfer_7d":
+        reply = (
+            "**[Comprehensive 7-Dimension Land Transfer]**\n"
+            "When the Tahsildar approves a Mutation or Succession, **everything** transfers across all 7 state governance layers:\n\n"
+            "• **1. Revenue RoR**: Owner name, father's name updated; previous owner's nominees cleared/reset; mutation history logged.\n"
+            "• **2. Registration Deeds**: Deed consistency verified (Executant $\\to$ Claimant match).\n"
+            "• **3. Planning & Permits**: Existing building permits and development rights endorsed to new owner.\n"
+            "• **4. 3D Cadastre Units**: All multi-level building units/apartments (`ulpin_3d`) retitled to new owner.\n"
+            "• **5. Alerts & Status**: Yellow 'Pending Mutation' flags cleared automatically.\n"
+            "• **6. Privacy & Consents**: Old consents revoked; fresh DPDP privacy preferences initialized.\n"
+            "• **7. Citizen Portal**: Parcel appears under **YOUR LAND** for the buyer; removed from seller."
+        )
+        suggestions = ["Track application", "Apply for mutation", "Check my registered land"]
+
+    elif intent == "threed_cadastre":
+        reply = (
+            "**[3D Cadastre & Spatial Unit Registry]**\n"
+            "Land Stack integrates 3D spatial cadastre for high-rise and multi-unit parcels:\n\n"
+            "• **3D ULPINs**: Each apartment or floor unit has a unique sub-cadastre ID (e.g. `AP071234567890-F02-U01`).\n"
+            "• **Floor Area Ratio (FAR)**: Pre-submission checks verify permissible built-up area and height limits against Master Plan zoning.\n"
+            "• **Unit Transfers**: Upon parcel title transfer, all associated 3D building units are automatically retitled to the new title holder."
+        )
+        suggestions = ["Check zoning on map", "Apply for building permission", "Open live map"]
+
     elif intent == "locate":
         reply = (
             "**[Locate Parcel on Map Explorer]**\n"
@@ -820,11 +910,12 @@ async def assistant(
             "• **Ownership / Mutation**: [Apply for Mutation](/citizen/request?type=mutation) to update passbook after buying\n"
             "• **Inheritance / Succession**: [Apply for Succession](/citizen/request?type=succession) for family property transfer\n"
             "• **Construction / Zoning**: [Apply for Building Permission](/citizen/request?type=building_permission) & check bylaws\n"
-            "• **Buyer Due Diligence**: 9-point multi-department audit before purchasing land\n"
+            "• **Officer Workflow Hierarchy**: Learn what VRO, Surveyor, RI, and Tahsildar check\n"
+            "• **Privacy Controls**: DPDP Act masking & public land disclosure rules\n"
             "• **Track Applications**: [Track Application](/citizen/track) to inspect file status and officer timeline\n\n"
             "💡 *Tip: Mention any survey number (e.g. \"survey no 123/4\") or ULPIN to diagnose records directly!*"
         )
-        suggestions = ["Is survey no 123/4 safe to buy?", "How do I transfer ownership?", "Neighbor built a fence on my land"]
+        suggestions = ["Who approves my mutation?", "How does privacy masking work?", "What gets transferred when buying land?"]
 
     # Build rich ground-truth facts for the LLM
     fact_lines: list[str] = []
@@ -850,7 +941,7 @@ async def assistant(
         if restr.get("encumbrances"):
             enc_str = "; ".join(f"{e.get('type')} by {e.get('holder')} (amount: ₹{e.get('amount')}, active: {e.get('active')})" for e in restr["encumbrances"])
             fact_lines.append(f"Encumbrances: {enc_str}")
-        fact_lines.append(f"Property Tax Arrears: ₹{float(st.get('tax_arrears') or 0):,.0f}, Paid till: {(fiscal.get('tax') or {}).get('paid_till')}, Guideline Value: ₹{float(fiscal.get('estimated_value') or 0):,.0f}")
+        fact_lines.append(f"Property Tax Arrears: ₹{float(st.get('tax_arrears') or 0):,.0f}, Paid till: {(fiscal.get('tax') or {}).get('paid_till')}, Guideline Circle Value: ₹{float(fiscal.get('estimated_value') or 0):,.0f} (₹{fiscal.get('guideline_value_per_sqm') or 0}/m²), Fair Market Value: ₹{float(fiscal.get('estimated_market_value') or 0):,.0f} (₹{fiscal.get('market_value_per_sqm') or 0}/m²), Location Tier: {fiscal.get('location_tier', 'Developing Node')}")
         disputes = restr.get("disputes") or []
         fact_lines.append(f"Court Disputes / Litigation: {len(disputes)} case(s)" + (f" ({'; '.join(d.get('case_no','') for d in disputes)})" if disputes else " None"))
         fact_lines.append(f"Buyer Due Diligence Verdict: {dd.get('verdict')} (checks passed: {sum(1 for c in dd.get('checks',[]) if c['status']=='pass')}/9)")
@@ -1062,3 +1153,124 @@ async def application_advice(db: DBLike, app_id: str, principal: Principal) -> d
         "allowed_actions": labels,
         "parcel_risk": {"score": brief["risk_score"], "level": brief["risk_level"]},
     }
+
+
+async def draft_speaking_order(
+    db: DBLike,
+    app_id: str,
+    action: str,
+    principal: Principal,
+) -> dict[str, Any]:
+    """Generate formal quasi-judicial statutory speaking orders or field inspection reports for officers."""
+    from datetime import date
+    from landstack.services import aggregator, workflow
+
+    app = await workflow.get_application(db, app_id)
+    cdm = await aggregator.get_parcel_cdm(db, app["ulpin"], principal)
+    brief = await parcel_brief(db, app["ulpin"], principal)
+
+    app_type = app.get("type", "mutation")
+    survey_no = app.get("survey_no") or (cdm.get("identifiers") or {}).get("survey_no") or "—"
+    village = (cdm.get("identifiers") or {}).get("village") or "Mangalagiri"
+    applicant = app.get("applicant_name") or "Applicant"
+    to_owner = (app.get("payload") or {}).get("new_owner_name") or applicant
+    today_str = date.today().strftime("%d-%m-%Y")
+    des = (principal.designation or "officer").lower()
+
+    if action in ("approved", "resolved"):
+        if des == "tahsildar":
+            draft = (
+                f"PROCEEDINGS OF THE TAHSILDAR & MANDAL REVENUE OFFICER, {village.upper()}.\n"
+                f"Present: {principal.name}, Tahsildar.\n"
+                f"Rc. No. {app_id}/Revenue/{app_type.capitalize()}. Dated: {today_str}.\n"
+                f"Sub: Land Administration — Transfer of Registry under Section 5(1) of RoR Act — Sy. No. {survey_no} of {village} — Statutory Sanction Accorded.\n"
+                f"Ref: 1. Application #{app_id} by Sri/Smt {applicant}.\n"
+                f"     2. Ground Panchanama report of Village Revenue Officer (VRO).\n"
+                f"     3. Field Traverse & Demarcation Report of Mandal Surveyor.\n"
+                f"     4. Scrutiny endorsement of Revenue Inspector (RI).\n\n"
+                f"ORDER:\n"
+                f"The spot verification and cadastral records confirm peaceful physical possession and an unbroken title chain. "
+                f"There are no subsisting Section 22A prohibitions, active court stays, or conflicting claims.\n"
+                f"In exercise of quasi-judicial powers vested under Section 5(1) of the Rights in Land and Pattadar Pass Books Act, "
+                f"sanction is hereby accorded to record the mutation in favour of '{to_owner}' for Sy. No. {survey_no}. "
+                f"The digital Record of Rights (1-B Khata) stands updated and e-Pattadar Passbook is ordered to be generated."
+            )
+        elif des == "town_planner":
+            draft = (
+                f"OFFICE OF THE TOWN PLANNING AUTHORITY, {village.upper()}.\n"
+                f"File No: {app_id}/Planning/BP. Dated: {today_str}.\n"
+                f"Sub: Town Planning — Grant of Building Sanction under Municipal Building Bylaws — Sy. No. {survey_no}.\n"
+                f"ORDER: Scrutiny of architectural drawings, site setbacks, and Floor Area Ratio (FAR) confirms compliance with Master Plan zoning regulations. "
+                f"Statutory building permission is hereby granted subject to standard fire safety, structural stability, and rainwater harvesting covenants."
+            )
+        else:
+            draft = f"Verified on ground. All documentary evidence, boundaries, and identity requirements on Sy. No. {survey_no} are verified and found in order."
+    elif action in ("rejected", "dismissed"):
+        blockers = [f["text"] for f in brief["findings"] if f["severity"] in ("high", "medium")]
+        ground_text = "; ".join(blockers[:2]) if blockers else "Discrepancy in title chain / boundaries"
+        draft = (
+            f"STATUTORY PROCEEDING OF THE COMPETENT AUTHORITY, {village.upper()}.\n"
+            f"Rc. No. {app_id}/Rejection Order. Dated: {today_str}.\n"
+            f"Sub: Rejection of {app_type.replace('_', ' ').title()} Application — Sy. No. {survey_no} — Speaking Order Passed.\n"
+            f"GROUNDS FOR REJECTION:\n"
+            f"Upon detailed scrutiny of records and ground inspection, the application is rejected under statutory provisions on the following grounds:\n"
+            f"1. {ground_text}.\n"
+            f"2. The applicant has failed to establish uninterrupted title or satisfy statutory compliance.\n"
+            f"The application #{app_id} is accordingly returned/rejected with liberty to file a fresh claim upon rectifying defects."
+        )
+    elif "field_inspection" in action or "panchanama" in action.lower():
+        draft = (
+            f"VILLAGE REVENUE OFFICER (VRO) GROUND PANCHANAMA REPORT:\n"
+            f"Conducted spot inspection on Sy. No. {survey_no} in {village} in the presence of neighboring ryots and panchas. "
+            f"Verified that the applicant '{applicant}' is in actual physical and peaceful possession. "
+            f"No adverse boundary encroachment or unrecorded crop disputes observed. Forwarded to Cadastral Surveyor."
+        )
+    elif "boundary_demarcation" in action or "survey" in action.lower():
+        draft = (
+            f"CADASTRAL SURVEYOR TRAVERSE & FIELD DEMARCATION REPORT:\n"
+            f"Measured Sy. No. {survey_no} of {village} using DGPS / Total Station against the village FMB (Field Measurement Book) and Tippan. "
+            f"All four corner boundary stones inspected. Ground extent reconciles with the registered deed within statutory tolerance limits. "
+            f"Sub-division sketch prepared and forwarded for RI scrutiny."
+        )
+    elif "scrutiny_review" in action or "endorsement" in action.lower():
+        draft = (
+            f"REVENUE INSPECTOR (RI) SCRUTINY & TITLE CHAIN ENDORSEMENT:\n"
+            f"Audited the link documents, 30-year Encumbrance Certificate, VRO Ground Panchanama, and Mandal Surveyor FMB demarcation report for Sy. No. {survey_no}. "
+            f"Reconciled revenue khata and registration entries. Found genuine and regular. "
+            f"Respectfully submitted to the Tahsildar with recommendation for statutory approval."
+        )
+    else:
+        draft = f"Completed statutory verification for step '{action.replace('_', ' ')}' on Sy. No. {survey_no}. Records scrutinized and forwarded for statutory processing."
+
+    s = get_settings()
+    engine = "rules"
+    if s.gemini_api_key or s.nvidia_api_key:
+        sys_prompt = (
+            "You are an expert Indian land administration legal drafting assistant. "
+            "Given the application context, parcel facts, and officer action, draft a crisp, formal, "
+            "and legally sound administrative proceeding or inspection remark. "
+            "Use authoritative revenue terminology (RoR Act, FMB, Panchanama, Section 5, G.O.Ms, Speaking Order). "
+            "Keep it under 150 words. Do not include greetings or markdown fences."
+        )
+        llm_reply = await chat(
+            [
+                {"role": "system", "content": sys_prompt},
+                {
+                    "role": "user",
+                    "content": f"App ID: {app_id}, Type: {app_type}, Action: {action}, Officer: {principal.name} ({des}), Sy No: {survey_no}, Village: {village}, Applicant: {applicant}.\nDraft:\n{draft}",
+                },
+            ],
+            max_tokens=300,
+            temperature=0.1,
+        )
+        if llm_reply and len(llm_reply.strip()) > 50:
+            draft = llm_reply.strip()
+            engine = engine_name()
+
+    return {
+        "application_id": app_id,
+        "action": action,
+        "draft": draft,
+        "engine": engine,
+    }
+

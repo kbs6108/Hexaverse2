@@ -11,13 +11,6 @@ from landstack.services import aggregator
 ULPIN = "TDR1K3M9A2F7C1"
 
 
-@pytest.fixture
-def client(fake_db):
-    app = create_app()
-    with TestClient(app, raise_server_exceptions=False) as c:
-        yield c
-
-
 def test_root_and_health(client) -> None:
     r = client.get("/")
     assert r.status_code == 200 and "X-Request-ID" in r.headers

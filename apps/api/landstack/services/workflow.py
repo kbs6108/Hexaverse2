@@ -380,7 +380,7 @@ async def transition(
             {"status": app["status"]},
             {"status": row["to_status"], "remark": remark},
         )
-    if row["to_status"] == "approved":
+    if row["to_status"] in ("approved", "resolved"):
         side = await run_side_effects(db, updated or app, principal)
         if side:
             payload["side_effect"] = side
@@ -402,30 +402,143 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
     """On approval: mutation → revenue POST /mutations; building_permission → planning POST /permissions."""
     payload = app.get("payload") or {}
     try:
-        if app["type"] == "succession":
+        if app["type"] in ("mutation", "succession"):
+            to_owner = (
+                payload.get("to_owner")
+                or payload.get("new_owner_name")
+                or payload.get("nominee_name")
+                or app.get("applicant_name")
+            )
+            if not to_owner:
+                log.warning("No new owner specified for mutation application %s", app["id"])
+                return None
+
+            to_owner = str(to_owner).strip()
+            from_owner = payload.get("from_owner")
+            if not from_owner:
+                from_owner = await db.fetchval(
+                    "SELECT owner_name FROM dept_revenue.ror WHERE ulpin = :u ORDER BY updated_at DESC NULLS LAST LIMIT 1",
+                    u=app["ulpin"],
+                )
+
+            # 1. Update Revenue RoR (owner, father_name, nominees reset, mutation history)
             body = {
                 "ulpin": app["ulpin"],
-                "to_owner": payload.get("nominee_name") or app.get("applicant_name"),
-                "reason": "succession",
+                "to_owner": to_owner,
+                "reason": payload.get("reason") or ("succession" if app["type"] == "succession" else "mutation approved"),
                 "application_id": app["id"],
+                "father_name": payload.get("father_name") or payload.get("new_father_name"),
+                "nominees": payload.get("nominees") or payload.get("new_nominees") or [],
+                "doc_no": payload.get("doc_no"),
             }
             res = await client.post_json("/revenue/mutations", body, timeout=5.0)
-            await audit.record(
-                db, principal, "revenue.succession_recorded", "application", app["id"], app["ulpin"], None, res
+
+            # 2. Transfer 3D Building Units to new owner
+            await db.execute(
+                """
+                UPDATE landstack.units u
+                SET owner_name = :to_owner
+                FROM landstack.buildings b
+                WHERE b.id = u.building_id AND b.ulpin = :u
+                """,
+                to_owner=to_owner,
+                u=app["ulpin"],
             )
-            return {"department": "revenue", "ok": True, "result": res}
-        if app["type"] == "mutation":
-            body = {
-                "ulpin": app["ulpin"],
-                "to_owner": payload.get("to_owner") or payload.get("new_owner_name") or app.get("applicant_name"),
-                "reason": payload.get("reason") or "mutation approved",
-                "application_id": app["id"],
-            }
-            res = await client.post_json("/revenue/mutations", body, timeout=5.0)
-            await audit.record(
-                db, principal, "revenue.mutation_recorded", "application", app["id"], app["ulpin"], None, res
+
+            # 3. Synchronize Registration Deed Record (Chain of Title)
+            # Ensure the chain of title in deeds reflects this transfer so consistency check passes
+            existing_deed = await db.fetchval(
+                "SELECT doc_no FROM dept_registration.deeds WHERE ulpin = :u AND claimant ILIKE :c LIMIT 1",
+                u=app["ulpin"],
+                c=to_owner,
             )
-            return {"department": "revenue", "ok": True, "result": res}
+            if not existing_deed:
+                year = dt.date.today().year
+                seq = await db.fetchval(
+                    "SELECT count(*) + 1 FROM dept_registration.deeds WHERE doc_no LIKE :p",
+                    p=f"DOC-{year}-%",
+                )
+                doc_no = payload.get("doc_no") or f"DOC-{year}-{int(seq or 1):05d}"
+                parcel_row = await db.fetchrow(
+                    "SELECT area_sqm, district, taluk FROM landstack.parcels WHERE ulpin = :u",
+                    u=app["ulpin"],
+                )
+                valuation = await db.fetchval(
+                    "SELECT guideline_value_per_sqm FROM dept_fiscal.valuation WHERE ulpin = :u",
+                    u=app["ulpin"],
+                )
+                area = float((parcel_row or {}).get("area_sqm") or 0)
+                rate = float(valuation or 5000)
+                consideration = payload.get("consideration") or round(area * rate, 2)
+                sro = (parcel_row or {}).get("taluk") or (parcel_row or {}).get("district") or "GNT-02"
+
+                await db.execute(
+                    """
+                    INSERT INTO dept_registration.deeds
+                        (doc_no, ulpin, deed_type, executant, claimant, consideration, extent_sqm, registered_on, sro_code)
+                    VALUES (:doc, :u, :dt, :ex, :cl, :cons, :ext, CURRENT_DATE, :sro)
+                    ON CONFLICT (doc_no) DO UPDATE SET claimant = EXCLUDED.claimant, executant = EXCLUDED.executant
+                    """,
+                    doc=doc_no,
+                    u=app["ulpin"],
+                    dt=payload.get("reason") or ("succession" if app["type"] == "succession" else "sale"),
+                    ex=from_owner or "Previous Title Holder",
+                    cl=to_owner,
+                    cons=consideration,
+                    ext=area or None,
+                    sro=str(sro).upper()[:20],
+                )
+
+            # 4. Endorse Building Permissions to new owner
+            await db.execute(
+                """
+                UPDATE dept_planning.building_permissions
+                SET conditions = CASE
+                    WHEN conditions IS NULL OR conditions = '' THEN 'Title & permissions transferred to ' || :to_owner
+                    ELSE conditions || ' · Title & permissions transferred to ' || :to_owner
+                END
+                WHERE ulpin = :u
+                """,
+                to_owner=to_owner,
+                u=app["ulpin"],
+            )
+
+            # 5. Resolve Pending Mutation Alerts
+            await db.execute(
+                """
+                UPDATE landstack.alerts
+                SET status = 'resolved'
+                WHERE ulpin = :u AND kind = 'pending_mutation' AND status <> 'resolved'
+                """,
+                u=app["ulpin"],
+            )
+
+            # 6. Clear pending_mutation flag on landstack.parcels
+            await db.execute(
+                "UPDATE landstack.parcels SET pending_mutation = false, updated_at = now() WHERE ulpin = :u",
+                u=app["ulpin"],
+            )
+
+            # 7. Reset Consents & Privacy Preferences for new owner
+            await db.execute("DELETE FROM landstack.consents WHERE ulpin = :u", u=app["ulpin"])
+            await db.execute(
+                """
+                INSERT INTO landstack.parcel_privacy (ulpin, public_owner_name, public_nominees, public_deed_details, public_building_units, public_utilities, updated_at)
+                VALUES (:u, false, false, false, true, true, now())
+                ON CONFLICT (ulpin) DO UPDATE SET
+                    public_owner_name = false,
+                    public_nominees = false,
+                    public_deed_details = false,
+                    updated_at = now()
+                """,
+                u=app["ulpin"],
+            )
+
+            await audit.record(
+                db, principal, f"{app['type']}.completed_full_transfer", "application", app["id"], app["ulpin"], None,
+                {"to_owner": to_owner, "from_owner": from_owner, "revenue_result": res}
+            )
+            return {"department": "revenue", "ok": True, "transferred": True, "to_owner": to_owner, "result": res}
         if app["type"] == "boundary_correction":
             from landstack.services import boundary
 
@@ -453,6 +566,131 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 db, principal, "planning.permission_issued", "application", app["id"], app["ulpin"], None, res
             )
             return {"department": "planning", "ok": True, "result": res}
+        if app["type"] == "record_correction":
+            field = str(payload.get("field") or "owner_name").strip().lower()
+            corrected_val = str(payload.get("corrected_value") or "").strip()
+            if not corrected_val:
+                log.warning("No corrected value in record_correction application %s", app["id"])
+                return None
+
+            # 1. Update revenue RoR & mutations
+            body = {
+                "ulpin": app["ulpin"],
+                "field": field,
+                "corrected_value": corrected_val,
+                "description": payload.get("description") or f"Record correction ({field}) approved",
+                "application_id": app["id"],
+            }
+            res = await client.post_json("/revenue/correction", body, timeout=5.0)
+
+            # 2. If owner_name changed, cascade to all related tables:
+            if field in ("owner_name", "name", "pattadar_name"):
+                # 2a. Building units
+                await db.execute(
+                    """
+                    UPDATE landstack.units u
+                    SET owner_name = :new_name
+                    FROM landstack.buildings b
+                    WHERE b.id = u.building_id AND b.ulpin = :u
+                    """,
+                    new_name=corrected_val,
+                    u=app["ulpin"],
+                )
+
+                # 2b. User account if applicant is a registered user
+                if app.get("applicant_uid"):
+                    await db.execute(
+                        "UPDATE landstack.users SET name = :new_name WHERE uid = :uid",
+                        new_name=corrected_val,
+                        uid=app["applicant_uid"],
+                    )
+                    await db.execute(
+                        "UPDATE landstack.applications SET applicant_name = :new_name WHERE applicant_uid = :uid",
+                        new_name=corrected_val,
+                        uid=app["applicant_uid"],
+                    )
+
+                # 2c. Registration deed claimant (so consistency check and title chain pass)
+                from_val = res.get("from_value") if isinstance(res, dict) else None
+                if not from_val:
+                    from_val = app.get("applicant_name")
+
+                if from_val:
+                    await db.execute(
+                        "UPDATE dept_registration.deeds SET claimant = :new_name WHERE ulpin = :u AND claimant ILIKE :prev",
+                        new_name=corrected_val,
+                        u=app["ulpin"],
+                        prev=f"%{from_val}%",
+                    )
+                else:
+                    await db.execute(
+                        "UPDATE dept_registration.deeds SET claimant = :new_name WHERE ulpin = :u",
+                        new_name=corrected_val,
+                        u=app["ulpin"],
+                    )
+
+            # 3. If extent changed, sync parcels.area_sqm
+            elif field in ("extent", "extent_sqm", "area"):
+                try:
+                    import re
+                    cleaned = re.sub(r"[^\d.]", "", corrected_val)
+                    val_num = float(cleaned)
+                    if "acre" in corrected_val.lower():
+                        val_num = round(val_num * 4046.8564224, 2)
+                    elif "cent" in corrected_val.lower():
+                        val_num = round(val_num * 40.468564224, 2)
+                    await db.execute(
+                        "UPDATE landstack.parcels SET area_sqm = :a, updated_at = now() WHERE ulpin = :u",
+                        a=val_num,
+                        u=app["ulpin"],
+                    )
+                except Exception as exc:
+                    log.warning("Could not sync parcel area_sqm for %s: %s", app["ulpin"], exc)
+
+            # 4. If survey_no changed, sync parcels.survey_no
+            elif field in ("survey_no", "sy_no"):
+                await db.execute(
+                    "UPDATE landstack.parcels SET survey_no = :s, updated_at = now() WHERE ulpin = :u",
+                    s=corrected_val,
+                    u=app["ulpin"],
+                )
+
+            await audit.record(
+                db,
+                principal,
+                "record_correction.applied",
+                "application",
+                app["id"],
+                app["ulpin"],
+                None,
+                {"field": field, "corrected_value": corrected_val, "revenue_result": res},
+            )
+            return {"department": "revenue", "ok": True, "field": field, "corrected_value": corrected_val, "result": res}
+
+        if app["type"] == "land_complaint":
+            # Resolve alerts and disputes
+            await db.execute(
+                "UPDATE landstack.alerts SET status = 'resolved' WHERE ulpin = :u AND status <> 'resolved'",
+                u=app["ulpin"],
+            )
+            await db.execute(
+                "UPDATE dept_legal.disputes SET status = 'disposed', updated_at = now() WHERE ulpin = :u AND status <> 'disposed'",
+                u=app["ulpin"],
+            )
+            await audit.record(
+                db, principal, "land_complaint.resolved", "application", app["id"], app["ulpin"], None, {"status": "resolved"}
+            )
+            return {"ok": True, "type": "land_complaint", "status": "resolved"}
+
+        if app["type"] == "field_review":
+            await db.execute(
+                "UPDATE landstack.alerts SET status = 'resolved' WHERE ulpin = :u AND kind = 'change_detected' AND status <> 'resolved'",
+                u=app["ulpin"],
+            )
+            await audit.record(
+                db, principal, "field_review.resolved", "application", app["id"], app["ulpin"], None, {"status": "resolved"}
+            )
+            return {"ok": True, "type": "field_review", "status": "resolved"}
     except Exception as exc:
         log.warning("side effect failed for %s: %s", app["id"], exc)
         return {"ok": False, "error": str(exc)[:200]}

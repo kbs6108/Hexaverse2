@@ -12,3 +12,4 @@ weasyprint>=62
 segno>=1.6
 python-multipart>=0.0.9
 rapidfuzz>=3
+pypdf>=6.0.0

@@ -17,6 +17,9 @@ Requires-Dist: weasyprint>=62
 Requires-Dist: segno>=1.6
 Requires-Dist: python-multipart>=0.0.9
 Requires-Dist: rapidfuzz>=3
+Requires-Dist: pypdf>=6.19.0
+Requires-Dist: reportlab>=5.0.1
+Requires-Dist: greenlet>=3.5.6
 Provides-Extra: ai
 Requires-Dist: google-genai>=1.0; extra == "ai"
 Provides-Extra: raster

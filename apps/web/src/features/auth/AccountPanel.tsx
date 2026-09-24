@@ -14,6 +14,7 @@ import {
   Mail,
   MapPin,
   Shield,
+  ShieldCheck,
   UserRound,
   Users,
   X,
@@ -25,6 +26,7 @@ import { useMyParcel } from '@/lib/my-parcel';
 import { useTranslation } from '@/lib/i18n';
 import { SlidingTabs } from '@/components/SlidingTabs';
 import { Kbd } from '@/components/Kbd';
+import { OwnerPrivacyModal } from '@/features/parcel/OwnerPrivacyModal';
 
 interface AccountPanelProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
   const qc = useQueryClient();
   const { parcel, hasOwnedLand, goToMyParcel } = useMyParcel();
   const [filter, setFilter] = useState<'all' | 'citizen' | 'officer' | 'admin'>('all');
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
 
   const switchTo = (id: DevUserId) => {
     setDevUser(id);
@@ -249,18 +252,28 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          onClose();
-                          await goToMyParcel();
-                        }}
-                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary text-white py-2.5 px-4 text-xs font-bold shadow-sm hover:bg-primary/90 hover:shadow transition-all cursor-pointer"
-                      >
-                        <MapPin size={14} />
-                        <span>{t('citizen.goToMyParcel')}</span>
-                        <ArrowRight size={14} className="ml-0.5" />
-                      </button>
+                      <div className="mt-4 flex flex-col sm:flex-row items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPrivacyModalOpen(true)}
+                          className="flex w-full sm:w-1/2 items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary-soft/60 hover:bg-primary-soft text-primary py-2.5 px-3 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                        >
+                          <ShieldCheck size={14} />
+                          <span>Privacy Settings</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            onClose();
+                            await goToMyParcel();
+                          }}
+                          className="flex w-full sm:w-1/2 items-center justify-center gap-1.5 rounded-xl bg-primary text-white py-2.5 px-3 text-xs font-bold shadow-sm hover:bg-primary/90 hover:shadow transition-all cursor-pointer"
+                        >
+                          <MapPin size={14} />
+                          <span>{t('citizen.goToMyParcel')}</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-line bg-panel p-4 text-center">
@@ -418,6 +431,15 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
           </motion.aside>
         </div>
       </div>
+      {parcel && (
+        <OwnerPrivacyModal
+          open={privacyModalOpen}
+          onClose={() => setPrivacyModalOpen(false)}
+          ulpin={parcel.ulpin}
+          surveyNo={parcel.survey_no}
+          village={parcel.village}
+        />
+      )}
     </AnimatePresence>
   );
 }

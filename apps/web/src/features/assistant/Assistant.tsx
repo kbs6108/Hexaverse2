@@ -88,12 +88,16 @@ const PROMPT_CATEGORIES_BY_LOCALE: Record<Locale, { category: string; prompts: s
         'Father passed away — how to transfer land to legal heirs?',
         'Is survey no 123/4 safe to buy? Check due diligence',
         'Why is my application delayed and what is the next step?',
+        'What gets transferred during a full 7D land transfer?',
       ],
     },
     {
       category: 'How to Do Things',
       prompts: [
         'How to verify seller ownership without leaking private data?',
+        'How does DPDP privacy masking protect my personal data?',
+        'Who approves my mutation? Explain officer hierarchy from VRO to Tahsildar',
+        'How does 3D cadastre handle vertical building units and apartments?',
         'How to check if there is an active court stay or mortgage?',
         'How to download a certified parcel report PDF with QR code?',
         'How does the public statutory notice board work?',

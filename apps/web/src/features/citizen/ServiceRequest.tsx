@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
@@ -17,9 +17,11 @@ import {
   PenLine,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   UsersRound,
   X,
   XCircle,
+  Zap,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { api, qk } from '@/lib/api';
@@ -650,15 +652,49 @@ function DocField({
   doc,
   setDoc,
   hint,
+  onAutoFill,
 }: {
   intent?: Intent;
   doc: File | null;
   setDoc: (f: File | null) => void;
   hint: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onAutoFill?: (extracted: Record<string, any>) => void;
 }) {
   const isPdf = doc?.type.includes('pdf') || doc?.name.toLowerCase().endsWith('.pdf');
   const checklist = intent ? STATUTORY_DOCUMENTS[intent] : [];
   const mandatoryDocs = checklist.filter((d) => d.requirement === 'mandatory');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [extracted, setExtracted] = useState<Record<string, any> | null>(null);
+  const [extracting, setExtracting] = useState(false);
+
+  useEffect(() => {
+    if (!doc) {
+      setExtracted(null);
+      setExtracting(false);
+      return;
+    }
+    let active = true;
+    setExtracting(true);
+    api.extractDocument(doc)
+      .then((res) => {
+        if (active) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data = (res?.extracted as Record<string, any>) || res || {};
+          setExtracted(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Document extraction failed:', err);
+      })
+      .finally(() => {
+        if (active) setExtracting(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [doc]);
 
   return (
     <Field label="Supporting document" hint={hint}>
@@ -713,31 +749,106 @@ function DocField({
           />
         </label>
       ) : (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary-soft/40 px-3.5 py-2.5 shadow-2xs">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className={clsx('flex size-8 shrink-0 items-center justify-center rounded-lg text-white text-[10px] font-bold', isPdf ? 'bg-rose-600' : 'bg-primary')}>
-              {isPdf ? 'PDF' : <FileText size={15} />}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-xs font-bold text-ink leading-tight">{doc.name}</p>
-              <div className="flex items-center gap-2 text-[10.5px] text-ink-3 mt-0.5">
-                <span className="font-mono">{formatFileSize(doc.size)}</span>
-                <span>•</span>
-                <span className="inline-flex items-center gap-0.5 text-emerald-600 font-semibold">
-                  <Check size={11} /> Ready for verification
-                </span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary-soft/40 px-3.5 py-2.5 shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className={clsx('flex size-8 shrink-0 items-center justify-center rounded-lg text-white text-[10px] font-bold', isPdf ? 'bg-rose-600' : 'bg-primary')}>
+                {isPdf ? 'PDF' : <FileText size={15} />}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-ink leading-tight">{doc.name}</p>
+                <div className="flex items-center gap-2 text-[10.5px] text-ink-3 mt-0.5">
+                  <span className="font-mono">{formatFileSize(doc.size)}</span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-0.5 text-emerald-600 font-semibold">
+                    <Check size={11} /> Ready for verification
+                  </span>
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDoc(null);
+                setExtracted(null);
+              }}
+              title="Remove document"
+              aria-label="Remove document"
+              className="flex size-6 shrink-0 items-center justify-center rounded-md text-ink-3 hover:bg-ground-1 hover:text-brick transition-colors cursor-pointer"
+            >
+              <X size={14} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setDoc(null)}
-            title="Remove document"
-            aria-label="Remove document"
-            className="flex size-6 shrink-0 items-center justify-center rounded-md text-ink-3 hover:bg-ground-1 hover:text-brick transition-colors cursor-pointer"
-          >
-            <X size={14} />
-          </button>
+
+          {extracting && (
+            <div className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary-soft/30 px-3 py-2 text-xs text-primary font-medium">
+              <Spinner size={13} />
+              <span>AI extracting deed entities & metadata using NLP parser...</span>
+            </div>
+          )}
+
+          {extracted && Object.keys(extracted).length > 0 && (
+            <div className="rounded-xl border border-primary/30 bg-primary-soft/30 p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 font-bold text-ink">
+                  <Sparkles size={14} className="text-primary" />
+                  <span>AI Document Intelligence</span>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.2 text-[10px] text-primary font-semibold">
+                    {extracted.document_type || 'Deed Extract'}
+                  </span>
+                </div>
+                {onAutoFill && (
+                  <button
+                    type="button"
+                    onClick={() => onAutoFill(extracted)}
+                    className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-white shadow-2xs hover:bg-primary-hover cursor-pointer transition-all"
+                  >
+                    <Zap size={12} /> Auto-fill Form
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] bg-panel/80 p-2.5 rounded-lg border border-line">
+                {extracted.deed_doc_number && (
+                  <div>
+                    <span className="text-ink-3 block">Deed No:</span>
+                    <span className="font-semibold text-ink">{extracted.deed_doc_number}</span>
+                  </div>
+                )}
+                {extracted.claimant && (
+                  <div>
+                    <span className="text-ink-3 block">Buyer / Claimant:</span>
+                    <span className="font-semibold text-ink">{extracted.claimant}</span>
+                  </div>
+                )}
+                {extracted.executant && (
+                  <div>
+                    <span className="text-ink-3 block">Seller / Executant:</span>
+                    <span className="font-semibold text-ink">{extracted.executant}</span>
+                  </div>
+                )}
+                {extracted.survey_no && (
+                  <div>
+                    <span className="text-ink-3 block">Survey No:</span>
+                    <span className="font-semibold text-ink">{extracted.survey_no}</span>
+                  </div>
+                )}
+                {(extracted.extent_acres || extracted.extent_sqm) && (
+                  <div>
+                    <span className="text-ink-3 block">Extent:</span>
+                    <span className="font-semibold text-ink">
+                      {extracted.extent_acres ? `${extracted.extent_acres} Ac` : `${extracted.extent_sqm} sqm`}
+                    </span>
+                  </div>
+                )}
+                {extracted.sro_office && (
+                  <div>
+                    <span className="text-ink-3 block">SRO Office:</span>
+                    <span className="font-semibold text-ink">{extracted.sro_office}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Field>
@@ -761,6 +872,9 @@ function MutationForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicatio
   const { t } = useTranslation();
   const [reason, setReason] = useState('sale');
   const [newOwner, setNewOwner] = useState('');
+  const [fatherName, setFatherName] = useState('');
+  const [nomineeName, setNomineeName] = useState('');
+  const [nomineeRelation, setNomineeRelation] = useState('spouse');
   const [doc, setDoc] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -772,6 +886,10 @@ function MutationForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicatio
         return await api.createApplication(ulpin.trim(), 'mutation', {
           reason,
           new_owner_name: newOwner.trim(),
+          father_name: fatherName.trim() || null,
+          nominees: nomineeName.trim()
+            ? [{ name: nomineeName.trim(), relation: nomineeRelation, share: 1.0 }]
+            : [],
           document_name: doc?.name ?? null,
           document: docRecord,
         });
@@ -793,10 +911,39 @@ function MutationForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicatio
           <option value="court_order">Court order</option>
         </Select>
       </Field>
-      <Field label="New owner name" htmlFor="sr-owner" hint="Exactly as on the deed">
+      <Field label="New owner name" htmlFor="sr-owner" hint="Full legal name of the buyer/transferee">
         <Input id="sr-owner" required value={newOwner} onChange={(e) => setNewOwner(e.target.value)} />
       </Field>
-      <DocField intent="mutation" doc={doc} setDoc={setDoc} hint="Registered deed, Encumbrance Certificate (EC), and tax receipt (PDF or image dossier)." />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Father's / Husband's Name (Optional)" htmlFor="sr-father">
+          <Input id="sr-father" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="e.g. Venkateswarlu" />
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Nominee Name (Optional)" htmlFor="sr-nominee">
+            <Input id="sr-nominee" value={nomineeName} onChange={(e) => setNomineeName(e.target.value)} placeholder="e.g. Lakshmi" />
+          </Field>
+          <Field label="Relation" htmlFor="sr-nom-rel">
+            <Select id="sr-nom-rel" value={nomineeRelation} onChange={(e) => setNomineeRelation(e.target.value)}>
+              <option value="spouse">Spouse</option>
+              <option value="son">Son</option>
+              <option value="daughter">Daughter</option>
+              <option value="parent">Parent</option>
+              <option value="other">Other</option>
+            </Select>
+          </Field>
+        </div>
+      </div>
+      <DocField
+        intent="mutation"
+        doc={doc}
+        setDoc={setDoc}
+        hint="Registered deed, Encumbrance Certificate (EC), and tax receipt (PDF or image dossier)."
+        onAutoFill={(extracted) => {
+          if (extracted.claimant) setNewOwner(extracted.claimant);
+          if (extracted.reason) setReason(extracted.reason);
+          toast.success('Form auto-filled from verified deed data!');
+        }}
+      />
       {m.isError && <ErrorNote error={m.error} />}
       <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
         {uploading ? 'Uploading document...' : t('service.btnSubmit')}
@@ -853,7 +1000,21 @@ function CorrectionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       <Field label="Tell us more" htmlFor="sr-corr-desc" hint="How the mistake happened, if you know">
         <Textarea id="sr-corr-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
-      <DocField intent="record_correction" doc={doc} setDoc={setDoc} hint="Parent deed, photo ID, FMB survey sketch, or affidavit proving the correct value." />
+      <DocField
+        intent="record_correction"
+        doc={doc}
+        setDoc={setDoc}
+        hint="Parent deed, photo ID, FMB survey sketch, or affidavit proving the correct value."
+        onAutoFill={(extracted) => {
+          if (extracted.claimant && field === 'owner_name') setCorrected(extracted.claimant);
+          else if (extracted.extent_acres && field === 'extent') setCorrected(String(extracted.extent_acres));
+          else if (extracted.survey_no && field === 'other') setCorrected(extracted.survey_no);
+          if (extracted.deed_doc_number) {
+            setDescription(`Rectification as per registered deed ${extracted.deed_doc_number} (SRO: ${extracted.sro_office || 'jurisdiction'}).`);
+          }
+          toast.success('Form auto-filled from document text!');
+        }}
+      />
       {m.isError && <ErrorNote error={m.error} />}
       <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
         {uploading ? 'Uploading document...' : t('service.btnSubmit')}
@@ -1101,7 +1262,17 @@ function SuccessionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
           </Select>
         </Field>
       </div>
-      <DocField intent="succession" doc={doc} setDoc={setDoc} hint="Death Certificate, Legal Heir Certificate, and Family Tree Affidavit." />
+      <DocField
+        intent="succession"
+        doc={doc}
+        setDoc={setDoc}
+        hint="Death Certificate, Legal Heir Certificate, and Family Tree Affidavit."
+        onAutoFill={(extracted) => {
+          if (extracted.executant) setDeceased(extracted.executant);
+          if (extracted.claimant) setHeir(extracted.claimant);
+          toast.success('Form auto-filled from certificate data!');
+        }}
+      />
       {m.isError && <ErrorNote error={m.error} />}
       <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
         {uploading ? 'Uploading document...' : t('service.btnSubmit')}

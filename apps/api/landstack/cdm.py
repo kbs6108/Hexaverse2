@@ -134,6 +134,13 @@ class Fiscal(_Leaf):
     tax: Tax = Field(default_factory=Tax)
     guideline_value_per_sqm: float | None = None
     estimated_value: float | None = None
+    market_value_per_sqm: float | None = None
+    estimated_market_value: float | None = None
+    base_rate_per_sqm: float | None = None
+    road_factor: float | None = None
+    infra_factor: float | None = None
+    zone_factor: float | None = None
+    location_tier: str | None = None
 
 
 class Utilities(_Leaf):
@@ -210,6 +217,14 @@ class Status(_Leaf):
     permission_status: str | None = None
 
 
+class PrivacyPreferences(_Leaf):
+    public_owner_name: bool = False
+    public_nominees: bool = False
+    public_deed_details: bool = False
+    public_building_units: bool = True
+    public_utilities: bool = True
+
+
 class ParcelCDM(_Leaf):
     """The aggregated per-parcel profile served by `GET /landstack/parcels/{ulpin}`."""
 
@@ -227,6 +242,8 @@ class ParcelCDM(_Leaf):
     provenance: dict[str, Provenance] = Field(default_factory=dict)
     consistency: Consistency = Field(default_factory=Consistency)
     status: Status = Field(default_factory=Status)
+    privacy_preferences: PrivacyPreferences | None = None
+    viewer_is_owner: bool = False
     generated_at: str | None = None
 
 

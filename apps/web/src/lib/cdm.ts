@@ -122,6 +122,13 @@ export interface Fiscal {
   tax: Tax | null;
   guideline_value_per_sqm?: number | null;
   estimated_value?: number | null;
+  market_value_per_sqm?: number | null;
+  estimated_market_value?: number | null;
+  base_rate_per_sqm?: number | null;
+  road_factor?: number | null;
+  infra_factor?: number | null;
+  zone_factor?: number | null;
+  location_tier?: string | null;
 }
 
 export interface Utilities {
@@ -208,6 +215,14 @@ export interface ParcelStatus {
   permission_status?: PermissionStatus | null;
 }
 
+export interface ParcelPrivacyPreferences {
+  public_owner_name: boolean;
+  public_nominees: boolean;
+  public_deed_details: boolean;
+  public_building_units: boolean;
+  public_utilities: boolean;
+}
+
 export interface ParcelCDM {
   ulpin: string;
   identifiers: Identifiers;
@@ -223,6 +238,8 @@ export interface ParcelCDM {
   provenance: Partial<Record<SourceKey, Provenance>>;
   consistency: Consistency;
   status: ParcelStatus;
+  privacy_preferences?: ParcelPrivacyPreferences | null;
+  viewer_is_owner?: boolean;
   /** Raw parcel flags (seeded + system): story key, settlement resurvey phase, ... */
   status_flags?: { story?: string; resurvey?: 'completed' | 'in_progress' | 'pending' } & Record<string, unknown>;
 }
@@ -355,6 +372,14 @@ export interface ApplicationAdvice {
   rationale: string | null;
   allowed_actions: string[];
   parcel_risk: { score: number; level: string };
+}
+export interface DraftOrderResult {
+  order_text: string;
+  act: string;
+  officer_role: string;
+  subject: string;
+  references: string[];
+  conditions: string[];
 }
 
 export interface BoundaryProposalResult {

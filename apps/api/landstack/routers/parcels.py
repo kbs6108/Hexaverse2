@@ -257,3 +257,90 @@ async def verify_ownership(
         {"claimed_name": body.claimed_name, "match": result["match"], "score": result["score"]},
     )
     return result
+
+
+class UpdatePrivacyBody(BaseModel):
+    public_owner_name: bool = False
+    public_nominees: bool = False
+    public_deed_details: bool = False
+    public_building_units: bool = True
+    public_utilities: bool = True
+
+
+@router.get("/parcels/{ulpin}/privacy")
+async def get_privacy(
+    ulpin: str, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    exists = await db.fetchval("SELECT 1 FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
+    if not exists:
+        from landstack.errors import not_found
+        raise not_found("parcel", ulpin)
+    prefs = await aggregator.get_privacy_preferences(db, ulpin)
+    return {"ulpin": ulpin, "preferences": prefs}
+
+
+@router.put("/parcels/{ulpin}/privacy")
+async def update_privacy(
+    ulpin: str, body: UpdatePrivacyBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    exists = await db.fetchval("SELECT 1 FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
+    if not exists:
+        from landstack.errors import not_found
+        raise not_found("parcel", ulpin)
+
+    # Permission check: must be admin or the verified owner of the parcel
+    if not principal.is_admin:
+        ror_owner = await db.fetchval("SELECT owner_name FROM dept_revenue.ror WHERE ulpin = :u LIMIT 1", u=ulpin)
+        p_name = (principal.name or "").strip().lower()
+        o_name = (ror_owner or "").strip().lower()
+        is_owner = (p_name == o_name) or (p_name in o_name) or (o_name in p_name)
+        if not is_owner and ror_owner:
+            is_owner = name_score(ror_owner, principal.name or "") >= 60
+        if not is_owner:
+            from landstack.errors import forbidden
+            raise forbidden("Only the verified title owner or an administrator can update public disclosure preferences.")
+
+    await db.execute(
+        """
+        INSERT INTO landstack.parcel_privacy (
+            ulpin, owner_uid, public_owner_name, public_nominees, public_deed_details,
+            public_building_units, public_utilities, updated_at
+        ) VALUES (
+            :ulpin, :uid, :public_owner_name, :public_nominees, :public_deed_details,
+            :public_building_units, :public_utilities, now()
+        )
+        ON CONFLICT (ulpin) DO UPDATE SET
+            public_owner_name = EXCLUDED.public_owner_name,
+            public_nominees = EXCLUDED.public_nominees,
+            public_deed_details = EXCLUDED.public_deed_details,
+            public_building_units = EXCLUDED.public_building_units,
+            public_utilities = EXCLUDED.public_utilities,
+            updated_at = now()
+        """,
+        ulpin=ulpin,
+        uid=principal.uid,
+        public_owner_name=False,  # Enforced DPDP masking; non-toggleable
+        public_nominees=False,    # Strictly confidential family data; non-toggleable
+        public_deed_details=False, # Masked to prevent unauthorized deed harvesting
+        public_building_units=body.public_building_units,
+        public_utilities=body.public_utilities,
+    )
+
+    aggregator.invalidate(ulpin)
+    enforced_prefs = {
+        **body.model_dump(),
+        "public_owner_name": False,
+        "public_nominees": False,
+        "public_deed_details": False,
+    }
+    await audit.record(
+        db,
+        principal,
+        "parcel.privacy_updated",
+        "parcel",
+        ulpin,
+        ulpin,
+        None,
+        enforced_prefs,
+    )
+    return {"ulpin": ulpin, "preferences": enforced_prefs, "status": "updated"}

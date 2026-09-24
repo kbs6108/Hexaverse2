@@ -12,4 +12,10 @@ map:
   tax.item.paid_till: fiscal.tax.paid_till
   tax.item.last_paid_on: fiscal.tax.last_paid_on
   valuation.item.guideline_value_per_sqm: fiscal.guideline_value_per_sqm
+  valuation.item.market_value_per_sqm: fiscal.market_value_per_sqm
+  valuation.item.base_rate_per_sqm: fiscal.base_rate_per_sqm
+  valuation.item.road_factor: fiscal.road_factor
+  valuation.item.infra_factor: fiscal.infra_factor
+  valuation.item.zone_factor: fiscal.zone_factor
+  valuation.item.location_tier: fiscal.location_tier
   valuation.item.effective_from: fiscal.guideline_effective_from

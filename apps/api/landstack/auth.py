@@ -177,19 +177,23 @@ def _verify_firebase(token: str, settings: Settings) -> Principal:
 async def upsert_user(db: DBLike, principal: Principal) -> None:
     """Best-effort `landstack.users` upsert; DB errors are logged, never raised."""
     try:
-        await db.execute(
-            """
-            INSERT INTO landstack.users (uid, email, name, role, department, created_at)
-            VALUES (:uid, :email, :name, :role, :department, now())
-            ON CONFLICT (uid) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role,
-                department = EXCLUDED.department, email = COALESCE(EXCLUDED.email, landstack.users.email)
-            """,
-            uid=principal.uid,
-            email=principal.email,
-            name=principal.name,
-            role=principal.role,
-            department=principal.department,
-        )
+        existing = await db.fetchrow("SELECT name FROM landstack.users WHERE uid = :uid", uid=principal.uid)
+        if existing and existing.get("name"):
+            principal.name = existing["name"]
+        else:
+            await db.execute(
+                """
+                INSERT INTO landstack.users (uid, email, name, role, department, created_at)
+                VALUES (:uid, :email, :name, :role, :department, now())
+                ON CONFLICT (uid) DO UPDATE SET role = EXCLUDED.role,
+                    department = EXCLUDED.department, email = COALESCE(EXCLUDED.email, landstack.users.email)
+                """,
+                uid=principal.uid,
+                email=principal.email,
+                name=principal.name,
+                role=principal.role,
+                department=principal.department,
+            )
     except Exception as exc:
         log.debug("user upsert skipped: %s", exc)
 

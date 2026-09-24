@@ -4,6 +4,7 @@
  *  - firebase: Firebase Auth; ID token sent as `Authorization: Bearer`, role/department from custom claims.
  */
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import {
   GoogleAuthProvider,
@@ -17,7 +18,19 @@ import {
 } from 'firebase/auth';
 import { env, isDevAuth } from './env';
 import { DEV_USERS, useUI, type DevUserId } from './store';
-import type { Department, Role } from './cdm';
+import type { Department, Me, Role } from './cdm';
+
+async function fetchMe(devUser: string): Promise<Me | null> {
+  try {
+    const res = await fetch(`${env.apiUrl}/landstack/me`, {
+      headers: { 'X-Dev-User': devUser },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as Me;
+  } catch {
+    return null;
+  }
+}
 
 export interface AuthUser {
   uid: string;
@@ -146,7 +159,17 @@ export function useAuth(): UseAuth {
   const setDevUser = useUI((s) => s.setDevUser);
   const fb = useSyncExternalStore(subscribe, () => snapshot, () => snapshot);
 
-  const user = isDevAuth ? parseDevUser(devUser) : fb.user;
+  const baseUser = isDevAuth ? parseDevUser(devUser) : fb.user;
+  const meQuery = useQuery({
+    queryKey: ['me', devUser],
+    queryFn: () => fetchMe(devUser),
+    enabled: isDevAuth && !!baseUser,
+    staleTime: 5000,
+  });
+
+  const user = isDevAuth && baseUser
+    ? (meQuery.data?.name ? { ...baseUser, name: meQuery.data.name } : baseUser)
+    : fb.user;
   return {
     ready: isDevAuth ? true : fb.ready,
     user,

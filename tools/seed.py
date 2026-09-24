@@ -1081,9 +1081,41 @@ def make_department_records(frame: Frame, rng: random.Random, names: Names) -> N
             "updated_at": NOW - timedelta(days=rng.randint(30, 900)),
         })
 
-        # ---- valuation & tax --------------------------------------------
-        gv = GUIDELINE_VALUE[p.zone_code]
-        frame.valuation.append({"ulpin": p.ulpin, "guideline_value_per_sqm": gv, "effective_from": date(2024, 4, 1)})
+        # ---- dynamic place-specific valuation & tax ---------------------
+        base_rate = (
+            26000.0 if "Shamshabad" in region.village or "Ranga Reddy" in region.district
+            else 16500.0 if "Mangalagiri" in region.village or "Guntur" in region.district
+            else 14500.0 if "Sriperumbudur" in region.village or "Kancheepuram" in region.district
+            else 12500.0
+        )
+        z_factor = {"C1": 2.05, "R1": 1.40, "R2": 1.00, "IND": 1.20, "AG": 0.22, "PUB": 0.75}.get(p.zone_code, 1.0)
+        nearest = int(road_tree.nearest(p.geom_utm))
+        road = frame.roads[nearest]
+        r_factor = (
+            1.45 if road.road_class == "national"
+            else 1.28 if road.road_class == "state"
+            else 1.15 if road.road_class == "district"
+            else 0.90 if road.road_class == "lane"
+            else 1.00
+        ) + (0.05 if road.width_m >= 24 else 0.0)
+        micro = 1.0 + (((abs(hash(p.ulpin)) % 13) - 6.0) / 100.0)
+        gv = round((base_rate * z_factor * r_factor * micro) / 50.0) * 50.0
+        mv = round((gv * (1.30 + (0.12 if r_factor >= 1.25 else 0.05))) / 50.0) * 50.0
+        tier = (
+            "National Highway Commercial Belt" if road.road_class == "national"
+            else "State Highway Growth Corridor" if road.road_class == "state"
+            else "Urban Commercial District" if p.zone_code == "C1"
+            else "High-Density Residential Sector" if p.zone_code == "R1"
+            else "Plotted Suburban Residential" if p.zone_code == "R2"
+            else "Industrial & Logistics Cluster" if p.zone_code == "IND"
+            else "Peri-Urban Agricultural Zone" if p.zone_code == "AG"
+            else "Developing Growth Node"
+        )
+        frame.valuation.append({
+            "ulpin": p.ulpin, "guideline_value_per_sqm": gv, "market_value_per_sqm": mv,
+            "base_rate_per_sqm": base_rate, "road_factor": round(r_factor, 2), "infra_factor": 1.0,
+            "zone_factor": round(z_factor, 2), "location_tier": tier, "effective_from": date(2024, 4, 1)
+        })
         if not govt:
             assess_seq += 1
             demand = round(gv * area * TAX_RATE[p.land_use] / 10) * 10
@@ -1700,8 +1732,11 @@ def write_db(conn, frames: Frame | list[Frame], only_mutable: bool = False) -> d
         n["dept_fiscal.property_tax"] = _insert(cur, "dept_fiscal.property_tax",
             ["assessment_no", "ulpin", "annual_demand", "paid_till", "arrears", "last_paid_on"],
             [(t["assessment_no"], t["ulpin"], t["annual_demand"], t["paid_till"], t["arrears"], t["last_paid_on"]) for f in frames for t in f.property_tax])
-        n["dept_fiscal.valuation"] = _insert(cur, "dept_fiscal.valuation", ["ulpin", "guideline_value_per_sqm", "effective_from"],
-            [(v["ulpin"], v["guideline_value_per_sqm"], v["effective_from"]) for f in frames for v in f.valuation])
+        n["dept_fiscal.valuation"] = _insert(cur, "dept_fiscal.valuation",
+            ["ulpin", "guideline_value_per_sqm", "market_value_per_sqm", "base_rate_per_sqm", "road_factor", "infra_factor", "zone_factor", "location_tier", "effective_from"],
+            [(v["ulpin"], v["guideline_value_per_sqm"], v.get("market_value_per_sqm"), v.get("base_rate_per_sqm"),
+              v.get("road_factor"), v.get("infra_factor"), v.get("zone_factor"), v.get("location_tier"), v["effective_from"])
+             for f in frames for v in f.valuation])
         n["dept_legal.disputes"] = _insert(cur, "dept_legal.disputes",
             ["case_no", "ulpin", "court", "nature", "filed_on", "status", "next_hearing"],
             [(d["case_no"], d["ulpin"], d["court"], d["nature"], d["filed_on"], d["status"], d["next_hearing"]) for f in frames for d in f.disputes])

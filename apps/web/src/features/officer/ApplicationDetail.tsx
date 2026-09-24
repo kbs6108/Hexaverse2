@@ -7,7 +7,7 @@ import { api, qk } from '@/lib/api';
 import type { NextAction, Objection, ParcelCDM } from '@/lib/cdm';
 import { Drawer } from '@/components/Drawer';
 import { Button } from '@/components/Button';
-import { Field, Textarea } from '@/components/Field';
+import { Textarea } from '@/components/Field';
 import { Badge } from '@/components/Badge';
 import { Loading } from '@/components/Spinner';
 import { ErrorNote } from '@/components/EmptyState';
@@ -606,6 +606,16 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
     retry: false,
   });
 
+  const draftOrderMutation = useMutation({
+    mutationFn: () => api.draftOrder(id!, pending?.action || 'approve'),
+    onSuccess: (res) => {
+      setRemark(res.order_text);
+      toast.success(`Drafted statutory order under ${res.act}`);
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (err: any) => toast.error('Could not draft statutory order', err?.message || 'AI service unavailable'),
+  });
+
   return (
     <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-14 bottom-0 right-0 border-l border-[#D5D2C7]/70 rounded-none"
       header={
@@ -814,16 +824,31 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                       </div>
                     )}
 
-                    <Field label={`${t('officer.remarkLabel', 'Official Finding / Remarks (required)')} · “${pending.label}”`} htmlFor="tr-remark">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-1 flex-wrap">
+                        <label htmlFor="tr-remark" className="text-xs font-semibold text-ink">
+                          {t('officer.remarkLabel', 'Official Finding / Remarks (required)')} · “{pending.label}”
+                        </label>
+                        <button
+                          type="button"
+                          disabled={draftOrderMutation.isPending}
+                          onClick={() => draftOrderMutation.mutate()}
+                          className="inline-flex items-center gap-1 rounded-md bg-violet/10 px-2 py-0.5 text-[11px] font-semibold text-violet hover:bg-violet/20 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          <Sparkles size={12} className={draftOrderMutation.isPending ? 'animate-spin' : ''} />
+                          {draftOrderMutation.isPending ? 'Drafting Order...' : '🪄 Auto-Draft Statutory Speaking Order'}
+                        </button>
+                      </div>
                       <Textarea
                         id="tr-remark"
                         required
                         minLength={3}
+                        rows={4}
                         value={remark}
                         onChange={(e) => setRemark(e.target.value)}
                         placeholder="Detail the ground enquiry findings, survey measurements, or statutory order specifics..."
                       />
-                    </Field>
+                    </div>
                     <div className="flex gap-2">
                       <Button type="submit" variant={tone(pending)} loading={mutateTransition.isPending} disabled={remark.trim().length < 3}>
                         {t('officer.confirmAction', 'Confirm')} · {pending.label}

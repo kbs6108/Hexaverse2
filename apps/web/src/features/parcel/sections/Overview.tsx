@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertOctagon, AlertTriangle, ArrowRight, BadgeCheck, CheckCircle2, ClipboardCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, Wand2, XCircle } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, ArrowRight, BadgeCheck, CheckCircle2, ClipboardCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, ShieldCheck, SlidersHorizontal, Wand2, XCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ParcelCDM } from '@/lib/cdm';
 import { api, qk } from '@/lib/api';
@@ -15,6 +15,7 @@ import { Badge } from '@/components/Badge';
 import { AIInsight, parcelNeedsAttention } from '@/components/AIInsight';
 import type { ParcelTab } from '../ParcelDrawer';
 import { useTranslation } from '@/lib/i18n';
+import { OwnerPrivacyModal } from '../OwnerPrivacyModal';
 
 /** Readable names for consistency-issue fields (raw keys are backend column names). */
 const ISSUE_LABEL: Record<string, string> = {
@@ -116,8 +117,17 @@ interface Cell {
 }
 
 export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => void }) {
-  const { role, department } = useAuth();
+  const { user, role, department } = useAuth();
   const { t } = useTranslation();
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const isOwner = !!p && (
+    !!p.viewer_is_owner ||
+    (!p.party.masked && user?.role === 'citizen' && p.party.owners.some((o) => {
+      const pName = (user?.name || '').trim().toLowerCase();
+      const oName = (o.name || '').trim().toLowerCase();
+      return pName && oName && (pName === oName || pName.includes(oName) || oName.includes(pName));
+    }))
+  );
   const startBoundaryEdit = useUI((s) => s.startBoundaryEdit);
   const canEditBoundary = role === 'admin' || (role === 'officer' && department === 'revenue');
   const beginBoundaryEdit = async () => {
@@ -162,6 +172,28 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
   const resurvey = p.status_flags?.resurvey;
   return (
     <div className="flex flex-col gap-5">
+      <OwnerPrivacyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} parcel={p} />
+      {isOwner && (
+        <div className="rounded-xl border border-primary/30 bg-primary-soft/50 p-3 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-white">
+              <ShieldCheck size={16} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-ink truncate">Verified Title Holder · Privacy Controls</p>
+              <p className="text-[11px] text-ink-3 truncate">Choose which optional details to show or hide from the public map.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPrivacyOpen(true)}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary text-white px-3 py-1.5 text-xs font-semibold shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
+          >
+            <SlidersHorizontal size={12} />
+            <span>Privacy Settings</span>
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-2" role="list" aria-label="Status summary">
         {cells.map((c) => (
           <div key={c.label} role="listitem" className={clsx('relative overflow-hidden rounded-md border px-2.5 py-2', tones[c.tone])}>
@@ -296,6 +328,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
             { k: p.identifiers.state === 'TN' ? 'Taluk / District' : 'Mandal / District', v: `${p.identifiers.taluk} · ${p.identifiers.district}` },
             { k: 'Centroid', v: `${p.spatial.centroid[1].toFixed(5)}, ${p.spatial.centroid[0].toFixed(5)}`, mono: true },
             { k: t('drawer.guidelineValue'), v: fmtINR(p.fiscal.estimated_value) },
+            { k: 'Fair Market Value', v: fmtINR(p.fiscal.estimated_market_value ?? (p.fiscal.estimated_value ? Math.round(p.fiscal.estimated_value * 1.35) : null)) },
             { k: 'Registered on', v: fmtDate(p.rights.registration?.registered_on) },
           ]}
         />

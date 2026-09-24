@@ -150,7 +150,7 @@ async def change_detection(
 
 @router.post("/extract-document")
 async def extract_document(
-    file: UploadFile = File(...), principal: Principal = Depends(require_officer), db: DBLike = Depends(get_db)
+    file: UploadFile = File(...), principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
 ) -> dict[str, Any]:
     from ai.extract import NotConfigured, extract_ror
 
@@ -172,3 +172,17 @@ async def extract_document(
         {"fields": sorted((result.get("fields") or {}).keys())},
     )
     return result
+
+
+class DraftOrderBody(BaseModel):
+    app_id: str
+    action: str
+
+
+@router.post("/draft-order")
+async def draft_order(
+    body: DraftOrderBody, principal: Principal = Depends(require_officer), db: DBLike = Depends(get_db)
+) -> dict[str, Any]:
+    """Auto-draft formal quasi-judicial statutory speaking order or field inspection report for an officer."""
+    return await ai_assist.draft_speaking_order(db, body.app_id, body.action, principal)
+

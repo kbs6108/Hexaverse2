@@ -27,7 +27,7 @@ from landstack.db import DBLike
 from landstack.errors import not_found
 from landstack.services import consistency
 from landstack.services.cache import TTLCache
-from landstack.services.masking import mask_cdm, should_mask
+from landstack.services.masking import is_parcel_owner, mask_cdm, should_mask
 
 log = logging.getLogger("landstack.aggregator")
 
@@ -212,9 +212,15 @@ def finalise(cdm: dict[str, Any]) -> dict[str, Any]:
     """Derived fields: estimated value, status block, consistency, generated_at."""
     fiscal = cdm.setdefault("fiscal", {})
     gv = fiscal.get("guideline_value_per_sqm")
+    mv = fiscal.get("market_value_per_sqm")
     area = (cdm.get("spatial") or {}).get("area_sqm")
     if gv and area:
         fiscal["estimated_value"] = round(float(gv) * float(area), 2)
+    if mv and area:
+        fiscal["estimated_market_value"] = round(float(mv) * float(area), 2)
+    elif gv and area:
+        fiscal["market_value_per_sqm"] = round(float(gv) * 1.35, 2)
+        fiscal["estimated_market_value"] = round(float(gv) * 1.35 * float(area), 2)
     status = cdm.setdefault("status", {})
     reg_status = (cdm.get("rights") or {}).get("registration", {}).get("status")
     if reg_status:
@@ -296,6 +302,28 @@ async def build_parcel_cdm(
     return ParcelCDM.model_validate(cdm).model_dump()
 
 
+async def get_privacy_preferences(db: DBLike, ulpin: str) -> dict[str, Any]:
+    try:
+        row = await db.fetchrow("SELECT * FROM landstack.parcel_privacy WHERE ulpin = :u", u=ulpin)
+        if row:
+            return {
+                "public_owner_name": bool(row["public_owner_name"]),
+                "public_nominees": bool(row["public_nominees"]),
+                "public_deed_details": bool(row["public_deed_details"]),
+                "public_building_units": bool(row["public_building_units"]),
+                "public_utilities": bool(row["public_utilities"]),
+            }
+    except Exception as exc:
+        log.debug("privacy preferences lookup skipped: %s", exc)
+    return {
+        "public_owner_name": False,
+        "public_nominees": False,
+        "public_deed_details": False,
+        "public_building_units": True,
+        "public_utilities": True,
+    }
+
+
 async def get_parcel_cdm(db: DBLike, ulpin: str, principal: Principal | None) -> dict[str, Any]:
     """Cached + masked CDM for the caller."""
     cdm = _cache.get(ulpin)
@@ -305,6 +333,9 @@ async def get_parcel_cdm(db: DBLike, ulpin: str, principal: Principal | None) ->
     cdm = copy.deepcopy(cdm)
     if principal is not None and not principal.is_officer:
         await has_consent(db, principal, ulpin)
+    prefs = await get_privacy_preferences(db, ulpin)
+    cdm["privacy_preferences"] = prefs
+    cdm["viewer_is_owner"] = is_parcel_owner(principal, cdm)
     if should_mask(principal, ulpin, cdm):
-        cdm = mask_cdm(cdm)
+        cdm = mask_cdm(cdm, prefs)
     return cdm

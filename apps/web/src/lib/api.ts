@@ -25,6 +25,7 @@ import type {
   OwnedParcel,
   ParcelBrief,
   ParcelCDM,
+  ParcelPrivacyPreferences,
   PlanningCheck,
   PreCheck,
   ReportIssued,
@@ -143,6 +144,13 @@ export const api = {
   proposeBoundary: (ulpin: string, geometry: Record<string, unknown>, reason: string) =>
     request<BoundaryProposalResult>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary`, { method: 'POST', body: { geometry, reason } }),
   requestConsent: (ulpin: string) => request<{ ok: boolean }>('/landstack/consents/request', { method: 'POST', body: { ulpin } }),
+  getPrivacy: (ulpin: string) =>
+    request<{ ulpin: string; preferences: ParcelPrivacyPreferences }>(`/landstack/parcels/${encodeURIComponent(ulpin)}/privacy`),
+  updatePrivacy: (ulpin: string, body: ParcelPrivacyPreferences) =>
+    request<{ ulpin: string; preferences: ParcelPrivacyPreferences; status: string }>(
+      `/landstack/parcels/${encodeURIComponent(ulpin)}/privacy`,
+      { method: 'PUT', body },
+    ),
   notices: (village?: string) =>
     request<{ items: Notice[]; count: number; window_days: number }>('/landstack/notices', { query: { village }, auth: false }),
   fileObjection: (id: string, reason: string) =>
@@ -177,6 +185,8 @@ export const api = {
     request<ChangeDetectionResult>('/landstack/ai/change-detection', { method: 'POST', body }),
   parcelBrief: (ulpin: string) => request<ParcelBrief>('/landstack/ai/parcel-brief', { method: 'POST', body: { ulpin } }),
   applicationAdvice: (id: string) => request<ApplicationAdvice>('/landstack/ai/application-advice', { method: 'POST', body: { id } }),
+  draftOrder: (app_id: string, action: string) =>
+    request<import('./cdm').DraftOrderResult>('/landstack/ai/draft-order', { method: 'POST', body: { app_id, action } }),
   uploadDocument: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);
