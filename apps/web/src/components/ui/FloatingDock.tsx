@@ -26,7 +26,7 @@ export interface FloatingDockProps {
 export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, role } = useAuth();
-  const { t, locale, setLocale, languages } = useTranslation();
+  const { t, locale, languages } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { phase, trigger: triggerCinematic } = useCinematicTransition();
@@ -135,7 +135,6 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
                 <Link
                   key={item.id}
                   to={item.to as any}
-                  search={item.to === '/' ? () => ({}) : undefined}
                   onClick={item.to === '/' ? () => useUI.getState().select(null) : undefined}
                   className={cn(
                     'relative z-20 px-3.5 py-1.5 text-xs font-bold select-none transition-colors duration-200 outline-none focus-visible:ring-1 focus-visible:ring-[#176B52] rounded-md',

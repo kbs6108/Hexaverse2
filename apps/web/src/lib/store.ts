@@ -71,7 +71,7 @@ export const DEV_USERS = [
   // --- National Platform Admin ---
   { id: 'admin::Admin', label: 'Admin', role: 'admin', state: 'National', hint: 'System Administrator · DoLR' },
 ] as const;
-export type DevUserId = (typeof DEV_USERS)[number]['id'];
+export type DevUserId = (typeof DEV_USERS)[number]['id'] | (string & {});
 
 /** Active boundary-edit session (officer/admin): the parcel + its draggable outer ring. */
 export interface BoundaryEdit {

@@ -16,6 +16,7 @@ import { AIInsight, parcelNeedsAttention } from '@/components/AIInsight';
 import type { ParcelTab } from '../ParcelDrawer';
 import { useTranslation } from '@/lib/i18n';
 import { OwnerPrivacyModal } from '../OwnerPrivacyModal';
+import { AcquisitionCard } from './AcquisitionCard';
 
 /** Readable names for consistency-issue fields (raw keys are backend column names). */
 const ISSUE_LABEL: Record<string, string> = {
@@ -205,6 +206,14 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           </div>
         ))}
       </div>
+
+      {p.acquisition && p.acquisition.length > 0 && (
+        <div className="space-y-3">
+          {p.acquisition.map((imp) => (
+            <AcquisitionCard key={imp.project_id} impact={imp} ulpin={p.ulpin} isOwner={isOwner} />
+          ))}
+        </div>
+      )}
 
       <AIInsight p={p} auto={parcelNeedsAttention(p)} />
 

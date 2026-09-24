@@ -1,6 +1,6 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronRight, RotateCcw, XCircle } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Card, CardBody, CardHeader } from '@/components/Card';
@@ -26,7 +26,47 @@ export function TrackApplication() {
     record_correction: t('service.intentCorrection'),
     building_permission: t('service.intentBuilding'),
     land_complaint: t('service.intentComplaint'),
+    utility_request: t('service.intentUtility', 'Utility Service Request'),
+    acquisition_claim: 'Land Acquisition Claim & Response',
   };
+
+  const app = detail.data;
+
+  // Extract decision details
+  const rejectionReason = app
+    ? (app.payload?.rejection_reason as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.remark ||
+      'Application was scrutinized and rejected by the competent authority for statutory non-compliance.'
+    : null;
+  const rejectedBy = app
+    ? (app.payload?.rejected_by as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.actor_name
+    : null;
+  const rejectedDesig = app
+    ? (app.payload?.rejected_by_designation as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.actor_designation
+    : null;
+  const rejectedAt = app
+    ? (app.payload?.rejected_at as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.ts
+    : null;
+
+  const approvalRemark = app
+    ? (app.payload?.approval_remark as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.remark
+    : null;
+  const approvedBy = app
+    ? (app.payload?.approved_by as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.actor_name
+    : null;
+  const approvedDesig = app
+    ? (app.payload?.approved_by_designation as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.actor_designation
+    : null;
+  const approvedAt = app
+    ? (app.payload?.approved_at as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.ts
+    : null;
 
   return (
     <>
@@ -73,27 +113,125 @@ export function TrackApplication() {
           {!selectedId && <CardBody className="pt-5 text-sm text-ink-3">{t('track.selectApp')}</CardBody>}
           {selectedId && detail.isLoading && <Loading />}
           {selectedId && detail.isError && <CardBody className="pt-4"><ErrorNote error={detail.error} /></CardBody>}
-          {detail.data && (
+          {app && (
             <>
               <CardHeader
-                title={<span className="font-mono">{detail.data.id}</span>}
-                subtitle={`${noticeTypeLabels[detail.data.type] ?? titleCase(detail.data.type)} · ${t('status.submitted')} ${fmtDate(detail.data.created_at, true)}`}
-                action={<StatusBadge status={detail.data.status} />}
+                title={<span className="font-mono">{app.id}</span>}
+                subtitle={`${noticeTypeLabels[app.type] ?? titleCase(app.type)} · ${t('status.submitted')} ${fmtDate(app.created_at, true)}`}
+                action={<StatusBadge status={app.status} />}
               />
               <CardBody className="flex flex-col gap-4">
                 <p className="text-sm">
                   {t('citizen.yourLand')}{' '}
-                  <Link to="/map" search={{ ulpin: detail.data.ulpin }} className="font-mono text-primary underline underline-offset-2">{detail.data.ulpin}</Link>
-                  {detail.data.assigned_department && (
-                    <span className="text-ink-3"> · {t('track.assignedDept').replace('{dept}', titleCase(detail.data.assigned_department))}</span>
+                  <Link to="/map" search={{ ulpin: app.ulpin }} className="font-mono text-primary underline underline-offset-2">{app.ulpin}</Link>
+                  {app.assigned_department && (
+                    <span className="text-ink-3"> · {t('track.assignedDept').replace('{dept}', titleCase(app.assigned_department))}</span>
                   )}
                 </p>
-                <StatusTimeline app={detail.data} />
-                {Object.keys(detail.data.payload).length > 0 && (
+
+                {/* Statutory Rejection Speaking Order & Grounds */}
+                {app.status === 'rejected' && (
+                  <div className="rounded-xl border border-brick/40 bg-brick-soft/40 p-4 text-xs space-y-2.5">
+                    <div className="flex items-center gap-2 text-brick font-bold text-sm">
+                      <XCircle size={18} className="shrink-0" />
+                      <span>Statutory Rejection Order Issued</span>
+                    </div>
+                    <div className="rounded-lg border border-brick/30 bg-panel p-3 space-y-1.5 shadow-2xs">
+                      <p className="text-[11px] uppercase tracking-wider font-bold text-ink-3">
+                        Official Grounds for Rejection / Speaking Order:
+                      </p>
+                      <p className="text-sm font-medium text-ink leading-relaxed whitespace-pre-wrap">
+                        “{rejectionReason}”
+                      </p>
+                      {rejectedBy && (
+                        <p className="text-[11px] text-ink-3 pt-1 border-t border-line/60">
+                          Order passed by: <strong>{rejectedBy}</strong>
+                          {rejectedDesig ? ` (${titleCase(rejectedDesig)})` : ''}
+                          {rejectedAt ? ` · ${fmtDate(rejectedAt, true)}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11.5px] text-ink-2">
+                      <span>You may rectify the cited defect and re-apply, or appeal to the Revenue Divisional Officer (RDO).</span>
+                      <Link
+                        to="/citizen/request"
+                        search={{ type: app.type, ulpin: app.ulpin }}
+                      >
+                        <Button size="sm" variant="primary" className="bg-brick hover:bg-brick/90">
+                          File Rectified Application →
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Statutory Approval & Execution Order */}
+                {(app.status === 'approved' || app.status === 'resolved') && (
+                  <div className="rounded-xl border border-primary/40 bg-primary-soft/40 p-4 text-xs space-y-2.5">
+                    <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                      <CheckCircle2 size={18} className="shrink-0" />
+                      <span>Statutory Approval & Execution Order Passed</span>
+                    </div>
+                    <div className="rounded-lg border border-primary/30 bg-panel p-3 space-y-1.5 shadow-2xs">
+                      <p className="text-[11px] uppercase tracking-wider font-bold text-ink-3">
+                        Official Endorsement Order:
+                      </p>
+                      <p className="text-sm font-medium text-ink leading-relaxed whitespace-pre-wrap">
+                        “{approvalRemark || 'The application has been officially scrutinized, approved, and executed in state land records.'}”
+                      </p>
+                      {approvedBy && (
+                        <p className="text-[11px] text-ink-3 pt-1 border-t border-line/60">
+                          Sanctioned by: <strong>{approvedBy}</strong>
+                          {approvedDesig ? ` (${titleCase(approvedDesig)})` : ''}
+                          {approvedAt ? ` · ${fmtDate(approvedAt, true)}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11.5px] text-ink-2">
+                      <span>Official land records and spatial GIS layers have been synchronized across departments.</span>
+                      <Link
+                        to="/map"
+                        search={{ ulpin: app.ulpin }}
+                      >
+                        <Button size="sm" variant="primary">
+                          View Updated Land on Map →
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Returned for Clarification */}
+                {app.status === 'returned' && (
+                  <div className="rounded-xl border border-amber/40 bg-amber-soft/40 p-4 text-xs space-y-2.5">
+                    <div className="flex items-center gap-2 text-amber font-bold text-sm">
+                      <AlertTriangle size={18} className="shrink-0" />
+                      <span>Application Returned for Clarification / Resubmission</span>
+                    </div>
+                    <div className="rounded-lg border border-amber/30 bg-panel p-3 space-y-1 shadow-2xs">
+                      <p className="text-[11px] uppercase tracking-wider font-bold text-ink-3">Officer Remarks:</p>
+                      <p className="text-sm font-medium text-ink">
+                        “{app.history?.slice().reverse().find((h) => h.to_status === 'returned')?.remark || 'Please provide required additional documents.'}”
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span className="text-[11.5px] text-ink-2">Upload the requested documents to resume scrutiny.</span>
+                      <Link to="/citizen/request" search={{ type: app.type, ulpin: app.ulpin }}>
+                        <Button size="sm" variant="secondary" icon={<RotateCcw size={13} />}>
+                          Resubmit with Corrections
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                <StatusTimeline app={app} />
+
+                {Object.keys(app.payload).length > 0 && (
                   <div>
                     <h3 className="mb-1 text-sm font-semibold">{t('track.submittedDetails')}</h3>
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                      {Object.entries(detail.data.payload).filter(([, v]) => typeof v !== 'object').map(([k, v]) => (
+                      {Object.entries(app.payload).filter(([k, v]) => typeof v !== 'object' && !k.includes('rejection') && !k.includes('approval')).map(([k, v]) => (
                         <div key={k}><dt className="text-[11px] uppercase tracking-wide text-ink-3">{titleCase(k)}</dt><dd>{String(v)}</dd></div>
                       ))}
                     </dl>

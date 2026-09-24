@@ -19,6 +19,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [signedInAs, setSignedInAs] = useState<string | null>(null);
+  const [customCitizenName, setCustomCitizenName] = useState('');
   const doneTimer = useRef<number | null>(null);
 
   useEffect(
@@ -94,6 +95,38 @@ export function LoginPage() {
               </button>
             ))}
             {user && <p className="pt-2 text-xs text-ink-3">Currently: {user.name}</p>}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!customCitizenName.trim()) return;
+                const devId = `citizen::${customCitizenName.trim()}`;
+                setDevUser(devId);
+                qc.clear();
+                done(customCitizenName.trim());
+              }}
+              className="mt-3 pt-3 border-t border-line flex flex-col gap-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-ink">Register / Test Custom Citizen</span>
+                <Badge tone="primary">Multi-device</Badge>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter citizen name (e.g. Ramesh Naidu)"
+                  value={customCitizenName}
+                  onChange={(e) => setCustomCitizenName(e.target.value)}
+                  className="flex-1 bg-ground-2 border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder:text-ink-3 focus:outline-none focus:border-primary"
+                />
+                <Button type="submit" variant="primary" size="sm" disabled={!customCitizenName.trim() || !!signedInAs}>
+                  Continue
+                </Button>
+              </div>
+              <p className="text-[11px] text-ink-3">
+                Open Land Stack in another browser or incognito window with a different name to test simultaneous multi-citizen actions.
+              </p>
+            </form>
           </CardBody>
         </Card>
       ) : (

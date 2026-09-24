@@ -1,22 +1,23 @@
 import { useState, type FormEvent } from 'react';
-import { useSearch } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, MapPin, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Field, Input } from '@/components/Field';
 import { ParcelPicker } from '@/components/ParcelPicker';
 import { Button } from '@/components/Button';
 import { ErrorNote } from '@/components/EmptyState';
 import { PageTitle } from './CitizenHome';
-import { titleCase } from '@/lib/format';
 import { useTranslation } from '@/lib/i18n';
 
 export function VerifyOwnership() {
   const search = useSearch({ from: '/citizen/verify' });
+  const { user } = useAuth();
   const { t } = useTranslation();
   const [ulpin, setUlpin] = useState(search.ulpin ?? '');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(user?.name ?? '');
   const m = useMutation({ mutationFn: () => api.verifyOwnership(ulpin.trim(), name.trim()) });
 
   const submit = (e: FormEvent) => {
@@ -60,7 +61,7 @@ export function VerifyOwnership() {
             <Card className={m.data.match ? 'border-primary/40' : 'border-brick/40'}>
               <CardBody className="pt-5">
                 <div className="flex items-start gap-3">
-                  {m.data.match ? <CheckCircle2 size={36} className="text-primary" /> : <XCircle size={36} className="text-brick" />}
+                  {m.data.match ? <CheckCircle2 size={36} className="text-primary shrink-0" /> : <XCircle size={36} className="text-brick shrink-0" />}
                   <div>
                     <p className="text-lg font-semibold">
                       {m.data.match ? t('verify.nameMatches') : t('verify.nameDoesNotMatch')}
@@ -88,6 +89,21 @@ export function VerifyOwnership() {
                 <p className="mt-4 text-xs text-ink-3">
                   {t('verify.comparedAgainst')}
                 </p>
+
+                {m.data.match && (
+                  <div className="mt-4 pt-3 border-t border-line/60 flex flex-wrap gap-2">
+                    <Link to="/map" search={{ ulpin }}>
+                      <Button size="sm" variant="primary" icon={<MapPin size={13} />}>
+                        Open Land Profile on Map
+                      </Button>
+                    </Link>
+                    <Link to="/citizen/request" search={{ ulpin }}>
+                      <Button size="sm" variant="secondary" icon={<ArrowRight size={13} />}>
+                        Apply for Services
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </CardBody>
             </Card>
           )}

@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
 
-from landstack.main import DEPARTMENT_APPS, create_app
+from landstack.main import DEPARTMENT_APPS
 from landstack.services import aggregator
 
 ULPIN = "TDR1K3M9A2F7C1"

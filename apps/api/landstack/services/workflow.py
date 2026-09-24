@@ -30,6 +30,8 @@ APPLICATION_TYPES = (
     "record_correction",
     "land_complaint",
     "succession",
+    "utility_request",
+    "acquisition_claim",
 )
 INITIAL_STATUS = {
     "mutation": "submitted",
@@ -40,6 +42,8 @@ INITIAL_STATUS = {
     "record_correction": "submitted",
     "land_complaint": "submitted",
     "succession": "submitted",
+    "utility_request": "submitted",
+    "acquisition_claim": "submitted",
 }
 DEFAULT_DEPARTMENT = {
     "mutation": "revenue",
@@ -50,6 +54,8 @@ DEFAULT_DEPARTMENT = {
     "record_correction": "revenue",
     "land_complaint": "revenue",
     "succession": "revenue",
+    "utility_request": "revenue",
+    "acquisition_claim": "revenue",
 }
 
 _transitions_cache: TTLCache[list[dict[str, Any]]] = TTLCache(ttl_s=60.0)
@@ -60,15 +66,31 @@ def _norm(s: Any) -> str:
     return str(s or "").strip().lower().replace(" ", "_")
 
 
-def find_transition(rows: list[dict[str, Any]], app_type: str, from_status: str, action: str) -> dict[str, Any] | None:
-    """Match `action` against `to_status` or `action_label` for the application's type/current status."""
+def find_transition(
+    rows: list[dict[str, Any]],
+    app_type: str,
+    from_status: str,
+    action: str,
+    principal: Principal | None = None,
+    app: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Match `action` against `to_status` or `action_label` for the application's type/current status.
+    If multiple candidate transitions exist for this action, prefers the one allowed for `principal`.
+    """
     wanted = _norm(action)
+    candidates: list[dict[str, Any]] = []
     for row in rows:
         if row["type"] != app_type or row["from_status"] != from_status:
             continue
         if _norm(row["to_status"]) == wanted or _norm(row.get("action_label")) == wanted:
-            return row
-    return None
+            candidates.append(row)
+    if not candidates:
+        return None
+    if principal is not None and app is not None:
+        for c in candidates:
+            if is_allowed(c, principal, app):
+                return c
+    return candidates[0]
 
 
 def is_allowed(row: dict[str, Any], principal: Principal, app: dict[str, Any]) -> bool:
@@ -264,6 +286,55 @@ async def create_application(
             row,
             source="system" if system_initiated else "gateway",
         )
+
+        if app_type == "acquisition_claim":
+            resp_type = payload.get("response_type") or "consent_settlement"
+            prj_id = int(payload.get("project_id") or 1)
+            status_map = {
+                "consent_settlement": "consent_accepted",
+                "compensation_negotiation": "negotiation_pending",
+                "statutory_objection": "objection_filed",
+                "tdr_opt_in": "tdr_opted",
+            }
+            new_st = status_map.get(resp_type, "notice_published")
+            await db.execute(
+                """
+                UPDATE gis.project_parcel_impacts
+                SET status = :status, updated_at = now()
+                WHERE ulpin = :u AND project_id = :p
+                """,
+                status=new_st,
+                u=ulpin,
+                p=prj_id,
+            )
+            await db.execute(
+                """
+                INSERT INTO gis.acquisition_claims (
+                    application_id, ulpin, project_id, response_type, applicant_name,
+                    demanded_amount, grounds, proposed_alignment, bank_account_no, bank_ifsc,
+                    bank_name, tdr_preferred_zone, supporting_docs, status, created_at, updated_at
+                ) VALUES (
+                    :aid, :u, :p, :resp, :name, :amt, :grounds, :align, :acct, :ifsc, :bname,
+                    :zone, CAST(:docs AS jsonb), 'submitted', now(), now()
+                )
+                """,
+                aid=app_id,
+                u=ulpin,
+                p=prj_id,
+                resp=resp_type,
+                name=applicant_name or principal.name or "Landowner",
+                amt=float(payload.get("demanded_amount") or 0) if payload.get("demanded_amount") else None,
+                grounds=payload.get("grounds"),
+                align=payload.get("proposed_alignment"),
+                acct=payload.get("bank_account_no"),
+                ifsc=payload.get("bank_ifsc"),
+                bname=payload.get("bank_name"),
+                zone=payload.get("tdr_preferred_zone"),
+                docs=json_dumps(payload.get("supporting_docs") or []),
+            )
+            from landstack.services import aggregator
+
+            aggregator.invalidate(ulpin)
     if row is not None:
         row["history"] = history_view(row)
     return row or {"id": app_id}
@@ -327,7 +398,7 @@ async def transition(
         app = await db.fetchrow("SELECT * FROM landstack.applications WHERE id = :id FOR UPDATE", id=app_id)
         if app is None:
             raise not_found("application", app_id)
-        row = find_transition(rows, app["type"], app["status"], action)
+        row = find_transition(rows, app["type"], app["status"], action, principal, app)
         if row is None:
             allowed = [r["to_status"] for r in rows if r["type"] == app["type"] and r["from_status"] == app["status"]]
             raise AppError(409, "invalid_transition", f"cannot '{action}' from '{app['status']}'", {"allowed": allowed})
@@ -363,6 +434,16 @@ async def transition(
                 "remark": remark,
             }
         )
+        if row["to_status"] in ("rejected", "dismissed"):
+            payload["rejection_reason"] = remark or "Application rejected by competent authority."
+            payload["rejected_at"] = _now()
+            payload["rejected_by"] = principal.name
+            payload["rejected_by_designation"] = principal.designation
+        elif row["to_status"] in ("approved", "resolved"):
+            payload["approval_remark"] = remark or "Application approved and order passed by competent authority."
+            payload["approved_at"] = _now()
+            payload["approved_by"] = principal.name
+            payload["approved_by_designation"] = principal.designation
         updated = await db.fetchrow(
             "UPDATE landstack.applications SET status = :status, payload = CAST(:payload AS jsonb), updated_at = now() "
             "WHERE id = :id RETURNING *",
@@ -534,6 +615,23 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 u=app["ulpin"],
             )
 
+            # 8. Transfer utility connections to new owner
+            try:
+                await client.post_json(
+                    "/utilities/modify",
+                    {
+                        "ulpin": app["ulpin"],
+                        "action": "name_transfer",
+                        "utility_type": "all",
+                        "consumer_name": to_owner,
+                        "remarks": f"Statutory transfer via {app['type']} ({app['id']})",
+                        "application_id": app["id"],
+                    },
+                    timeout=5.0,
+                )
+            except Exception as u_exc:
+                log.warning("Utility name transfer failed for %s: %s", app["id"], u_exc)
+
             await audit.record(
                 db, principal, f"{app['type']}.completed_full_transfer", "application", app["id"], app["ulpin"], None,
                 {"to_owner": to_owner, "from_owner": from_owner, "revenue_result": res}
@@ -629,6 +727,23 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                         u=app["ulpin"],
                     )
 
+                # 2d. Sync utility consumer name
+                try:
+                    await client.post_json(
+                        "/utilities/modify",
+                        {
+                            "ulpin": app["ulpin"],
+                            "action": "name_transfer",
+                            "utility_type": "all",
+                            "consumer_name": corrected_val,
+                            "remarks": f"Name update synced from record correction ({app['id']})",
+                            "application_id": app["id"],
+                        },
+                        timeout=5.0,
+                    )
+                except Exception as u_exc:
+                    log.warning("Utility record correction sync failed for %s: %s", app["id"], u_exc)
+
             # 3. If extent changed, sync parcels.area_sqm
             elif field in ("extent", "extent_sqm", "area"):
                 try:
@@ -691,6 +806,72 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 db, principal, "field_review.resolved", "application", app["id"], app["ulpin"], None, {"status": "resolved"}
             )
             return {"ok": True, "type": "field_review", "status": "resolved"}
+
+        if app["type"] == "utility_request":
+            u_action = payload.get("action") or "new_connection"
+            u_type = payload.get("utility_type") or "electricity"
+            body = {
+                "ulpin": app["ulpin"],
+                "action": u_action,
+                "utility_type": u_type,
+                "consumer_name": payload.get("consumer_name") or app.get("applicant_name"),
+                "sanctioned_load_kw": float(payload["sanctioned_load_kw"]) if payload.get("sanctioned_load_kw") is not None else None,
+                "pipe_size_mm": int(payload["pipe_size_mm"]) if payload.get("pipe_size_mm") is not None else None,
+                "tariff_category": payload.get("tariff_category"),
+                "phase": payload.get("phase"),
+                "meter_no": payload.get("meter_no"),
+                "provider": payload.get("provider"),
+                "remarks": payload.get("remarks") or payload.get("description") or f"Sanctioned under application {app['id']}",
+                "application_id": app["id"],
+            }
+            res = await client.post_json("/utilities/modify", body, timeout=5.0)
+            await audit.record(
+                db, principal, "utilities.request_sanctioned", "application", app["id"], app["ulpin"], None, res
+            )
+            return {"department": "utilities", "ok": True, "result": res}
+
+        if app["type"] == "acquisition_claim":
+            response_type = payload.get("response_type") or "consent_settlement"
+            project_id = int(payload.get("project_id") or 1)
+            status_map = {
+                "consent_settlement": "consent_accepted",
+                "compensation_negotiation": "award_passed",
+                "statutory_objection": "objection_filed",
+                "tdr_opt_in": "tdr_opted",
+            }
+            new_status = status_map.get(response_type, "consent_accepted")
+            await db.execute(
+                """
+                UPDATE gis.project_parcel_impacts
+                SET status = :status, updated_at = now()
+                WHERE ulpin = :u AND project_id = :p
+                """,
+                status=new_status,
+                u=app["ulpin"],
+                p=project_id,
+            )
+            await db.execute(
+                """
+                UPDATE gis.acquisition_claims
+                SET status = 'approved', updated_at = now()
+                WHERE application_id = :aid
+                """,
+                aid=app["id"],
+            )
+            from landstack.services import aggregator
+
+            aggregator.invalidate(app["ulpin"])
+            await audit.record(
+                db,
+                principal,
+                "acquisition.claim_approved",
+                "application",
+                app["id"],
+                app["ulpin"],
+                None,
+                {"response_type": response_type, "project_id": project_id, "status": new_status},
+            )
+            return {"department": "revenue", "ok": True, "status": new_status}
     except Exception as exc:
         log.warning("side effect failed for %s: %s", app["id"], exc)
         return {"ok": False, "error": str(exc)[:200]}

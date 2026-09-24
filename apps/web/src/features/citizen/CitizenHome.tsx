@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { clsx } from 'clsx';
 import { ArrowRight, FileSearch, ListChecks, MapPin, MapPinned, Megaphone, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { Textarea } from '@/components/Field';

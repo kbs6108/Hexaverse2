@@ -131,12 +131,128 @@ export interface Fiscal {
   location_tier?: string | null;
 }
 
+export interface ElectricityDetails {
+  consumer_no?: string;
+  consumer_name?: string;
+  provider?: string;
+  tariff_category?: string;
+  sanctioned_load_kw?: number;
+  phase?: string;
+  meter_no?: string;
+  connection_date?: string;
+  status?: string;
+  last_reading_kwh?: number;
+  feeder_name?: string;
+  transformer_id?: string;
+  nearest_pole_no?: string;
+}
+
+export interface WaterDetails {
+  consumer_no?: string;
+  consumer_name?: string;
+  provider?: string;
+  connection_type?: string;
+  pipe_size_mm?: number;
+  meter_no?: string;
+  status?: string;
+  supply_hours?: string;
+  water_quality_index?: string;
+  connection_date?: string;
+}
+
+export interface SewerDetails {
+  connection_no?: string;
+  network_type?: string;
+  nearest_manhole_distance_m?: number;
+  status?: string;
+  chamber_inspection?: string;
+  maintenance_ward?: string;
+}
+
+export interface GasDetails {
+  bp_no?: string;
+  consumer_name?: string;
+  provider?: string;
+  status?: string;
+  meter_no?: string;
+  connection_type?: string;
+  line_pressure_bar?: number;
+}
+
+export interface BroadbandDetails {
+  status?: string;
+  infrastructure?: string;
+  available_isps?: string[];
+  max_speed_available?: string;
+  nearest_junction_box?: string;
+}
+
+export interface SanitationDetails {
+  sanitation_qr?: string;
+  collection_tier?: string;
+  waste_segregation?: string;
+  supervisor_contact?: string;
+  rwh_pit_status?: string;
+  rwh_capacity_liters?: number;
+}
+
+export interface UtilityHistoryEntry {
+  date: string;
+  action: string;
+  utility_type: string;
+  consumer_name?: string;
+  remark?: string;
+  application_id?: string;
+}
+
 export interface Utilities {
   water: boolean;
   electricity: boolean;
   sewer: boolean;
+  gas?: boolean;
+  broadband?: boolean;
+  rainwater_harvesting?: boolean;
+  solid_waste_mgmt?: boolean;
   road_access_m?: number | null;
   nearest_road_class?: string | null;
+  electricity_details?: ElectricityDetails;
+  water_details?: WaterDetails;
+  sewer_details?: SewerDetails;
+  gas_details?: GasDetails;
+  broadband_details?: BroadbandDetails;
+  sanitation_details?: SanitationDetails;
+  history?: UtilityHistoryEntry[];
+  updated_at?: string | null;
+}
+
+export interface AcquisitionImpact {
+  project_id: number;
+  project_name: string;
+  kind: string;
+  executing_agency?: string | null;
+  statutory_act?: string | null;
+  notification_section?: string | null;
+  gazette_no?: string | null;
+  gazette_date?: string | null;
+  objection_deadline?: string | null;
+  days_left?: number | null;
+  impact_type: string;
+  total_area_sqm: number;
+  affected_area_sqm: number;
+  residual_area_sqm: number;
+  impact_pct: number;
+  guideline_rate_per_sqm: number;
+  base_land_value: number;
+  solatium_amount: number;
+  structural_damage_estimate: number;
+  total_compensation_offer: number;
+  consent_settlement_total: number;
+  tdr_units_offered_sqm: number;
+  severance_risk: boolean;
+  status: string;
+  hearing_date?: string | null;
+  description?: string | null;
+  affected_geojson?: Record<string, unknown> | null;
 }
 
 export interface Unit {
@@ -233,6 +349,7 @@ export interface ParcelCDM {
   planning: Planning;
   fiscal: Fiscal;
   utilities: Utilities | null;
+  acquisition?: AcquisitionImpact[];
   buildings: Building[];
   alerts: Alert[];
   provenance: Partial<Record<SourceKey, Provenance>>;
@@ -281,7 +398,9 @@ export type ApplicationType =
   | 'boundary_correction'
   | 'record_correction'
   | 'land_complaint'
-  | 'succession';
+  | 'succession'
+  | 'utility_request'
+  | 'acquisition_claim';
 
 /* ---------- Boundary correction (bounded parcel editing, CONTRACTS §6/§8) ---------- */
 
@@ -355,6 +474,7 @@ export interface DueDiligence {
 export interface AssistantSource {
   kind: 'parcel' | 'application' | string;
   id: string;
+  label?: string;
 }
 
 export interface AssistantReply {

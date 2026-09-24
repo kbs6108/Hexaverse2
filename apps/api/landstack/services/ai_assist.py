@@ -227,6 +227,34 @@ def triage(
         add(warnings, "No registered deed is on record for this parcel.",
             "A mutation normally needs the registered deed; attach it or register the transaction first.")
 
+    if app_type == "utility_request":
+        util = cdm.get("utilities") or {}
+        if not util.get("road_access_m") or float(util.get("road_access_m") or 0) <= 0:
+            add(warnings, "No dedicated road access width is recorded for this parcel.",
+                "Service line right-of-way (ROW) clearance or alignment survey may be required.")
+        if arrears > 0:
+            add(warnings, f"Municipal tax arrears of ₹{arrears:,.0f} are recorded.",
+                "Property tax clearance receipt may be requested by the DISCOM or Water Board.")
+        else:
+            add(notes, "Utility feasibility and service line alignment will be verified by the local municipal and revenue staff.")
+
+    if app_type == "acquisition_claim":
+        acqs = cdm.get("acquisition") or []
+        if not acqs:
+            add(warnings, "No active statutory land acquisition notice or road widening corridor is currently mapped for this parcel.",
+                "Ensure your survey number matches the official Gazette notification before filing.")
+        else:
+            first_acq = acqs[0]
+            days = first_acq.get("days_left")
+            if days is not None and days <= 7:
+                add(warnings, f"Statutory objection window closes in {days} day(s).",
+                    "Submit your consent settlement or §15 objection before the gazette deadline.")
+            if first_acq.get("severance_risk"):
+                add(notes, "Severance risk flagged: the residual parcel is under statutory minimum viability thresholds.",
+                    "You have the legal right under RFCTLARR Act §94 to demand 100% acquisition of the entire parcel.")
+            else:
+                add(notes, f"Calculated statutory compensation offer: ₹{first_acq.get('total_compensation_offer', 0):,.0f} (includes 100% statutory solatium under RFCTLARR Act §30).")
+
     _, score = rule_findings(cdm)
     return {
         "type": app_type,
@@ -503,6 +531,25 @@ _INTENT_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "utility",
+        (
+            "utility", "utilities", "electricity", "power connection", "water connection",
+            "tap connection", "sewer", "drainage", "sewerage", "ugd", "gas connection", "png",
+            "broadband", "fiber", "ofc", "sanitation", "meter change", "load enhancement",
+            "utility change", "utility details", "water bill", "current bill", "power bill",
+        ),
+    ),
+    (
+        "acquisition",
+        (
+            "acquisition", "land acquisition", "road widening", "compensation", "solatium",
+            "government project", "metro corridor", "highway", "partial land", "partial occupation",
+            "row", "right of way", "project affect", "project cutting", "decline project",
+            "negotiate compensation", "statutory objection", "section 15", "section 19",
+            "rfctlarr", "nhai", "tdr", "transferable development rights",
+        ),
+    ),
+    (
         "locate",
         (
             "locate", "find", "where is", "search parcel", "how to search", "ulpin",
@@ -519,6 +566,8 @@ _INTENT_APP_TYPE = {
     "correction": "record_correction",
     "complaint": "land_complaint",
     "build": "building_permission",
+    "utility": "utility_request",
+    "acquisition": "acquisition_claim",
 }
 
 
@@ -672,6 +721,7 @@ async def assistant(
             "correction": "For a record correction on this parcel",
             "complaint": "For a complaint on this parcel",
             "build": "For building permission on this parcel",
+            "utility": "For utility connection / modification on this parcel",
         }[intent]
         if t["blockers"]:
             reply = f"{head}, the record shows a statutory blocker: {_worst(t['blockers'])}"
@@ -848,6 +898,82 @@ async def assistant(
         )
         suggestions = ["Verify ownership", "Survey no 123/4", "Is survey no 123/4 safe to buy?"]
 
+    elif intent == "utility":
+        if cdm is not None:
+            util = cdm.get("utilities") or {}
+            elec = util.get("electricity_details") or {}
+            water = util.get("water_details") or {}
+            gas = util.get("gas_details") or {}
+            bb = util.get("broadband_details") or {}
+            sewer = util.get("sewer_details") or {}
+            reply = (
+                f"**[Utility Infrastructure for Survey No. {ids.get('survey_no') or target_ulpin}]**\n\n"
+                f"• **⚡ Power / Electricity**: {elec.get('provider', 'DISCOM Grid')} — Consumer No: `{elec.get('consumer_no', 'N/A')}`, Sanctioned Load: **{elec.get('sanctioned_load_kw', 5)} kW** ({elec.get('tariff_category', 'LT-I Domestic')}, {elec.get('phase', '1-Phase')}), Meter: `{elec.get('meter_no', 'N/A')}`\n"
+                f"• **🚰 Water Supply**: {water.get('provider', 'Municipal Water Works')} — CAN No: `{water.get('consumer_no', 'N/A')}`, Pipe Diameter: **{water.get('pipe_size_mm', 15)} mm**, Meter: `{water.get('meter_no', 'N/A')}`\n"
+                f"• **🚽 Sewerage (UGD)**: {sewer.get('network_type', 'Underground Drainage')} — Connection ID: `{sewer.get('connection_no', 'N/A')}`, Manhole Distance: {sewer.get('nearest_manhole_distance_m', 7)}m\n"
+                f"• **🔥 Piped Natural Gas (PNG)**: {gas.get('provider', 'City Gas Network')} — BP No: `{gas.get('bp_no', 'N/A')}`, Meter: `{gas.get('meter_no', 'N/A')}`\n"
+                f"• **🌐 OFC Fiber Internet**: Gigabit FTTH — Available ISPs: {', '.join(bb.get('available_isps', ['BSNL', 'JioFiber', 'Airtel']))} ({bb.get('max_speed_available', '1 Gbps')})\n"
+                f"• **🛣️ Road Access**: **{util.get('road_access_m', 6)} meters** frontage ({util.get('nearest_road_class', 'residential')})\n\n"
+                f"To add a new connection, transfer consumer name, or enhance load: [Apply for Utility Services](/citizen/request?type=utility_request&ulpin={target_ulpin})."
+            )
+        else:
+            reply = (
+                "**[Municipal Utility Services & Infrastructure]**\n"
+                "Land Stack monitors and manages 6 major utility lifelines per parcel:\n\n"
+                "• **1. Electricity (DISCOM)**: Consumer Service Connection (USC), sanctioned load (kW), tariff category (LT-I/II), phase, and meter serial.\n"
+                "• **2. Water Supply**: Consumer Account Number (CAN), pipe diameter (15–50mm), daily supply schedule, and water quality index.\n"
+                "• **3. Sewerage (UGD)**: Underground drainage connection, nearest manhole distance, and inspection chamber clearance.\n"
+                "• **4. Piped Natural Gas (PNG)**: City Gas Distribution BP number, connection type, and meter.\n"
+                "• **5. Telecom / OFC Fiber**: Underground micro-duct status, ISP coverage (BSNL, Jio, Airtel), and gigabit FTTH readiness.\n"
+                "• **6. Sanitation & Rainwater Harvesting**: SWM QR code, door-to-door waste collection, and certified percolation pit capacity.\n\n"
+                "Need to add a new connection or change consumer name / load? [Apply for Utility Services](/citizen/request?type=utility_request)."
+            )
+        suggestions = ["Apply for utility service", "Check building permission", "Is survey no 123/4 safe to buy?"]
+
+    elif intent == "acquisition":
+        if target_cdm and target_cdm.get("acquisition"):
+            acqs = target_cdm["acquisition"]
+            acq = acqs[0]
+            reply = (
+                f"**[Statutory Land Acquisition Notice for Survey No. {ids.get('survey_no') or target_ulpin}]**\n\n"
+                f"• **Project**: **{acq.get('project_name')}**\n"
+                f"• **Executing Agency**: {acq.get('executing_agency', 'Public Works / Infrastructure Agency')}\n"
+                f"• **Statutory Act & Section**: {acq.get('statutory_act', 'RFCTLARR Act, 2013')} — `{acq.get('notification_section', 'Section 19')}` (Gazette: `{acq.get('gazette_no', 'N/A')}`)\n"
+                f"• **Parcel Take**: **{acq.get('affected_area_sqm', 0):,.1f} m²** ({acq.get('impact_pct', 0):,.1f}%) | **Residual Land Retained**: {acq.get('residual_area_sqm', 0):,.1f} m²\n"
+                f"• **Statutory Compensation Breakdown**:\n"
+                f"  - Base Land Value: **₹{acq.get('base_land_value', 0):,.0f}** (@ ₹{acq.get('guideline_rate_per_sqm', 0):,.0f}/m²)\n"
+                f"  - 100% Mandatory Solatium (§30): **₹{acq.get('solatium_amount', 0):,.0f}**\n"
+                f"  - Structural / Asset Damages: **₹{acq.get('structural_damage_estimate', 0):,.0f}**\n"
+                f"  - **Total Statutory Award**: **₹{acq.get('total_compensation_offer', 0):,.0f}**\n"
+                f"  - **Fast-Track Consent Payout (+25% bonus)**: **₹{acq.get('consent_settlement_total', 0):,.0f}**\n"
+                f"  - *Alternative Option*: **{acq.get('tdr_units_offered_sqm', 0):,.0f} m² TDR / FSI Credits**\n"
+                f"• **Objections Deadline**: **{acq.get('objection_deadline')}** ({acq.get('days_left', 0)} days remaining)\n\n"
+                f"**Your Legal Options Under Law**:\n"
+                f"1. **Accept Award (Consent Settlement)**: Receive direct DBT transfer with 25% bonus.\n"
+                f"2. **Negotiate / Claim Higher Compensation (§64)**: Object to land valuation or claim severance damages.\n"
+                f"3. **Decline / File Statutory Objection (§15)**: Challenge project alignment or demand 100% full acquisition if remaining plot is unviable (§94).\n"
+                f"4. **Opt for TDR**: Receive Transferable Development Rights certificates.\n\n"
+                f"[Respond to Statutory Acquisition Notice](/citizen/request?type=acquisition_claim&ulpin={target_ulpin})."
+            )
+        else:
+            reply = (
+                "**[Government Land Acquisition & Fair Compensation (RFCTLARR 2013)]**\n\n"
+                "When the government acquires private land for public infrastructure (roads, highways, metro, civic complexes):\n\n"
+                "• **1. Partial Land Occupation (Road Widening)**: Only the Right-of-Way (RoW) strip is acquired (e.g. 50–100 m² along the road frontage). The residual parcel is retained by the landowner and sub-divided with a new survey sub-number.\n"
+                "• **2. Statutory Compensation Formula (RFCTLARR Act 2013)**:\n"
+                "  - **Base Value**: Guideline / Circle Rate × Urban (1.0x) or Rural (1.25–2.0x) factor.\n"
+                "  - **100% Solatium (§30)**: Mandatory 100% bonus over land value (exempt from income tax under §96).\n"
+                "  - **Asset Valuation (§29)**: Full payout for compound walls, gates, borewells, and trees.\n"
+                "  - **Consent Bonus (§23A)**: Up to 25% additional cash bonus for fast amicable consent settlement without litigation.\n"
+                "  - **TDR Option**: Landowners can opt for 2x–4x Transferable Development Rights (DRC) instead of cash.\n"
+                "• **3. Landowner's 3 Legal Pathways**:\n"
+                "  - **Accept & Settle**: Direct bank transfer (DBT) via PFMS with consent bonus.\n"
+                "  - **Negotiate (§64)**: Claim higher market compensation, severance damages, or commercial potential.\n"
+                "  - **Decline / File §15 Objection**: Challenge alignment, propose alternative government corridor, or compel 100% acquisition if remaining strip is unviable (§94).\n\n"
+                "[Check & Respond to Acquisition Notices](/citizen/request?type=acquisition_claim)."
+            )
+        suggestions = ["How is road compensation calculated?", "What is solatium in land acquisition?", "Can I decline land acquisition?"]
+
     elif intent == "privacy":
         reply = (
             "**[Landowner Privacy Controls & DPDP Act 2023]**\n"
@@ -946,6 +1072,20 @@ async def assistant(
         fact_lines.append(f"Court Disputes / Litigation: {len(disputes)} case(s)" + (f" ({'; '.join(d.get('case_no','') for d in disputes)})" if disputes else " None"))
         fact_lines.append(f"Buyer Due Diligence Verdict: {dd.get('verdict')} (checks passed: {sum(1 for c in dd.get('checks',[]) if c['status']=='pass')}/9)")
         fact_lines.append(f"Resurvey Status: {flags.get('resurvey')}, Change Alert: {st.get('change_alert')}, Pending Mutation: {st.get('pending_mutation')}")
+
+        util = cdm.get("utilities") or {}
+        elec = util.get("electricity_details") or {}
+        water = util.get("water_details") or {}
+        gas = util.get("gas_details") or {}
+        bb = util.get("broadband_details") or {}
+        fact_lines.append(
+            f"Utilities: Electricity: {'Active' if util.get('electricity') else 'None'} (Consumer: {elec.get('consumer_no', 'N/A')}, Provider: {elec.get('provider', 'N/A')}, Load: {elec.get('sanctioned_load_kw', 'N/A')}kW), "
+            f"Water: {'Active' if util.get('water') else 'None'} (CAN: {water.get('consumer_no', 'N/A')}, Pipe: {water.get('pipe_size_mm', 'N/A')}mm), "
+            f"Sewer: {'Connected' if util.get('sewer') else 'None'}, "
+            f"Gas: {'Active' if util.get('gas') else 'None'} (BP: {gas.get('bp_no', 'N/A')}), "
+            f"Broadband: {'Active FTTH' if util.get('broadband') else 'None'} ({bb.get('max_speed_available', 'N/A')}), "
+            f"Road Access: {util.get('road_access_m', 'N/A')}m ({util.get('nearest_road_class', 'N/A')})"
+        )
 
     if target_app_id:
         try:
@@ -1163,6 +1303,7 @@ async def draft_speaking_order(
 ) -> dict[str, Any]:
     """Generate formal quasi-judicial statutory speaking orders or field inspection reports for officers."""
     from datetime import date
+
     from landstack.services import aggregator, workflow
 
     app = await workflow.get_application(db, app_id)

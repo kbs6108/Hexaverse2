@@ -1,8 +1,10 @@
 import io
+
 import pytest
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from ai.extract import extract_ror, parse_document_text
+
+from ai.extract import extract_ror
 
 
 @pytest.mark.asyncio

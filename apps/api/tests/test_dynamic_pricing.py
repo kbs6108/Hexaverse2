@@ -1,4 +1,3 @@
-import pytest
 from landstack.services.aggregator import finalise
 
 

@@ -240,6 +240,38 @@ function StatutoryImpactCard({ app, pending }: { app: { type: string; status: st
         records: 'landstack.alerts marked resolved with officer inspection remarks',
       },
     ];
+  } else if (app.type === 'utility_request') {
+    const uAct = titleCase((app.payload?.action as string) || 'Service Sanction');
+    const uType = titleCase((app.payload?.utility_type as string) || 'Utility');
+    details = [
+      {
+        dept: 'Municipal Utilities & Infrastructure Desk',
+        impact: `${uAct} for ${uType} (${(app.payload?.consumer_name as string) || 'Applicant'})`,
+        records: 'dept_utilities.connections · Updates service connection, load/pipe parameters, and appends to audit history',
+      },
+      {
+        dept: 'Master Parcel Registry & CDM',
+        impact: 'Invalidates CDM cache; synchronizes live utility status for citizen and municipal GIS',
+        records: 'dept_utilities.connections & aggregator cache updated in real time',
+      },
+    ];
+  } else if (app.type === 'acquisition_claim') {
+    const claimType = titleCase(String(app.payload?.claim_type || 'Statutory Claim'));
+    const claimant = String(app.payload?.claimant_name || 'Landowner');
+    details = [
+      {
+        dept: 'Competent Authority (Land Acquisition) & Revenue Division',
+        impact: `${claimType} by ${claimant} · Statutory Assessment under RFCTLARR Act 2013`,
+        records: 'gis.acquisition_claims · gis.project_parcel_impacts · updates compensation award, consent bonus, and hearing schedule',
+      },
+      {
+        dept: 'Treasury / Urban Planning Authority (TDR & DBT Disbursement)',
+        impact: app.payload?.tdr_opted
+          ? `Issuance of ${app.payload?.tdr_zone || 'Municipal'} Transferable Development Rights (DRC)`
+          : `Direct Benefit Transfer (DBT) to claimant bank account (${app.payload?.bank_ifsc || 'e-Kuber Mandate'})`,
+        records: 'Direct e-Treasury mandate or TDR registry issuance',
+      },
+    ];
   } else {
     details = [
       {

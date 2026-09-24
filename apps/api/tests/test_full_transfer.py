@@ -1,7 +1,9 @@
 """Test that land transfer updates all dimensions of the parcel (RoR, units, deeds, permissions, alerts)."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from landstack.auth import Principal
 from landstack.services.workflow import run_side_effects
 
@@ -55,12 +57,20 @@ async def test_full_land_transfer_side_effects() -> None:
     assert res.get("ok") is True
     assert res.get("to_owner") == "Ravi Kumar"
 
-    # Check 1: Revenue call was dispatched with full details
-    mock_post.assert_called_once()
-    body = mock_post.call_args[0][1]
+    # Check 1: Revenue & Utilities calls were dispatched
+    assert mock_post.call_count == 2
+    called_paths = [c[0][0] for c in mock_post.call_args_list]
+    assert "/revenue/mutations" in called_paths
+    assert "/utilities/modify" in called_paths
+
+    body = [c[0][1] for c in mock_post.call_args_list if c[0][0] == "/revenue/mutations"][0]
     assert body["to_owner"] == "Ravi Kumar"
     assert body["father_name"] == "Venkateswarlu"
     assert body["nominees"] == [{"name": "Lakshmi", "relation": "spouse", "share": 1.0}]
+
+    u_body = [c[0][1] for c in mock_post.call_args_list if c[0][0] == "/utilities/modify"][0]
+    assert u_body["action"] == "name_transfer"
+    assert u_body["consumer_name"] == "Ravi Kumar"
 
     # Check 2: Building units updated
     assert any("UPDATE landstack.units" in sql and params.get("to_owner") == "Ravi Kumar" for sql, params in executed_statements)

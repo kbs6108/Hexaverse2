@@ -87,6 +87,7 @@ tests/test_extract_pdf.py
 tests/test_full_transfer.py
 tests/test_mappings.py
 tests/test_masking.py
+tests/test_record_correction.py
 tests/test_rules_misc.py
 tests/test_smoke_app.py
 tests/test_tiles_math.py

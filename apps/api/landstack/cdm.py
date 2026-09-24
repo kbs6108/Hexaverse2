@@ -147,8 +147,20 @@ class Utilities(_Leaf):
     water: bool | None = None
     electricity: bool | None = None
     sewer: bool | None = None
+    gas: bool | None = None
+    broadband: bool | None = None
+    rainwater_harvesting: bool | None = None
+    solid_waste_mgmt: bool | None = None
     road_access_m: float | None = None
     nearest_road_class: str | None = None
+    electricity_details: dict[str, Any] | None = Field(default_factory=dict)
+    water_details: dict[str, Any] | None = Field(default_factory=dict)
+    sewer_details: dict[str, Any] | None = Field(default_factory=dict)
+    gas_details: dict[str, Any] | None = Field(default_factory=dict)
+    broadband_details: dict[str, Any] | None = Field(default_factory=dict)
+    sanitation_details: dict[str, Any] | None = Field(default_factory=dict)
+    history: list[dict[str, Any]] | None = Field(default_factory=list)
+    updated_at: str | None = None
 
 
 class Unit(_Leaf):
@@ -225,6 +237,36 @@ class PrivacyPreferences(_Leaf):
     public_utilities: bool = True
 
 
+class AcquisitionImpact(_Leaf):
+    project_id: int
+    project_name: str
+    kind: str
+    executing_agency: str | None = None
+    statutory_act: str | None = None
+    notification_section: str | None = None
+    gazette_no: str | None = None
+    gazette_date: str | None = None
+    objection_deadline: str | None = None
+    days_left: int | None = None
+    impact_type: str = "partial_road_widening"
+    total_area_sqm: float = 0.0
+    affected_area_sqm: float = 0.0
+    residual_area_sqm: float = 0.0
+    impact_pct: float = 0.0
+    guideline_rate_per_sqm: float = 0.0
+    base_land_value: float = 0.0
+    solatium_amount: float = 0.0
+    structural_damage_estimate: float = 0.0
+    total_compensation_offer: float = 0.0
+    consent_settlement_total: float = 0.0
+    tdr_units_offered_sqm: float = 0.0
+    severance_risk: bool = False
+    status: str = "notice_published"
+    hearing_date: str | None = None
+    description: str | None = None
+    affected_geojson: dict[str, Any] | None = None
+
+
 class ParcelCDM(_Leaf):
     """The aggregated per-parcel profile served by `GET /landstack/parcels/{ulpin}`."""
 
@@ -237,6 +279,7 @@ class ParcelCDM(_Leaf):
     planning: Planning = Field(default_factory=Planning)
     fiscal: Fiscal = Field(default_factory=Fiscal)
     utilities: Utilities = Field(default_factory=Utilities)
+    acquisition: list[AcquisitionImpact] = Field(default_factory=list)
     buildings: list[Building] = Field(default_factory=list)
     alerts: list[Alert] = Field(default_factory=list)
     provenance: dict[str, Provenance] = Field(default_factory=dict)

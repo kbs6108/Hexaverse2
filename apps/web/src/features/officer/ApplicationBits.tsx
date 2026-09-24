@@ -76,6 +76,19 @@ export function fallbackActions(type: string, status: string): NextAction[] {
     if (status === 'submitted') return mk([['geometry_check', 'Start geometry check']]);
     if (status === 'geometry_check') return mk([['approved', 'Approve & apply (Surveyor / Tahsildar)'], ['returned', 'Return to proposer'], ['rejected', 'Reject']]);
   }
+  if (type === 'utility_request') {
+    if (status === 'submitted') return mk([['in_review', 'VRO Verify Ground Feasibility', 'vro'], ['site_inspection', 'Surveyor Verify Alignment', 'surveyor']]);
+    if (status === 'in_review') return mk([['site_inspection', 'Surveyor Verify Alignment', 'surveyor'], ['approved', 'Sanction Utility Connection', 'tahsildar']]);
+    if (status === 'site_inspection') return mk([['scrutiny_review', 'RI Endorsement to Competent Authority', 'ri']]);
+    if (status === 'scrutiny_review') return mk([['approved', 'Sanction Utility Connection', 'tahsildar'], ['rejected', 'Reject Utility Request', 'tahsildar']]);
+  }
+  if (type === 'acquisition_claim') {
+    if (status === 'claim_submitted' || status === 'submitted') return mk([['vro_verification', 'VRO Title & Possession Verification', 'vro'], ['hearing_scheduled', 'Schedule Statutory Hearing', 'tahsildar']]);
+    if (status === 'vro_verification') return mk([['hearing_scheduled', 'Schedule Statutory Hearing (§15/§64)', 'tahsildar'], ['valuation_scrutiny', 'Verify Structural/Asset Valuation', 'surveyor']]);
+    if (status === 'valuation_scrutiny') return mk([['hearing_scheduled', 'Schedule Statutory Hearing', 'tahsildar']]);
+    if (status === 'hearing_scheduled') return mk([['award_finalized', 'Pass Statutory Compensation Award', 'tahsildar'], ['disbursed', 'Disburse Direct Consent Payout (DBT)', 'tahsildar'], ['rejected', 'Reject Ineligible Claim', 'tahsildar']]);
+    if (status === 'award_finalized') return mk([['disbursed', 'Disburse Compensation Payout (DBT)', 'tahsildar']]);
+  }
   return [];
 }
 
@@ -167,7 +180,9 @@ function SideEffectNote({ app }: { app: Application }) {
         ? 'New PostGIS boundary coordinates were applied to the cadastral map and the recorded extent was synchronized in the Revenue department.'
         : app.type === 'building_permission'
           ? 'Official Building Sanction was recorded in the Planning department’s system.'
-          : `Approved and automatically updated the ${titleCase(side.department ?? 'other')} department’s records.`;
+          : app.type === 'acquisition_claim'
+            ? 'Statutory compensation award and hearing determination were recorded in the Land Acquisition Registry and treasury disbursement mandate created.'
+            : `Approved and automatically updated the ${titleCase(side.department ?? 'other')} department’s records.`;
   return (
     <div className="mt-3 rounded-xl border border-primary/30 bg-primary-soft/40 p-3 text-[12.5px] text-ink-2 space-y-1.5 shadow-xs">
       <div className="flex items-center gap-1.5 font-semibold text-primary">

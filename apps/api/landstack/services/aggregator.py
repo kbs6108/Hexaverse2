@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import datetime as dt
+import json
 import logging
 from typing import Any
 
@@ -159,6 +160,72 @@ async def _restriction_zones(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
     )
 
 
+async def _acquisitions(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
+    rows = await db.fetch(
+        """
+        SELECT i.project_id, prj.name as project_name, prj.kind, prj.executing_agency,
+               prj.statutory_act, prj.notification_section, prj.gazette_no,
+               prj.gazette_date::text as gazette_date,
+               prj.objection_deadline::text as objection_deadline,
+               GREATEST(0, (prj.objection_deadline - CURRENT_DATE)) as days_left,
+               i.impact_type, i.total_area_sqm, i.affected_area_sqm, i.residual_area_sqm,
+               i.impact_pct, i.guideline_rate_per_sqm, i.base_land_value, i.solatium_amount,
+               i.structural_damage_estimate, i.total_compensation_offer, i.consent_settlement_total,
+               i.tdr_units_offered_sqm, i.severance_risk, i.status,
+               i.hearing_date::text as hearing_date, prj.description,
+               ST_AsGeoJSON(i.affected_geom) as affected_geojson_str
+        FROM gis.project_parcel_impacts i
+        JOIN gis.projects prj ON prj.id = i.project_id
+        WHERE i.ulpin = :ulpin
+        ORDER BY i.impact_pct DESC
+        """,
+        ulpin=ulpin,
+    )
+    result = []
+    for r in rows:
+        geo = None
+        raw_geo = r.get("affected_geojson_str")
+        if isinstance(raw_geo, dict):
+            geo = raw_geo
+        elif isinstance(raw_geo, str):
+            try:
+                geo = json.loads(raw_geo)
+            except Exception:
+                geo = None
+        result.append(
+            {
+                "project_id": r["project_id"],
+                "project_name": r["project_name"],
+                "kind": r["kind"],
+                "executing_agency": r.get("executing_agency"),
+                "statutory_act": r.get("statutory_act"),
+                "notification_section": r.get("notification_section"),
+                "gazette_no": r.get("gazette_no"),
+                "gazette_date": r.get("gazette_date"),
+                "objection_deadline": r.get("objection_deadline"),
+                "days_left": int(r["days_left"]) if r.get("days_left") is not None else None,
+                "impact_type": r.get("impact_type") or "partial_road_widening",
+                "total_area_sqm": float(r["total_area_sqm"]) if r.get("total_area_sqm") is not None else 0.0,
+                "affected_area_sqm": float(r["affected_area_sqm"]) if r.get("affected_area_sqm") is not None else 0.0,
+                "residual_area_sqm": float(r["residual_area_sqm"]) if r.get("residual_area_sqm") is not None else 0.0,
+                "impact_pct": float(r["impact_pct"]) if r.get("impact_pct") is not None else 0.0,
+                "guideline_rate_per_sqm": float(r["guideline_rate_per_sqm"]) if r.get("guideline_rate_per_sqm") is not None else 0.0,
+                "base_land_value": float(r["base_land_value"]) if r.get("base_land_value") is not None else 0.0,
+                "solatium_amount": float(r["solatium_amount"]) if r.get("solatium_amount") is not None else 0.0,
+                "structural_damage_estimate": float(r["structural_damage_estimate"]) if r.get("structural_damage_estimate") is not None else 0.0,
+                "total_compensation_offer": float(r["total_compensation_offer"]) if r.get("total_compensation_offer") is not None else 0.0,
+                "consent_settlement_total": float(r["consent_settlement_total"]) if r.get("consent_settlement_total") is not None else 0.0,
+                "tdr_units_offered_sqm": float(r["tdr_units_offered_sqm"]) if r.get("tdr_units_offered_sqm") is not None else 0.0,
+                "severance_risk": bool(r.get("severance_risk")),
+                "status": r.get("status") or "notice_published",
+                "hearing_date": r.get("hearing_date"),
+                "description": r.get("description"),
+                "affected_geojson": geo,
+            }
+        )
+    return result
+
+
 async def _run_adapter(adapter: DepartmentAdapter, ulpin: str, timeout_s: float) -> AdapterResult:
     try:
         return await asyncio.wait_for(adapter.fetch(ulpin), timeout=timeout_s)
@@ -250,7 +317,11 @@ def finalise(cdm: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_base_cdm(
-    row: dict[str, Any], buildings: list[dict[str, Any]], alerts: list[dict[str, Any]], zones: list[dict[str, Any]]
+    row: dict[str, Any],
+    buildings: list[dict[str, Any]],
+    alerts: list[dict[str, Any]],
+    zones: list[dict[str, Any]],
+    acquisitions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     cdm = empty_cdm(row["ulpin"])
     cdm["identifiers"].update(
@@ -269,6 +340,7 @@ def build_base_cdm(
     cdm["buildings"] = buildings
     cdm["alerts"] = alerts
     cdm["restrictions"]["restriction_zones"] = [{"kind": z.get("kind"), "name": z.get("name")} for z in zones]
+    cdm["acquisition"] = acquisitions or []
     cdm["status"].update(
         {
             "registered": bool(row.get("registered")),
@@ -290,10 +362,10 @@ async def build_parcel_cdm(
 ) -> dict[str, Any]:
     """Unmasked, uncached CDM (used by the cached entry point and by reports/tests)."""
     row = await _base(db, ulpin)
-    buildings, alerts, zones = await asyncio.gather(
-        _buildings(db, ulpin), _alerts(db, ulpin), _restriction_zones(db, ulpin)
+    buildings, alerts, zones, acquisitions = await asyncio.gather(
+        _buildings(db, ulpin), _alerts(db, ulpin), _restriction_zones(db, ulpin), _acquisitions(db, ulpin)
     )
-    cdm = build_base_cdm(row, buildings, alerts, zones)
+    cdm = build_base_cdm(row, buildings, alerts, zones, acquisitions)
     adapters = adapters if adapters is not None else get_adapters(row.get("state"))
     timeout = timeout_s if timeout_s is not None else max(get_settings().dept_timeout_s, 0.05)
     results = await collect_fragments(adapters, ulpin, timeout)

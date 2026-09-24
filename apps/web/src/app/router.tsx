@@ -75,10 +75,11 @@ const verifyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/verif
 /* ---- citizen ---- */
 const citizenRoute = createRoute({ getParentRoute: () => rootRoute, path: '/citizen', component: CitizenLayout, beforeLoad: guard('citizen') });
 const citizenIndex = createRoute({ getParentRoute: () => citizenRoute, path: '/', component: CitizenHome });
-type UlpinSearch = { ulpin?: string; type?: string };
+type UlpinSearch = { ulpin?: string; type?: string; response_mode?: string };
 const ulpinSearch = (s: Record<string, unknown>): UlpinSearch => ({
   ...(typeof s.ulpin === 'string' && s.ulpin ? { ulpin: s.ulpin } : {}),
   ...(typeof s.type === 'string' && s.type ? { type: s.type } : {}),
+  ...(typeof s.response_mode === 'string' && s.response_mode ? { response_mode: s.response_mode } : {}),
 });
 const citizenVerify = createRoute({ getParentRoute: () => citizenRoute, path: '/verify', component: VerifyOwnership, validateSearch: ulpinSearch });
 const citizenTrack = createRoute({ getParentRoute: () => citizenRoute, path: '/track', component: TrackApplication });

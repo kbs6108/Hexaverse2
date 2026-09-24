@@ -268,8 +268,9 @@ function FormattedMessage({
         const renderedLine = parts.map((part, pIdx) => {
           // Link format: [Label](/url)
           const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-          if (linkMatch) {
-            const [, label, href] = linkMatch;
+          if (linkMatch && linkMatch[1] && linkMatch[2]) {
+            const label = linkMatch[1];
+            const href = linkMatch[2];
             const isInternal = href.startsWith('/');
             return (
               <button
@@ -445,7 +446,7 @@ export default function Assistant() {
       api.assistant(vars.message, selectedUlpin, vars.history),
     onSuccess: (r) => {
       setMsgs((prev) => {
-        const next = [...prev, { who: 'bot', text: r.reply, engine: r.engine, sources: r.sources }];
+        const next: Msg[] = [...prev, { who: 'bot' as const, text: r.reply, engine: r.engine, sources: r.sources }];
         setAnimatingIndex(next.length - 1);
         return next;
       });
@@ -661,7 +662,7 @@ export default function Assistant() {
                                   key={`src-${s.id}`}
                                   className="rounded-full bg-ground-3 px-2 py-0.5 text-[10.5px] text-ink-3"
                                 >
-                                  {s.label}
+                                  {s.label ?? s.id}
                                 </span>
                               );
                             })}

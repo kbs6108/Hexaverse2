@@ -11,6 +11,7 @@ import * as L from './styles/layers';
 import { HoverCard, type HoverInfo } from './HoverCard';
 import { RegionMarkers } from './RegionMarkers';
 import { BoundaryEditLayers } from './BoundaryEditor';
+import { AcquisitionLayer } from './AcquisitionLayer';
 import { UnitCard, type UnitInfo } from './UnitCard';
 
 // The demo spans three state clusters (CONTRACTS §10), so the map allows a national
@@ -143,6 +144,7 @@ export function MapView() {
         <ScaleControl position="bottom-left" maxWidth={120} />
         <RegionMarkers />
         <BoundaryEditLayers />
+        <AcquisitionLayer />
 
         {/* Tier 2: zones (under parcels) */}
         <Source id={L.SRC.zones} type="vector" tiles={[L.tileUrl('zones')]} minzoom={10} maxzoom={18}>

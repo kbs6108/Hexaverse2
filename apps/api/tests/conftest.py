@@ -71,6 +71,7 @@ def fake_db() -> Any:
 @pytest.fixture
 def client(fake_db: Any) -> Any:
     from fastapi.testclient import TestClient
+
     from landstack.main import create_app
 
     app = create_app()

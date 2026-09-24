@@ -43,14 +43,14 @@ async def list_alerts(
     rows = await db.fetch(
         f"""
         SELECT a.*, p.survey_no, p.village,
-               (SELECT app.id FROM landstack.applications app 
+               (SELECT app.id FROM landstack.applications app
                 WHERE app.ulpin = a.ulpin AND app.status NOT IN ('approved','rejected','resolved','dismissed')
                 ORDER BY app.created_at DESC LIMIT 1) AS open_application_id,
-               (SELECT app.type FROM landstack.applications app 
+               (SELECT app.type FROM landstack.applications app
                 WHERE app.ulpin = a.ulpin AND app.status NOT IN ('approved','rejected','resolved','dismissed')
                 ORDER BY app.created_at DESC LIMIT 1) AS open_application_type
-        FROM landstack.alerts a 
-        LEFT JOIN landstack.parcels p ON p.ulpin = a.ulpin 
+        FROM landstack.alerts a
+        LEFT JOIN landstack.parcels p ON p.ulpin = a.ulpin
         WHERE {' AND '.join(clauses)} ORDER BY a.created_at DESC LIMIT :limit
         """,
         **params,

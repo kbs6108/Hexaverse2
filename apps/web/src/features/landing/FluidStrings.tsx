@@ -155,6 +155,7 @@ export function FluidStrings() {
 
       for (let s = 0; s < strings.length; s++) {
         const str = strings[s];
+        if (!str) continue;
         const points = str.points;
 
         // 1. Physics update: Wave equation + cursor pluck/repulsion
@@ -162,6 +163,7 @@ export function FluidStrings() {
           const p = points[i];
           const prev = points[i - 1];
           const next = points[i + 1];
+          if (!p || !prev || !next) continue;
 
           // Resting harmonic wave height (breathing layout)
           const targetY =
@@ -194,28 +196,32 @@ export function FluidStrings() {
           p.y += p.vy;
         }
 
+        const firstPt = points[0];
+        const lastPt = points[points.length - 1];
+        if (!firstPt || !lastPt) continue;
+
         // Ensure boundary endpoints stay pinned
-        points[0].y =
+        firstPt.y =
           str.baseY +
           Math.sin(time * str.speed * 20 + str.phase) * str.amplitude;
-        points[points.length - 1].y =
+        lastPt.y =
           str.baseY +
           Math.sin((width) * str.frequency + time * str.speed * 20 + str.phase) * str.amplitude;
 
         // 2. Render smooth fluid string curve with Bezier splines
         ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
+        ctx.moveTo(firstPt.x, firstPt.y);
 
         for (let i = 0; i < points.length - 1; i++) {
           const p0 = points[i];
           const p1 = points[i + 1];
+          if (!p0 || !p1) continue;
           const midX = (p0.x + p1.x) * 0.5;
           const midY = (p0.y + p1.y) * 0.5;
           ctx.quadraticCurveTo(p0.x, p0.y, midX, midY);
         }
 
-        const last = points[points.length - 1];
-        ctx.lineTo(last.x, last.y);
+        ctx.lineTo(lastPt.x, lastPt.y);
 
         ctx.strokeStyle = str.color;
         ctx.lineWidth = str.lineWidth;

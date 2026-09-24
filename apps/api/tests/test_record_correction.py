@@ -1,7 +1,9 @@
 """Test that record corrections and complaints update all dimensions of the parcel and profile."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from landstack.auth import Principal
 from landstack.services.workflow import run_side_effects
 
@@ -52,13 +54,16 @@ async def test_record_correction_owner_name_side_effects() -> None:
     assert res.get("field") == "owner_name"
     assert res.get("corrected_value") == "Jatin barali"
 
-    # 1. Revenue correction endpoint called
-    mock_post.assert_called_once()
-    path, body = mock_post.call_args[0][:2]
-    assert path == "/revenue/correction"
-    assert body["ulpin"] == "TFCM916196F0FE"
-    assert body["field"] == "owner_name"
-    assert body["corrected_value"] == "Jatin barali"
+    # 1. Revenue correction & Utilities endpoints called
+    assert mock_post.call_count == 2
+    called_paths = [c[0][0] for c in mock_post.call_args_list]
+    assert "/revenue/correction" in called_paths
+    assert "/utilities/modify" in called_paths
+
+    rev_body = [c[0][1] for c in mock_post.call_args_list if c[0][0] == "/revenue/correction"][0]
+    assert rev_body["ulpin"] == "TFCM916196F0FE"
+    assert rev_body["field"] == "owner_name"
+    assert rev_body["corrected_value"] == "Jatin barali"
 
     # 2. Units updated
     assert any("UPDATE landstack.units" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)

@@ -57,7 +57,7 @@ def _load_doc_meta(doc_id: str) -> dict[str, Any] | None:
     mpath = _meta_path(doc_id)
     if os.path.exists(mpath):
         try:
-            with open(mpath, "r", encoding="utf-8") as f:
+            with open(mpath, encoding="utf-8") as f:
                 data = json.load(f)
                 DOC_INDEX[doc_id] = data
                 return data

@@ -15,14 +15,17 @@ import {
   Info,
   MapPin,
   PenLine,
+  Scale,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  TrendingUp,
   UsersRound,
   X,
   XCircle,
   Zap,
 } from 'lucide-react';
+import { fmtArea, fmtINR } from '@/lib/format';
 import { clsx } from 'clsx';
 import { api, qk } from '@/lib/api';
 import type { Application, ApplicationType } from '@/lib/cdm';
@@ -39,10 +42,10 @@ import { toast } from '@/components/Toast';
 import { PageTitle } from './CitizenHome';
 import { useTranslation } from '@/lib/i18n';
 
-type Intent = 'mutation' | 'record_correction' | 'building_permission' | 'land_complaint' | 'succession';
+type Intent = 'mutation' | 'record_correction' | 'building_permission' | 'land_complaint' | 'succession' | 'utility_request' | 'acquisition_claim';
 
 function isIntent(v: unknown): v is Intent {
-  return ['mutation', 'record_correction', 'building_permission', 'land_complaint', 'succession'].includes(v as string);
+  return ['mutation', 'record_correction', 'building_permission', 'land_complaint', 'succession', 'utility_request', 'acquisition_claim'].includes(v as string);
 }
 
 export function ServiceRequest() {
@@ -57,6 +60,8 @@ export function ServiceRequest() {
     { key: 'mutation', title: t('service.intentMutation'), desc: t('service.intentMutationDesc'), icon: ArrowRightLeft },
     { key: 'succession', title: t('service.intentSuccession'), desc: t('service.intentSuccessionDesc'), icon: UsersRound },
     { key: 'record_correction', title: t('service.intentCorrection'), desc: t('service.intentCorrectionDesc'), icon: PenLine },
+    { key: 'utility_request', title: t('service.intentUtility', 'Utility Services & Connections'), desc: t('service.intentUtilityDesc', 'Apply for electricity, water, sewer, or gas connections; name transfer or load change.'), icon: Zap },
+    { key: 'acquisition_claim', title: 'Land Acquisition & Project Response', desc: 'Respond to statutory notices (RFCTLARR 2013 / NHAI Act): Accept consent payout (+25%), negotiate compensation (§64), or file objection (§15).', icon: Scale },
     { key: 'building_permission', title: t('service.intentBuilding'), desc: t('service.intentBuildingDesc'), icon: Building2 },
     { key: 'land_complaint', title: t('service.intentComplaint'), desc: t('service.intentComplaintDesc'), icon: Flag },
   ];
@@ -93,6 +98,21 @@ export function ServiceRequest() {
       'Submitted to the Revenue department.',
       'Officer verifies the death certificate and legal heirship certificates.',
       'Approval transfers the Record of Rights to lawful heirs.',
+    ],
+    utility_request: [
+      t('service.stepsTitle'),
+      'Submitted to municipal utility desk & respective department (DISCOM / Water Board / CGD).',
+      'VRO / Surveyor verifies ground feasibility and service line alignment.',
+      'Technical scrutiny of sanctioned load / pipe specification by municipal engineer.',
+      'Approval sanctions connection & updates official land records automatically.',
+    ],
+    acquisition_claim: [
+      'Statutory Claim & Response Workflow (RFCTLARR 2013)',
+      'Notice & Response registered with Competent Authority (CALA / Revenue Division).',
+      'VRO title & ground possession verification.',
+      'Certified structural and tree asset damages evaluation by approved valuer.',
+      'Statutory personal hearing conducted by the Competent Authority under Section 15.',
+      'Compensation award finalized & direct DBT payout disbursed / TDR certificate issued.',
     ],
   };
 
@@ -154,6 +174,14 @@ export function ServiceRequest() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
           {intent === 'mutation' && <MutationForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'record_correction' && <CorrectionForm ulpin={ulpin} onDone={setDone} />}
+          {intent === 'utility_request' && <UtilityForm ulpin={ulpin} onDone={setDone} />}
+          {intent === 'acquisition_claim' && (
+            <AcquisitionClaimForm
+              ulpin={ulpin}
+              onDone={setDone}
+              initialMode={(search as Record<string, any>).response_mode}
+            />
+          )}
           {intent === 'building_permission' && <PermissionForm ulpin={ulpin} setUlpin={setUlpin} onDone={setDone} />}
           {intent === 'land_complaint' && <ComplaintForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'succession' && <SuccessionForm ulpin={ulpin} onDone={setDone} />}
@@ -519,6 +547,83 @@ export const STATUTORY_DOCUMENTS: Record<Intent, StatutoryDoc[]> = {
       issuingAuthority: 'Advocate / Gram Panchayat',
       description: 'Copies of previously issued legal notices, postal delivery track reports, or Panchayat settlement attempts.',
       conditionNote: 'Attach if legal notices have already been served to the opposing party.',
+    },
+  ],
+
+  utility_request: [
+    {
+      title: 'Proof of Title Ownership (RoR Passbook / Registered Sale Deed)',
+      requirement: 'mandatory',
+      issuingAuthority: 'Revenue Department / Sub-Registrar Office',
+      description: 'Documentary evidence establishing lawful ownership or right to occupy the premises.',
+      legalRef: 'Electricity Act 2003 / Municipal Water Works Bylaws',
+    },
+    {
+      title: 'Government Identity Proof (Aadhaar / Passport / Voter ID)',
+      requirement: 'mandatory',
+      issuingAuthority: 'UIDAI / Election Commission / Govt of India',
+      description: 'Photo identity of the applicant or designated authorized signatory.',
+      legalRef: 'KYC Standards for Utility Consumers',
+    },
+    {
+      title: 'Municipal Property Tax Assessment & Clearance Receipt',
+      requirement: 'mandatory',
+      issuingAuthority: 'Urban Local Body (ULB) / Gram Panchayat',
+      description: 'Latest municipal property tax receipt or assessment order showing no outstanding tax arrears.',
+      legalRef: 'Municipal Corporation Act',
+    },
+    {
+      title: 'Existing Utility Bill (Power / Water / Gas)',
+      requirement: 'conditional',
+      issuingAuthority: 'DISCOM / Water Board / City Gas Distributor',
+      description: 'Previous consumer bill copy showing USC / CAN / BP number.',
+      conditionNote: 'Mandatory for Name Transfer, Load Enhancement, Tariff Category Change, or Meter Replacement.',
+    },
+    {
+      title: 'Sanctioned Building Plan / Town Planning NOC',
+      requirement: 'conditional',
+      issuingAuthority: 'DTCP / APCRDA / Urban Development Authority',
+      description: 'Approved architectural floor plan and building permit order.',
+      conditionNote: 'Mandatory for commercial connections, multi-floor high-rises, or loads exceeding 10 kW.',
+    },
+    {
+      title: 'No-Objection Certificate (NOC) / Landlord Consent',
+      requirement: 'conditional',
+      issuingAuthority: 'Property Owner / Notary Public',
+      description: 'NOC from registered pattadar if applicant is a tenant or industrial occupant.',
+      conditionNote: 'Required if applicant name differs from the registered land title holder.',
+    },
+  ],
+
+  acquisition_claim: [
+    {
+      title: 'Title Deed & Updated Pattadar Passbook (RoR-1B)',
+      requirement: 'mandatory',
+      issuingAuthority: 'Registration & Stamps / Revenue Dept',
+      description: 'Official proof of title and lawful possession establishing your right to claim statutory compensation.',
+      legalRef: 'RFCTLARR Act 2013 Section 11',
+    },
+    {
+      title: 'Bank Passbook / Cancelled Cheque with IFSC',
+      requirement: 'mandatory',
+      issuingAuthority: 'Scheduled Commercial Bank',
+      description: 'Required for direct government electronic treasury disbursement (Direct Benefit Transfer - DBT).',
+      legalRef: 'Direct Benefit Transfer (DBT) Mandate',
+    },
+    {
+      title: 'Certified Valuation Report / Recent Registered Deeds',
+      requirement: 'conditional',
+      issuingAuthority: 'Govt Approved Valuer / Sub-Registrar Office',
+      description: 'Evidence of higher fair market value or commercial potential when filing for enhancement under Section 64.',
+      conditionNote: 'Required if claiming higher compensation or disputing the circle guideline rate.',
+      legalRef: 'RFCTLARR Act 2013 Section 64',
+    },
+    {
+      title: 'Site Photographs & Structural / Tree Asset Evidence',
+      requirement: 'conditional',
+      issuingAuthority: 'Self-attested / Licensed Surveyor',
+      description: 'Photographs of existing residential structures, borewells, perimeter walls, or orchards inside the project strip.',
+      conditionNote: 'Required if claiming asset damages under Section 29 or severance relief under Section 94.',
     },
   ],
 };
@@ -1277,6 +1382,800 @@ function SuccessionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
         {uploading ? 'Uploading document...' : t('service.btnSubmit')}
       </Button>
+    </FormCard>
+  );
+}
+
+/* ---------- Utility Request Form ---------- */
+
+function UtilityForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Application) => void }) {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [action, setAction] = useState('new_connection');
+  const [utilityType, setUtilityType] = useState('electricity');
+  const [consumerName, setConsumerName] = useState(user?.name || '');
+  const [consumerNo, setConsumerNo] = useState('');
+  const [sanctionedLoad, setSanctionedLoad] = useState('5.0');
+  const [tariffCategory, setTariffCategory] = useState('LT-I Domestic');
+  const [phase, setPhase] = useState('1-Phase');
+  const [pipeSize, setPipeSize] = useState('15');
+  const [meterNo, setMeterNo] = useState('');
+  const [description, setDescription] = useState('');
+  const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const m = useMutation({
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'utility_request', {
+          action,
+          utility_type: utilityType,
+          consumer_name: consumerName.trim(),
+          consumer_no: consumerNo.trim() || undefined,
+          sanctioned_load_kw: utilityType === 'electricity' ? parseFloat(sanctionedLoad) : undefined,
+          tariff_category: utilityType === 'electricity' ? tariffCategory : undefined,
+          phase: utilityType === 'electricity' ? phase : undefined,
+          pipe_size_mm: utilityType === 'water' ? parseInt(pipeSize, 10) : undefined,
+          meter_no: meterNo.trim() || undefined,
+          description: description.trim(),
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
+    onSuccess: (a) => {
+      toast.success(t('service.successTitle'), a.id);
+      onDone(a);
+    },
+  });
+
+  return (
+    <FormCard
+      title="Utility Services & Municipal Connections"
+      subtitle="DISCOM · Water Board · Municipal Drainage & City Gas"
+      onSubmit={(e) => {
+        e.preventDefault();
+        m.mutate();
+      }}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="What service do you require?" htmlFor="sr-util-action">
+          <Select id="sr-util-action" value={action} onChange={(e) => setAction(e.target.value)}>
+            <option value="new_connection">New Service Connection</option>
+            <option value="name_transfer">Consumer Name / Ownership Transfer</option>
+            <option value="load_enhancement">Sanctioned Load / Pipe Enhancement</option>
+            <option value="category_change">Tariff Category Conversion</option>
+            <option value="meter_replacement">Meter Replacement / Smart Meter</option>
+          </Select>
+        </Field>
+
+        <Field label="Utility Department / Service" htmlFor="sr-util-type">
+          <Select id="sr-util-type" value={utilityType} onChange={(e) => setUtilityType(e.target.value)}>
+            <option value="electricity">⚡ Power & Electricity (DISCOM)</option>
+            <option value="water">🚰 Municipal Water Supply</option>
+            <option value="sewer">🚽 Underground Drainage (UGD)</option>
+            <option value="gas">🔥 Piped Natural Gas (PNG)</option>
+            <option value="broadband">🌐 OFC Fiber Internet (FTTH)</option>
+            <option value="all">⚡🚰 All Utilities (Full Ownership Sync)</option>
+          </Select>
+        </Field>
+      </div>
+
+      <Field
+        label="Consumer / Applicant Legal Name"
+        htmlFor="sr-util-name"
+        hint="Name under which the service connection or account must be sanctioned"
+      >
+        <Input
+          id="sr-util-name"
+          required
+          value={consumerName}
+          onChange={(e) => setConsumerName(e.target.value)}
+          placeholder="e.g. Jatin barali"
+        />
+      </Field>
+
+      {action !== 'new_connection' && (
+        <Field
+          label="Existing Consumer / Service Account Number"
+          htmlFor="sr-util-cno"
+          hint="USC number for power, CAN for water, or BP number for gas"
+        >
+          <Input
+            id="sr-util-cno"
+            value={consumerNo}
+            onChange={(e) => setConsumerNo(e.target.value)}
+            placeholder="e.g. USC-1092842 or CAN-441029"
+          />
+        </Field>
+      )}
+
+      {/* Electricity Specific Fields */}
+      {utilityType === 'electricity' && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg border border-primary/20 bg-primary-soft/20 p-3">
+          <Field label="Sanctioned Load (kW)" htmlFor="sr-util-load">
+            <Input
+              id="sr-util-load"
+              type="number"
+              step="0.5"
+              min="0.5"
+              max="150"
+              required
+              value={sanctionedLoad}
+              onChange={(e) => setSanctionedLoad(e.target.value)}
+            />
+          </Field>
+          <Field label="Tariff Category" htmlFor="sr-util-tariff">
+            <Select id="sr-util-tariff" value={tariffCategory} onChange={(e) => setTariffCategory(e.target.value)}>
+              <option value="LT-I Domestic">LT-I Domestic (Residential)</option>
+              <option value="LT-II Commercial">LT-II Commercial (Offices / Retail)</option>
+              <option value="LT-III Industrial">LT-III Industrial</option>
+              <option value="LT-IV Agriculture">LT-IV Agricultural Pump</option>
+              <option value="LT-VII General">LT-VII General / Institutional</option>
+            </Select>
+          </Field>
+          <Field label="Electric Phase" htmlFor="sr-util-phase">
+            <Select id="sr-util-phase" value={phase} onChange={(e) => setPhase(e.target.value)}>
+              <option value="1-Phase">1-Phase (230V Single Phase)</option>
+              <option value="3-Phase">3-Phase (415V Three Phase)</option>
+            </Select>
+          </Field>
+        </div>
+      )}
+
+      {/* Water Specific Fields */}
+      {utilityType === 'water' && (
+        <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-3">
+          <Field label="Requested Pipe Diameter" htmlFor="sr-util-pipe" hint="Internal pipe bore for municipal tap connection">
+            <Select id="sr-util-pipe" value={pipeSize} onChange={(e) => setPipeSize(e.target.value)}>
+              <option value="15">15 mm (0.5 inch - Standard Domestic)</option>
+              <option value="20">20 mm (0.75 inch - High Flow Domestic)</option>
+              <option value="25">25 mm (1.0 inch - Commercial / Multi-dwelling)</option>
+              <option value="50">50 mm (2.0 inch - Bulk Commercial / Apartment)</option>
+            </Select>
+          </Field>
+        </div>
+      )}
+
+      {/* Meter Replacement */}
+      {(action === 'meter_replacement' || action === 'load_enhancement') && (
+        <Field label="Existing Meter Serial Number" htmlFor="sr-util-meter" hint="Found on meter glass plate or monthly utility invoice">
+          <Input
+            id="sr-util-meter"
+            value={meterNo}
+            onChange={(e) => setMeterNo(e.target.value)}
+            placeholder="e.g. AP-MTR-882194"
+          />
+        </Field>
+      )}
+
+      <Field label="Purpose & Justification" htmlFor="sr-util-desc" hint="Provide context on usage, occupancy, or justification">
+        <Textarea
+          id="sr-util-desc"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="e.g. Applying for 3-Phase load enhancement following installation of new equipment, or name endorsement following land registration."
+        />
+      </Field>
+
+      <DocField
+        intent="utility_request"
+        doc={doc}
+        setDoc={setDoc}
+        hint="Attach latest utility invoice, property tax receipt, registered sale deed, or municipal NOC."
+        onAutoFill={(extracted) => {
+          if (extracted.claimant) setConsumerName(extracted.claimant);
+          if (extracted.deed_doc_number) {
+            setDescription(`Utility endorsement as per registered deed ${extracted.deed_doc_number} (SRO: ${extracted.sro_office || 'jurisdiction'}).`);
+          }
+          toast.success('Form auto-filled from document text!');
+        }}
+      />
+
+      {m.isError && <ErrorNote error={m.error} />}
+      <Button
+        type="submit"
+        variant="primary"
+        loading={m.isPending || uploading}
+        className="self-start"
+        disabled={ulpin.trim().length < 8}
+      >
+        {uploading ? 'Uploading document...' : t('service.btnSubmit')}
+      </Button>
+    </FormCard>
+  );
+}
+
+/* ---------- Statutory Land Acquisition Claim Form ---------- */
+
+function AcquisitionClaimForm({
+  ulpin,
+  onDone,
+  initialMode,
+}: {
+  ulpin: string;
+  onDone: (a: Application) => void;
+  initialMode?: string;
+}) {
+  const { user } = useAuth();
+
+  const parcelQ = useQuery({
+    queryKey: qk.parcel(ulpin, user?.uid ?? 'anon'),
+    queryFn: () => api.parcel(ulpin),
+    enabled: !!ulpin && ulpin.trim().length >= 8,
+  });
+
+  const p = parcelQ.data;
+  const impact = p?.acquisition?.[0];
+
+  const isOwner = !!p && (
+    !!p.viewer_is_owner ||
+    (!p.party.masked && user?.role === 'citizen' && p.party.owners.some((o) => {
+      const pName = (user?.name || '').trim().toLowerCase();
+      const oName = (o.name || '').trim().toLowerCase();
+      return pName && oName && (pName === oName || pName.includes(oName) || oName.includes(pName));
+    }))
+  );
+
+  const [repAffirmation, setRepAffirmation] = useState(false);
+
+  const validModes = ['accept_consent', 'negotiate_value', 'decline_objection', 'opt_tdr'] as const;
+  type ResponseMode = (typeof validModes)[number];
+
+  const [mode, setMode] = useState<ResponseMode>(() => {
+    if (initialMode && validModes.includes(initialMode as ResponseMode)) {
+      return initialMode as ResponseMode;
+    }
+    return 'accept_consent';
+  });
+
+  const defaultName = user?.name || p?.party.owners[0]?.name || '';
+  const [applicantName, setApplicantName] = useState(defaultName);
+  const [applicantPhone, setApplicantPhone] = useState('9876543210');
+  const [applicantAadhaar, setApplicantAadhaar] = useState('XXXX-XXXX-4819');
+  const [bankAccountNo, setBankAccountNo] = useState('');
+  const [bankAccountConfirm, setBankAccountConfirm] = useState('');
+  const [bankIfsc, setBankIfsc] = useState('SBIN0001234');
+  const [bankName, setBankName] = useState('State Bank of India');
+  const [consentAgreed, setConsentAgreed] = useState(true);
+
+  // Negotiation / enhancement
+  const standardOffer = impact?.total_compensation_offer ?? 4746000;
+  const consentTotal = impact?.consent_settlement_total ?? Math.round(standardOffer * 1.25);
+  const [demandedAmount, setDemandedAmount] = useState(String(Math.round(standardOffer * 1.5)));
+  const enhancementGrounds = [
+    'Recent market sales average higher value (SRO registered deeds)',
+    'Loss of prime road frontage & commercial utility',
+  ];
+  const [enhancementJustification, setEnhancementJustification] = useState(
+    'Recent registered sale transactions in the same village reflect higher market rate. The acquisition cuts off road frontage and undervalues existing boundary and structural assets.'
+  );
+
+  // Objection
+  const [objectionCategory, setObjectionCategory] = useState('realignment');
+  const [objectionDetails, setObjectionDetails] = useState(
+    'Adequate government poramboke / vacant land exists on the opposite margin. The proposed alignment severely impacts existing structures.'
+  );
+  const [severanceRelief, setSeveranceRelief] = useState(impact?.severance_risk ?? false);
+
+  // TDR
+  const [tdrZone, setTdrZone] = useState('Amaravati Capital Metropolitan Planning Zone');
+  const [tdrPurpose, setTdrPurpose] = useState('tradable_drc');
+
+  const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!applicantName && p?.party.owners[0]?.name) {
+      setApplicantName(p.party.owners[0].name);
+    }
+  }, [p, applicantName]);
+
+  const m = useMutation({
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'acquisition_claim', {
+          project_id: impact?.project_id ?? 1,
+          project_name: impact?.project_name ?? 'Government Infrastructure Project',
+          claim_type: mode,
+          claimant_name: applicantName.trim(),
+          claimant_phone: applicantPhone.trim(),
+          claimant_aadhaar: applicantAadhaar.trim() || undefined,
+          bank_account_no: bankAccountNo.trim() || undefined,
+          bank_ifsc: bankIfsc.trim().toUpperCase() || undefined,
+          bank_name: bankName.trim() || undefined,
+          offered_amount: standardOffer,
+          consent_settlement_total: consentTotal,
+          demanded_amount: mode === 'negotiate_value' ? parseFloat(demandedAmount) || consentTotal : consentTotal,
+          grounds:
+            mode === 'negotiate_value'
+              ? `${enhancementGrounds.join('; ')}: ${enhancementJustification}`
+              : mode === 'decline_objection'
+                ? `[${objectionCategory}] ${objectionDetails}`
+                : 'Direct consent settlement under Section 23A with 25% statutory bonus.',
+          severance_relief_demanded: severanceRelief,
+          tdr_opted: mode === 'opt_tdr',
+          tdr_zone: mode === 'opt_tdr' ? tdrZone : undefined,
+          tdr_units_sqm: mode === 'opt_tdr' ? (impact?.tdr_units_offered_sqm ?? (impact?.affected_area_sqm ? impact.affected_area_sqm * 2 : 0)) : undefined,
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
+    onSuccess: (a) => {
+      toast.success('Statutory Application Submitted for Official Verification', a.id);
+      onDone(a);
+    },
+    onError: (err: Error) => {
+      toast.error('Failed to submit application', err.message);
+    },
+  });
+
+  return (
+    <FormCard
+      title="Statutory Land Acquisition Application & Representation"
+      subtitle="Competent Authority for Land Acquisition (CALA) · RFCTLARR Act, 2013"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (p && !isOwner && !repAffirmation) {
+          toast.error('You must confirm titleholder or authorized representative standing.');
+          return;
+        }
+        if (mode === 'accept_consent' && (!bankAccountNo.trim() || !bankIfsc.trim())) {
+          toast.error('Bank Account & IFSC are required for direct DBT compensation payment.');
+          return;
+        }
+        if (mode === 'accept_consent' && bankAccountNo.trim() !== bankAccountConfirm.trim()) {
+          toast.error('Bank Account numbers do not match. Please re-check.');
+          return;
+        }
+        m.mutate();
+      }}
+    >
+      {/* Titleholder Standing Advisory (When logged-in user is not verified owner) */}
+      {p && !isOwner && (
+        <div className="rounded-lg border border-amber/40 bg-amber-soft/40 p-3 text-xs text-ink space-y-1.5">
+          <div className="flex items-center gap-1.5 font-semibold text-amber-900 dark:text-amber-200">
+            <ShieldAlert size={15} className="text-amber-700 dark:text-amber-400 shrink-0" />
+            <span>Title Standing Advisory · Representative Mandate Required</span>
+          </div>
+          <p className="text-[11.5px] text-ink-3 leading-relaxed">
+            You are not currently logged in as the recorded Pattadar (titleholder) for this parcel ({p.identifiers.survey_no ? `Survey No. ${p.identifiers.survey_no}` : ulpin}).
+            Under Section 84 of the RFCTLARR Act, 2013, submissions made on behalf of another party require a registered Power of Attorney (POA) or Succession Certificate.
+          </p>
+          <label className="flex items-start gap-2 pt-1 text-[11px] text-ink cursor-pointer">
+            <input
+              type="checkbox"
+              checked={repAffirmation}
+              onChange={(e) => setRepAffirmation(e.target.checked)}
+              className="mt-0.5 rounded border-line text-primary focus:ring-primary"
+              required
+            />
+            <span>
+              I solemnly affirm that I am the recorded Pattadar, legal heir, or legally authorized representative under registered Power of Attorney (POA) holding lawful authority for this parcel.
+            </span>
+          </label>
+        </div>
+      )}
+
+      {/* Official 4-Stage Verification Workflow Banner */}
+      <div className="rounded-lg border border-line bg-panel p-2.5 text-xs">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="font-semibold text-ink-2 uppercase text-[10.5px] tracking-wider flex items-center gap-1">
+            <FileCheck size={12} className="text-primary" />
+            Official Revenue Verification Procedure (Post-Submission)
+          </span>
+          <span className="text-[10px] text-ink-3">Governed by CALA & Revenue Division</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-1.5 text-[11px] text-ink-3">
+          <div className="p-1.5 rounded bg-ground-1 border border-line/60">
+            <span className="font-semibold text-ink block text-[11px]">1. Acknowledgment</span>
+            Statutory Ack ID generated for tracking
+          </div>
+          <div className="p-1.5 rounded bg-ground-1 border border-line/60">
+            <span className="font-semibold text-ink block text-[11px]">2. VRO Ground Check</span>
+            Boundary stone inspection & title verification
+          </div>
+          <div className="p-1.5 rounded bg-ground-1 border border-line/60">
+            <span className="font-semibold text-ink block text-[11px]">3. Valuer & Hearing</span>
+            Damage appraisal & CALA hearing (§15)
+          </div>
+          <div className="p-1.5 rounded bg-ground-1 border border-line/60">
+            <span className="font-semibold text-ink block text-[11px]">4. Award & Treasury DBT</span>
+            Order sanctioned & e-Kuber payout released
+          </div>
+        </div>
+      </div>
+
+      {/* Project Impact Summary */}
+      {impact && (
+        <div className="rounded-lg border border-line bg-ground-1 p-3 text-xs text-ink space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-1.5 font-semibold">
+            <span className="text-ink flex items-center gap-1.5">
+              <Scale size={14} className="text-primary" />
+              {impact.project_name}
+            </span>
+            <span className="font-mono text-ink-3 text-[11px]">Gazette: {impact.gazette_no || 'AP/GZ/2026/088'}</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center text-[11px] pt-0.5">
+            <div className="rounded border border-line bg-panel p-1.5">
+              <span className="text-ink-3">Total Area</span>
+              <p className="font-semibold font-mono">{fmtArea(impact.total_area_sqm)}</p>
+            </div>
+            <div className="rounded border border-amber/30 bg-amber-soft/40 p-1.5">
+              <span className="text-amber-800 dark:text-amber-300 font-medium">Acquired Strip</span>
+              <p className="font-semibold font-mono text-amber-900 dark:text-amber-200">
+                {fmtArea(impact.affected_area_sqm)} ({impact.impact_pct}%)
+              </p>
+            </div>
+            <div className="rounded border border-line bg-panel p-1.5">
+              <span className="text-ink-3">Standard Award</span>
+              <p className="font-semibold font-mono text-ink">{fmtINR(impact.total_compensation_offer)}</p>
+            </div>
+            <div className="rounded border border-line bg-panel p-1.5">
+              <span className="text-ink-3">Consent Offer (+25%)</span>
+              <p className="font-semibold font-mono text-primary">{fmtINR(impact.consent_settlement_total)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4 Statutory Pathway Tabs */}
+      <div>
+        <label className="block text-xs font-semibold text-ink mb-1.5">
+          Select Statutory Application Type (As per Indian Law)
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* 1. Consent */}
+          <button
+            type="button"
+            onClick={() => setMode('accept_consent')}
+            className={clsx(
+              'rounded-lg border p-2.5 text-left transition-all cursor-pointer flex flex-col justify-between text-xs',
+              mode === 'accept_consent'
+                ? 'border-primary bg-primary/10 shadow-2xs'
+                : 'border-line bg-panel hover:bg-ground-1'
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <span className="font-semibold text-ink">1. Consent Award (§23A)</span>
+              <CheckCircle2 size={13} className={mode === 'accept_consent' ? 'text-primary' : 'text-ink-3'} />
+            </div>
+            <p className="mt-1 text-[10.5px] text-ink-3">Direct DBT payout with +25% bonus upon VRO check</p>
+            <span className="mt-2 text-xs font-semibold font-mono text-primary">
+              {fmtINR(consentTotal)}
+            </span>
+          </button>
+
+          {/* 2. Valuation Representation */}
+          <button
+            type="button"
+            onClick={() => setMode('negotiate_value')}
+            className={clsx(
+              'rounded-lg border p-2.5 text-left transition-all cursor-pointer flex flex-col justify-between text-xs',
+              mode === 'negotiate_value'
+                ? 'border-primary bg-primary/10 shadow-2xs'
+                : 'border-line bg-panel hover:bg-ground-1'
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <span className="font-semibold text-ink">2. Valuation Rep. (§64)</span>
+              <TrendingUp size={13} className={mode === 'negotiate_value' ? 'text-primary' : 'text-ink-3'} />
+            </div>
+            <p className="mt-1 text-[10.5px] text-ink-3">Reference petition for rate enhancement before LARRA</p>
+            <span className="mt-2 text-xs font-semibold font-mono text-ink">
+              Claim Higher Value
+            </span>
+          </button>
+
+          {/* 3. Statutory Objection */}
+          <button
+            type="button"
+            onClick={() => setMode('decline_objection')}
+            className={clsx(
+              'rounded-lg border p-2.5 text-left transition-all cursor-pointer flex flex-col justify-between text-xs',
+              mode === 'decline_objection'
+                ? 'border-primary bg-primary/10 shadow-2xs'
+                : 'border-line bg-panel hover:bg-ground-1'
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <span className="font-semibold text-ink">3. Objection (§15)</span>
+              <XCircle size={13} className={mode === 'decline_objection' ? 'text-primary' : 'text-ink-3'} />
+            </div>
+            <p className="mt-1 text-[10.5px] text-ink-3">Hearing for alignment shift or §94 buyout</p>
+            <span className="mt-2 text-xs font-semibold font-mono text-ink">
+              Personal Hearing
+            </span>
+          </button>
+
+          {/* 4. TDR */}
+          <button
+            type="button"
+            onClick={() => setMode('opt_tdr')}
+            className={clsx(
+              'rounded-lg border p-2.5 text-left transition-all cursor-pointer flex flex-col justify-between text-xs',
+              mode === 'opt_tdr'
+                ? 'border-primary bg-primary/10 shadow-2xs'
+                : 'border-line bg-panel hover:bg-ground-1'
+            )}
+          >
+            <div className="flex items-center justify-between w-full">
+              <span className="font-semibold text-ink">4. TDR Surrender</span>
+              <Building2 size={13} className={mode === 'opt_tdr' ? 'text-primary' : 'text-ink-3'} />
+            </div>
+            <p className="mt-1 text-[10.5px] text-ink-3">Tradable 2.0x Development Rights Certificate</p>
+            <span className="mt-2 text-xs font-semibold font-mono text-ink">
+              {impact?.tdr_units_offered_sqm ? `${impact.tdr_units_offered_sqm} m² DRC` : '200% DRC'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Applicant Identity */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Field label="Claimant / Landowner Name" htmlFor="ac-name">
+          <Input id="ac-name" value={applicantName} onChange={(e) => setApplicantName(e.target.value)} required />
+        </Field>
+        <Field label="Mobile Phone (for Hearing SMS & DBT)" htmlFor="ac-phone">
+          <Input id="ac-phone" value={applicantPhone} onChange={(e) => setApplicantPhone(e.target.value)} required />
+        </Field>
+        <Field label="Aadhaar / PAN" htmlFor="ac-aadhaar" hint="For Treasury e-Kuber DBT KYC">
+          <Input id="ac-aadhaar" value={applicantAadhaar} onChange={(e) => setApplicantAadhaar(e.target.value)} />
+        </Field>
+      </div>
+
+      {/* Dynamic Content based on chosen Mode */}
+
+      {/* PATHWAY 1: ACCEPT CONSENT AWARD */}
+      {mode === 'accept_consent' && (
+        <div className="space-y-3 rounded-lg border border-line bg-ground-1 p-3 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-ink">
+            <CheckCircle2 size={14} className="text-primary" />
+            <span>Direct Consent Award Application & Bank Mandate (Section 23A RFCTLARR Act, 2013)</span>
+          </div>
+
+          <div className="rounded border border-line bg-panel p-2.5 divide-y divide-line/60 text-xs">
+            <div className="flex items-center justify-between pb-1 text-ink-2">
+              <span>Standard Statutory Award (Base + Solatium + Damages)</span>
+              <span className="font-mono text-ink">{fmtINR(standardOffer)}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 text-ink-2">
+              <span>Statutory Direct Consent Incentive (+25% bonus)</span>
+              <span className="font-mono text-primary">+{fmtINR(consentTotal - standardOffer)}</span>
+            </div>
+            <div className="flex items-center justify-between pt-1 font-semibold text-ink">
+              <span>Total Statutory Compensation (Non-taxable under Section 96)</span>
+              <span className="font-mono text-primary text-sm">{fmtINR(consentTotal)}</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-ink-3">
+            Please enter your bank account details for direct government electronic treasury credit (e-Kuber DBT).
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Bank Account Number" htmlFor="ac-bank-acc">
+              <Input
+                id="ac-bank-acc"
+                value={bankAccountNo}
+                onChange={(e) => setBankAccountNo(e.target.value)}
+                placeholder="e.g. 10293847561"
+                required
+              />
+            </Field>
+            <Field label="Confirm Bank Account Number" htmlFor="ac-bank-acc-confirm">
+              <Input
+                id="ac-bank-acc-confirm"
+                value={bankAccountConfirm}
+                onChange={(e) => setBankAccountConfirm(e.target.value)}
+                placeholder="Re-enter account number"
+                required
+              />
+            </Field>
+            <Field label="Bank IFSC Code" htmlFor="ac-bank-ifsc" hint="e.g. SBIN0001234">
+              <Input
+                id="ac-bank-ifsc"
+                value={bankIfsc}
+                onChange={(e) => setBankIfsc(e.target.value.toUpperCase())}
+                required
+              />
+            </Field>
+            <Field label="Bank & Branch Name" htmlFor="ac-bank-name">
+              <Input
+                id="ac-bank-name"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+                placeholder="e.g. State Bank of India, Main Branch"
+                required
+              />
+            </Field>
+          </div>
+
+          <label className="flex items-start gap-2 pt-1 text-xs text-ink-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentAgreed}
+              onChange={(e) => setConsentAgreed(e.target.checked)}
+              className="mt-0.5 rounded border-line text-primary focus:ring-primary"
+              required
+            />
+            <span>
+              I agree to execute the direct consent agreement under Section 23A of the RFCTLARR Act, 2013 and surrender the demarcated right-of-way strip upon electronic credit of <strong>{fmtINR(consentTotal)}</strong> into my designated bank account following VRO field verification.
+            </span>
+          </label>
+        </div>
+      )}
+
+      {/* PATHWAY 2: NEGOTIATE / ENHANCEMENT CLAIM (§64) */}
+      {mode === 'negotiate_value' && (
+        <div className="space-y-3 rounded-lg border border-line bg-ground-1 p-3 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-ink">
+            <TrendingUp size={14} className="text-primary" />
+            <span>Valuation Enhancement Reference Petition (Section 64 RFCTLARR Act, 2013)</span>
+          </div>
+
+          <div className="rounded border border-line bg-panel p-2.5 text-xs text-ink-2">
+            <strong className="text-ink">Legal Protection (§64): </strong>
+            Under Section 64, you have the statutory right to receive the offered base award (<strong>{fmtINR(standardOffer)}</strong>) <em>"Under Protest"</em> immediately, without prejudicing your legal right to claim higher compensation before the Land Acquisition Authority (LARRA).
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Current Government Award Offer" htmlFor="ac-offer">
+              <Input id="ac-offer" value={fmtINR(standardOffer)} disabled />
+            </Field>
+            <Field label="Demanded Fair Market Compensation (₹)" htmlFor="ac-demand" hint="Based on recent sale deeds or commercial potential">
+              <Input
+                id="ac-demand"
+                type="number"
+                value={demandedAmount}
+                onChange={(e) => setDemandedAmount(e.target.value)}
+                required
+              />
+            </Field>
+          </div>
+
+          <Field label="Detailed Statutory Justification & Evidence Cited" htmlFor="ac-enh-desc" hint="Mention deed numbers, commercial frontage factors, or structural damage omissions">
+            <Textarea
+              id="ac-enh-desc"
+              rows={3}
+              value={enhancementJustification}
+              onChange={(e) => setEnhancementJustification(e.target.value)}
+              required
+            />
+          </Field>
+        </div>
+      )}
+
+      {/* PATHWAY 3: DECLINE / FILE STATUTORY OBJECTION (§15) */}
+      {mode === 'decline_objection' && (
+        <div className="space-y-3 rounded-lg border border-line bg-ground-1 p-3 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-ink">
+            <XCircle size={14} className="text-brick" />
+            <span>Statutory Objection Petition under Section 15 of RFCTLARR Act, 2013 / Section 3C NHAI Act</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Primary Ground of Objection" htmlFor="ac-obj-cat">
+              <Select id="ac-obj-cat" value={objectionCategory} onChange={(e) => setObjectionCategory(e.target.value)}>
+                <option value="realignment">Realignment Feasibility (Sufficient vacant government land exists on opposite margin)</option>
+                <option value="homestead">Protection of Residential Homestead / Religious Structure</option>
+                <option value="severance_total_take">Severance Viability Risk (§94): Demand 100% Parcel Buyout</option>
+                <option value="measurement_error">Measurement & Boundary Demarcation Discrepancy</option>
+                <option value="lack_of_public_purpose">Non-Compliance with Social Impact Assessment (SIA)</option>
+              </Select>
+            </Field>
+
+            <div className="flex flex-col justify-center">
+              <label className="flex items-start gap-2 text-xs text-ink-2 cursor-pointer p-2 rounded-lg border border-line bg-panel">
+                <input
+                  type="checkbox"
+                  checked={severanceRelief}
+                  onChange={(e) => setSeveranceRelief(e.target.checked)}
+                  className="mt-0.5 rounded border-line text-brick focus:ring-brick"
+                />
+                <div>
+                  <span className="font-semibold text-ink">Invoke Section 94 Severance Rights</span>
+                  <p className="text-[11px] text-ink-3">Demand full parcel buyout if the residual plot cannot be feasibly used.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <Field label="Written Grounds of Objection" htmlFor="ac-obj-desc" hint="The Collector / CALA is legally mandated to provide a personal hearing on these grounds">
+            <Textarea
+              id="ac-obj-desc"
+              rows={4}
+              value={objectionDetails}
+              onChange={(e) => setObjectionDetails(e.target.value)}
+              required
+            />
+          </Field>
+        </div>
+      )}
+
+      {/* PATHWAY 4: OPT FOR TDR */}
+      {mode === 'opt_tdr' && (
+        <div className="space-y-3 rounded-lg border border-line bg-ground-1 p-3 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-ink">
+            <Building2 size={14} className="text-primary" />
+            <span>Transferable Development Rights (TDR) / Development Rights Certificate (DRC)</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="TDR Credit Ratio Offered" htmlFor="ac-tdr-ratio">
+              <Input
+                id="ac-tdr-ratio"
+                value={`${impact?.affected_area_sqm ? (impact.affected_area_sqm * 2).toFixed(1) : '157.0'} m² DRC (2.0x Land Extent)`}
+                disabled
+              />
+            </Field>
+            <Field label="Target Municipal Planning Jurisdiction" htmlFor="ac-tdr-zone">
+              <Select id="ac-tdr-zone" value={tdrZone} onChange={(e) => setTdrZone(e.target.value)}>
+                <option value="Amaravati Capital Metropolitan Planning Zone">Amaravati Capital Metropolitan Planning Zone (APCRDA)</option>
+                <option value="Hyderabad Metropolitan Development Authority (HMDA)">Hyderabad Metropolitan Development Authority (HMDA)</option>
+                <option value="Chennai Metropolitan Development Authority (CMDA)">Chennai Metropolitan Development Authority (CMDA)</option>
+                <option value="General Urban Planning Area">General Urban Planning Area</option>
+              </Select>
+            </Field>
+          </div>
+
+          <Field label="Intended Utilization of Development Rights" htmlFor="ac-tdr-purpose">
+            <Select id="ac-tdr-purpose" value={tdrPurpose} onChange={(e) => setTdrPurpose(e.target.value)}>
+              <option value="tradable_drc">Issuance of Tradable DRC for open market sale to registered builders / developers</option>
+              <option value="self_development">Utilization on another land parcel owned by applicant to construct additional floors/FSI</option>
+            </Select>
+          </Field>
+        </div>
+      )}
+
+      {/* Document Upload */}
+      <DocField
+        intent="acquisition_claim"
+        doc={doc}
+        setDoc={setDoc}
+        hint="Upload Title Deed, Bank Passbook, Certified Valuation, or Photographs of Affected Assets"
+        onAutoFill={(extracted) => {
+          if (extracted.claimant) setApplicantName(extracted.claimant);
+          if (extracted.bank_account) setBankAccountNo(extracted.bank_account);
+          if (extracted.bank_ifsc) setBankIfsc(extracted.bank_ifsc);
+          toast.success('Auto-extracted claimant info from document!');
+        }}
+      />
+
+      {m.isError && <ErrorNote error={m.error} />}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <Button
+          type="submit"
+          variant="primary"
+          loading={m.isPending || uploading}
+          disabled={ulpin.trim().length < 8 || (p && !isOwner && !repAffirmation)}
+        >
+          {uploading
+            ? 'Uploading document...'
+            : mode === 'accept_consent'
+              ? 'Submit Consent Award Application & Bank Mandate'
+              : mode === 'negotiate_value'
+                ? 'Submit Statutory Enhancement Petition (§64)'
+                : mode === 'decline_objection'
+                  ? 'Submit Statutory Objection Petition (§15)'
+                  : 'Submit TDR Application to Planning Authority'}
+        </Button>
+
+        <span className="text-[11.5px] text-ink-3">
+          Filed directly to the Revenue Divisional Officer / Competent Authority for Land Acquisition
+        </span>
+      </div>
     </FormCard>
   );
 }

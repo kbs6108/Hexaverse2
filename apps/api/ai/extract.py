@@ -490,6 +490,7 @@ def _fallback_extraction(data: bytes, filename: str | None = None) -> dict[str, 
 async def extract_ror_nvidia(data: bytes, mime: str, filename: str | None = None) -> dict[str, Any]:
     """Dynamic vision extraction via NVIDIA Build (OpenAI-compatible, base64 content)."""
     import base64
+
     import httpx
 
     settings = get_settings()

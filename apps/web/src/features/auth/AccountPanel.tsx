@@ -41,6 +41,8 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
   const { parcel, hasOwnedLand, goToMyParcel } = useMyParcel();
   const [filter, setFilter] = useState<'all' | 'citizen' | 'officer' | 'admin'>('all');
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customRole, setCustomRole] = useState<'citizen' | 'officer'>('citizen');
 
   const switchTo = (id: DevUserId) => {
     setDevUser(id);
@@ -357,6 +359,66 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                         );
                       })}
                   </div>
+
+                  {/* Register / Switch to Custom Identity */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!customName.trim()) return;
+                      const devId = customRole === 'officer'
+                        ? `officer:revenue:tahsildar:${customName.trim()}`
+                        : `citizen::${customName.trim()}`;
+                      switchTo(devId);
+                    }}
+                    className="mt-3 p-3 rounded-xl border border-line bg-panel-2/60 space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-ink uppercase tracking-wider">
+                        Register / Switch Identity
+                      </span>
+                      <div className="flex items-center gap-1 bg-panel border border-line rounded-lg p-0.5 text-[10.5px]">
+                        <button
+                          type="button"
+                          onClick={() => setCustomRole('citizen')}
+                          className={clsx(
+                            'px-2 py-0.5 rounded font-medium cursor-pointer transition-colors',
+                            customRole === 'citizen' ? 'bg-primary text-white shadow-2xs' : 'text-ink-3 hover:text-ink'
+                          )}
+                        >
+                          Citizen
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCustomRole('officer')}
+                          className={clsx(
+                            'px-2 py-0.5 rounded font-medium cursor-pointer transition-colors',
+                            customRole === 'officer' ? 'bg-primary text-white shadow-2xs' : 'text-ink-3 hover:text-ink'
+                          )}
+                        >
+                          Officer (Tahsildar)
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={customRole === 'citizen' ? 'Citizen Name (e.g. Ramesh Naidu)' : 'Officer Name (e.g. K. Varma)'}
+                        value={customName}
+                        onChange={(e) => setCustomName(e.target.value)}
+                        className="flex-1 bg-panel border border-line rounded-lg px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-3 focus:outline-none focus:border-primary"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!customName.trim()}
+                        className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none cursor-pointer transition-all shrink-0"
+                      >
+                        Switch
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-ink-3 leading-normal">
+                      Testing on multiple devices? Enter any citizen or officer name to simulate independent accounts simultaneously.
+                    </p>
+                  </form>
                 </div>
               )}
 

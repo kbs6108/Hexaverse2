@@ -107,6 +107,16 @@ def mask_cdm(cdm: dict[str, Any], prefs: dict[str, Any] | None = None) -> dict[s
     # Utilities
     if not public_utilities:
         out["utilities"] = None
+    elif not public_owner_name and out.get("utilities"):
+        util = out["utilities"]
+        if isinstance(util, dict):
+            for k in ("electricity_details", "water_details", "gas_details"):
+                d = util.get(k)
+                if isinstance(d, dict) and d.get("consumer_name"):
+                    d["consumer_name"] = mask_name(d["consumer_name"])
+            for h in util.get("history", []) or []:
+                if isinstance(h, dict) and h.get("consumer_name"):
+                    h["consumer_name"] = mask_name(h["consumer_name"])
 
     for enc in out.get("restrictions", {}).get("encumbrances", []) or []:
         if enc.get("holder") and enc.get("kind") not in ("mortgage", "lien", "charge"):

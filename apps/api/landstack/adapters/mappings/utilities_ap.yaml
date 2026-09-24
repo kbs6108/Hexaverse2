@@ -8,5 +8,17 @@ map:
   connections.item.water: utilities.water
   connections.item.electricity: utilities.electricity
   connections.item.sewer: utilities.sewer
+  connections.item.gas: utilities.gas
+  connections.item.broadband: utilities.broadband
+  connections.item.rainwater_harvesting: utilities.rainwater_harvesting
+  connections.item.solid_waste_mgmt: utilities.solid_waste_mgmt
   connections.item.road_access_m: utilities.road_access_m
   connections.item.nearest_road_class: utilities.nearest_road_class
+  connections.item.electricity_details: utilities.electricity_details
+  connections.item.water_details: utilities.water_details
+  connections.item.sewer_details: utilities.sewer_details
+  connections.item.gas_details: utilities.gas_details
+  connections.item.broadband_details: utilities.broadband_details
+  connections.item.sanitation_details: utilities.sanitation_details
+  connections.item.history: utilities.history
+  connections.item.updated_at: utilities.updated_at
