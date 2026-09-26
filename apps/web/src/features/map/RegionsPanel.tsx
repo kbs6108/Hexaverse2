@@ -71,17 +71,17 @@ export function RegionsPanel() {
         className={clsx(
           'flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold backdrop-blur-2xl transition-all cursor-pointer shadow-xs',
           open
-            ? 'border-[#23483A] bg-[#23483A] text-[#F4F1E7] ring-2 ring-[#23483A]/20'
-            : 'border-[#D5D2C7] bg-[#F4F1E7]/90 text-[#18231F] hover:bg-[#E9E5D8]'
+            ? 'border-primary bg-primary text-white ring-2 ring-primary/20'
+            : 'border-line bg-panel/90 text-ink hover:bg-ground-2'
         )}
       >
-        <MapPin size={13} className={open ? 'text-[#B38A4C]' : 'text-[#176B52]'} />
+        <MapPin size={13} className={open ? 'text-amber' : 'text-primary'} />
         <span>
           {activeRegion ? `${activeRegion.code} · ${activeRegion.village}` : 'Regions'}
         </span>
         <ChevronDown
           size={13}
-          className={clsx('transition-transform duration-200', open ? '-rotate-180 text-[#B38A4C]' : 'text-[#6F7768]')}
+          className={clsx('transition-transform duration-200', open ? '-rotate-180 text-amber' : 'text-ink-3')}
         />
       </button>
 
@@ -89,9 +89,9 @@ export function RegionsPanel() {
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 mt-1.5 w-64 origin-top-right rounded-2xl border border-[#D5D2C7] bg-[#F4F1E7]/95 p-1.5 shadow-[0_12px_36px_rgba(24,35,31,0.12)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-1.5 w-64 origin-top-right rounded-2xl border border-line bg-panel/95 p-1.5 shadow-lg backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-100"
         >
-          <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6F7768] border-b border-[#D5D2C7]/60">
+          <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-3 border-b border-line">
             Pilot Cadastral Clusters
           </div>
 
@@ -106,22 +106,22 @@ export function RegionsPanel() {
                   className={clsx(
                     'flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs transition-colors cursor-pointer',
                     isSelected
-                      ? 'bg-[#176B52] text-[#F4F1E7]'
-                      : 'text-[#18231F] hover:bg-[#E9E5D8]/80'
+                      ? 'bg-primary text-white'
+                      : 'text-ink hover:bg-ground-2'
                   )}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className={clsx(
                         'inline-flex size-5 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold',
-                        isSelected ? 'bg-white/20 text-white' : 'bg-[#176B52]/10 text-[#176B52]'
+                        isSelected ? 'bg-white/20 text-white' : 'bg-primary-soft text-primary'
                       )}
                     >
                       {r.code}
                     </span>
                     <div className="truncate">
                       <div className="font-semibold leading-tight">{r.village}</div>
-                      <div className={clsx('text-[10px]', isSelected ? 'text-white/70' : 'text-[#6F7768]')}>
+                      <div className={clsx('text-[10px]', isSelected ? 'text-white/70' : 'text-ink-3')}>
                         {r.district} · {r.state}
                       </div>
                     </div>
@@ -130,7 +130,7 @@ export function RegionsPanel() {
                     <span
                       className={clsx(
                         'rounded px-1.5 py-0.5 font-mono text-[9.5px]',
-                        isSelected ? 'bg-white/20 text-white' : 'bg-[#D5D2C7]/70 text-[#4B5345]'
+                        isSelected ? 'bg-white/20 text-white' : 'bg-ground-2 text-ink-2'
                       )}
                     >
                       {r.parcel_count}
@@ -143,19 +143,19 @@ export function RegionsPanel() {
           </div>
 
           {/* All India Overview */}
-          <div className="border-t border-[#D5D2C7]/60 pt-1">
+          <div className="border-t border-line pt-1">
             <button
               type="button"
               onClick={handleAllIndia}
               className={clsx(
                 'flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs transition-colors cursor-pointer',
                 activeCode === null
-                  ? 'bg-[#176B52] text-[#F4F1E7]'
-                  : 'text-[#18231F] hover:bg-[#E9E5D8]/80'
+                  ? 'bg-primary text-white'
+                  : 'text-ink hover:bg-ground-2'
               )}
             >
               <div className="flex items-center gap-2">
-                <Globe2 size={13} className={activeCode === null ? 'text-[#B38A4C]' : 'text-[#176B52]'} />
+                <Globe2 size={13} className={activeCode === null ? 'text-amber' : 'text-primary'} />
                 <span className="font-semibold">All India (Overview)</span>
               </div>
               {activeCode === null && <Check size={12} className="text-white" />}

@@ -86,7 +86,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
           )}
           {p && (
             <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1.5">
-              <div className="flex flex-wrap gap-1">{statusChips(p.status)}</div>
+              <div className="flex flex-wrap gap-1">{statusChips(p.status, t)}</div>
               {isOwner && (
                 <button
                   type="button"
@@ -111,7 +111,7 @@ export function ParcelDrawer({ onClose }: { onClose: () => void }) {
       )}
       {p && (
         <>
-          <Tabs ariaLabel={t('drawer.parcelProfile')} items={tabs} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-[#F4F1E7]/50 backdrop-blur-xl border-b border-[#D5D2C7]/50 px-2" />
+          <Tabs ariaLabel={t('drawer.parcelProfile')} items={tabs} value={tab} onChange={(id) => setTab(id as ParcelTab)} className="sticky top-0 z-10 bg-panel/85 backdrop-blur-xl border-b border-line px-2" />
           <div className="p-4">
             <TabPanel id="overview" active={tab === 'overview'}><Overview p={p} goTo={setTab} /></TabPanel>
             <TabPanel id="ownership" active={tab === 'ownership'}><Ownership p={p} /></TabPanel>

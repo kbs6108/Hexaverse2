@@ -63,9 +63,18 @@ async def _auto_checks(db: DBLike, body: CreateApplication, principal: Principal
     if "document" in payload and isinstance(payload["document"], dict) and payload["document"].get("id"):
         try:
             from landstack.services.document_verify import verify_application_document
-            payload["document_verification"] = await verify_application_document(db, body.ulpin, payload["document"])
+            app_ctx = {
+                "applicant_name": principal.name,
+                "applicant_uid": principal.uid,
+                "app_type": body.type,
+                "claimed_name": payload.get("claimed_name"),
+            }
+            payload["document_verification"] = await verify_application_document(
+                db, body.ulpin, payload["document"], app_context=app_ctx
+            )
         except Exception as exc:
             payload["document_verification"] = {"status": "error", "error": str(exc)[:200]}
+
     return payload
 
 

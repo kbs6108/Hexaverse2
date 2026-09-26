@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     google_application_credentials: str = ""
     cors_origins: str = "http://localhost:5173"
     dept_base_url: str = ""
-    dept_timeout_s: float = 0.3
+    dept_timeout_s: float = 2.0
     events_shared_secret: str = "change-me"
     report_hmac_secret: str = "change-me"
     public_web_url: str = "http://localhost:5173"

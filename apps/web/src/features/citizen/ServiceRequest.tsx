@@ -7,6 +7,7 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  ChevronDown,
   Download,
   FileCheck,
   FileText,
@@ -18,7 +19,6 @@ import {
   Scale,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
   UsersRound,
   X,
@@ -42,77 +42,108 @@ import { toast } from '@/components/Toast';
 import { PageTitle } from './CitizenHome';
 import { useTranslation } from '@/lib/i18n';
 
-type Intent = 'mutation' | 'record_correction' | 'building_permission' | 'land_complaint' | 'succession' | 'utility_request' | 'acquisition_claim';
+type Intent = 'mutation' | 'record_correction' | 'building_permission' | 'land_complaint' | 'succession' | 'utility_request' | 'acquisition_claim' | 'boundary_correction';
 
 function isIntent(v: unknown): v is Intent {
-  return ['mutation', 'record_correction', 'building_permission', 'land_complaint', 'succession', 'utility_request', 'acquisition_claim'].includes(v as string);
+  return ['mutation', 'record_correction', 'building_permission', 'land_complaint', 'succession', 'utility_request', 'acquisition_claim', 'boundary_correction'].includes(v as string);
 }
 
 export function ServiceRequest() {
   const search = useSearch({ from: '/citizen/request' });
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [intent, setIntent] = useState<Intent | null>(isIntent(search.type) ? search.type : null);
   const [ulpin, setUlpin] = useState(search.ulpin ?? '');
   const [done, setDone] = useState<Application | null>(null);
   const { parcels, hasOwnedLand } = useMyParcel();
 
+  // Query active parcel when ulpin is provided
+  const activeParcelQ = useQuery({
+    queryKey: qk.parcel(ulpin.trim(), user?.uid ?? 'anon'),
+    queryFn: () => api.parcel(ulpin.trim()),
+    enabled: !!ulpin && ulpin.trim().length >= 8,
+    staleTime: 30_000,
+  });
+  const activeCdm = activeParcelQ.data;
+
+  // Government project settlement is strictly visible ONLY to applicable citizens:
+  // 1) Selected parcel has an active acquisition impact, OR
+  // 2) Any owned parcel has an active acquisition notice.
+  const isAcquisitionApplicable = Boolean(
+    (activeCdm?.acquisition && activeCdm.acquisition.length > 0) ||
+    parcels.some((p) => p.has_acquisition_notice)
+  );
+
   const intents: { key: Intent; title: string; desc: string; icon: typeof ArrowRightLeft }[] = [
     { key: 'mutation', title: t('service.intentMutation'), desc: t('service.intentMutationDesc'), icon: ArrowRightLeft },
     { key: 'succession', title: t('service.intentSuccession'), desc: t('service.intentSuccessionDesc'), icon: UsersRound },
     { key: 'record_correction', title: t('service.intentCorrection'), desc: t('service.intentCorrectionDesc'), icon: PenLine },
+    { key: 'boundary_correction', title: 'Boundary Demarcation & Correction', desc: 'Request cadastral FMB survey, missing boundary stones demarcation, or dispute resolution.', icon: MapPin },
     { key: 'utility_request', title: t('service.intentUtility', 'Utility Services & Connections'), desc: t('service.intentUtilityDesc', 'Apply for electricity, water, sewer, or gas connections; name transfer or load change.'), icon: Zap },
-    { key: 'acquisition_claim', title: 'Land Acquisition & Project Response', desc: 'Respond to statutory notices (RFCTLARR 2013 / NHAI Act): Accept consent payout (+25%), negotiate compensation (§64), or file objection (§15).', icon: Scale },
+    ...(isAcquisitionApplicable ? [
+      { key: 'acquisition_claim' as Intent, title: 'Land Acquisition & Project Response', desc: 'Respond to statutory notices (RFCTLARR 2013 / NHAI Act): Accept consent payout (+25%), negotiate compensation (§64), or file objection (§15).', icon: Scale },
+    ] : []),
     { key: 'building_permission', title: t('service.intentBuilding'), desc: t('service.intentBuildingDesc'), icon: Building2 },
     { key: 'land_complaint', title: t('service.intentComplaint'), desc: t('service.intentComplaintDesc'), icon: Flag },
   ];
 
+
   const steps: Record<Intent, string[]> = {
     mutation: [
       t('service.stepsTitle'),
-      'Submitted to the Revenue department (Tahsildar office).',
-      'Document check against the registered deed.',
-      'Field verification by the Village Revenue Officer (VRO).',
-      'Approval updates the Record of Rights; a new khata and passbook entry is generated.',
+      'Stage 1 (VRO): On-ground field inspection, ryot notices to adjoining fields, and Panchanama with village elders.',
+      'Stage 2 (Mandal Surveyor): High-precision FMB traverse check and subdivision demarcation (if partial parcel transfer).',
+      'Stage 3 (Revenue Inspector): Scrutiny of 30-year encumbrance index, link deeds, and public objection records.',
+      'Stage 4 (Tahsildar / MRO): Quasi-judicial Speaking Order under ROR Act; updates RoR 1-B and issues e-Pattadar Passbook.',
     ],
     record_correction: [
       t('service.stepsTitle'),
-      'Submitted to the Revenue department.',
-      'Officer compares the record with your supporting evidence.',
-      'Approval corrects the official record; you can download a fresh Land Information Report.',
+      'Stage 1: Automated cross-check against 30-year Registration deed index and cadastral settlement registers.',
+      'Stage 2: Field inquiry by Village Revenue Officer (VRO) to confirm physical possession and ground classification.',
+      'Stage 3: Scrutiny by Revenue Inspector (RI) against original settlement registers and link deeds.',
+      'Stage 4: Quasi-judicial rectification order by Tahsildar updates the Record of Rights and issues a verified Land Information Report.',
     ],
     building_permission: [
       t('service.stepsTitle'),
-      'Automatic planning check against the master-plan zone.',
-      'Planning officer scrutiny & ownership verification.',
-      'Site inspection by municipal / town planning surveyor.',
-      'Sanction permit issued with conditions.',
+      'Instant automated zoning check against master-plan regulations, permissible land uses, and road width.',
+      'Town Planning Officer title verification and planning guideline conformity scrutiny.',
+      'Site inspection by municipal / town planning surveyor to verify setbacks and ground coverage.',
+      'Sanction permit issued with digital QR verification and automated revenue notification.',
     ],
     land_complaint: [
       t('service.stepsTitle'),
-      'Registered with a tracking ID straight away.',
-      'A revenue or survey officer takes it up for review.',
-      'You see the outcome and remarks in your tracking page.',
+      'Registered with instant statutory tracking ID and assigned to designated Mandal grievance desk.',
+      'Field inquiry and inquest conducted by Village Revenue Officer / Revenue Inspector within 15 days.',
+      'Quasi-judicial determination or action-taken report passed by the Tahsildar with formal citizen notice.',
     ],
     succession: [
       t('service.stepsTitle'),
-      'Submitted to the Revenue department.',
-      'Officer verifies the death certificate and legal heirship certificates.',
-      'Approval transfers the Record of Rights to lawful heirs.',
+      'Submitted with registered death certificate and legal heirship certificate / family tree.',
+      'VRO field inquiry with village panchas to confirm surviving legal heirs in peaceful possession.',
+      'Public statutory notice window (15–30 days) published on village notice board for objections.',
+      'Tahsildar passes formal succession order transferring Record of Rights (RoR) title to lawful heirs.',
     ],
     utility_request: [
       t('service.stepsTitle'),
-      'Submitted to municipal utility desk & respective department (DISCOM / Water Board / CGD).',
-      'VRO / Surveyor verifies ground feasibility and service line alignment.',
-      'Technical scrutiny of sanctioned load / pipe specification by municipal engineer.',
-      'Approval sanctions connection & updates official land records automatically.',
+      'Submitted to municipal single-window desk and respective utility board (DISCOM / Water Board / CGD).',
+      'VRO / Surveyor verifies ground feasibility, service line right-of-way alignment, and lawful connection.',
+      'Technical scrutiny of sanctioned electrical load or water/sewer pipe specifications by utility engineer.',
+      'Statutory connection sanction issued; spatial easement automatically registered in cadastre.',
     ],
     acquisition_claim: [
-      'Statutory Claim & Response Workflow (RFCTLARR 2013)',
-      'Notice & Response registered with Competent Authority (CALA / Revenue Division).',
-      'VRO title & ground possession verification.',
-      'Certified structural and tree asset damages evaluation by approved valuer.',
-      'Statutory personal hearing conducted by the Competent Authority under Section 15.',
-      'Compensation award finalized & direct DBT payout disbursed / TDR certificate issued.',
+      'Statutory Claim & Response Workflow (RFCTLARR Act 2013 / NHAI Act)',
+      'Notice & Claim response registered with Competent Authority for Land Acquisition (CALA / Revenue Division).',
+      'VRO and Surveyor title & physical severance demarcation on ground.',
+      'Certified structural, crop, and tree asset damage evaluation by approved government valuer.',
+      'Statutory personal hearing conducted by the Competent Authority under Section 15 / Section 64.',
+      'Final compensation award decree passed; direct DBT treasury payout disbursed or TDR certificate generated.',
+    ],
+    boundary_correction: [
+      t('service.stepsTitle'),
+      'Filed under the State Survey & Boundaries Act with Mandal Survey & Settlement Office.',
+      'Cadastral vertex and FMB tippen verification within statutory ±15% area variance norm.',
+      'On-ground demarcation with ETS / DGPS and statutory notice served to adjacent field ryots.',
+      'Two-officer ratification: Surveyor submits demarcated polygon → Tahsildar signs order updating PostGIS cadastre.',
     ],
   };
 
@@ -176,15 +207,49 @@ export function ServiceRequest() {
           {intent === 'record_correction' && <CorrectionForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'utility_request' && <UtilityForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'acquisition_claim' && (
-            <AcquisitionClaimForm
-              ulpin={ulpin}
-              onDone={setDone}
-              initialMode={(search as Record<string, any>).response_mode}
-            />
+            isAcquisitionApplicable ? (
+              <AcquisitionClaimForm
+                ulpin={ulpin}
+                onDone={setDone}
+                initialMode={(search as Record<string, any>).response_mode}
+              />
+            ) : (
+              <Card className="p-5 border-amber-200 bg-amber-50/60 space-y-3.5">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-amber-100 p-2 text-amber-800 shrink-0">
+                    <Scale size={20} />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-sm text-ink">Government Project Settlement Not Applicable</h3>
+                    <p className="text-xs text-ink-2 leading-relaxed">
+                      Statutory Land Acquisition Claims (RFCTLARR Act, 2013) are strictly restricted to citizens whose land parcels are officially notified under a Gazette infrastructure alignment or road widening project.
+                    </p>
+                    <p className="text-xs text-amber-900 font-medium">
+                      No active acquisition notice or corridor impact applies to {ulpin ? `parcel ${ulpin}` : 'your selected land'}.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-amber-200">
+                  <Button variant="secondary" size="sm" onClick={() => setIntent('mutation')}>
+                    Apply for Mutation
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setIntent('boundary_correction')}>
+                    Boundary Demarcation
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setIntent('record_correction')}>
+                    Record Correction
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setIntent(null)}>
+                    View All Services
+                  </Button>
+                </div>
+              </Card>
+            )
           )}
           {intent === 'building_permission' && <PermissionForm ulpin={ulpin} setUlpin={setUlpin} onDone={setDone} />}
           {intent === 'land_complaint' && <ComplaintForm ulpin={ulpin} onDone={setDone} />}
           {intent === 'succession' && <SuccessionForm ulpin={ulpin} onDone={setDone} />}
+          {intent === 'boundary_correction' && <BoundaryCorrectionForm ulpin={ulpin} onDone={setDone} />}
           <aside className="flex flex-col gap-3 text-sm text-ink-2">
             <RequiredDocumentsCard intent={intent} />
             <PreCheckPanel ulpin={ulpin} type={intent} />
@@ -219,7 +284,9 @@ function PreCheckPanel({ ulpin, type }: { ulpin: string; type: ApplicationType }
   if (!ready) {
     return (
       <Card className="p-4">
-        <h3 className="font-semibold">{t('service.stepsTitle')}</h3>
+        <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+          <Scale size={14} className="text-primary" /> Statutory Pre-Check
+        </h3>
         <p className="mt-1 text-xs text-ink-3">{t('service.pickParcelHint')}</p>
       </Card>
     );
@@ -244,9 +311,11 @@ function PreCheckPanel({ ulpin, type }: { ulpin: string; type: ApplicationType }
   return (
     <Card className="p-4">
       <div className="flex items-center gap-2">
-        <h3 className="font-semibold">{t('service.stepsTitle')}</h3>
+        <h3 className="font-semibold text-xs text-ink flex items-center gap-1.5">
+          <Scale size={14} className="text-primary" /> Statutory Pre-Check
+        </h3>
         <span className="ml-auto font-mono text-[10px] text-ink-3" title="How this check was produced">
-          {c.engine === 'rules' ? 'rule engine' : c.engine}
+          {c.engine === 'rules' ? 'Statutory Rule Engine' : 'Cadastral Check'}
         </span>
       </div>
       {empty ? (
@@ -297,6 +366,30 @@ export interface StatutoryDoc {
 }
 
 export const STATUTORY_DOCUMENTS: Record<Intent, StatutoryDoc[]> = {
+  boundary_correction: [
+    {
+      title: 'Registered Title Deed / Pattadar Passbook',
+      requirement: 'mandatory',
+      issuingAuthority: 'Sub-Registrar Office / Revenue Dept',
+      description: 'Document proving ownership title to the parcel for which boundary demarcation is requested.',
+      legalRef: 'State Survey and Boundaries Act',
+    },
+    {
+      title: 'Existing Field Measurement Book (FMB) / Tippon Sketch',
+      requirement: 'mandatory',
+      issuingAuthority: 'Survey & Land Records Department',
+      description: 'Certified cadastral village map extract or FMB sketch showing traverse lines and ladder measurements.',
+      legalRef: 'Survey Manual & Demarcation Rules',
+    },
+    {
+      title: 'Adjacent Landowners Details & Schedule of Boundaries',
+      requirement: 'conditional',
+      issuingAuthority: 'Self Declaration / Village Revenue Officer',
+      description: 'North, South, East, West boundary neighbours list for issuance of statutory survey notices.',
+      conditionNote: 'Required if boundaries border private holdings to avoid contiguous boundary litigation.',
+      legalRef: 'Notice to Interested Persons under Survey Act',
+    },
+  ],
   mutation: [
     {
       title: 'Registered Sale / Gift / Partition / Settlement Deed',
@@ -694,9 +787,9 @@ function RequiredDocumentsCard({ intent }: { intent: Intent }) {
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-1.5 min-w-0">
                 {d.requirement === 'mandatory' ? (
-                  <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <FileText size={14} className="text-primary shrink-0 mt-0.5" />
                 ) : (
-                  <Info size={14} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <Info size={14} className="text-amber shrink-0 mt-0.5" />
                 )}
                 <span className="font-bold text-ink leading-tight text-[12.5px]">{d.title}</span>
               </div>
@@ -704,8 +797,8 @@ function RequiredDocumentsCard({ intent }: { intent: Intent }) {
                 className={clsx(
                   'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide',
                   d.requirement === 'mandatory'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
-                    : 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
+                    ? 'bg-primary-soft/40 text-primary border-primary/20'
+                    : 'bg-amber-500/10 text-amber-800 border-amber-500/20 dark:text-amber-300'
                 )}
               >
                 {d.requirement === 'mandatory' ? 'Mandatory' : 'As Applicable'}
@@ -737,7 +830,7 @@ function RequiredDocumentsCard({ intent }: { intent: Intent }) {
       <div className="mt-3 pt-2.5 border-t border-line flex items-start gap-2 text-[11px] text-ink-3">
         <ShieldCheck size={14} className="text-primary shrink-0 mt-0.5" />
         <span>
-          Upload single or multi-page documents (PDF, PNG, JPG). Hexaverse AI auto-extracts parties and boundaries and cross-verifies with the Spatial Cadastre.
+          Upload official records (PDF, PNG, JPG). Automated cadastral scrutiny will verify deed covenants, boundary schedules, and party identity against spatial registers.
         </span>
       </div>
     </Card>
@@ -754,12 +847,14 @@ function formatFileSize(bytes: number): string {
 
 function DocField({
   intent,
+  ulpin,
   doc,
   setDoc,
   hint,
   onAutoFill,
 }: {
   intent?: Intent;
+  ulpin?: string;
   doc: File | null;
   setDoc: (f: File | null) => void;
   hint: string;
@@ -773,6 +868,7 @@ function DocField({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [extracted, setExtracted] = useState<Record<string, any> | null>(null);
   const [extracting, setExtracting] = useState(false);
+  const [showPreconditions, setShowPreconditions] = useState(false);
 
   useEffect(() => {
     if (!doc) {
@@ -782,12 +878,45 @@ function DocField({
     }
     let active = true;
     setExtracting(true);
-    api.extractDocument(doc)
+    api.extractDocument(doc, ulpin)
       .then((res) => {
         if (active) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const data = (res?.extracted as Record<string, any>) || res || {};
-          setExtracted(data);
+          const raw = (res?.extracted as Record<string, any>) || res || {};
+          const anchors = (raw.core_anchors as Record<string, any>) || {};
+          const fields = (raw.fields as Record<string, any>) || {};
+          const parties = (anchors.parties as Array<Record<string, any>>) || [];
+          const cross = (res?.cross_verification as Record<string, any>) || raw.cross_verification || {};
+          const tamper = (raw.tampering_and_risk_check as Record<string, any>) || raw.tamper_check || {};
+
+          const claimant =
+            parties.find((p) => p.role?.includes('claimant') || p.role?.includes('buyer') || p.role?.includes('heir'))?.name ||
+            fields.claimant ||
+            fields.owner_name ||
+            raw.claimant;
+          const executant =
+            parties.find((p) => p.role?.includes('executant') || p.role?.includes('seller') || p.role?.includes('deceased'))?.name ||
+            fields.executant ||
+            raw.executant;
+          const deedDocNo = anchors.registration?.document_no || fields.document_no || raw.deed_doc_number;
+          const sro = anchors.registration?.sub_registrar_office || fields.sro_office || raw.sro_office;
+          const survey = anchors.survey_no || fields.survey_no || raw.survey_no;
+          const extent = anchors.extent || fields.extent || raw.extent_acres;
+          const extentUnit = anchors.extent_unit || fields.extent_unit || 'Ac';
+
+          const normalized = {
+            ...raw,
+            claimant,
+            executant,
+            deed_doc_number: deedDocNo,
+            sro_office: sro,
+            survey_no: survey,
+            extent_acres: extent,
+            extent_unit: extentUnit,
+            cross,
+            tamper,
+          };
+          setExtracted(normalized);
         }
       })
       .catch((err) => {
@@ -799,7 +928,7 @@ function DocField({
     return () => {
       active = false;
     };
-  }, [doc]);
+  }, [doc, ulpin]);
 
   return (
     <Field label="Supporting document" hint={hint}>
@@ -819,15 +948,11 @@ function DocField({
                 className={clsx(
                   'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border cursor-help transition-colors',
                   d.requirement === 'mandatory'
-                    ? 'bg-panel border-emerald-300/80 text-emerald-800 dark:border-emerald-700/60 dark:text-emerald-300 font-semibold'
+                    ? 'bg-panel border-line text-ink font-medium shadow-2xs'
                     : 'bg-ground-1 border-line text-ink-3'
                 )}
               >
-                {d.requirement === 'mandatory' ? (
-                  <Check size={10} className="text-emerald-600 dark:text-emerald-400" />
-                ) : (
-                  <Info size={10} className="text-ink-4" />
-                )}
+                <FileText size={10} className={d.requirement === 'mandatory' ? 'text-primary' : 'text-ink-4'} />
                 {(d.title.split('(')[0] ?? d.title).trim()}
               </span>
             ))}
@@ -865,8 +990,8 @@ function DocField({
                 <div className="flex items-center gap-2 text-[10.5px] text-ink-3 mt-0.5">
                   <span className="font-mono">{formatFileSize(doc.size)}</span>
                   <span>•</span>
-                  <span className="inline-flex items-center gap-0.5 text-emerald-600 font-semibold">
-                    <Check size={11} /> Ready for verification
+                  <span className="inline-flex items-center gap-0.5 text-primary font-semibold">
+                    <Check size={11} /> Attached for verification
                   </span>
                 </div>
               </div>
@@ -888,18 +1013,18 @@ function DocField({
           {extracting && (
             <div className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary-soft/30 px-3 py-2 text-xs text-primary font-medium">
               <Spinner size={13} />
-              <span>AI extracting deed entities & metadata using NLP parser...</span>
+              <span>Parsing instrument covenants and cross-verifying with spatial registers...</span>
             </div>
           )}
 
           {extracted && Object.keys(extracted).length > 0 && (
-            <div className="rounded-xl border border-primary/30 bg-primary-soft/30 p-3 text-xs space-y-2">
+            <div className="rounded-xl border border-line bg-panel p-3 text-xs space-y-2.5 shadow-2xs">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-1.5 font-bold text-ink">
-                  <Sparkles size={14} className="text-primary" />
-                  <span>AI Document Intelligence</span>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.2 text-[10px] text-primary font-semibold">
-                    {extracted.document_type || 'Deed Extract'}
+                  <ShieldCheck size={15} className="text-primary shrink-0" />
+                  <span>Cadastral Instrument Verification</span>
+                  <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] text-primary font-semibold border border-primary/20">
+                    {extracted.document_type || 'Deed Verified'}
                   </span>
                 </div>
                 {onAutoFill && (
@@ -908,50 +1033,119 @@ function DocField({
                     onClick={() => onAutoFill(extracted)}
                     className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-white shadow-2xs hover:bg-primary-hover cursor-pointer transition-all"
                   >
-                    <Zap size={12} /> Auto-fill Form
+                    <FileCheck size={12} /> Auto-fill Form
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-2 text-[11px] bg-panel/80 p-2.5 rounded-lg border border-line">
+
+              {/* Core Extracted Metadata */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] bg-panel/85 p-2.5 rounded-lg border border-line">
                 {extracted.deed_doc_number && (
                   <div>
-                    <span className="text-ink-3 block">Deed No:</span>
-                    <span className="font-semibold text-ink">{extracted.deed_doc_number}</span>
-                  </div>
-                )}
-                {extracted.claimant && (
-                  <div>
-                    <span className="text-ink-3 block">Buyer / Claimant:</span>
-                    <span className="font-semibold text-ink">{extracted.claimant}</span>
-                  </div>
-                )}
-                {extracted.executant && (
-                  <div>
-                    <span className="text-ink-3 block">Seller / Executant:</span>
-                    <span className="font-semibold text-ink">{extracted.executant}</span>
+                    <span className="text-ink-3 block text-[10px]">Deed No:</span>
+                    <span className="font-semibold text-ink font-mono">{extracted.deed_doc_number}</span>
                   </div>
                 )}
                 {extracted.survey_no && (
                   <div>
-                    <span className="text-ink-3 block">Survey No:</span>
+                    <span className="text-ink-3 block text-[10px]">Survey No:</span>
                     <span className="font-semibold text-ink">{extracted.survey_no}</span>
                   </div>
                 )}
                 {(extracted.extent_acres || extracted.extent_sqm) && (
                   <div>
-                    <span className="text-ink-3 block">Extent:</span>
+                    <span className="text-ink-3 block text-[10px]">Deed Extent:</span>
                     <span className="font-semibold text-ink">
-                      {extracted.extent_acres ? `${extracted.extent_acres} Ac` : `${extracted.extent_sqm} sqm`}
+                      {extracted.extent_acres ? `${extracted.extent_acres} ${extracted.extent_unit || 'Ac'}` : `${extracted.extent_sqm} m²`}
                     </span>
+                  </div>
+                )}
+                {extracted.claimant && (
+                  <div>
+                    <span className="text-ink-3 block text-[10px]">Buyer / Claimant:</span>
+                    <span className="font-semibold text-ink">{extracted.claimant}</span>
+                  </div>
+                )}
+                {extracted.executant && (
+                  <div>
+                    <span className="text-ink-3 block text-[10px]">Seller / Executant:</span>
+                    <span className="font-semibold text-ink">{extracted.executant}</span>
                   </div>
                 )}
                 {extracted.sro_office && (
                   <div>
-                    <span className="text-ink-3 block">SRO Office:</span>
+                    <span className="text-ink-3 block text-[10px]">SRO Office:</span>
                     <span className="font-semibold text-ink">{extracted.sro_office}</span>
                   </div>
                 )}
               </div>
+
+              {/* Cadastral Cross-Verification Flags */}
+              {extracted.cross?.flags && extracted.cross.flags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {extracted.cross.flags.map((flag: any) => (
+                    <span
+                      key={flag.id}
+                      title={`${flag.summary} (${flag.statutory_ref})`}
+                      className={clsx(
+                        'inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-medium border cursor-help',
+                        flag.severity === 'ok' && 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50',
+                        flag.severity === 'warn' && 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50',
+                        flag.severity === 'bad' && 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50'
+                      )}
+                    >
+                      {flag.severity === 'ok' ? (
+                        <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <AlertTriangle size={11} className={flag.severity === 'bad' ? 'text-rose-600' : 'text-amber-600'} />
+                      )}
+                      <span>{flag.title}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Forensic Tamper Check & Conditions Toggle */}
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/60 text-[10.5px] text-ink-3">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck size={12} className="text-emerald-600" />
+                  <span>Forensic Tamper Check: <strong className="text-ink font-semibold">{extracted.tamper?.risk_level || 'Clean'}</strong></span>
+                </div>
+                {extracted.cross?.statutory_conditions && extracted.cross.statutory_conditions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPreconditions((prev) => !prev)}
+                    className="text-primary hover:underline font-semibold cursor-pointer inline-flex items-center gap-0.5"
+                  >
+                    <span>Preconditions ({extracted.cross.statutory_conditions.length})</span>
+                    <ChevronDown size={11} className={clsx('transition-transform', showPreconditions && 'rotate-180')} />
+                  </button>
+                )}
+              </div>
+
+              {/* Collapsible Preconditions Checklist */}
+              {showPreconditions && extracted.cross?.statutory_conditions && (
+                <div className="rounded-lg bg-panel p-2.5 space-y-1.5 border border-line text-[11px]">
+                  <span className="font-bold text-ink block text-[10px] uppercase tracking-wide">
+                    Mandatory Statutory Preconditions:
+                  </span>
+                  <ul className="space-y-1">
+                    {extracted.cross.statutory_conditions.map((sc: any) => (
+                      <li key={sc.id} className="flex items-start gap-1.5 text-ink-2">
+                        <Check size={12} className="text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <strong className="text-ink">{sc.title}:</strong> {sc.desc}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Compact Statutory Disclaimer */}
+              <p className="text-[10px] text-ink-3 italic leading-tight">
+                Disclaimer: Automated diagnostic extraction is an administrative triage aid. Final quasi-judicial determination rests with the designated Competent Authority.
+              </p>
             </div>
           )}
         </div>
@@ -1040,6 +1234,7 @@ function MutationForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicatio
       </div>
       <DocField
         intent="mutation"
+        ulpin={ulpin}
         doc={doc}
         setDoc={setDoc}
         hint="Registered deed, Encumbrance Certificate (EC), and tax receipt (PDF or image dossier)."
@@ -1107,6 +1302,7 @@ function CorrectionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       </Field>
       <DocField
         intent="record_correction"
+        ulpin={ulpin}
         doc={doc}
         setDoc={setDoc}
         hint="Parent deed, photo ID, FMB survey sketch, or affidavit proving the correct value."
@@ -1122,6 +1318,120 @@ function CorrectionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       />
       {m.isError && <ErrorNote error={m.error} />}
       <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
+        {uploading ? 'Uploading document...' : t('service.btnSubmit')}
+      </Button>
+    </FormCard>
+  );
+}
+
+const BOUNDARY_DISPUTE_REASONS = [
+  { value: 'stone_missing', label: 'Boundary Stones Missing or Damaged' },
+  { value: 'encroachment', label: 'Neighbour Encroachment / Ridge Shift' },
+  { value: 'vertex_shift', label: 'Cadastral Vertex / Coordinates Shift' },
+  { value: 'subdivision_demarcation', label: 'Sub-division Demarcation & FMB Update' },
+  { value: 'fmb_discrepancy', label: 'Discrepancy Between Ground & FMB Sketch' },
+];
+
+function BoundaryCorrectionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Application) => void }) {
+  const { t } = useTranslation();
+  const [reasonCategory, setReasonCategory] = useState('stone_missing');
+  const [neighbourDetails, setNeighbourDetails] = useState('');
+  const [description, setDescription] = useState('');
+  const [doc, setDoc] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const m = useMutation({
+    mutationFn: async () => {
+      setUploading(true);
+      try {
+        const docRecord = doc ? await api.uploadDocument(doc) : null;
+        return await api.createApplication(ulpin.trim(), 'boundary_correction', {
+          reason_category: reasonCategory,
+          reason: description.trim() || reasonCategory,
+          neighbour_details: neighbourDetails.trim(),
+          document_name: doc?.name ?? null,
+          document: docRecord,
+        });
+      } finally {
+        setUploading(false);
+      }
+    },
+    onSuccess: (a) => {
+      toast.success(t('service.successTitle'), a.id);
+      onDone(a);
+    },
+  });
+
+  return (
+    <FormCard
+      title="Boundary Demarcation & Correction"
+      subtitle="Survey & Land Records Department · Cadastral boundary verification & FMB demarcation"
+      onSubmit={(e) => {
+        e.preventDefault();
+        m.mutate();
+      }}
+    >
+      <Field label="Demarcation Reason" htmlFor="bc-reason">
+        <Select id="bc-reason" value={reasonCategory} onChange={(e) => setReasonCategory(e.target.value)}>
+          {BOUNDARY_DISPUTE_REASONS.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+
+      <Field
+        label="Adjacent Landowners / Boundary Schedule"
+        htmlFor="bc-neighbours"
+        hint="Names or survey numbers of North, South, East, West neighbours for survey notice"
+      >
+        <Input
+          id="bc-neighbours"
+          placeholder="e.g. North: Sy 102/1 (Ramesh), South: Panchayat Road, East: Sy 104, West: Canal"
+          value={neighbourDetails}
+          onChange={(e) => setNeighbourDetails(e.target.value)}
+        />
+      </Field>
+
+      <Field
+        label="Dispute & Demarcation Details"
+        htmlFor="bc-desc"
+        hint="Describe ground landmarks, estimated boundary shift in feet/metres, or details of missing stones"
+      >
+        <Textarea
+          id="bc-desc"
+          rows={3}
+          required
+          placeholder="Please describe the exact boundary dispute or demarcation needed..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </Field>
+
+      <DocField
+        intent="boundary_correction"
+        ulpin={ulpin}
+        doc={doc}
+        setDoc={setDoc}
+        hint="Title deed, old FMB sketch, or photos of boundary stones / demarcation site."
+        onAutoFill={(extracted) => {
+          if (extracted.survey_no) {
+            setDescription((prev) => prev || `Boundary survey requested for Survey No. ${extracted.survey_no}.`);
+          }
+          toast.success('Form details auto-filled from document!');
+        }}
+      />
+
+      {m.isError && <ErrorNote error={m.error} />}
+
+      <Button
+        type="submit"
+        variant="primary"
+        loading={m.isPending || uploading}
+        className="self-start"
+        disabled={ulpin.trim().length < 8}
+      >
         {uploading ? 'Uploading document...' : t('service.btnSubmit')}
       </Button>
     </FormCard>
@@ -1258,7 +1568,7 @@ function PermissionForm({ ulpin, setUlpin, onDone }: { ulpin: string; setUlpin: 
         {!check.data && !check.isError && <p className="mt-1 text-xs text-ink-3">Calls the planning department’s <code>/planning/check</code> before you submit.</p>}
       </div>
       {check.data && !check.data.permissible && <Callout tone="amber" title="You can still submit">The application will be scrutinised by a planning officer, but expect it to be rejected unless the proposal changes.</Callout>}
-      <DocField intent="building_permission" doc={doc} setDoc={setDoc} hint="Architectural drawings, site plan, structural stability certificate (PDF or image dossier)." />
+      <DocField intent="building_permission" ulpin={ulpin} doc={doc} setDoc={setDoc} hint="Architectural drawings, site plan, structural stability certificate (PDF or image dossier)." />
       {m.isError && <ErrorNote error={m.error} />}
       <Button
         type="submit"
@@ -1315,7 +1625,7 @@ function ComplaintForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicati
       <Field label="Describe what happened" htmlFor="sr-comp-desc" hint="When it started, who is involved, what you want done">
         <Textarea id="sr-comp-desc" rows={4} required value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
-      <DocField intent="land_complaint" doc={doc} setDoc={setDoc} hint="Title proof, cadastral FMB extract, timestamped photos, or police acknowledgment." />
+      <DocField intent="land_complaint" ulpin={ulpin} doc={doc} setDoc={setDoc} hint="Title proof, cadastral FMB extract, timestamped photos, or police acknowledgment." />
       {m.isError && <ErrorNote error={m.error} />}
       <Button type="submit" variant="primary" loading={m.isPending || uploading} className="self-start" disabled={ulpin.trim().length < 8}>
         {uploading ? 'Uploading document...' : t('service.btnSubmit')}
@@ -1369,6 +1679,7 @@ function SuccessionForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Applicat
       </div>
       <DocField
         intent="succession"
+        ulpin={ulpin}
         doc={doc}
         setDoc={setDoc}
         hint="Death Certificate, Legal Heir Certificate, and Family Tree Affidavit."
@@ -1565,6 +1876,7 @@ function UtilityForm({ ulpin, onDone }: { ulpin: string; onDone: (a: Application
 
       <DocField
         intent="utility_request"
+        ulpin={ulpin}
         doc={doc}
         setDoc={setDoc}
         hint="Attach latest utility invoice, property tax receipt, registered sale deed, or municipal NOC."
@@ -2141,6 +2453,7 @@ function AcquisitionClaimForm({
       {/* Document Upload */}
       <DocField
         intent="acquisition_claim"
+        ulpin={ulpin}
         doc={doc}
         setDoc={setDoc}
         hint="Upload Title Deed, Bank Passbook, Certified Valuation, or Photographs of Affected Assets"

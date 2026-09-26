@@ -713,7 +713,9 @@ export interface OwnedParcel {
   area_sqm: number;
   owner_name: string;
   ownership_type: string;
+  has_acquisition_notice?: boolean;
   centroid?: [number, number];
   bbox?: [number, number, number, number];
 }
+
 

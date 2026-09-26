@@ -468,8 +468,19 @@ INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, a
     ('acquisition_claim', 'submitted',         'in_review',         'officer', 'revenue', 'vro',        'Scrutinize Claim & Verify Parcel Take',    false),
     ('acquisition_claim', 'submitted',         'approved',          'officer', 'revenue', 'tahsildar',  'Approve Direct Consent Settlement Award',  true),
     ('acquisition_claim', 'in_review',         'hearing_scheduled', 'officer', 'revenue', 'tahsildar',  'Schedule Statutory §15 / §64 Hearing',     false),
+    ('acquisition_claim', 'in_review',         'returned',          'officer', 'revenue', 'tahsildar',  'Return for Missing Documents / Clarification', false),
     ('acquisition_claim', 'in_review',         'approved',          'officer', 'revenue', 'tahsildar',  'Pass Final Compensation Award Order',      true),
     ('acquisition_claim', 'in_review',         'rejected',          'officer', 'revenue', 'tahsildar',  'Reject Objection (Speaking Order)',        true),
     ('acquisition_claim', 'hearing_scheduled', 'approved',          'officer', 'revenue', 'tahsildar',  'Pass Revised Award Post-Hearing',          true),
     ('acquisition_claim', 'hearing_scheduled', 'rejected',          'officer', 'revenue', 'tahsildar',  'Dismiss Objection Post-Hearing',           true)
 ON CONFLICT DO NOTHING;
+
+-- 8. Add statutory workflow transitions for building_permission and boundary_correction
+INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal) VALUES
+    ('building_permission', 'planning_check',  'rejected',          'officer', 'planning', 'town_planner', 'Reject Prohibited Building Proposal',        true),
+    ('building_permission', 'planning_check',  'returned',          'officer', 'planning', 'town_planner', 'Return for Plan Revision / Clearances',     false),
+    ('building_permission', 'scrutiny_review', 'returned',          'officer', 'planning', 'town_planner', 'Return for Structural Revision',            false),
+    ('building_permission', 'returned',         'submitted',         'citizen', NULL,       NULL,           'Resubmit Revised Building Plan',           false),
+    ('boundary_correction', 'geometry_check',   'returned',          'officer', 'revenue',  'surveyor',     'Return for Polygon / Vertex Correction',   false)
+ON CONFLICT DO NOTHING;
+

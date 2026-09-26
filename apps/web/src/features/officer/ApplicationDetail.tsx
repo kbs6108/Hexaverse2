@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, ExternalLink, Eye, FileText, ShieldCheck, Sparkles, XCircle, Lock, ShieldAlert, UserCheck, Info, BookOpen } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, ExternalLink, Eye, FileText, ShieldCheck, Scale, ScrollText, XCircle, Lock, ShieldAlert, UserCheck } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import type { NextAction, Objection, ParcelCDM } from '@/lib/cdm';
 import { Drawer } from '@/components/Drawer';
@@ -19,7 +19,7 @@ import { statusChips } from '@/components/StatusChip';
 import { useAuth } from '@/lib/auth';
 import { useUI, type DevUserId } from '@/lib/store';
 import { isDevAuth } from '@/lib/env';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 export function designationLabel(des?: string | null): string {
   if (!des) return '';
@@ -192,6 +192,7 @@ function PrecheckLine({ pc }: { pc: unknown }) {
 }
 
 function StatutoryImpactCard({ app, pending }: { app: { type: string; status: string; payload: Record<string, unknown>; assigned_department?: string | null; id: string }; pending: NextAction | null }) {
+  const { t } = useTranslation();
   const isTerminalApproval = pending?.to_status === 'approved' || pending?.to_status === 'resolved';
   const toOwner = (app.payload?.to_owner || app.payload?.new_owner_name || app.payload?.nominee_name || app.payload?.applicant_name) as string | undefined;
 
@@ -235,7 +236,7 @@ function StatutoryImpactCard({ app, pending }: { app: { type: string; status: st
   } else if (app.type === 'field_review') {
     details = [
       {
-        dept: 'Ground Enforcement & Satellite AI',
+        dept: 'Ground Enforcement & Earth Observation',
         impact: 'Concludes site inspection and dismisses satellite change detection alert',
         records: 'landstack.alerts marked resolved with officer inspection remarks',
       },
@@ -291,7 +292,7 @@ function StatutoryImpactCard({ app, pending }: { app: { type: string; status: st
     >
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 font-semibold text-ink">
-          <Sparkles size={14} className="text-primary" />
+          <ShieldCheck size={14} className="text-primary" />
           {title}
         </span>
         <Badge tone={isTerminalApproval ? 'primary' : 'neutral'}>
@@ -316,8 +317,8 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
   const doc = app.payload.document as { id?: string; filename?: string; mime?: string; size?: number; sha256?: string; url?: string } | undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ver = app.payload.document_verification as Record<string, any> | undefined;
-  const [showAllFields, setShowAllFields] = useState(false);
-  const [showExecutantExplainer, setShowExecutantExplainer] = useState(true);
+  const [showAllFields, setShowAllFields] = useState(true);
+  const [showConditions, setShowConditions] = useState(true);
   const [copied, setCopied] = useState(false);
 
   if (!doc && !ver && !app.payload.document_name) return null;
@@ -341,17 +342,20 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
   const anchors = ver?.core_anchors;
   const dynamic = ver?.dynamic_fields;
   const tamper = ver?.tamper_check;
+  const flags = cross?.flags as Array<{ id: string; severity: 'ok' | 'warn' | 'bad'; title: string; summary: string; statutory_ref?: string }> | undefined;
+  const conditions = cross?.statutory_conditions as Array<{ id: string; title: string; desc: string; mandatory?: boolean }> | undefined;
+  const disclaimer = cross?.disclaimer as string | undefined;
 
   return (
-    <div className="rounded-xl border border-line bg-panel p-3.5 space-y-3 shadow-2xs">
-      <div className="flex items-center justify-between border-b border-line pb-2.5">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className={clsx('flex size-8 shrink-0 items-center justify-center rounded-lg text-white text-xs font-bold', isPdf ? 'bg-rose-600' : 'bg-primary')}>
-            {isPdf ? 'PDF' : <FileText size={16} />}
+    <div className="rounded-xl border border-line bg-panel p-3 space-y-2.5 shadow-2xs">
+      <div className="flex items-center justify-between border-b border-line pb-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={clsx('flex size-7 shrink-0 items-center justify-center rounded-lg text-white text-[11px] font-bold', isPdf ? 'bg-rose-600' : 'bg-primary')}>
+            {isPdf ? 'PDF' : <FileText size={14} />}
           </span>
           <div className="min-w-0">
             <h4 className="text-xs font-bold text-ink truncate leading-tight">{filename}</h4>
-            <p className="text-[11px] text-ink-3">
+            <p className="text-[10.5px] text-ink-3">
               {ver?.document_type || 'Land Record Instrument'}
               {doc?.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ''}
             </p>
@@ -362,21 +366,21 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
             href={docUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-ground-1 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary-soft transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-ground-1 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary-soft transition-colors shadow-2xs"
           >
-            <Eye size={13} /> View File
+            <Eye size={12} /> View File
           </a>
         ) : (
-          <span className="text-[11px] text-ink-3 italic">Verified on submission</span>
+          <span className="text-[10px] text-ink-3 italic">Verified on submission</span>
         )}
       </div>
 
       {sha256 && (
-        <div className="flex items-center justify-between gap-2 rounded-lg bg-ground-2/70 px-2.5 py-1.5 text-[11px]">
+        <div className="flex items-center justify-between gap-2 rounded bg-ground-2/70 px-2 py-1 text-[10.5px]">
           <div className="flex items-center gap-1.5 text-ink-2 truncate">
-            <ShieldCheck size={14} className="shrink-0 text-emerald-600" />
+            <ShieldCheck size={13} className="shrink-0 text-emerald-600" />
             <span className="font-semibold text-ink">SHA-256:</span>
-            <span className="font-mono text-[10px] text-ink-3 truncate">{sha256}</span>
+            <span className="font-mono text-[9.5px] text-ink-3 truncate">{sha256}</span>
           </div>
           <button
             type="button"
@@ -389,144 +393,123 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
       )}
 
       {cross && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-ink-3">Cadastral Cross-Check</span>
-            <span className={clsx('inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full', cross.overall_status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800')}>
-              {cross.overall_status === 'verified' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-3">Automated Cadastral Cross-Check</span>
+            <span className={clsx('inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full', cross.overall_status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800')}>
+              {cross.overall_status === 'verified' ? <CheckCircle2 size={11} /> : <AlertTriangle size={11} />}
               {cross.overall_status === 'verified' ? 'Automated Match' : 'Flagged for Review'}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-lg border border-line/60 bg-ground-1 p-2.5 space-y-1">
-              <span className="text-[10px] uppercase font-semibold text-ink-3 block">Area Consistency</span>
-              <div>
-                <span className="text-[10px] text-ink-3 block leading-tight">Deed Extent:</span>
-                <p className="font-bold text-ink truncate text-[11.5px]">
-                  {cross.area_check?.deed_extent_raw || '—'}
-                </p>
-              </div>
-              <div>
-                <span className="text-[10px] text-ink-3 block leading-tight">Cadastre GIS Area:</span>
-                <p className="text-[11px] font-semibold text-ink-2 truncate">
-                  {cross.area_check?.cadastre_sqm ? `${cross.area_check.cadastre_sqm.toLocaleString()} sqm` : '—'}
-                </p>
-              </div>
-              <div className="pt-0.5">
-                <span className={clsx('inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded', cross.area_check?.status === 'matched' ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-amber-800 bg-amber-50 border border-amber-200')}>
-                  {cross.area_check?.status === 'matched' ? '✓ Area Matches GIS' : `Discrepancy: ${cross.area_check?.diff_percent}%`}
-                </span>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-line/60 bg-ground-1 p-2.5 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-semibold text-ink-3">Parties & Title</span>
-                <span className="text-[9.5px] font-mono text-ink-3">Deed vs Govt</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-ink-3 block leading-tight">Seller in Deed (Executant):</span>
-                <p className="font-bold text-ink truncate text-[11.5px]">
-                  {cross.owner_check?.matched_party || '—'}
-                </p>
-              </div>
-              <div>
-                <span className="text-[10px] text-ink-3 block leading-tight">Govt Record Owner (RoR):</span>
-                <p className="text-[11px] font-semibold text-ink-2 truncate">
-                  {cross.owner_check?.ror_owner || '—'}
-                </p>
-              </div>
-              <div className="pt-0.5">
-                <span className={clsx('inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded', cross.owner_check?.status === 'matched' ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-amber-800 bg-amber-50 border border-amber-200')}>
-                  {cross.owner_check?.status === 'matched' ? '✓ Title Verified' : '⚠ Discrepancy: Check Title Chain'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dedicated Executant & Title Chain Explainer Card */}
-          {cross.owner_check && (
-            <div className={clsx(
-              'rounded-xl border p-3 text-xs space-y-2 transition-all',
-              cross.owner_check.status === 'matched'
-                ? 'border-emerald-200 bg-emerald-50/50 text-emerald-950'
-                : 'border-amber-300 bg-amber-50/80 text-ink ring-1 ring-amber-200/60'
-            )}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-bold text-xs">
-                  {cross.owner_check.status === 'matched' ? (
-                    <>
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                      <span className="text-emerald-950">Title Chain Verified (Clean Title)</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle size={15} className="text-amber-700 shrink-0" />
-                      <span className="text-amber-950 font-bold">Understanding This Flag: Executant vs Govt Record</span>
-                    </>
+          {/* Structured High-Density Flags */}
+          {flags && flags.length > 0 ? (
+            <div className="space-y-1">
+              {flags.map((f) => (
+                <div
+                  key={f.id}
+                  className={clsx(
+                    'flex items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] leading-tight',
+                    f.severity === 'ok'
+                      ? 'border-emerald-200 bg-emerald-50/60 text-emerald-950'
+                      : f.severity === 'bad'
+                      ? 'border-rose-300 bg-rose-50 text-rose-950'
+                      : 'border-amber-300 bg-amber-50 text-amber-950'
                   )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowExecutantExplainer(!showExecutantExplainer)}
-                  className="text-[11px] font-semibold text-primary hover:underline cursor-pointer inline-flex items-center gap-1 bg-white/70 px-2 py-0.5 rounded border border-line/60"
                 >
-                  <Info size={12} />
-                  {showExecutantExplainer ? 'Hide Guide' : 'Explain "Executant" & Title Chain'}
-                </button>
+                  {f.severity === 'ok' ? (
+                    <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-emerald-600" />
+                  ) : f.severity === 'bad' ? (
+                    <XCircle size={13} className="mt-0.5 shrink-0 text-rose-600" />
+                  ) : (
+                    <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-600" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <strong className="font-semibold text-ink">{f.title}</strong>
+                      {f.statutory_ref && (
+                        <span className="font-mono text-[9px] text-ink-3 uppercase">{f.statutory_ref}</span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-ink-2 mt-0.5">{f.summary}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg border border-line/60 bg-ground-1 p-2 space-y-1">
+                <span className="text-[9.5px] uppercase font-semibold text-ink-3 block">Area Consistency</span>
+                <p className="font-bold text-ink truncate text-[11px]">{cross.area_check?.deed_extent_raw || '—'}</p>
+                <p className="text-[10px] text-ink-2 truncate">GIS: {cross.area_check?.cadastre_sqm ? `${cross.area_check.cadastre_sqm.toLocaleString()} sqm` : '—'}</p>
               </div>
+              <div className="rounded-lg border border-line/60 bg-ground-1 p-2 space-y-1">
+                <span className="text-[9.5px] uppercase font-semibold text-ink-3 block">Title & Parties</span>
+                <p className="font-bold text-ink truncate text-[11px]">{cross.owner_check?.matched_party || '—'}</p>
+                <p className="text-[10px] text-ink-2 truncate">RoR: {cross.owner_check?.ror_owner || '—'}</p>
+              </div>
+            </div>
+          )}
 
-              {cross.owner_check.status !== 'matched' ? (
-                <div className="space-y-1.5 text-[11.5px] leading-relaxed">
-                  <p className="text-amber-950">
-                    <strong>Why is this flagged?</strong> The seller signing this deed (the <strong>Executant</strong>: <span className="font-semibold underline decoration-amber-400">{cross.owner_check.matched_party || 'Seller'}</span>) is <strong>NOT</strong> the legal owner registered in government land records (<strong>RoR Owner</strong>: <span className="font-semibold underline decoration-amber-400">{cross.owner_check.ror_owner || 'Govt Owner'}</span>).
+          {/* Statutory Title Chain Discrepancy Notice */}
+          {cross.owner_check && cross.owner_check.status !== 'matched' && (
+            <div className="rounded-lg border border-amber-300/80 bg-amber-50/80 p-2.5 text-xs space-y-1.5 shadow-2xs">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={14} className="text-amber-700 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1 flex-wrap">
+                    <span className="font-bold text-[11.5px] text-amber-950">
+                      Title Chain Continuity Scrutiny
+                    </span>
+                    <span className="font-mono text-[9px] uppercase tracking-wider bg-amber-200/70 text-amber-900 px-1.5 py-0.2 rounded font-semibold border border-amber-300/60">
+                      §32 Registration Act
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-900 mt-1 leading-snug">
+                    Deed Executant <strong className="text-amber-950 font-bold">({cross.owner_check.matched_party || 'Seller on Instrument'})</strong> does not match recorded 1-B RoR Title Holder <strong className="text-amber-950 font-bold">({cross.owner_check.ror_owner || 'Record Owner'})</strong>.
                   </p>
-                  <p className="text-ink-2">
-                    <strong>The Legal Problem:</strong> Under property law, nobody can sell land they do not own (<em>Nemo dat quod non habet</em>). Because <strong>{cross.owner_check.matched_party}</strong> is not entered in the Record of Rights, they have no recorded title to sell this land.
+                  <p className="text-[10px] text-amber-800/90 mt-1 border-t border-amber-200/80 pt-1 leading-normal">
+                    Applicant must produce registered link deed (parent title chain) or legal heirship order before quasi-judicial mutation sanction.
                   </p>
                 </div>
-              ) : (
-                <p className="text-[11.5px] text-emerald-900 leading-relaxed">
-                  The person executing the sale (<strong>Executant: {cross.owner_check.matched_party}</strong>) matches the registered title holder in official government revenue records (<strong>RoR Owner</strong>). The title chain is clean and unbroken.
-                </p>
-              )}
+              </div>
+            </div>
+          )}
 
-              {showExecutantExplainer && (
-                <div className="rounded-lg bg-panel p-3 border border-line/80 space-y-2.5 text-[11px] text-ink-2 shadow-xs mt-2">
-                  <div className="border-b border-line/60 pb-1.5 font-bold text-ink text-[11.5px] flex items-center gap-1.5">
-                    <BookOpen size={13} className="text-primary" />
-                    Plain-English Guide: What do these terms mean?
-                  </div>
+          {/* Statutory Conditions Checklist */}
+          {conditions && conditions.length > 0 && (
+            <div className="rounded-lg border border-line/70 bg-panel-2 p-2 text-xs space-y-1">
+              <button
+                type="button"
+                onClick={() => setShowConditions(!showConditions)}
+                className="flex w-full items-center justify-between font-semibold text-ink cursor-pointer text-left text-[11px]"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Scale size={12} className="text-primary" />
+                  Statutory Preconditions ({conditions.length})
+                </span>
+                {showConditions ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </button>
 
-                  <div className="space-y-2">
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-ink block">1. What is an "Executant" (విక్రేత / Seller)?</span>
-                      <p className="text-ink-2 pl-3 leading-relaxed">
-                        In property registration law (Registration Act 1908), the <strong>Executant</strong> is the person who <em>executes (signs)</em> the deed to give or sell the land to a buyer (Claimant).
-                        In this application, <strong>{cross.owner_check?.matched_party || 'Suresh Varma'}</strong> is the Executant selling the property.
-                      </p>
+              {showConditions && (
+                <div className="pt-1.5 border-t border-line/60 space-y-1">
+                  {conditions.map((c) => (
+                    <div key={c.id} className="flex items-start gap-1.5 rounded bg-ground-1 p-1.5 text-[10.5px]">
+                      <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-emerald-600" />
+                      <div>
+                        <strong className="text-ink">{c.title}:</strong> <span className="text-ink-2">{c.desc}</span>
+                      </div>
                     </div>
-
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-ink block">2. What is the "RoR Owner" (పట్టాదారు / Record of Rights)?</span>
-                      <p className="text-ink-2 pl-3 leading-relaxed">
-                        The <strong>Record of Rights (RoR / 1-B / Pahani / Patta)</strong> is the government’s official register of land ownership. The RoR Owner is the legally recognized owner (here: <strong>{cross.owner_check?.ror_owner || 'Lakshmi Devi'}</strong>).
-                      </p>
-                    </div>
-
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-ink block">3. What does "Check Title Chain" mean?</span>
-                      <p className="text-ink-2 pl-3 leading-relaxed">
-                        A <strong>Title Chain (Link Documents / లింక్ దస్తావేజులు)</strong> is the sequence of historical deeds showing how ownership passed from owner to owner over the last 13 to 30 years.
-                      </p>
-                      <p className="text-ink-2 pl-3 leading-relaxed font-medium text-amber-900 bg-amber-soft/40 p-1.5 rounded border border-amber/30 mt-1">
-                        If <strong>{cross.owner_check?.matched_party || 'Suresh Varma'}</strong> previously purchased this land from <strong>{cross.owner_check?.ror_owner || 'Lakshmi Devi'}</strong>, the applicant must produce that prior registered link deed. If they cannot produce a valid link deed, this transfer cannot be approved because it may be an impersonation or fraudulent sale.
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Official AI Disclaimer */}
+          {disclaimer && (
+            <div className="rounded bg-ground-2/50 px-2 py-1 text-[9.5px] text-ink-3 leading-normal border border-line/40">
+              ⚖️ <em>{disclaimer}</em>
             </div>
           )}
         </div>
@@ -534,21 +517,21 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
 
       {/* Dynamic Fields Inspector */}
       {anchors && (
-        <div className="rounded-lg border border-line/80 bg-panel-2 p-2.5 text-xs space-y-1.5">
+        <div className="rounded-lg border border-line/80 bg-panel-2 p-2 text-xs space-y-1">
           <button
             type="button"
             onClick={() => setShowAllFields(!showAllFields)}
-            className="flex w-full items-center justify-between font-semibold text-ink cursor-pointer text-left"
+            className="flex w-full items-center justify-between font-semibold text-ink cursor-pointer text-left text-[11px]"
           >
             <span className="flex items-center gap-1.5">
-              <Sparkles size={13} className="text-primary" />
-              Dynamic Extracted Clauses & Anchors
+              <ScrollText size={13} className="text-primary" />
+              Registered Instrument Covenants & Anchors
             </span>
-            {showAllFields ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {showAllFields ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
 
           {showAllFields && (
-            <div className="pt-2 border-t border-line/60 space-y-2 text-[11.5px]">
+            <div className="pt-1.5 border-t border-line/60 space-y-1.5 text-[11px]">
               {anchors.registration?.document_no && (
                 <div>
                   <span className="font-bold text-ink">Registration: </span>
@@ -556,7 +539,7 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
                 </div>
               )}
               {anchors.boundaries && (
-                <div className="grid grid-cols-2 gap-1 rounded bg-ground-1 p-2 text-[11px]">
+                <div className="grid grid-cols-2 gap-1 rounded bg-ground-1 p-1.5 text-[10.5px]">
                   <span><strong>N:</strong> {anchors.boundaries.north ?? '—'}</span>
                   <span><strong>S:</strong> {anchors.boundaries.south ?? '—'}</span>
                   <span><strong>E:</strong> {anchors.boundaries.east ?? '—'}</span>
@@ -565,9 +548,9 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
               )}
               {dynamic && Object.keys(dynamic).length > 0 && (
                 <div className="space-y-1">
-                  <span className="font-bold text-ink block">Dynamic Clauses Found:</span>
+                  <span className="font-bold text-ink block text-[10.5px]">Dynamic Clauses Found:</span>
                   {Object.entries(dynamic).map(([k, v]) => (
-                    <div key={k} className="rounded bg-ground-1 px-2 py-1">
+                    <div key={k} className="rounded bg-ground-1 px-2 py-0.5 text-[10.5px]">
                       <span className="font-semibold text-ink">{titleCase(k)}: </span>
                       <span className="text-ink-2">{Array.isArray(v) ? v.join(', ') : String(v)}</span>
                     </div>
@@ -575,14 +558,14 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
                 </div>
               )}
               {tamper && (
-                <div className="rounded border border-line/70 bg-ground-1 p-2 space-y-1">
-                  <div className="flex items-center gap-1.5">
+                <div className="rounded border border-line/70 bg-ground-1 p-1.5 space-y-0.5 text-[10px]">
+                  <div className="flex items-center gap-1">
                     <span className="font-bold text-ink">Forensic Tamper Check:</span>
                     <Badge tone={tamper.risk_level === 'clean' ? 'primary' : 'amber'}>
                       {tamper.risk_level}
                     </Badge>
                   </div>
-                  <p className="text-ink-3 text-[10.5px] leading-tight">{tamper.summary}</p>
+                  <p className="text-ink-3 leading-tight">{tamper.summary}</p>
                 </div>
               )}
             </div>
@@ -594,6 +577,7 @@ function DocumentVerificationPanel({ app }: { app: { payload: Record<string, unk
 }
 
 export function ApplicationDetail({ id, onClose }: { id: string | null; onClose: () => void }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { user } = useAuth();
   const q = useQuery({ queryKey: qk.application(id ?? ''), queryFn: () => api.application(id!), enabled: !!id });
@@ -629,7 +613,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
   const app = q.data;
   const actions = app ? app.next_actions ?? fallbackActions(app.type, app.status) : [];
   const tone = (a: NextAction) => (a.to_status === 'rejected' ? 'danger' : a.to_status === 'approved' || a.to_status === 'resolved' ? 'primary' : 'secondary');
-  // Auto-run AI advice whenever the officer has a decision to make.
+  // Auto-run statutory advice whenever the officer has a decision to make.
   const advice = useQuery({
     queryKey: qk.applicationAdvice(id ?? ''),
     queryFn: () => api.applicationAdvice(id!),
@@ -645,11 +629,11 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
       toast.success(`Drafted statutory order under ${res.act}`);
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (err: any) => toast.error('Could not draft statutory order', err?.message || 'AI service unavailable'),
+    onError: (err: any) => toast.error('Could not draft statutory order', err?.message || 'Statutory drafting service unavailable'),
   });
 
   return (
-    <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-14 bottom-0 right-0 border-l border-[#D5D2C7]/70 rounded-none"
+    <Drawer open={!!id} onClose={onClose} ariaLabel="Application detail" width="w-[520px] max-w-[94vw]" className="fixed top-14 bottom-0 right-0 border-l border-line rounded-none"
       header={
         <div>
           <p className="text-[11px] uppercase tracking-wide text-ink-3">Application</p>
@@ -673,7 +657,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                     { k: t('common.owner', 'Owner (RoR)'), v: parcel.data.party.owners.map((o) => o.name).join(', ') || '—' },
                     { k: t('common.extent', 'Area / Extent'), v: fmtArea(parcel.data.spatial.area_sqm) },
                   ]} />
-                  <div className="mt-2 flex flex-wrap gap-1">{statusChips(parcel.data.status)}</div>
+                  <div className="mt-2 flex flex-wrap gap-1">{statusChips(parcel.data.status, t)}</div>
                 </>
               ) : (
                 <p className="font-mono text-sm">{app.ulpin}</p>
@@ -690,7 +674,12 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
               {app.payload.precheck !== undefined && app.payload.precheck !== null && <PrecheckLine pc={app.payload.precheck} />}
             </div>
 
-            <DocumentVerificationPanel app={app} />
+            {(Boolean(app.payload.document || app.payload.document_verification || app.payload.document_name)) && (
+              <div>
+                <SectionTitle>{t('officer.extractedDataTitle', 'Instrument Scrutiny & Extracted Covenants')}</SectionTitle>
+                <DocumentVerificationPanel app={app} />
+              </div>
+            )}
 
             {parcel.data && (
               <div>
@@ -728,14 +717,38 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                 </div>
                 <StatutoryImpactCard app={app} pending={pending} />
                 {advice.data?.suggested_action && (
-                  <div className="mb-2 flex items-start gap-2 rounded-md border border-violet/30 bg-violet-soft/40 px-2.5 py-2 text-[12.5px]">
-                    <Sparkles size={14} className="mt-0.5 shrink-0 text-violet" />
-                    <span className="text-ink-2">
-                      <span className="font-semibold text-ink">{t('officer.suggests', 'Suggests')} “{titleCase(advice.data.suggested_action)}”.</span>{' '}
-                      {advice.data.rationale}
-                      <span className="ml-1 font-mono text-[10px] text-ink-3">
-                        {advice.data.engine === 'rules' ? 'rule engine' : advice.data.engine}
-                      </span>
+                  <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-line bg-panel p-2.5 text-xs shadow-2xs">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary border border-primary/20 mt-0.5">
+                        <Scale size={14} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-ink text-[12px]">Statutory Desk Guidance:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const target = actions.find((a) => a.action === advice.data?.suggested_action);
+                              if (target) {
+                                setPending(target);
+                                const items = getDeskChecklistItems(target.allowed_designation || user?.designation, app.status);
+                                const initial: Record<string, boolean> = {};
+                                items.forEach((it) => { initial[it.id] = true; });
+                                setChecklist(initial);
+                              }
+                            }}
+                            title="Click to select this recommended action"
+                            className="inline-flex items-center gap-1 rounded bg-primary text-white hover:bg-primary-hover px-2 py-0.5 font-semibold text-[11px] shadow-2xs transition-colors cursor-pointer"
+                          >
+                            <span>{titleCase(advice.data.suggested_action)}</span>
+                            <ChevronRight size={11} />
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-ink-2 leading-tight mt-1">{advice.data.rationale}</p>
+                      </div>
+                    </div>
+                    <span className="rounded bg-ground-1 border border-line px-1.5 py-0.5 font-mono text-[9px] font-semibold text-ink-3 shrink-0 uppercase tracking-wide">
+                      {advice.data.engine === 'rules' ? 'Rules §14' : 'Cadastral Scrutiny'}
                     </span>
                   </div>
                 )}
@@ -758,7 +771,7 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                         }}
                         aria-pressed={pending?.action === a.action}
                         className={clsx(
-                          advice.data?.suggested_action === a.action && isAllowed && 'ring-2 ring-violet/50',
+                          advice.data?.suggested_action === a.action && isAllowed && 'ring-2 ring-primary/40',
                           !isAllowed && 'opacity-60 cursor-not-allowed bg-ground-2 text-ink-3'
                         )}
                       >
@@ -865,10 +878,10 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                           type="button"
                           disabled={draftOrderMutation.isPending}
                           onClick={() => draftOrderMutation.mutate()}
-                          className="inline-flex items-center gap-1 rounded-md bg-violet/10 px-2 py-0.5 text-[11px] font-semibold text-violet hover:bg-violet/20 transition-colors cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-line bg-panel hover:bg-ground-1 px-2.5 py-1 text-[11px] font-semibold text-ink transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
                         >
-                          <Sparkles size={12} className={draftOrderMutation.isPending ? 'animate-spin' : ''} />
-                          {draftOrderMutation.isPending ? 'Drafting Order...' : '🪄 Auto-Draft Statutory Speaking Order'}
+                          <Scale size={12} className={draftOrderMutation.isPending ? 'animate-spin text-primary' : 'text-primary'} />
+                          {draftOrderMutation.isPending ? 'Preparing Statutory Order...' : 'Generate Draft Speaking Order'}
                         </button>
                       </div>
                       <Textarea
@@ -880,6 +893,9 @@ export function ApplicationDetail({ id, onClose }: { id: string | null; onClose:
                         onChange={(e) => setRemark(e.target.value)}
                         placeholder="Detail the ground enquiry findings, survey measurements, or statutory order specifics..."
                       />
+                      <p className="text-[10.5px] text-ink-3 italic">
+                        Speaking orders cite statutory state Acts (AP Pattadar Pass Books Act 1971 / TN Patta Pass Book Act 1983 / TG ROR Act 2020) and are permanently recorded in the quasi-judicial audit trail.
+                      </p>
                     </div>
                     <div className="flex gap-2">
                       <Button type="submit" variant={tone(pending)} loading={mutateTransition.isPending} disabled={remark.trim().length < 3}>

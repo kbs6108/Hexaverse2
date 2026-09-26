@@ -7,11 +7,12 @@ import { ErrorNote } from '@/components/EmptyState';
 import { Callout } from '@/components/Section';
 import { fmtDate, fmtVal, titleCase } from '@/lib/format';
 import { Badge, type Tone } from '@/components/Badge';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 const srcTone: Record<string, Tone> = { revenue: 'primary', registration: 'slate', planning: 'amber', fiscal: 'neutral', legal: 'brick', utilities: 'neutral', landstack: 'violet', satellite: 'brick' };
 
 export function Timeline({ ulpin }: { ulpin: string }) {
+  const { t } = useTranslation();
   const { role } = useAuth();
   const allowed = roleAtLeast(role, 'officer');
   const q = useQuery({ queryKey: qk.timeline(ulpin), queryFn: () => api.timeline(ulpin), enabled: allowed });

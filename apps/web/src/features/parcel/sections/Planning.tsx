@@ -5,12 +5,13 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { KV, SectionTitle } from '@/components/Section';
 import { titleCase } from '@/lib/format';
 import { Badge, type Tone } from '@/components/Badge';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 import { AcquisitionCard } from './AcquisitionCard';
 
 const permTone: Record<string, Tone> = { approved: 'primary', pending: 'amber', rejected: 'brick', none: 'neutral' };
 
 export function PlanningSection({ p }: { p: ParcelCDM }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isOwner = !!p && (
     !!p.viewer_is_owner ||

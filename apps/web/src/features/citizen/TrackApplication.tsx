@@ -1,6 +1,17 @@
+import { useState } from 'react';
 import { Link, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, ChevronRight, RotateCcw, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  RotateCcw,
+  ShieldCheck,
+  XCircle,
+} from 'lucide-react';
+import { clsx } from 'clsx';
 import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Card, CardBody, CardHeader } from '@/components/Card';
@@ -12,6 +23,69 @@ import { fmtDate, titleCase } from '@/lib/format';
 import { Button } from '@/components/Button';
 import { useTranslation } from '@/lib/i18n';
 
+function StageGatedDeskTracker({ app }: { app: any }) {
+  const isRevenueWorkflow = ['mutation', 'record_correction', 'succession', 'boundary_correction'].includes(app.type);
+  if (!isRevenueWorkflow || ['approved', 'resolved', 'rejected', 'dismissed'].includes(app.status)) {
+    return null;
+  }
+
+  // Determine current active desk
+  let activeIndex = 0;
+  if (['document_check', 'field_inspection'].includes(app.status)) activeIndex = 0;
+  else if (['field_verification', 'boundary_demarcation', 'geometry_check'].includes(app.status)) activeIndex = 1;
+  else if (app.status === 'scrutiny_review') activeIndex = 2;
+  else if (app.status === 'statutory_sanction') activeIndex = 3;
+
+  const desks = [
+    { title: 'VRO Desk', desc: 'On-ground Panchanama & Ryot Notice', role: 'Village Revenue Officer' },
+    { title: 'Surveyor Desk', desc: 'FMB Boundary Traverse & Demarcation', role: 'Mandal Cadastral Surveyor' },
+    { title: 'RI Scrutiny', desc: 'Title Chain & 30-Yr Encumbrance Audit', role: 'Revenue Inspector' },
+    { title: 'Tahsildar Desk', desc: 'Statutory Speaking Order & RoR Update', role: 'Tahsildar / MRO' },
+  ];
+
+  return (
+    <div className="rounded-xl border border-line bg-panel p-3.5 space-y-2.5 text-xs shadow-2xs">
+      <div className="flex items-center justify-between gap-2 border-b border-line pb-2">
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={15} className="text-primary" />
+          <span className="font-bold text-ink text-sm">Stage-Gated Statutory Desk Progression</span>
+        </div>
+        <span className="font-mono text-[10px] text-ink-3 uppercase tracking-wider bg-ground-2 px-2 py-0.5 rounded border border-line">
+          ROR Act §5
+        </span>
+      </div>
+      <p className="text-[11.5px] text-ink-3 leading-relaxed">
+        Under statutory revenue procedure, applications pass sequentially through designated revenue desks. Only the jurisdictional officer can sign off on their stage.
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+        {desks.map((d, idx) => {
+          const isPassed = idx < activeIndex;
+          const isCurrent = idx === activeIndex;
+          return (
+            <div
+              key={d.title}
+              className={clsx(
+                'rounded-lg p-2.5 border transition-all space-y-1',
+                isCurrent && 'border-primary/50 bg-primary-soft/60 shadow-xs ring-1 ring-primary/30',
+                isPassed && 'border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300',
+                !isCurrent && !isPassed && 'border-line bg-ground-1 opacity-60 text-ink-3'
+              )}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-bold text-[11px]">{d.title}</span>
+                {isPassed && <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />}
+                {isCurrent && <span className="size-2 rounded-full bg-primary animate-pulse" />}
+              </div>
+              <p className="text-[10px] leading-tight text-ink-2">{d.desc}</p>
+              <span className="text-[9.5px] text-ink-3 block font-mono">Stage {idx + 1}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function TrackApplication() {
   const params = useParams({ strict: false }) as { id?: string };
   const { user } = useAuth();
@@ -19,6 +93,7 @@ export function TrackApplication() {
   const list = useQuery({ queryKey: qk.myApplications(user?.uid ?? ''), queryFn: api.myApplications });
   const selectedId = params.id ?? null;
   const detail = useQuery({ queryKey: qk.application(selectedId ?? ''), queryFn: () => api.application(selectedId!), enabled: !!selectedId });
+  const [showConditions, setShowConditions] = useState(false);
 
   const noticeTypeLabels: Record<string, string> = {
     mutation: t('service.intentMutation'),
@@ -33,40 +108,49 @@ export function TrackApplication() {
   const app = detail.data;
 
   // Extract decision details
-  const rejectionReason = app
-    ? (app.payload?.rejection_reason as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.remark ||
-      'Application was scrutinized and rejected by the competent authority for statutory non-compliance.'
+  const rejectionReason: string | null = app
+    ? ((app.payload?.rejection_reason as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected' || h.to_status === 'dismissed')?.remark ||
+      (app.status === 'dismissed' ? 'Grievance was scrutinized and dismissed by the competent authority.' : 'Application was scrutinized and rejected by the competent authority for statutory non-compliance.'))
     : null;
-  const rejectedBy = app
-    ? (app.payload?.rejected_by as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.actor_name
+  const rejectedBy: string | null = app
+    ? ((app.payload?.rejected_by as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected' || h.to_status === 'dismissed')?.actor_name ||
+      null)
     : null;
-  const rejectedDesig = app
-    ? (app.payload?.rejected_by_designation as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.actor_designation
+  const rejectedDesig: string | null = app
+    ? ((app.payload?.rejected_by_designation as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected' || h.to_status === 'dismissed')?.actor_designation ||
+      null)
     : null;
-  const rejectedAt = app
-    ? (app.payload?.rejected_at as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'rejected')?.ts
+  const rejectedAt: string | null = app
+    ? ((app.payload?.rejected_at as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'rejected' || h.to_status === 'dismissed')?.ts ||
+      null)
     : null;
 
-  const approvalRemark = app
-    ? (app.payload?.approval_remark as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.remark
+  const approvalRemark: string | null = app
+    ? ((app.payload?.approval_remark as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.remark ||
+      null)
     : null;
-  const approvedBy = app
-    ? (app.payload?.approved_by as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.actor_name
+  const approvedBy: string | null = app
+    ? ((app.payload?.approved_by as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.actor_name ||
+      null)
     : null;
-  const approvedDesig = app
-    ? (app.payload?.approved_by_designation as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.actor_designation
+  const approvedDesig: string | null = app
+    ? ((app.payload?.approved_by_designation as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.actor_designation ||
+      null)
     : null;
-  const approvedAt = app
-    ? (app.payload?.approved_at as string) ||
-      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.ts
+  const approvedAt: string | null = app
+    ? ((app.payload?.approved_at as string) ||
+      app.history?.slice().reverse().find((h) => h.to_status === 'approved' || h.to_status === 'resolved')?.ts ||
+      null)
     : null;
+
+  const docVerification = app?.payload?.document_verification as Record<string, any> | undefined;
 
   return (
     <>
@@ -130,15 +214,15 @@ export function TrackApplication() {
                 </p>
 
                 {/* Statutory Rejection Speaking Order & Grounds */}
-                {app.status === 'rejected' && (
+                {(app.status === 'rejected' || app.status === 'dismissed') && (
                   <div className="rounded-xl border border-brick/40 bg-brick-soft/40 p-4 text-xs space-y-2.5">
                     <div className="flex items-center gap-2 text-brick font-bold text-sm">
                       <XCircle size={18} className="shrink-0" />
-                      <span>Statutory Rejection Order Issued</span>
+                      <span>{app.status === 'dismissed' ? 'Statutory Grievance Dismissed' : 'Statutory Rejection Order Issued'}</span>
                     </div>
                     <div className="rounded-lg border border-brick/30 bg-panel p-3 space-y-1.5 shadow-2xs">
                       <p className="text-[11px] uppercase tracking-wider font-bold text-ink-3">
-                        Official Grounds for Rejection / Speaking Order:
+                        {app.status === 'dismissed' ? 'Official Grounds for Dismissal:' : 'Official Grounds for Rejection / Speaking Order:'}
                       </p>
                       <p className="text-sm font-medium text-ink leading-relaxed whitespace-pre-wrap">
                         “{rejectionReason}”
@@ -152,13 +236,13 @@ export function TrackApplication() {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11.5px] text-ink-2">
-                      <span>You may rectify the cited defect and re-apply, or appeal to the Revenue Divisional Officer (RDO).</span>
+                      <span>{app.status === 'dismissed' ? 'You may submit fresh supporting evidence or escalate to the District Collectorate.' : 'You may rectify the cited defect and re-apply, or appeal to the Revenue Divisional Officer (RDO).'}</span>
                       <Link
                         to="/citizen/request"
                         search={{ type: app.type, ulpin: app.ulpin }}
                       >
                         <Button size="sm" variant="primary" className="bg-brick hover:bg-brick/90">
-                          File Rectified Application →
+                          {app.status === 'dismissed' ? 'File Rectified Grievance →' : 'File Rectified Application →'}
                         </Button>
                       </Link>
                     </div>
@@ -222,6 +306,113 @@ export function TrackApplication() {
                         </Button>
                       </Link>
                     </div>
+                  </div>
+                )}
+
+                <StageGatedDeskTracker app={app} />
+
+                {/* Cadastral Document Verification & Scrutiny */}
+                {docVerification && typeof docVerification === 'object' && (
+                  <div className="rounded-xl border border-line bg-panel p-3.5 text-xs space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between gap-2 flex-wrap border-b border-line pb-2">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={15} className="text-primary" />
+                        <span className="font-bold text-sm text-ink">
+                          {docVerification.document_type || 'Cadastral Instrument Verification'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={clsx(
+                          'rounded-full px-2 py-0.5 text-[10.5px] font-bold border',
+                          docVerification.cross_verification?.overall_status === 'verified'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300'
+                        )}>
+                          {docVerification.cross_verification?.overall_status === 'verified'
+                            ? 'Cadastre Verified'
+                            : 'Flagged for Officer Review'}
+                        </span>
+                        {docVerification.sha256 && (
+                          <span className="font-mono text-[10px] text-ink-3 hidden sm:inline" title="SHA-256 Fingerprint">
+                            SHA: {String(docVerification.sha256).slice(0, 10)}...
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Flags */}
+                    {docVerification.cross_verification?.flags &&
+                      docVerification.cross_verification.flags.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-3 block">
+                            Forensic Checks & Cadastral Alignment:
+                          </span>
+                          <div className="grid gap-1.5 sm:grid-cols-2">
+                            {docVerification.cross_verification.flags.map((f: any) => (
+                              <div
+                                key={f.id}
+                                className={clsx(
+                                  'flex items-start gap-1.5 rounded-lg border p-2 text-[11px] leading-tight',
+                                  f.severity === 'ok' && 'border-emerald-200/70 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200',
+                                  f.severity === 'warn' && 'border-amber-200/70 bg-amber-50/50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200',
+                                  f.severity === 'bad' && 'border-rose-200/70 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200'
+                                )}
+                              >
+                                {f.severity === 'ok' ? (
+                                  <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                ) : (
+                                  <AlertTriangle size={13} className={clsx('shrink-0 mt-0.5', f.severity === 'bad' ? 'text-rose-600' : 'text-amber-600')} />
+                                )}
+                                <div>
+                                  <strong className="block text-ink font-semibold">{f.title}</strong>
+                                  <span className="text-ink-2">{f.summary}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Tamper status and Conditions toggle */}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/60 text-[11px]">
+                      <span className="text-ink-3 flex items-center gap-1">
+                        <ShieldCheck size={13} className="text-emerald-600" />
+                        Tamper Hash: <strong className="text-ink font-medium">{docVerification.tamper_check?.risk_level || 'Clean'}</strong>
+                      </span>
+                      {docVerification.cross_verification?.statutory_conditions && (
+                        <button
+                          type="button"
+                          onClick={() => setShowConditions((p) => !p)}
+                          className="text-primary hover:underline font-semibold cursor-pointer inline-flex items-center gap-0.5"
+                        >
+                          <span>Statutory Preconditions ({docVerification.cross_verification.statutory_conditions.length})</span>
+                          <ChevronDown size={12} className={clsx('transition-transform', showConditions && 'rotate-180')} />
+                        </button>
+                      )}
+                    </div>
+
+                    {showConditions && docVerification.cross_verification?.statutory_conditions && (
+                      <div className="rounded-lg bg-ground-1 p-2.5 space-y-1.5 border border-line text-[11px]">
+                        <span className="font-bold text-ink block text-[10px] uppercase tracking-wide">
+                          Officer Preconditions Before Statutory Approval:
+                        </span>
+                        <ul className="space-y-1">
+                          {docVerification.cross_verification.statutory_conditions.map((sc: any) => (
+                            <li key={sc.id} className="flex items-start gap-1.5 text-ink-2">
+                              <Check size={12} className="text-primary mt-0.5 shrink-0" />
+                              <div>
+                                <strong className="text-ink">{sc.title}:</strong> {sc.desc}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-ink-3 italic">
+                      {docVerification.cross_verification?.disclaimer ||
+                        'Automated diagnostic extraction is an administrative triage aid. Final quasi-judicial determination rests with the designated Competent Authority.'}
+                    </p>
                   </div>
                 )}
 

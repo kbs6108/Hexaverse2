@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { Activity, CircleCheck, CircleX, RefreshCcw, RotateCcw, Wand2, BookOpen, ArrowRight, Clock, Info, CheckCircle2 } from 'lucide-react';
+import { Activity, CircleCheck, CircleX, RefreshCcw, RotateCcw, FileSignature, BookOpen, ArrowRight, Clock, Info, CheckCircle2 } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import { Card, CardBody, CardHeader } from '@/components/Card';
 import { Button } from '@/components/Button';
@@ -217,7 +217,7 @@ function SimulateDeed({ initialUlpin }: { initialUlpin: string }) {
           <Field label="ULPIN" htmlFor="sim-ulpin"><ParcelPicker id="sim-ulpin" value={ulpin} onChange={setUlpin} /></Field>
           <Field label="Claimant (new owner)" htmlFor="sim-claimant"><Input id="sim-claimant" required value={claimant} onChange={(e) => setClaimant(e.target.value)} placeholder="Lakshmi Devi" /></Field>
           {m.isError && <ErrorNote error={m.error} />}
-          <Button type="submit" variant="primary" icon={<Wand2 size={15} />} loading={m.isPending} className="self-start">Register deed</Button>
+          <Button type="submit" variant="primary" icon={<FileSignature size={15} />} loading={m.isPending} className="self-start">Register deed</Button>
           
           {m.data && (
             <div className="mt-2 rounded-xl border border-primary/30 bg-ground-1 p-3.5 shadow-xs space-y-3">

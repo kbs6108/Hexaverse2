@@ -550,6 +550,14 @@ _INTENT_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "doc_verify",
+        (
+            "document", "doc check", "verify deed", "sale deed check", "ec check", "encumbrance certificate",
+            "link deed", "title chain", "forensic", "tamper", "stamp duty", "sro registration",
+            "document verify", "analyze document", "upload deed", "deed check",
+        ),
+    ),
+    (
         "locate",
         (
             "locate", "find", "where is", "search parcel", "how to search", "ulpin",
@@ -722,7 +730,8 @@ async def assistant(
             "complaint": "For a complaint on this parcel",
             "build": "For building permission on this parcel",
             "utility": "For utility connection / modification on this parcel",
-        }[intent]
+            "acquisition": "For government project acquisition settlement & compensation on this parcel",
+        }.get(intent, "For this service on the parcel")
         if t["blockers"]:
             reply = f"{head}, the record shows a statutory blocker: {_worst(t['blockers'])}"
         elif t["warnings"]:
@@ -732,6 +741,15 @@ async def assistant(
         if t["notes"]:
             reply += f" Also noted: {_worst(t['notes'], 1)}"
         suggestions = ["What documents do I need?", "Check my application status"]
+
+    elif intent == "doc_verify":
+        reply = (
+            "On Land Stack, every uploaded title deed or certificate undergoes automated forensic AI extraction and "
+            "cadastral cross-verification. The engine checks: 1) Executant vs official 1-B RoR owner, 2) Deed extent vs digital cadastre area, "
+            "3) Boundary alignment with village FMB, and 4) Registration stamps & encumbrances. "
+            "You can upload your deed for instant pre-screening at [Citizen Services → Apply](/citizen/request) or check title at [Verify Ownership](/citizen/verify)."
+        )
+        suggestions = ["How do I apply for mutation?", "How to verify ownership?"]
 
     elif intent == "buy" and cdm is not None:
         dd = due_diligence(cdm)
@@ -1106,11 +1124,13 @@ async def assistant(
             "2. HIGH INFORMATION DENSITY STRUCTURE:\n"
             "   - **[Assessment]**: 1-2 sharp sentences identifying the legal, cadastral, or administrative root cause.\n"
             "   - **[Actionable Steps]**: 2-3 concise bullets with explicit markdown navigation links, e.g. [Apply for Mutation](/citizen/request?type=mutation), [Apply for Boundary Correction](/citizen/request?type=boundary_correction), [Track Application](/citizen/track), [Verify Ownership](/citizen/verify), [Map Explorer](/map).\n"
-            "   - **[Key Verification]**: 1 factual sentence on the statutory authority (Tahsildar / Sub-Registrar / Town Planning / Surveyor) and evidence required.\n"
+            "   - **[Statutory Conditions & Authority]**: 1 factual sentence specifying the statutory preconditions (e.g. VRO ground panchanama, Surveyor FMB demarcation, 15-day objection notice) and Competent Authority.\n"
             "3. STRICT GROUNDING: Cite exact Survey No, ULPIN, Khata, and amounts from the verified record when present. Never fabricate data.\n"
             "4. PRIVACY MASKING: If an owner name is masked (e.g. R*** K***), explain that privacy masking protects identity and direct the user to [Verify Ownership](/citizen/verify).\n"
-            "5. INTERACTIVE LINKS: Always format app destinations as clickable markdown links [Label](/path) so the UI renders interactive action buttons.\n"
-            "6. LOCAL LANGUAGE & FARMER CONNECTION: If the user asks in Telugu or Hindi, or the conversation includes Telugu/Hindi, respond directly in that language using respectful, local terminology familiar to farmers and landowners (e.g. in Telugu: పట్టాదారు పాస్ పుస్తకం, 1-B అడంగల్ / పహణీ, రికార్డు మార్పిడి / మ్యుటేషన్, హద్దుల కొలత / ఎఫ్-లైన్ పిటిషన్, తహసీల్దార్; in Hindi: खतौनी, खसरा संख्या, दाखिल-खारिज / नामांतरण, मेढ़ पैमाइश, लेखपाल / पटवारी, तहसीलदार). Keep explanations clear, supportive, and free of confusing bureaucratic jargon."
+            "5. GOVERNMENT ACQUISITION PROJECTS: If the user inquires about government project compensation or acquisition, note that RFCTLARR Act 2013 claims apply exclusively to citizens whose parcels have an official Gazette corridor notification. Direct eligible titleholders to [Land Acquisition Claim](/citizen/request?type=acquisition_claim).\n"
+            "6. DOCUMENT VERIFICATION: If the user asks about uploaded deeds or title chains, explain that Land Stack auto-screens deed numbers, parties, boundaries, and SHA-256 tamper seals against the digital cadastre during [Citizen Services → Apply](/citizen/request).\n"
+            "7. INTERACTIVE LINKS: Always format app destinations as clickable markdown links [Label](/path) so the UI renders interactive action buttons.\n"
+            "8. LOCAL LANGUAGE & FARMER CONNECTION: If the user asks in Telugu or Hindi, or the conversation includes Telugu/Hindi, respond directly in that language using respectful, local terminology familiar to farmers and landowners (e.g. in Telugu: పట్టాదారు పాస్ పుస్తకం, 1-B అడంగల్ / పహణీ, రికార్డు మార్పిడి / మ్యుటేషన్, హద్దుల కొలత / ఎఫ్-లైన్ పిటిషన్, తహసీల్దార్; in Hindi: खतौनी, खसरा संख्या, दाखिल-खारिज / नामांतरण, मेढ़ पैमाइश, लेखपाल / पटवारी, तहसीलदार). Keep explanations clear, supportive, and free of confusing bureaucratic jargon."
         )
 
         llm_messages: list[dict[str, str]] = [{"role": "system", "content": sys_prompt}]
@@ -1408,10 +1428,36 @@ async def draft_speaking_order(
             draft = llm_reply.strip()
             engine = engine_name()
 
+    # Determine act reference based on application type
+    act_map = {
+        "mutation": "Rights in Land & Pattadar Pass Books Act, §5(1)",
+        "record_correction": "Revenue Record Correction Rules",
+        "building_permission": "Municipal Building Bylaws & Town Planning Act",
+        "succession": "Hindu Succession Act / Indian Succession Act",
+        "boundary_correction": "Land Survey & Boundaries Act",
+        "land_complaint": "Revenue Court Proceedings Rules",
+    }
+    act = act_map.get(app_type, "Revenue Administrative Rules")
+
+    des_labels = {
+        "vro": "Village Revenue Officer (VRO)",
+        "surveyor": "Cadastral / Mandal Surveyor",
+        "ri": "Revenue Inspector (RI)",
+        "tahsildar": "Tahsildar / MRO",
+        "sub_registrar": "Sub-Registrar (SRO)",
+        "town_planner": "Town Planning Officer",
+    }
+    officer_role = des_labels.get(des, principal.designation or "Revenue Officer")
+
     return {
         "application_id": app_id,
         "action": action,
-        "draft": draft,
+        "order_text": draft,
+        "act": act,
+        "officer_role": officer_role,
+        "subject": f"{app_type.replace('_', ' ').title()} — Sy. No. {survey_no}, {village}",
+        "references": [f"Application #{app_id}", f"Parcel Sy. No. {survey_no}", f"Village: {village}"],
+        "conditions": [],
         "engine": engine,
     }
 

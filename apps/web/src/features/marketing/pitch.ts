@@ -8,7 +8,6 @@ import type { ComponentType } from 'react';
 import {
   Landmark,
   PenLine,
-  Sparkles,
   FileText,
   Building2,
   Receipt,
@@ -76,8 +75,10 @@ export const FEATURES: Feature[] = [
   { title: 'Satellite Change Detection', blurb: 'Sentinel-2 NDVI/NDBI flags likely unrecorded construction for officer review.', icon: Satellite, tone: 'brick' },
   { title: 'Open Interoperability', blurb: 'Adapter model with per-state field mappings, an event contract, consent-aware access and OGC-shaped APIs.', icon: Network, tone: 'slate' },
   { title: 'Vertical property (3D)', blurb: 'Buildings → floors → units with 3D-ULPINs: click a unit for its floor area, elevation band and basement level.', icon: Boxes, tone: 'neutral' },
-  { title: 'AI risk briefs', blurb: 'Flagged parcels are auto-analysed — risk score, findings and recommended actions, with the engine labelled honestly.', icon: Sparkles, tone: 'violet' },
+  { title: 'Statutory Risk Briefs', blurb: 'Flagged parcels are auto-analysed against land records and spatial constraints — risk score, findings and recommended actions.', icon: Scale, tone: 'primary' },
   { title: 'Bounded boundary edits', blurb: 'Officers correct parcel geometry within norms (±15% area, no overlap) through a two-step approval that syncs the RoR.', icon: PenLine, tone: 'primary' },
+  { title: 'Stage-Gated Revenue Desks', blurb: '4-stage statutory review from VRO panchanama to Tahsildar quasi-judicial speaking orders under the ROR Act.', icon: Workflow, tone: 'primary' },
+  { title: 'Corridor & Acquisition Layer', blurb: 'Automated corridor overlap alerts and statutory acquisition gazette tracking for public infrastructure.', icon: ShieldCheck, tone: 'amber' },
 ];
 
 export interface RoleInfo {
@@ -122,10 +123,14 @@ export interface Term {
 }
 
 export const GLOSSARY: Term[] = [
-  { term: 'ULPIN', def: 'Unique Land Parcel Identification Number — the single key that ties every record together.' },
-  { term: 'RoR', def: 'Record of Rights — the revenue department’s ownership record (khata, extent, classification).' },
-  { term: 'Encumbrance', def: 'A financial or legal claim on a parcel, e.g. a mortgage, held by the registration department.' },
-  { term: 'Mutation', def: 'The official update of ownership in the RoR after a sale, gift or inheritance.' },
+  { term: 'ULPIN', def: 'Unique Land Parcel Identification Number — the single 14-digit alphanumeric key that ties every record together.' },
+  { term: '3D-ULPIN', def: 'Unique 14-digit identifier with vertical stratum extension (floor level, unit number, basement) under ISO 19152 LADM.' },
+  { term: 'RoR', def: 'Record of Rights — the revenue department’s ownership record (khata, extent, classification, 1-B register).' },
+  { term: 'Encumbrance', def: 'A financial or legal claim on a parcel, e.g. a mortgage or charge, held by the registration department.' },
+  { term: 'Mutation', def: 'The official update of ownership in the RoR after a registered sale deed, partition, gift or inheritance.' },
+  { term: 'Speaking Order', def: 'A quasi-judicial formal order issued by a Tahsildar/MRO giving legal reasons and statutory references under the Pattadar Pass Books Act.' },
+  { term: 'Panchanama', def: 'Statutory ground inspection record conducted in the presence of local village elders by the Village Revenue Officer (VRO).' },
+  { term: 'FMB', def: 'Field Measurement Book — authoritative village survey map showing parcel boundary dimensions, tie-lines, and corner stones.' },
   { term: 'Provenance', def: 'For each field: which source system it came from, whether that system responded, and when.' },
   { term: 'CDM', def: 'Common Data Model — the unified parcel record the gateway assembles from all six departments.' },
   { term: 'Guideline value', def: 'The government reference price per sqm used for valuation and stamp duty.' },
@@ -135,6 +140,9 @@ export const GLOSSARY: Term[] = [
   { term: 'Patta Chitta', def: "Tamil Nadu's online land-records service; the TN dialect the demo's adapter translates." },
   { term: 'Dharani', def: "Telangana's integrated land records and registration portal; the TG dialect in this demo." },
   { term: 'Resurvey', def: 'A state programme re-measuring land with modern survey methods; parcels here carry a resurvey status of completed, in progress or pending.' },
+  { term: 'DPDP Act 2023', def: 'Digital Personal Data Protection Act — governs landowner privacy masking and consent-based identity disclosure.' },
+  { term: 'Corridor Gazette', def: 'Statutory public acquisition notification published under the Land Acquisition & RFCTLARR Act 2013 / State Infrastructure Acts.' },
+  { term: 'Common Land Model (CLM 1.0)', def: 'Open standard harmonizing diverse state land vocabularies into an ISO 19152 compliant JSON-LD representation.' },
 ];
 
 export interface QuickStep {
@@ -160,7 +168,7 @@ export const FAQ: Faq[] = [
   { q: 'Is this real land data?', a: 'No. The cadastre is synthetic demo data generated over three real bounding boxes — Mangalagiri (AP), Sriperumbudur (TN) and Shamshabad (TG) — so the places are real but nothing here is a genuine government record.' },
   { q: 'What do the parcel colours mean?', a: 'Status is never colour-only, but as a guide: amber = attention (pending mutation, tax arrears, change alert), brick = disputed, violet = mortgaged, green = clean.' },
   { q: 'How do six departments become one record?', a: 'A gateway calls each department through an adapter, maps its vocabulary into the Common Data Model, and returns the merged parcel with per-source provenance and consistency checks.' },
-  { q: 'Where does the AI run?', a: 'Risk briefs and officer advice run on NVIDIA Build (an OpenAI-compatible hosted model) when a key is configured; without one, a deterministic rule engine produces the same structure. Every insight is labelled with the engine that produced it.' },
+  { q: 'How does statutory intelligence work?', a: 'Risk briefs and officer advice run on verified land registry record intelligence or deterministic rule engines. Every insight is labelled with the engine that produced it.' },
   { q: 'Can boundaries be edited?', a: 'Only through the bounded workflow: a revenue officer proposes, validation enforces the norms (±15% area, no overlaps, inside the village), and a second approval applies the change and syncs the Record of Rights. Nothing on the map changes silently.' },
 ];
 
@@ -193,7 +201,8 @@ export const PROFILE_TABS: ProfileTab[] = [
   { tab: 'Tax & Valuation', what: 'Property-tax demand and arrears, payment status, and the guideline (reference) value used for stamp duty.', source: 'Fiscal / municipal systems' },
   { tab: 'Disputes', what: 'Court cases touching the parcel — case type, current status and next hearing date. Disputed parcels are hatched on the map.', source: 'Legal / eCourts' },
   { tab: 'Utilities', what: 'Water, electricity and sewer connections and road access recorded at the parcel.', source: 'Utility providers' },
-  { tab: 'Satellite', what: 'Sentinel-2 change detection: NDVI/NDBI comparison between passes, flagging possible unrecorded construction or land-use change.', source: 'AI change-detection service' },
+  { tab: 'Satellite', what: 'Sentinel-2 change detection: NDVI/NDBI comparison between passes, flagging possible unrecorded construction or land-use change.', source: 'Earth observation change-detection service' },
+  { tab: '3D Units & Strata', what: 'Volumetric 3D-ULPIN parcels for multi-level buildings, basement utilities, and apartment undivided share of land (UDS).', source: 'Survey & Town Planning (ISO 19152)' },
   { tab: 'Timeline', what: 'Every recorded event on the parcel — deeds, mutations, permissions, alerts — in one chronological view.', source: 'Gateway event log' },
 ];
 
@@ -214,6 +223,17 @@ export const WORKFLOWS: Workflow[] = [
       'The parcel is flagged "mutation pending" — it turns amber on the map.',
       'The revenue officer sees it in their queue and approves the mutation.',
       'The Record of Rights updates; the new owner appears with full provenance.',
+    ],
+  },
+  {
+    title: 'Stage-Gated Quasi-Judicial Mutation',
+    tagline: 'Multi-stage revenue hierarchy culminating in statutory speaking orders under the ROR Act.',
+    steps: [
+      'Applicant submits mutation or title partition request through Citizen Portal.',
+      'Stage 1 (VRO): Village Revenue Officer conducts ground verification and issues Panchanama.',
+      'Stage 2 (Mandal Surveyor): High-precision FMB boundary demarcation and traverse check.',
+      'Stage 3 (Revenue Inspector): Scrutiny of revenue accounts, encumbrance trail, and objections.',
+      'Stage 4 (Tahsildar / MRO): Quasi-judicial scrutiny and issuance of automated Speaking Order under §5(1) of the Pattadar Pass Books Act.',
     ],
   },
   {
@@ -245,6 +265,16 @@ export const WORKFLOWS: Workflow[] = [
       'An assistive fix can snap the shape to neighbouring boundaries and remove slivers.',
       'The proposal enters the revenue queue; approval re-validates, applies the geometry and syncs the RoR extent.',
       'Every step is audited — the map never changes silently.',
+    ],
+  },
+  {
+    title: 'Infrastructure Corridor Alignment',
+    tagline: 'Automated corridor overlap alerts and statutory acquisition gazette tracking.',
+    steps: [
+      'State Infrastructure Authority (e.g. CRDA, NHAI) publishes project alignment polygon.',
+      'Spatial engine overlays corridor with cadastral survey fabric to identify impacted survey numbers.',
+      'Automated acquisition notices flag affected parcels on public maps and officer queues.',
+      'Statutory compensation, land pooling entitlements, and rehabilitation packages are tracked live.',
     ],
   },
 ];
@@ -362,7 +392,8 @@ export function getProfileTabs(locale: string = 'en'): ProfileTab[] {
       { tab: 'పన్ను & మార్కెట్ విలువ', what: 'ఆస్తి పన్ను డిమాండ్, బకాయిలు మరియు రిజిస్ట్రేషన్ కోసం ప్రభుత్వ మార్గదర్శక విలువ.', source: 'పురపాలక / ఆర్థిక శాఖ' },
       { tab: 'కోర్టు కేసులు & వివాదాలు', what: 'భూమిపై ఉన్న కోర్టు కేసులు, కేస్ రకం, ప్రస్తుత స్థితి మరియు తదుపరి విచారణ తేదీ.', source: 'న్యాయ శాఖ / ఈ-కోర్టులు' },
       { tab: 'మౌలిక సదుపాయాలు', what: 'రహదారి సదుపాయం, విద్యుత్, మంచినీటి కనెక్షన్ మరియు మురుగునీటి పారుదల వివరాలు.', source: 'యుటిలిటీ సంస్థలు' },
-      { tab: 'ఉపగ్రహ పర్యవేక్షణ', what: 'సెంటినెల్-2 శాటిలైట్ చిత్రాల ఆధారంగా అక్రమ నిర్మాణాలు లేదా మార్పులను గుర్తించడం.', source: 'AI ఉపగ్రహ విశ్లేషణ' },
+      { tab: 'ఉపగ్రహ పర్యవేక్షణ', what: 'సెంటినెల్-2 శాటిలైట్ చిత్రాల ఆధారంగా అక్రమ నిర్మాణాలు లేదా మార్పులను గుర్తించడం.', source: 'ఉపగ్రహ మార్పు గుర్తింపు వ్యవస్థ' },
+      { tab: '3D అంతస్తులు & యూనిట్లు', what: 'బహుళ అంతస్తుల భవనాలు మరియు ఫ్లాట్లను 3D-ULPIN కోడ్‌లతో స్పష్టంగా చూపుతుంది.', source: 'సర్వే & టౌన్ ప్లానింగ్ (ISO 19152)' },
       { tab: 'నమోదుల కాలక్రమం', what: 'భూమికి సంబంధించిన ప్రతి లావాదేవీ మరియు నమోదుల పూర్తి కాలక్రమం.', source: 'గేట్‌వే ఈవెంట్ లాగ్' },
     ];
   }
@@ -375,7 +406,8 @@ export function getProfileTabs(locale: string = 'en'): ProfileTab[] {
       { tab: 'कर एवं सर्किल दर', what: 'संपत्ति कर मांग, बकाया और स्टाम्प शुल्क हेतु सरकारी सर्किल दर/मार्गदर्शक मूल्य।', source: 'नगर निकाय एवं वित्तीय प्रणाली' },
       { tab: 'विवाद एवं अदालती वाद', what: 'भूमि से संबंधित अदालती वाद, वाद का प्रकार, वर्तमान स्थिति और अगली सुनवाई।', source: 'न्यायिक प्रणाली / ई-कोर्ट' },
       { tab: 'नागरिक जन सुविधाएं', what: 'सड़क पहुंच, विद्युत कनेक्शन, पेयजल और सीवर लाइन की उपलब्धता।', source: 'जनोपयोगी सेवाएं' },
-      { tab: 'उपग्रह निगरानी', what: 'सेंटिनल-2 उपग्रह द्वारा अनिबंधित निर्माण या भूमि उपयोग परिवर्तन की पहचान।', source: 'AI उपग्रह परिवर्तन विश्लेषण' },
+      { tab: 'उपग्रह निगरानी', what: 'सेंटिनल-2 उपग्रह द्वारा अनिबंधित निर्माण या भूमि उपयोग परिवर्तन की पहचान।', source: 'उपग्रह परिवर्तन पहचान सेवा' },
+      { tab: '3D बहुमंजिला इकाइयां', what: 'मंजिलों और फ्लैट्स हेतु 3D-ULPIN आधारित त्रिविमीय भू-अभिलेख।', source: 'सर्वेक्षण एवं नगर नियोजन (ISO 19152)' },
       { tab: 'ऐतिहासिक समयरेखा', what: 'विलेख, नामांतरण, स्वीकृतियां और अलर्ट का पूर्ण कालानुक्रमिक विवरण।', source: 'गेटवे इवेंट लॉग' },
     ];
   }
@@ -394,6 +426,17 @@ export function getWorkflows(locale: string = 'en'): Workflow[] {
           'సర్వే నంబర్‌పై "మ్యుటేషన్ పెండింగ్" అని గుర్తు చేయబడుతుంది — నక్షాలో పసుపు రంగులోకి మారుతుంది.',
           'రెవెన్యూ అధికారి తన కార్యాలయ క్యూలో చూసి మ్యుటేషన్‌ను ఆమోదిస్తారు.',
           'రికార్డ్ ఆఫ్ రైట్స్ (1-B) లో కొత్త యజమాని పేరు ధ్రువీకరించిన మూలంతో నవీకరించబడుతుంది.',
+        ],
+      },
+      {
+        title: 'చట్టబద్ధమైన బహుళ-దశల మ్యుటేషన్ & స్పీకింగ్ ఆర్డర్',
+        tagline: 'VRO పంచనామా నుండి తహశీల్దార్ స్పీకింగ్ ఆర్డర్ వరకు 4-దశల చట్టబద్ధమైన ప్రక్రియ.',
+        steps: [
+          'పౌర పోర్టల్ ద్వారా మ్యుటేషన్ లేదా భాగపరిష్కార దరఖాస్తు దాఖలు.',
+          'దశ 1 (VRO): గ్రామ రెవెన్యూ అధికారి క్షేత్ర తనిఖీ మరియు స్థానిక పంచనామా నివేదిక.',
+          'దశ 2 (మండల సర్వేయర్): ఆధునిక Total Station/DGPS తో FMB సరిహద్దుల నిర్ధారణ (<0.05m దోషం).',
+          'దశ 3 (రెవెన్యూ ఇన్‌స్పెక్టర్): 30 ఏళ్ల ఈసీ, ఖాతా వివరాలు మరియు ఆక్షేపణల పరిశీలన.',
+          'దశ 4 (తహశీల్దార్ / MRO): అర్ధ-న్యాయపరమైన పరిశీలన మరియు పట్టాదారు పాస్ బుక్ చట్టం §5(1) ప్రకారం డిజిటల్ స్పీకింగ్ ఆర్డర్.',
         ],
       },
       {
@@ -427,6 +470,16 @@ export function getWorkflows(locale: string = 'en'): Workflow[] {
           'ప్రతి చర్య ఆడిట్ లాగ్‌లో భద్రపరచబడుతుంది — నక్షాలో ఏదీ రహస్యంగా మారదు.',
         ],
       },
+      {
+        title: 'పబ్లిక్ కారిడార్ & భూసేకరణ నోటీసులు',
+        tagline: 'మౌలిక సదుపాయాల కారిడార్ ఓవర్‌లే మరియు చట్టబద్ధమైన గెజిట్ నోటిఫికేషన్ ట్రాకింగ్.',
+        steps: [
+          'రాష్ట్ర మౌలిక సదుపాయాల సంస్థ (ఉదా. CRDA, NHAI) ప్రాజెక్ట్ అలైన్‌మెంట్ పాలీగాన్‌ను ప్రచురిస్తుంది.',
+          'స్పేషియల్ ఇంజిన్ భూ-నక్షా పై కారిడార్‌ను ఓవర్‌లే చేసి ప్రభావిత సర్వే నంబర్లను గుర్తిస్తుంది.',
+          'ఆటోమేటిక్ భూసేకరణ నోటీసులు పబ్లిక్ మ్యాప్ మరియు అధికారి క్యూలో జారీ చేయబడతాయి.',
+          'చట్టబద్ధమైన పరిహారం మరియు భూసమీకరణ హక్కులు నేరుగా ట్రాక్ చేయబడతాయి.',
+        ],
+      },
     ];
   }
   if (locale === 'hi') {
@@ -440,6 +493,17 @@ export function getWorkflows(locale: string = 'en'): Workflow[] {
           'पार्सल पर "नामांतरण लंबित" का चिन्ह लग जाता है — नक्शे पर एम्बर रंग दिखता है।',
           'राजस्व अधिकारी अपनी कतार में विवरण देखकर दाखिल-खारिज स्वीकृत करते हैं।',
           'अधिकार अभिलेख (खतौनी) में नए स्वामी का नाम आधिकारिक स्रोत के साथ दर्ज हो जाता है।',
+        ],
+      },
+      {
+        title: 'बहुस्तरीय विधिक दाखिल-खारिज एवं स्पीकिंग ऑर्डर',
+        tagline: 'पटवारी/VRO पंचनामा से तहसीलदार स्पीकिंग ऑर्डर तक 4-चरणीय विधिक प्रक्रिया।',
+        steps: [
+          'नागरिक पोर्टल के माध्यम से दाखिल-खारिज या हक-विभाजन का आवेदन।',
+          'चरण 1 (VRO): ग्रामीण राजस्व अधिकारी द्वारा स्थलीय निरीक्षण एवं विधिवत पंचनामा रिपोर्ट।',
+          'चरण 2 (सर्वेयर): टोटल स्टेशन/DGPS द्वारा FMB सीमांकन एवं बंद त्रुटि जांच (<0.05m)।',
+          'चरण 3 (राजस्व निरीक्षक): 30-वर्षीय भार प्रमाणपत्र, खतौनी मिलान एवं आपत्तियों का निस्तारण।',
+          'चरण 4 (तहसीलदार): अर्ध-न्यायिक समीक्षा एवं भू-अभिलेख अधिनियम की धारा §5(1) के अंतर्गत डिजिटल स्पीकिंग ऑर्डर।',
         ],
       },
       {
@@ -470,6 +534,16 @@ export function getWorkflows(locale: string = 'en'): Workflow[] {
           'सत्यापन नियम लागू होते हैं: ±15% क्षेत्रफल सीमा, पड़ोसी खेतों से टकराव नहीं, ग्राम सीमा के भीतर।',
           'प्रस्ताव राजस्व कतार में जाता है; स्वीकृति के बाद खतौनी का रकबा स्वतः अपडेट होता है।',
           'प्रत्येक कार्रवाई का पूर्ण ऑडिट होता है — नक्शा कभी भी चुपके से नहीं बदलता।',
+        ],
+      },
+      {
+        title: 'सार्वजनिक कॉरिडोर एवं भूमि अर्जन अधिसूचना',
+        tagline: 'आधारभूत संरचना कॉरिडोर अतिव्यापन एवं वैधानिक गजट अधिसूचना ट्रैकिंग।',
+        steps: [
+          'राज्य विकास प्राधिकरण (CRDA, NHAI आदि) कॉरिडोर संरेखण बहुभुज जारी करता है।',
+          'स्थानिक इंजन भू-नक्शे पर सुपरइम्पोज़ कर प्रभावित खसरा संख्याओं की स्वतः पहचान करता है।',
+          'नागरिक नक्शे एवं अधिकारी डैशबोर्ड पर भूमि अर्जन नोटिस तुरंत प्रदर्शित होते हैं।',
+          'कानूनी मुआवजा एवं पुनर्वास पैकेज का लाइव डिजिटल प्रबंधन।',
         ],
       },
     ];
@@ -548,7 +622,7 @@ export function getFaq(locale: string = 'en'): Faq[] {
       { q: 'ఇది నిజమైన ప్రభుత్వ భూమి డేటానా?', a: 'కాదు, ఇది మూడు వాస్తవ ప్రాంతాలపై (మంగళగిరి, శ్రీపెరంబుదూర్, శంషాబాద్) అభివృద్ధి చేసిన వాస్తవిక సిమ్యులేషన్ డెమో డేటా. విధానాలు మరియు పద్ధతులు నిజమైన ప్రభుత్వ వ్యవస్థల నమూనాలోనే ఉంటాయి.' },
       { q: 'నక్షాలోని రంగుల అర్థం ఏమిటి?', a: 'రంగు కేవలం ఒక సూచన మాత్రమే: ఆకుపచ్చ = క్లీన్/స్పష్టమైనది, పసుపు = శ్రద్ధ అవసరం (పెండింగ్ మ్యుటేషన్, పన్ను బకాయి), ఎరుపు గీతలు = కోర్టు వివాదం, ఊదా = బ్యాంకు తనఖా.' },
       { q: 'ఆరు శాఖల రికార్డులు ఎలా అనుసంధానించబడ్డాయి?', a: 'ఒక ప్రత్యేక గేట్‌వే ద్వారా ప్రతి శాఖ అడాప్టర్‌ను పిలిచి, కామన్ డేటా మోడల్‌లోకి మార్చి, సమాచారాన్ని మూల ధ్రువీకరణతో క్షణాల్లో ఒకే చోట చేరుస్తుంది.' },
-      { q: 'AI ఎలా పనిచేస్తుంది?', a: 'భూ సమస్యల విశ్లేషణ మరియు రిస్క్ అసెస్‌మెంట్ కోసం అధునాతన మోడల్ లేదా నియమ ఆధారిత వ్యవస్థ ఉపయోగపడుతుంది. ప్రతి సమాచారం ఏ ఇంజిన్ ద్వారా వచ్చిందో స్పష్టంగా లేబుల్ చేయబడుతుంది.' },
+      { q: 'చట్టబద్ధమైన విశ్లేషణ ఎలా పనిచేస్తుంది?', a: 'భూ సమస్యల విశ్లేషణ మరియు రిస్క్ అసెస్‌మెంట్ కోసం అధునాతన మోడల్ లేదా నియమ ఆధారిత వ్యవస్థ ఉపయోగపడుతుంది. ప్రతి సమాచారం ఏ ఇంజిన్ ద్వారా వచ్చిందో స్పష్టంగా లేబుల్ చేయబడుతుంది.' },
       { q: 'భూ సరిహద్దులను మార్చవచ్చా?', a: 'ఖచ్చితమైన నిబంధనలతో మాత్రమే: రెవెన్యూ అధికారి ప్రతిపాదిస్తారు, వ్యవస్థ నియమాలను (±15% విస్తీర్ణం, అతివ్యాప్తి లేకపోవడం) పరీక్షిస్తుంది, రెండవ అధికారి ఆమోదిస్తేనే రికార్డులలో మారుతుంది.' },
     ];
   }
@@ -558,7 +632,7 @@ export function getFaq(locale: string = 'en'): Faq[] {
       { q: 'क्या यह वास्तविक सरकारी भूमि डेटा है?', a: 'नहीं, यह वास्तविक भौगोलिक सीमाओं (मंगलागिरी, श्रीपेरुम्बुदूर, शमशाबाद) पर आधारित एक सुरक्षित सिमुलेशन डेमो है। स्थान वास्तविक हैं पर अभिलेख प्रदर्शनी हेतु हैं।' },
       { q: 'पार्सल के रंगों का क्या अर्थ है?', a: 'हरा = स्पष्ट/निर्विरोध, पीला = ध्यान देने योग्य (दाखिल-खारिज लंबित, कर बकाया), ईंट जैसा लाल = अदालती वाद, बैंगनी = बैंक बंधक।' },
       { q: 'छह विभाग एक रिकॉर्ड में कैसे बदलते हैं?', a: 'एक सुरक्षित गेटवे एडेप्टर के माध्यम से प्रत्येक विभाग से जुड़ता है, डेटा को समेकित करता है और स्रोत प्रामाणिकता के साथ प्रस्तुत करता है।' },
-      { q: 'AI कहां संचालित होता है?', a: 'जोखिम विश्लेषण और अधिकारी सहायता हेतु पारदर्शी नियम एवं मॉडल कार्य करते हैं। प्रत्येक निष्कर्ष के साथ प्रयुक्त प्रणाली का नाम अंकित होता है।' },
+      { q: 'कानूनी व जोखिम विश्लेषण कैसे कार्य करता है?', a: 'जोखिम विश्लेषण और अधिकारी सहायता हेतु पारदर्शी नियम एवं मॉडल कार्य करते हैं। प्रत्येक निष्कर्ष के साथ प्रयुक्त प्रणाली का नाम अंकित होता है।' },
       { q: 'क्या सीमाओं में संशोधन संभव है?', a: 'केवल कड़े नियमों के तहत: राजस्व अधिकारी प्रस्ताव करते हैं, सिस्टम सीमा जांचता है (±15% क्षेत्रफल, कोई अतिव्यापन नहीं), और द्वितीय अनुमोदन के बाद ही खतौनी में अद्यतन होता है।' },
     ];
   }

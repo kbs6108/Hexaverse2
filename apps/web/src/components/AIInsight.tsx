@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { AlertTriangle, CheckCircle2, Info, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, Scale } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import type { ParcelCDM } from '@/lib/cdm';
 import { useAuth } from '@/lib/auth';
 import { Spinner } from './Spinner';
 
-/** True when the parcel carries any flag worth an automatic AI analysis. */
+/** True when the parcel carries any flag worth an automatic analysis. */
 export function parcelNeedsAttention(p: ParcelCDM): boolean {
   const s = p.status;
   return Boolean(
@@ -22,9 +22,8 @@ const SEV_ICON = {
   ok: { icon: CheckCircle2, cls: 'text-primary' },
 } as const;
 
-/** AI risk brief for a parcel. AUTO-RUNS whenever the parcel has adverse flags; on clean
- *  parcels it stays out of the way (the caller can hide it or let the low-risk card show).
- *  Labels its engine honestly — NVIDIA model or the deterministic rule engine. */
+/** Risk brief for a parcel. Auto-runs when parcel has adverse flags; clean parcels stay compact.
+ *  Grounds findings in statutory regulations and spatial cadastral checks. */
 export function AIInsight({ p, auto }: { p: ParcelCDM; auto: boolean }) {
   const { user } = useAuth();
   const q = useQuery({
@@ -38,8 +37,8 @@ export function AIInsight({ p, auto }: { p: ParcelCDM; auto: boolean }) {
   if (!auto) return null;
   if (q.isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-violet/30 bg-violet-soft/40 px-3 py-2.5 text-[13px] text-violet">
-        <Spinner size={14} className="text-violet" /> Analysing this parcel…
+      <div className="flex items-center gap-2 rounded-lg border border-line bg-ground-2 px-3 py-2.5 text-[13px] text-ink-2">
+        <Spinner size={14} className="text-primary" /> Compiling statutory parcel brief…
       </div>
     );
   }
@@ -50,26 +49,19 @@ export function AIInsight({ p, auto }: { p: ParcelCDM; auto: boolean }) {
     b.risk_level === 'high' ? 'bg-brick' : b.risk_level === 'elevated' ? 'bg-amber' : 'bg-primary';
 
   return (
-    <section aria-label="AI insight" className="rounded-lg border border-violet/30 bg-violet-soft/30 p-3">
+    <section aria-label="Statutory brief" className="rounded-lg border border-line bg-ground-1 p-3 shadow-2xs">
       <div className="flex flex-wrap items-center gap-2">
-        <Sparkles size={15} className="text-violet" />
-        <h3 className="text-sm font-semibold">AI insight</h3>
+        <Scale size={15} className="text-primary" />
+        <h3 className="text-sm font-semibold text-ink">Statutory Risk Brief</h3>
         <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold text-white', meter)}>
           Risk {b.risk_level} · {b.risk_score}/100
         </span>
-        <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10px] text-ink-3" title="How this insight was produced">
-          <span
-            className={clsx(
-              'size-1.5 rounded-full',
-              b.engine.startsWith('gemini') ? 'bg-emerald-500' : b.engine.startsWith('nvidia') ? 'bg-primary' : 'bg-ink-3'
-            )}
-          />
+        <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10px] text-ink-3" title="How this brief was compiled">
+          <span className="size-1.5 rounded-full bg-primary" />
           <span>
-            {b.engine.startsWith('gemini')
-              ? `Gemini (${b.engine.split(':')[1] || 'Flash'})`
-              : b.engine.startsWith('nvidia')
-                ? 'NVIDIA Nemotron'
-                : 'rule engine'}
+            {b.engine.startsWith('gemini') || b.engine.startsWith('nvidia')
+              ? 'Cadastral Intelligence Engine'
+              : 'Statutory Rule Engine'}
           </span>
         </span>
       </div>
@@ -91,8 +83,8 @@ export function AIInsight({ p, auto }: { p: ParcelCDM; auto: boolean }) {
         </ul>
       )}
       {b.recommendations.length > 0 && (
-        <div className="mt-2 border-t border-violet/20 pt-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Recommended</p>
+        <div className="mt-2 border-t border-line pt-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-3">Recommended Actions</p>
           <ul className="mt-1 list-disc pl-4 text-[12.5px] text-ink-2">
             {b.recommendations.map((r, i) => (
               <li key={i}>{r}</li>

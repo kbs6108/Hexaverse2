@@ -19,16 +19,16 @@ export function HoverCard({ info }: { info: HoverInfo }) {
   return (
     <div
       role="tooltip"
-      className="pointer-events-none absolute z-10 min-w-44 max-w-72 rounded-xl border border-[#D5D2C7]/50 bg-[#F4F1E7]/40 px-3 py-2 text-xs shadow-[0_8px_32px_rgba(24,35,31,0.08)] backdrop-blur-xl text-[#18231F]"
+      className="pointer-events-none absolute z-10 min-w-44 max-w-72 rounded-xl border border-line bg-panel/95 px-3 py-2 text-xs shadow-elevated backdrop-blur-xl text-ink"
       style={{ left: info.x + 14, top: info.y + 14 }}
     >
-      <p className="font-display text-sm font-semibold text-[#18231F]">Sy. No. {String(p.survey_no ?? '—')}</p>
-      <p className="text-[#6F7768]">
+      <p className="font-display text-sm font-semibold text-ink">Sy. No. {String(p.survey_no ?? '—')}</p>
+      <p className="text-ink-2">
         {titleCase(String(p.land_use ?? '—'))} · {fmtArea(Number(p.area_sqm ?? 0))}
       </p>
-      {typeof p.owner_name === 'string' && p.owner_name && <p className="text-[#6F7768]">Owner: {maskName(p.owner_name)}</p>}
-      {flags.length > 0 && <p className="mt-1 text-[#9A6B12] font-semibold">{flags.join(' · ')}</p>}
-      <p className="mt-1 font-mono text-[10.5px] text-[#6F7768]">{String(p.ulpin ?? '')}</p>
+      {typeof p.owner_name === 'string' && p.owner_name && <p className="text-ink-2">Owner: {maskName(p.owner_name)}</p>}
+      {flags.length > 0 && <p className="mt-1 text-amber-600 dark:text-amber-400 font-semibold">{flags.join(' · ')}</p>}
+      <p className="mt-1 font-mono text-[10.5px] text-ink-3">{String(p.ulpin ?? '')}</p>
     </div>
   );
 }

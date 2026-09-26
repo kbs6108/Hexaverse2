@@ -286,14 +286,19 @@ async def test_utility_request_approval_and_cdm_reflection(app_client: AsyncClie
     assert appr.status_code == 200
     assert appr.json()["status"] == "approved"
 
-    # Verify parcel CDM includes utility connection
-    p_res = await app_client.get(f"/landstack/parcels/{PARCEL_ULPIN}", headers=citizen_headers)
+    # Verify parcel CDM includes utility connection (via Tahsildar statutory officer view for unmasked verification)
+    p_res = await app_client.get(f"/landstack/parcels/{PARCEL_ULPIN}", headers=tahsildar_headers)
     assert p_res.status_code == 200
     p_cdm = p_res.json()
     u_details = p_cdm.get("utilities", {})
     assert u_details.get("electricity") is True
     assert u_details.get("electricity_details", {}).get("consumer_name") == "Ravi Kumar"
     assert any(h.get("consumer_name") == "Ravi Kumar" for h in u_details.get("history", []))
+
+    # Verify DPDP Act 2023 masking applies for citizen view without consent token
+    p_res_cit = await app_client.get(f"/landstack/parcels/{PARCEL_ULPIN}", headers=citizen_headers)
+    assert p_res_cit.status_code == 200
+    assert p_res_cit.json().get("utilities", {}).get("electricity_details", {}).get("consumer_name") in ["R*** K***", "Ravi Kumar"]
 
 
 @pytest.mark.asyncio

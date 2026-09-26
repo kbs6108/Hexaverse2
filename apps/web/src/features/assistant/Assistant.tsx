@@ -8,16 +8,17 @@ import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
-  Bot,
   Check,
+  Compass,
   Copy,
+  Landmark,
   Maximize2,
   Mic,
   MicOff,
   Minimize2,
   RotateCcw,
   Send,
-  Sparkles,
+  ShieldCheck,
   X,
 } from 'lucide-react';
 import { useVoiceSearch, LOCALE_LANG_NAMES } from '@/lib/useVoiceSearch';
@@ -39,7 +40,7 @@ const GREETINGS_BY_LOCALE: Record<Locale, Msg> = {
   en: {
     who: 'bot',
     text:
-      '**[Bhu-Sahayak AI Land Assistant]**\n' +
+      '**[Bhu-Sahayak Land Records Guide]**\n' +
       'Select a common land problem or type any survey number to inspect verified records:\n\n' +
       '• **Encroachment & Demarcation**: [Apply for Boundary Correction](/citizen/request?type=boundary_correction) or check satellite alerts\n' +
       '• **Deed Registration & Mutation**: [Apply for Mutation](/citizen/request?type=mutation) to update your name in revenue records\n' +
@@ -156,19 +157,17 @@ const PROMPT_CATEGORIES_BY_LOCALE: Record<Locale, { category: string; prompts: s
 function engineBadge(engine?: string) {
   if (!engine) return null;
   const isGemini = engine.startsWith('gemini');
-  const isNvidia = engine.startsWith('nvidia');
 
-  let label = 'Deterministic Rule Engine · Verified Records';
+  let label = 'Statutory Rule Engine · Verified Land Records';
   if (isGemini) {
-    const model = engine.split(':')[1] || 'Gemini';
-    label = `Gemini (${model}) · Grounded AI`;
-  } else if (isNvidia) {
-    label = 'NVIDIA Nemotron · Grounded AI';
+    label = 'Statutory Assistant · Grounded on Official Records';
+  } else if (engine.startsWith('nvidia')) {
+    label = 'Cadastral Intelligence · Grounded on Spatial Registers';
   }
 
   return (
     <div className="flex items-center gap-1.5 text-[10px] text-ink-3">
-      <span className={`inline-block size-1.5 rounded-full ${isGemini ? 'bg-emerald-500' : 'bg-primary'}`} />
+      <span className="inline-block size-1.5 rounded-full bg-primary" />
       <span>{label}</span>
     </div>
   );
@@ -557,15 +556,15 @@ export default function Assistant() {
           {/* Header */}
           <header className={`flex items-center gap-2 border-b border-line bg-ground-1 ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>
             <span className={`grid place-items-center rounded-xl bg-primary text-white shadow-xs ${compact ? 'size-7' : 'size-8'}`}>
-              <Bot size={compact ? 16 : 18} />
+              <Landmark size={compact ? 16 : 18} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <h2 className={`font-display font-bold leading-tight text-ink ${compact ? 'text-[14px]' : 'text-[15px]'}`}>
                   {t('ai.title')}
                 </h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-1.5 py-0.2 text-[10px] font-semibold text-primary">
-                  <Sparkles size={10} /> AI
+                <span className="inline-flex items-center gap-1 rounded-full bg-ground-2 border border-line px-2 py-0.5 text-[10px] font-semibold text-ink-2">
+                  <ShieldCheck size={11} className="text-primary" /> Bhu-Sahayak
                 </span>
               </div>
               <p className="truncate text-[11px] text-ink-3">
@@ -849,13 +848,12 @@ export default function Assistant() {
           aria-label={open ? t('common.close') : t('ai.title')}
           title={open ? t('common.close') : t('ai.title')}
           aria-expanded={open}
-          className="flex size-12 items-center justify-center rounded-full bg-primary text-white shadow-2xl ring-4 ring-primary/20 pointer-events-auto cursor-pointer focus:outline-none"
+          className="flex size-12 items-center justify-center rounded-full bg-primary text-white shadow-xl border border-white/20 hover:bg-primary-hover pointer-events-auto cursor-pointer focus:outline-none transition-all active:scale-95"
         >
           <span className="relative flex items-center justify-center">
-            {open ? <X size={22} /> : <Bot size={22} />}
-            <span className="absolute -top-1 -right-1 flex size-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-3 rounded-full bg-emerald-500 ring-2 ring-panel" />
+            {open ? <X size={20} /> : <Compass size={22} />}
+            <span className="absolute -top-1 -right-1 flex size-2.5">
+              <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400 ring-2 ring-primary" />
             </span>
           </span>
         </button>

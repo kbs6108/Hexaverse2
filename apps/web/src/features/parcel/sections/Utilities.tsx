@@ -18,7 +18,7 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { SectionTitle } from '@/components/Section';
 import { Button } from '@/components/Button';
 import { titleCase } from '@/lib/format';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 function cleanProvider(name?: string): string {
   if (!name) return '';
@@ -26,6 +26,7 @@ function cleanProvider(name?: string): string {
 }
 
 export function UtilitiesSection({ p }: { p: ParcelCDM }) {
+  const { t } = useTranslation();
   const u = p.utilities;
   const elec = u?.electricity_details;
   const water = u?.water_details;

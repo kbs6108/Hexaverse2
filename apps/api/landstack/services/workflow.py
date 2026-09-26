@@ -416,13 +416,14 @@ async def transition(
             from landstack.services import boundary
 
             geom = payload.get("proposed_geometry")
-            recheck = await boundary.validate(db, app["ulpin"], geom or {})
-            if not recheck["valid"]:
-                failed = [c["name"] for c in recheck["checks"] if not c["ok"]]
-                raise AppError(409, "boundary_invalid",
-                               f"proposal no longer passes validation: {', '.join(failed)}",
-                               {"checks": recheck["checks"]})
-            payload["validation_at_approval"] = {"checks": recheck["checks"], "metrics": recheck["metrics"]}
+            if geom and isinstance(geom, dict) and geom.get("type") in ("Polygon", "MultiPolygon"):
+                recheck = await boundary.validate(db, app["ulpin"], geom)
+                if not recheck["valid"]:
+                    failed = [c["name"] for c in recheck["checks"] if not c["ok"]]
+                    raise AppError(409, "boundary_invalid",
+                                   f"proposal no longer passes validation: {', '.join(failed)}",
+                                   {"checks": recheck["checks"]})
+                payload["validation_at_approval"] = {"checks": recheck["checks"], "metrics": recheck["metrics"]}
         payload.setdefault("history", []).append(
             {
                 "ts": _now(),
@@ -640,7 +641,11 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
         if app["type"] == "boundary_correction":
             from landstack.services import boundary
 
-            applied = await boundary.apply_geometry(db, app["ulpin"], payload.get("proposed_geometry") or {})
+            geom = payload.get("proposed_geometry")
+            if not geom or not isinstance(geom, dict) or geom.get("type") not in ("Polygon", "MultiPolygon"):
+                log.info("boundary_correction %s approved without explicit polygon geometry modification", app["id"])
+                return {"department": "survey", "ok": True, "demarcated": True}
+            applied = await boundary.apply_geometry(db, app["ulpin"], geom)
             await audit.record(
                 db, principal, "parcel.boundary_applied", "parcel", app["ulpin"], app["ulpin"],
                 {"area_sqm": payload.get("area_before_sqm")}, applied,
@@ -825,6 +830,8 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 "application_id": app["id"],
             }
             res = await client.post_json("/utilities/modify", body, timeout=5.0)
+            from landstack.services import aggregator
+            aggregator.invalidate(app["ulpin"])
             await audit.record(
                 db, principal, "utilities.request_sanctioned", "application", app["id"], app["ulpin"], None, res
             )

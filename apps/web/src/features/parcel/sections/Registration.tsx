@@ -4,9 +4,10 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { KV, SectionTitle } from '@/components/Section';
 import { fmtDate, fmtINR, titleCase } from '@/lib/format';
 import { Badge } from '@/components/Badge';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 export function Registration({ p }: { p: ParcelCDM }) {
+  const { t } = useTranslation();
   const r = p.rights.registration;
   return (
     <div className="flex flex-col gap-6">

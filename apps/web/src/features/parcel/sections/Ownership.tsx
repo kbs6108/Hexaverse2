@@ -6,10 +6,11 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { KV, SectionTitle, Callout } from '@/components/Section';
 import { fmtArea, titleCase } from '@/lib/format';
 import { Badge } from '@/components/Badge';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 import { OwnerPrivacyModal } from '../OwnerPrivacyModal';
 
 export function Ownership({ p }: { p: ParcelCDM }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const ror = p.rights.ror;

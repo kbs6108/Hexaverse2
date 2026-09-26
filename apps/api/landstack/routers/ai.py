@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from pydantic import BaseModel, model_validator
 
 from landstack.auth import Principal, current_principal, require_officer, require_user
@@ -150,17 +150,46 @@ async def change_detection(
 
 @router.post("/extract-document")
 async def extract_document(
-    file: UploadFile = File(...), principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
+    file: UploadFile = File(...),
+    ulpin: str | None = Query(None),
+    principal: Principal = Depends(require_user),
+    db: DBLike = Depends(get_db),
 ) -> dict[str, Any]:
     from ai.extract import NotConfigured, extract_ror
+    from landstack.services.document_verify import build_parcel_context, evaluate_cross_verification
 
     data = await file.read()
     if not data:
         raise AppError(422, "empty_file", "uploaded file is empty")
+
+    ctx: dict[str, Any] | None = None
+    encumbrances: list[dict[str, Any]] = []
+    disputes: list[dict[str, Any]] = []
+    if ulpin and ulpin.strip():
+        try:
+            ctx, encumbrances, disputes = await build_parcel_context(
+                db, ulpin.strip(), app_context={"applicant_name": principal.name}
+            )
+        except Exception as exc:
+            log.warning("failed to fetch parcel context for %s: %s", ulpin, exc)
+
     try:
-        result = await extract_ror(data, file.content_type or "application/octet-stream", filename=file.filename)
+        result = await extract_ror(
+            data,
+            file.content_type or "application/octet-stream",
+            filename=file.filename,
+            context=ctx,
+        )
     except NotConfigured as exc:
         raise AppError(503, "ai_not_configured", str(exc)) from exc
+
+    if ctx:
+        try:
+            cross = evaluate_cross_verification(ctx, result, encumbrances, disputes)
+            result["cross_verification"] = cross
+        except Exception as exc:
+            log.warning("cross verification evaluation failed: %s", exc)
+
     await audit.record(
         db,
         principal,
@@ -169,7 +198,7 @@ async def extract_document(
         file.filename,
         None,
         None,
-        {"fields": sorted((result.get("fields") or {}).keys())},
+        {"fields": sorted((result.get("fields") or {}).keys()), "ulpin": ulpin},
     )
     return result
 

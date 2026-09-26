@@ -37,6 +37,7 @@ async def my_parcels(
     sql = """
         SELECT p.ulpin, p.survey_no, p.village, p.state, p.district, p.land_use, p.area_sqm,
                r.khata_no, r.owner_name, r.ownership_type,
+               EXISTS(SELECT 1 FROM gis.project_parcel_impacts i WHERE i.ulpin = p.ulpin) AS has_acquisition_notice,
                ST_X(ST_PointOnSurface(p.geom)) AS lon, ST_Y(ST_PointOnSurface(p.geom)) AS lat,
                ST_XMin(p.geom) AS minx, ST_YMin(p.geom) AS miny,
                ST_XMax(p.geom) AS maxx, ST_YMax(p.geom) AS maxy
@@ -60,10 +61,12 @@ async def my_parcels(
             "khata_no": r["khata_no"],
             "owner_name": r["owner_name"],
             "ownership_type": r["ownership_type"],
+            "has_acquisition_notice": bool(r.get("has_acquisition_notice")),
             "centroid": [r["lon"], r["lat"]],
             "bbox": [r["minx"], r["miny"], r["maxx"], r["maxy"]],
         })
     return {"items": items}
+
 
 
 def _iso(v: Any) -> Any:

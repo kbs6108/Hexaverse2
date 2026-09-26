@@ -200,10 +200,14 @@ export const api = {
     }>('/landstack/documents/upload', { method: 'POST', body: fd });
   },
   documentUrl: (docId: string) => `${env.apiUrl}/landstack/documents/${encodeURIComponent(docId)}`,
-  extractDocument: (file: File) => {
+  extractDocument: (file: File, ulpin?: string) => {
     const fd = new FormData();
     fd.append('file', file);
-    return request<Record<string, unknown>>('/landstack/ai/extract-document', { method: 'POST', body: fd });
+    return request<Record<string, unknown>>('/landstack/ai/extract-document', {
+      method: 'POST',
+      body: fd,
+      query: ulpin?.trim() ? { ulpin: ulpin.trim() } : undefined,
+    });
   },
 
   /* ---------- Department sub-apps (public GETs) ---------- */

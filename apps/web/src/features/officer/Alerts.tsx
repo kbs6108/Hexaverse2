@@ -14,12 +14,13 @@ import { toast } from '@/components/Toast';
 import { fmtDate, titleCase } from '@/lib/format';
 import { PageTitle } from '@/features/citizen/CitizenHome';
 import { MechanismExplainerModal } from '@/components/MechanismExplainerModal';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 const KIND_ICON = { change_detected: Radar, inconsistency: Scale, pending_mutation: Clock } as const;
 const SEV_TONE: Record<string, Tone> = { high: 'brick', medium: 'amber', low: 'slate' };
 
 export function AlertsPage() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<'open' | 'assigned' | 'resolved' | ''>('open');
   const [guideOpen, setGuideOpen] = useState(false);
   const qc = useQueryClient();
@@ -83,7 +84,7 @@ export function AlertsPage() {
           <div>
             <p className="font-semibold text-ink">{t('officer.alertFlagAnomalies', 'Alerts Flag Anomalies · Applications Execute Statutory Changes')}</p>
             <p className="text-ink-3 text-[11.5px] leading-relaxed">
-              {t('officer.alertBannerDesc', 'Alerts are automated detection signals (satellite AI, registry discrepancies, pending mutations). Resolving an alert acknowledges the notice. Official property title and extent records are legally modified by approving applications in the Work Queue.')}
+              {t('officer.alertBannerDesc', 'Alerts are automated detection signals (satellite change detection, registry discrepancies, pending mutations). Resolving an alert acknowledges the notice. Official property title and extent records are legally modified by approving applications in the Work Queue.')}
             </p>
           </div>
         </div>

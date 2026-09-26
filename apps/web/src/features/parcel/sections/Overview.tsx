@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertOctagon, AlertTriangle, ArrowRight, BadgeCheck, CheckCircle2, ClipboardCheck, Clock, Download, FileSearch, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, ShieldCheck, SlidersHorizontal, Wand2, XCircle } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, ArrowRight, BadgeCheck, CheckCircle2, ClipboardCheck, Clock, Download, FileSearch, FileSignature, Landmark, ListChecks, PenLine, Radar, Receipt, Satellite, ShieldCheck, SlidersHorizontal, XCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ParcelCDM } from '@/lib/cdm';
 import { api, qk } from '@/lib/api';
@@ -63,15 +63,13 @@ function BuyerCheck({ ulpin }: { ulpin: string }) {
             <span
               className={clsx(
                 'size-1.5 rounded-full',
-                d.engine.startsWith('gemini') ? 'bg-emerald-500' : d.engine.startsWith('nvidia') ? 'bg-primary' : 'bg-ink-3'
+                d.engine.startsWith('gemini') || d.engine.startsWith('nvidia') ? 'bg-primary' : 'bg-ink-3'
               )}
             />
             <span>
-              {d.engine.startsWith('gemini')
-                ? `Gemini (${d.engine.split(':')[1] || '2.5 Flash'})`
-                : d.engine.startsWith('nvidia')
-                  ? 'NVIDIA Nemotron'
-                  : 'rule engine'}
+              {d.engine.startsWith('gemini') || d.engine.startsWith('nvidia')
+                ? 'Cadastral Intelligence Engine'
+                : 'Statutory Rule Engine'}
             </span>
           </span>
         )}
@@ -318,7 +316,7 @@ export function Overview({ p, goTo }: { p: ParcelCDM; goTo: (t: ParcelTab) => vo
           )}
           {role === 'admin' && (
             <>
-              <Link to="/admin" search={{ ulpin: p.ulpin }}><Button variant="primary" icon={<Wand2 size={15} />}>Simulate deed</Button></Link>
+              <Link to="/admin" search={{ ulpin: p.ulpin }}><Button variant="primary" icon={<FileSignature size={15} />}>Simulate deed</Button></Link>
               <Link to="/officer/queue" search={{}}><Button icon={<ListChecks size={15} />}>Open in queue</Button></Link>
               <Button icon={<Satellite size={15} />} onClick={() => goTo('satellite')}>Run change detection</Button>
             </>

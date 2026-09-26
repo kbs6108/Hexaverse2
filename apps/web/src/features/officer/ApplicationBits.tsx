@@ -26,9 +26,10 @@ const STATUS_TONE: Record<string, Tone> = {
   dismissed: 'brick',
 };
 
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 export function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{t(`status.${status}`, titleCase(status))}</Badge>;
 }
 
@@ -69,25 +70,28 @@ export function fallbackActions(type: string, status: string): NextAction[] {
     if (status === 'statutory_sanction') return mk([['approved', 'Pass Statutory Order (Tahsildar)', 'tahsildar'], ['rejected', 'Reject (Tahsildar)', 'tahsildar'], ['returned', 'Return to Applicant (Tahsildar)', 'tahsildar']]);
   }
   if (type === 'land_complaint') {
-    if (status === 'submitted') return mk([['in_review', 'Take up for review']]);
-    if (status === 'in_review') return mk([['resolved', 'Mark resolved'], ['dismissed', 'Dismiss']]);
+    if (status === 'submitted') return mk([['in_review', 'RI Take up Grievance for Inquiry', 'ri']]);
+    if (status === 'in_review') return mk([['field_inspection', 'VRO Field Inquest & Verification', 'vro'], ['resolved', 'Pass Statutory Grievance Resolution', 'tahsildar'], ['dismissed', 'Dismiss Grievance with Grounds', 'tahsildar']]);
+    if (status === 'field_inspection') return mk([['scrutiny_review', 'RI Scrutiny & Action Taken Report', 'ri']]);
+    if (status === 'scrutiny_review') return mk([['resolved', 'Pass Statutory Grievance Resolution', 'tahsildar'], ['dismissed', 'Dismiss Grievance with Grounds', 'tahsildar']]);
   }
   if (type === 'boundary_correction') {
-    if (status === 'submitted') return mk([['geometry_check', 'Start geometry check']]);
-    if (status === 'geometry_check') return mk([['approved', 'Approve & apply (Surveyor / Tahsildar)'], ['returned', 'Return to proposer'], ['rejected', 'Reject']]);
+    if (status === 'submitted') return mk([['geometry_check', 'Verify Cadastral Vertex Shift & FMB', 'surveyor']]);
+    if (status === 'geometry_check') return mk([['boundary_demarcation', 'Conduct Ground Boundary Demarcation', 'surveyor'], ['approved', 'Pass Boundary Revision Sanction', 'tahsildar'], ['rejected', 'Reject Boundary Revision', 'tahsildar']]);
+    if (status === 'boundary_demarcation') return mk([['scrutiny_review', 'Submit Demarcated Polygon to RI', 'surveyor']]);
+    if (status === 'scrutiny_review') return mk([['statutory_sanction', 'RI Neighbour Consent & Endorsement', 'ri']]);
+    if (status === 'statutory_sanction') return mk([['approved', 'Pass Boundary Revision Sanction', 'tahsildar'], ['returned', 'Return for Boundary Overlap Dispute', 'tahsildar'], ['rejected', 'Reject Boundary Revision', 'tahsildar']]);
   }
   if (type === 'utility_request') {
-    if (status === 'submitted') return mk([['in_review', 'VRO Verify Ground Feasibility', 'vro'], ['site_inspection', 'Surveyor Verify Alignment', 'surveyor']]);
-    if (status === 'in_review') return mk([['site_inspection', 'Surveyor Verify Alignment', 'surveyor'], ['approved', 'Sanction Utility Connection', 'tahsildar']]);
+    if (status === 'submitted') return mk([['in_review', 'VRO Verify Ground Feasibility', 'vro'], ['site_inspection', 'Surveyor Verify Alignment', 'surveyor'], ['approved', 'Sanction Utility Connection', 'tahsildar']]);
+    if (status === 'in_review') return mk([['site_inspection', 'Surveyor Verify Alignment', 'surveyor'], ['approved', 'Sanction Utility Connection', 'tahsildar'], ['returned', 'Return for Clarification', 'tahsildar'], ['rejected', 'Reject Utility Request', 'tahsildar']]);
     if (status === 'site_inspection') return mk([['scrutiny_review', 'RI Endorsement to Competent Authority', 'ri']]);
-    if (status === 'scrutiny_review') return mk([['approved', 'Sanction Utility Connection', 'tahsildar'], ['rejected', 'Reject Utility Request', 'tahsildar']]);
+    if (status === 'scrutiny_review') return mk([['approved', 'Sanction Utility Connection', 'tahsildar'], ['returned', 'Return for Clarification', 'tahsildar'], ['rejected', 'Reject Utility Request', 'tahsildar']]);
   }
   if (type === 'acquisition_claim') {
-    if (status === 'claim_submitted' || status === 'submitted') return mk([['vro_verification', 'VRO Title & Possession Verification', 'vro'], ['hearing_scheduled', 'Schedule Statutory Hearing', 'tahsildar']]);
-    if (status === 'vro_verification') return mk([['hearing_scheduled', 'Schedule Statutory Hearing (§15/§64)', 'tahsildar'], ['valuation_scrutiny', 'Verify Structural/Asset Valuation', 'surveyor']]);
-    if (status === 'valuation_scrutiny') return mk([['hearing_scheduled', 'Schedule Statutory Hearing', 'tahsildar']]);
-    if (status === 'hearing_scheduled') return mk([['award_finalized', 'Pass Statutory Compensation Award', 'tahsildar'], ['disbursed', 'Disburse Direct Consent Payout (DBT)', 'tahsildar'], ['rejected', 'Reject Ineligible Claim', 'tahsildar']]);
-    if (status === 'award_finalized') return mk([['disbursed', 'Disburse Compensation Payout (DBT)', 'tahsildar']]);
+    if (status === 'submitted') return mk([['in_review', 'Scrutinize Claim & Verify Parcel Take', 'vro'], ['approved', 'Approve Direct Consent Settlement Award', 'tahsildar']]);
+    if (status === 'in_review') return mk([['hearing_scheduled', 'Schedule Statutory §15 / §64 Hearing', 'tahsildar'], ['approved', 'Pass Final Compensation Award Order', 'tahsildar'], ['returned', 'Return for Clarification', 'tahsildar'], ['rejected', 'Reject Objection', 'tahsildar']]);
+    if (status === 'hearing_scheduled') return mk([['approved', 'Pass Revised Award Post-Hearing', 'tahsildar'], ['rejected', 'Dismiss Objection Post-Hearing', 'tahsildar']]);
   }
   return [];
 }

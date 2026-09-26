@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   GitPullRequest,
+  Scale,
 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
@@ -19,11 +20,11 @@ import { Badge } from '@/components/Badge';
 interface Props {
   open: boolean;
   onClose: () => void;
-  initialTab?: 'registration' | 'alerts_vs_apps' | 'satellite' | 'boundary';
+  initialTab?: 'registration' | 'alerts_vs_apps' | 'satellite' | 'boundary' | 'revenue_hierarchy';
 }
 
 export function MechanismExplainerModal({ open, onClose, initialTab = 'registration' }: Props) {
-  const [tab, setTab] = useState<'registration' | 'alerts_vs_apps' | 'satellite' | 'boundary'>(initialTab);
+  const [tab, setTab] = useState<'registration' | 'alerts_vs_apps' | 'satellite' | 'boundary' | 'revenue_hierarchy'>(initialTab);
 
   if (!open) return null;
 
@@ -66,8 +67,9 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
           {[
             { id: 'registration', label: '1. Deed & Title Mutation', icon: FileText },
             { id: 'alerts_vs_apps', label: '2. Alerts vs. Applications', icon: GitPullRequest },
-            { id: 'satellite', label: '3. Satellite AI & Field Review', icon: Radar },
+            { id: 'satellite', label: '3. Earth Observation & Field Review', icon: Radar },
             { id: 'boundary', label: '4. Resurvey & Boundary Fix', icon: PenTool },
+            { id: 'revenue_hierarchy', label: '5. Stage-Gated Statutory Desks', icon: Scale },
           ].map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -194,7 +196,7 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
                     <Badge tone="amber">Diagnostic</Badge>
                   </div>
                   <p className="text-xs text-ink-2">
-                    An automated red flag raised when satellite AI spots new construction, or when the system detects an owner mismatch between deeds and revenue records.
+                    An automated red flag raised when satellite change detection spots new construction, or when the system detects an owner mismatch between deeds and revenue records.
                   </p>
                   <div className="rounded-lg bg-ground-2 p-2.5 text-[11.5px] text-ink-3 space-y-1 border border-line">
                     <p><strong>Action:</strong> Assign to officer or click “Resolve”.</p>
@@ -235,10 +237,10 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
             <div className="space-y-4">
               <div className="rounded-xl border border-line bg-panel p-4">
                 <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-                  <Radar size={16} className="text-primary" /> Earth Observation AI & Field Review Loop
+                  <Radar size={16} className="text-primary" /> Earth Observation & Field Review Loop
                 </h3>
                 <p className="mt-1 text-xs text-ink-2">
-                  Hexaverse continuously monitors land parcels via Sentinel-2 & high-resolution commercial optical sensors to detect encroachment, vegetation loss, and unauthorized construction.
+                  Hexaverse continuously monitors land parcels via Sentinel-2 & high-resolution optical observation to detect encroachment, vegetation loss, and unauthorized construction.
                 </p>
               </div>
 
@@ -246,7 +248,7 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
                 <div className="rounded-xl border border-line bg-ground-2/50 p-3.5 space-y-1.5">
                   <span className="font-semibold text-ink">1. Detection</span>
                   <p className="text-ink-3 text-[11.5px]">
-                    Satellite AI runs NDVI and radiometric change detection across temporal imagery, flagging anomalous structures.
+                    Automated change detection pipelines run NDVI and radiometric analysis across temporal imagery, flagging anomalous structures.
                   </p>
                 </div>
                 <div className="rounded-xl border border-amber/30 bg-amber-soft/30 p-3.5 space-y-1.5">
@@ -269,7 +271,7 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
             <div className="space-y-4">
               <div className="rounded-xl border border-line bg-panel p-4">
                 <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-                  <PenTool size={16} className="text-violet" /> PostGIS Topological Cadastral Resurvey
+                  <PenTool size={16} className="text-primary" /> PostGIS Topological Cadastral Resurvey
                 </h3>
                 <p className="mt-1 text-xs text-ink-2">
                   Boundary editing enforces strict PostGIS spatial validation to prevent common survey errors that cause decades of litigation.
@@ -288,14 +290,76 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-violet/30 bg-violet-soft/30 p-3 space-y-1">
-                  <p className="font-semibold text-violet">Assisted Fix & Dual Control</p>
+                <div className="rounded-xl border border-primary/30 bg-primary-soft/30 p-3 space-y-1">
+                  <p className="font-semibold text-primary">Assisted Fix & Dual Control</p>
                   <ul className="list-disc pl-4 space-y-0.5 text-ink-3 text-[11.5px]">
-                    <li><strong>AI Node Snapping</strong>: Automatically snaps vertex drifts to existing cadastral corner stones.</li>
+                    <li><strong>Automated Cadastral Snapping</strong>: Automatically snaps vertex drifts to existing cadastral corner stones.</li>
                     <li><strong>Dual Control</strong>: Proposing surveyor cannot self-approve. A 2nd Revenue Officer must approve the application.</li>
                     <li><strong>Automatic Extent Sync</strong>: Approval updates the PostGIS layer AND posts new extent to Revenue RoR!</li>
                   </ul>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {tab === 'revenue_hierarchy' && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-primary/20 bg-primary-soft/30 p-4">
+                <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <Scale size={16} /> Quasi-Judicial Hierarchy & Automated Speaking Orders
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-ink-2">
+                  In Indian revenue administration, title changes cannot occur through single-click officer approvals without statutory due process. Land Stack enforces a four-stage administrative gate ending in formal, legally binding speaking orders.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="rounded-xl border border-line bg-panel p-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-ink">Stage 1: VRO Panchanama</span>
+                    <Badge tone="slate">Ground Inquiry</Badge>
+                  </div>
+                  <p className="text-ink-3 text-[11.5px]">
+                    Village Revenue Officer inspects actual possession on site in presence of village elders and neighboring pattadars, generating an attested Panchanama report.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-line bg-panel p-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-ink">Stage 2: Mandal Surveyor Demarcation</span>
+                    <Badge tone="amber">FMB Demarcation</Badge>
+                  </div>
+                  <p className="text-ink-3 text-[11.5px]">
+                    Technical boundary verification against Field Measurement Book (FMB) traverse records, validating sub-division stone pillars and road alignment buffers.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-line bg-panel p-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-ink">Stage 3: Revenue Inspector (RI) Scrutiny</span>
+                    <Badge tone="violet">Legal Scrutiny</Badge>
+                  </div>
+                  <p className="text-ink-3 text-[11.5px]">
+                    Cross-verification of registered deeds, 30-year encumbrance certificates, tax clearance, and absence of Section 22A prohibited property flags.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-primary/30 bg-primary-soft/30 p-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-primary">Stage 4: Tahsildar Speaking Order</span>
+                    <Badge tone="primary">Quasi-Judicial</Badge>
+                  </div>
+                  <p className="text-ink-3 text-[11.5px]">
+                    Tahsildar / Mandal Revenue Officer (MRO) conducts final proceedings under §5(1) of the Pattadar Pass Books Act, generating an automated statutory Speaking Order with digital seal.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-line bg-ground-2/50 p-3.5 text-xs text-ink-2">
+                <p className="font-semibold text-ink mb-1">Why Speaking Orders Matter:</p>
+                <p className="text-[12px] text-ink-3 leading-relaxed">
+                  A speaking order contains findings of fact, evidence cited, and statutory grounds under the Rights in Land & Pattadar Pass Books Act. This quasi-judicial document shields government officers from arbitrary challenge and provides unassailable title certainty to landowners and banks.
+                </p>
               </div>
             </div>
           )}

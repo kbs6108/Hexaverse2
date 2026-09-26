@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, History, Sparkles } from 'lucide-react';
+import { ChevronDown, History, Compass } from 'lucide-react';
 import { qk } from '@/lib/api';
 import type { StoryParcel } from '@/lib/cdm';
 import { useUI } from '@/lib/store';
@@ -81,7 +81,7 @@ export function ParcelPicker({ id, value, onChange }: { id: string; value: strin
           )}
           {stories.length > 0 && (
             <>
-              <p className="flex items-center gap-1 border-b border-t border-line px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-3 first:border-t-0"><Sparkles size={11} /> Demo parcels</p>
+              <p className="flex items-center gap-1 border-b border-t border-line px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-3 first:border-t-0"><Compass size={11} className="text-primary" /> Landmark parcels</p>
               {stories.map((s) => (
                 <button
                   key={s.ulpin}

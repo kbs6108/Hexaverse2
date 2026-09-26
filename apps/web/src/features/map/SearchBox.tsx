@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, CornerDownLeft, Mic, MicOff, Search, Sparkles, X } from 'lucide-react';
+import { Clock, CornerDownLeft, Mic, MicOff, Search, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useVoiceSearch, LOCALE_LANG_NAMES } from '@/lib/useVoiceSearch';
 import { api, qk } from '@/lib/api';
@@ -152,13 +152,13 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
           exit={{ opacity: 0, y: -10, scale: 0.98 }}
           transition={{ type: 'spring', damping: 28, stiffness: 360 }}
           className={clsx(
-            'absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[94vw] sm:w-[520px] max-w-[560px] z-50 rounded-2xl border border-[#D5D2C7] bg-[#F4F1E7]/95 backdrop-blur-2xl shadow-[0_20px_45px_rgba(24,35,31,0.18)] text-[#18231F] overflow-hidden select-none',
+            'absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[94vw] sm:w-[520px] max-w-[560px] z-50 rounded-2xl border border-line bg-panel/95 backdrop-blur-2xl shadow-xl text-ink overflow-hidden select-none',
             className,
           )}
         >
           {/* Pop-down Search Header Bar */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-[#D5D2C7]/60 bg-[#E9E5D8]/40">
-            <Search className="text-[#176B52] w-4 h-4 shrink-0" />
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-line bg-ground-1/50">
+            <Search className="text-primary w-4 h-4 shrink-0" />
             <input
               ref={inputRef}
               role="combobox"
@@ -184,10 +184,10 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                   onClose?.();
                 }
               }}
-              className="w-full bg-transparent text-sm font-semibold text-[#18231F] placeholder-[#6F7768] outline-none cursor-text select-text"
+              className="w-full bg-transparent text-sm font-semibold text-ink placeholder-ink-3 outline-none cursor-text select-text"
             />
             {results.isFetching ? (
-              <Spinner size={14} className="text-[#176B52]" />
+              <Spinner size={14} className="text-primary" />
             ) : (
               q && (
                 <button
@@ -197,7 +197,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                     setQ('');
                     inputRef.current?.focus();
                   }}
-                  className="p-1 rounded-md text-[#6F7768] hover:text-[#18231F] hover:bg-[#E9E5D8]/70 transition-colors cursor-pointer shrink-0"
+                  className="p-1 rounded-md text-ink-3 hover:text-ink hover:bg-ground-2 transition-colors cursor-pointer shrink-0"
                 >
                   <X size={14} />
                 </button>
@@ -224,7 +224,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                 className={`p-1 rounded-md transition-all shrink-0 cursor-pointer ${
                   voice.isListening
                     ? 'bg-brick text-white shadow-xs animate-pulse ring-2 ring-brick/30'
-                    : 'text-[#6F7768] hover:text-[#176B52] hover:bg-[#E9E5D8]/70'
+                    : 'text-ink-3 hover:text-primary hover:bg-ground-2'
                 }`}
               >
                 {voice.isListening ? <MicOff size={14} /> : <Mic size={14} />}
@@ -244,7 +244,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                 onClose?.();
               }}
               aria-label="Close search"
-              className="flex items-center gap-1 text-[11px] font-semibold text-[#6F7768] hover:text-[#18231F] px-1.5 py-0.5 rounded-md border border-[#D5D2C7] bg-[#E9E5D8]/60 hover:bg-[#E1E6DE] transition-colors cursor-pointer shrink-0"
+              className="flex items-center gap-1 text-[11px] font-semibold text-ink-3 hover:text-ink px-1.5 py-0.5 rounded-md border border-line bg-ground-1 hover:bg-ground-2 transition-colors cursor-pointer shrink-0"
             >
               <span>Esc</span>
             </button>
@@ -259,8 +259,8 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                   <li className="px-3 py-2 text-xs font-semibold text-brick">Search service temporarily unavailable</li>
                 )}
                 {!results.isError && hits.length === 0 && !results.isFetching && (
-                  <li className="px-3 py-3 text-xs text-[#6F7768] text-center">
-                    No parcels match <span className="font-bold text-[#18231F]">“{dq}”</span>
+                  <li className="px-3 py-3 text-xs text-ink-3 text-center">
+                    No parcels match <span className="font-bold text-ink">“{dq}”</span>
                   </li>
                 )}
                 {hits.map((h, i) => (
@@ -274,28 +274,28 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                     className={clsx(
                       'flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm transition-all',
                       i === active
-                        ? 'bg-[#23483A] text-[#F4F1E7] shadow-xs'
-                        : 'text-[#18231F] hover:bg-[#E9E5D8]/70',
+                        ? 'bg-primary text-white shadow-xs'
+                        : 'text-ink hover:bg-ground-2',
                     )}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs">Sy. No. {h.survey_no}</span>
-                        <span className={clsx('text-xs truncate', i === active ? 'text-[#F4F1E7]/80' : 'text-[#6F7768]')}>
+                        <span className={clsx('text-xs truncate', i === active ? 'text-white/80' : 'text-ink-3')}>
                           {h.village ?? ''}
                         </span>
                       </div>
                       {h.owner_name && (
-                        <span className={clsx('block truncate text-[11.5px] mt-0.5', i === active ? 'text-[#F4F1E7]/85' : 'text-[#6F7768]')}>
+                        <span className={clsx('block truncate text-[11.5px] mt-0.5', i === active ? 'text-white/85' : 'text-ink-3')}>
                           Owner: {roleAtLeast(role, 'officer') ? h.owner_name : maskName(h.owner_name)}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={clsx('font-mono text-[11px] px-2 py-0.5 rounded-md border', i === active ? 'border-white/20 bg-white/10 text-[#F4F1E7]' : 'border-[#D5D2C7] bg-[#E9E5D8]/50 text-[#6F7768]')}>
+                      <span className={clsx('font-mono text-[11px] px-2 py-0.5 rounded-md border', i === active ? 'border-white/20 bg-white/10 text-white' : 'border-line bg-ground-1 text-ink-3')}>
                         {h.khata_no ?? h.ulpin}
                       </span>
-                      {i === active && <CornerDownLeft size={13} className="text-[#F4F1E7]/80" />}
+                      {i === active && <CornerDownLeft size={13} className="text-white/80" />}
                     </div>
                   </li>
                 ))}
@@ -307,7 +307,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
               <div className="space-y-3 p-1">
                 {recentParcels.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-1.5 px-2 pb-1 text-[10.5px] font-bold uppercase tracking-wide text-[#6F7768]">
+                    <div className="flex items-center gap-1.5 px-2 pb-1 text-[10.5px] font-bold uppercase tracking-wide text-ink-3">
                       <Clock size={11} /> Recent Parcels
                     </div>
                     <div className="space-y-1">
@@ -316,13 +316,13 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                           key={r.ulpin}
                           type="button"
                           onClick={() => pickRecent(r)}
-                          className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left rounded-xl hover:bg-[#E9E5D8]/60 transition-colors cursor-pointer text-xs"
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left rounded-xl hover:bg-ground-2 transition-colors cursor-pointer text-xs"
                         >
-                          <span className="font-semibold text-[#18231F]">
+                          <span className="font-semibold text-ink">
                             Sy. No. {r.survey_no || '—'}{' '}
-                            <span className="font-normal text-[#6F7768]">· {r.village || ''}</span>
+                            <span className="font-normal text-ink-3">· {r.village || ''}</span>
                           </span>
-                          <span className="font-mono text-[10.5px] text-[#6F7768] truncate max-w-[140px]">
+                          <span className="font-mono text-[10.5px] text-ink-3 truncate max-w-[140px]">
                             {r.ulpin}
                           </span>
                         </button>
@@ -331,11 +331,53 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                   </div>
                 )}
 
-                <div className="px-3 py-2 rounded-xl bg-[#E9E5D8]/50 border border-[#D5D2C7]/50 flex items-start gap-2 text-[11.5px] text-[#6F7768]">
-                  <Sparkles size={13} className="text-[#176B52] shrink-0 mt-0.5" />
-                  <span>
-                    Type to search by <strong className="text-[#18231F]">Survey No</strong> (e.g. 142), <strong className="text-[#18231F]">ULPIN</strong> (14-digit code), or <strong className="text-[#18231F]">Khata No</strong>.
-                  </span>
+                <div className="space-y-2.5">
+                  <div className="px-3.5 py-2.5 rounded-xl bg-ground-2/80 border border-line flex items-start gap-2.5 text-[12px] text-ink-2">
+                    <Search size={14} className="text-primary shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-medium text-ink">
+                        Authoritative Land Records Search
+                      </p>
+                      <p className="text-[11.5px] text-ink-3 leading-relaxed">
+                        Search by <strong className="text-ink">14-character ULPIN</strong> (e.g. TFCM91641E6C82 or 3D strata TFCM91641E6C82-U01), <strong className="text-ink">Survey No</strong> with subdivisions (e.g. 123/4, 142), or <strong className="text-ink">Khata Passbook No</strong>.
+                      </p>
+                      <p className="text-[11px] text-ink-3 flex items-center gap-1">
+                        <Mic size={11} className="text-primary" />
+                        <span>Voice search supports English, Telugu (తెలుగు), and Hindi (हिन्दी) with speech pause auto-stop.</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="px-2 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
+                      Representative Demo Scenarios
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: '3D Strata Unit', ulpin: 'TFCM91641E6C82', desc: 'ISO 19152 Volumetric' },
+                        { label: 'Corridor Severance', ulpin: 'TFCM91KDED50FD', desc: 'RFCTLARR 2013 Take' },
+                        { label: 'Satellite Alert', ulpin: 'TFCM91D3533DD2', desc: 'Sentinel-2 Built-up Surge' },
+                        { label: 'Court Dispute', ulpin: 'TFCM9167B91686', desc: 'Civil Suit Injunction' },
+                        { label: 'Bank Mortgage', ulpin: 'TFCM916196F0FE', desc: 'Active SBI Charge' },
+                        { label: 'Pending Mutation', ulpin: 'TFCM914291996F', desc: '4-Stage Desk Review' },
+                      ].map((item) => (
+                        <button
+                          key={item.ulpin}
+                          type="button"
+                          onClick={() => {
+                            onClose?.();
+                            setQ('');
+                            void openParcel(item.ulpin, null);
+                          }}
+                          className="group inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel hover:bg-ground-2 hover:border-primary/40 px-2.5 py-1.5 text-xs text-left transition-all cursor-pointer shadow-2xs"
+                        >
+                          <span className="size-1.5 rounded-full bg-primary group-hover:scale-125 transition-transform" />
+                          <span className="font-semibold text-ink">{item.label}</span>
+                          <span className="text-[10px] text-ink-3 hidden sm:inline">· {item.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

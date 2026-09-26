@@ -150,13 +150,13 @@ function NoticeRow({ n }: { n: Notice }) {
 }
 
 const CITIZEN_SIGNALS = [
-  '🟢 Andhra Pradesh Meebhoomi Gateway online',
-  '🟢 Tamil Nadu Patta Chitta Gateway online',
-  '🟢 Telangana Dharani Gateway online',
-  '✨ AI Pre-check active on all service applications',
-  '🛡️ DPDP 2023 Consent-Driven Owner Masking enforced',
-  '📄 Instant Land Information Report (LIR) with Verification QR active',
-  '🛰️ Sentinel-2 Satellite Land Observation Synced',
+  '🏛️ 6-Department CLM 1.0 JSON-LD Federation online (AP · TN · TG)',
+  '🏢 3D Volumetric Cadastre (ISO 19152) Strata Envelopes active',
+  '🛡️ DPDP Act 2023 Purpose-Bound Consent Unmasking enforced',
+  '⚖️ 4-Stage Statutory Desk Scrutiny (VRO → Surveyor → RI → Tahsildar)',
+  '🚆 Linear Infrastructure Corridor Acquisition (RFCTLARR 2013) Overlays live',
+  '🛰️ Sentinel-2 Automated Satellite Change Detection (NDVI/NDBI) Synced',
+  '📄 Instant Land Information Report (LIR) with Tamper-Proof QR active',
 ];
 
 export function CitizenHome() {

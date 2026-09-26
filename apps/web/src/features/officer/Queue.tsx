@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clsx } from 'clsx';
-import { ChevronRight, BookOpen } from 'lucide-react';
+import { ChevronRight, BookOpen, Scale } from 'lucide-react';
 import { api, qk } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Application } from '@/lib/cdm';
@@ -19,8 +19,19 @@ import { PageTitle } from '@/features/citizen/CitizenHome';
 import { MechanismExplainerModal } from '@/components/MechanismExplainerModal';
 import { useTranslation } from '@/lib/i18n';
 
-const TYPES = ['mutation', 'building_permission', 'field_review', 'boundary_correction', 'ownership_verification'];
-const DEPTS = ['revenue', 'registration', 'planning'];
+const TYPES = [
+  'mutation',
+  'succession',
+  'record_correction',
+  'building_permission',
+  'boundary_correction',
+  'utility_request',
+  'acquisition_claim',
+  'land_complaint',
+  'field_review',
+  'ownership_verification',
+];
+const DEPTS = ['revenue', 'registration', 'planning', 'utilities', 'survey'];
 
 /** One queue row, memoized */
 const QueueRow = memo(
@@ -131,6 +142,26 @@ export function QueuePage() {
         }
       />
       <MechanismExplainerModal open={guideOpen} onClose={() => setGuideOpen(false)} initialTab="registration" />
+
+      {/* Statutory Desk Guidance Banner */}
+      <div className="mb-4 rounded-2xl border border-line bg-panel p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+            <Scale size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-ink text-sm">Stage-Gated Statutory Work Queue</span>
+              <span className="font-mono text-[10px] text-primary uppercase font-bold bg-primary-soft px-1.5 py-0.5 rounded border border-primary/20">
+                ROR Act 1971 / 2020 §5
+              </span>
+            </div>
+            <p className="text-[11.5px] text-ink-3 mt-0.5 leading-relaxed">
+              Statutory duties are sequentially separated (VRO Panchanama → Mandal Surveyor FMB → Revenue Inspector Scrutiny → Tahsildar Speaking Order). Quick advances are active when signed in with matching desk designation.
+            </p>
+          </div>
+        </div>
+      </div>
       <Card className="mb-3 flex flex-wrap items-end gap-3 p-3">
         <Field label={t('account.department')} htmlFor="q-dept" className="w-44">
           <Select id="q-dept" value={department} onChange={(e) => setDept(e.target.value)} disabled={user?.role === 'officer'}>

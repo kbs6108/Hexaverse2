@@ -3,10 +3,11 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { KV, SectionTitle, Callout } from '@/components/Section';
 import { fmtDate, fmtINR } from '@/lib/format';
 import { titleCase } from '@/lib/format';
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 import { TrendingUp, MapPin, Milestone, Zap, Layers } from 'lucide-react';
 
 export function FiscalSection({ p }: { p: ParcelCDM }) {
+  const { t } = useTranslation();
   const tax = p.fiscal.tax;
   const f = p.fiscal;
   const gv = f.guideline_value_per_sqm;
@@ -57,27 +58,27 @@ export function FiscalSection({ p }: { p: ParcelCDM }) {
           </div>
 
           {/* Dynamic Fair Market Value */}
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 p-3.5 space-y-1.5 shadow-2xs">
+          <div className="rounded-xl border border-primary/30 bg-primary-soft/40 p-3.5 space-y-1.5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
                 <TrendingUp size={12} /> Fair Market Value
               </span>
-              <span className="rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.5 text-[10px] font-semibold">
+              <span className="rounded bg-primary-soft text-primary px-1.5 py-0.5 text-[10px] font-semibold border border-primary/20">
                 Dynamic
               </span>
             </div>
-            <p className="font-mono text-xl font-bold text-emerald-900 dark:text-emerald-200">
+            <p className="font-mono text-xl font-bold text-ink">
               {fmtINR(estMv)}
             </p>
-            <div className="text-[11.5px] text-emerald-900 dark:text-emerald-300">
-              <span className="font-semibold">{mv ? fmtINR(mv) : '—'} / m²</span>
+            <div className="text-[11.5px] text-ink-2">
+              <span className="font-semibold text-ink">{mv ? fmtINR(mv) : '—'} / m²</span>
               {mv && (
-                <span className="opacity-80 font-normal ml-1">
+                <span className="text-ink-3 font-normal ml-1">
                   ({fmtINR(Math.round(mv * 4046.8564))} / acre)
                 </span>
               )}
             </div>
-            <p className="text-[10.5px] text-emerald-800/80 dark:text-emerald-300/80 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/50">
+            <p className="text-[10.5px] text-ink-3 pt-1 border-t border-line/60">
               Adjusted for village base, highway frontage, and infrastructure rating.
             </p>
           </div>

@@ -34,7 +34,7 @@ export function SlidingTabs<T extends string = string>({
     <div
       role="tablist"
       className={clsx(
-        'relative inline-flex items-center gap-1 rounded-xl bg-[#E9E5D8] p-1 border border-[#D5D2C7] select-none max-w-full overflow-x-auto',
+        'relative inline-flex items-center gap-1 rounded-xl bg-ground-2 p-1 border border-line select-none max-w-full overflow-x-auto',
         className,
       )}
     >

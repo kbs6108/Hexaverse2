@@ -181,7 +181,7 @@ ALTER TABLE landstack.applications DROP CONSTRAINT IF EXISTS applications_type_c
 ALTER TABLE landstack.applications ADD CONSTRAINT applications_type_check
     CHECK (type IN ('mutation', 'building_permission', 'ownership_verification', 'field_review',
                     'boundary_correction', 'record_correction', 'land_complaint', 'succession',
-                    'utility_request'));
+                    'utility_request', 'acquisition_claim'));
 
 INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal)
 SELECT v.type, v.from_status, v.to_status, v.allowed_role, v.allowed_department, v.allowed_designation, v.action_label, v.is_terminal
@@ -190,7 +190,9 @@ FROM (VALUES
     ('utility_request', 'submitted',       'in_review',        'officer', 'revenue',  'vro',           'VRO Verify Ground Feasibility',            false),
     ('utility_request', 'submitted',       'site_inspection',  'officer', 'revenue',  'surveyor',      'Surveyor Verify Service Line Alignment',   false),
     ('utility_request', 'in_review',       'site_inspection',  'officer', 'revenue',  'surveyor',      'Surveyor Verify Service Line Alignment',   false),
+    ('utility_request', 'in_review',       'returned',         'officer', 'revenue',  'tahsildar',     'Return for Supporting Documents',          false),
     ('utility_request', 'site_inspection', 'scrutiny_review',  'officer', 'revenue',  'ri',            'RI Endorsement to Competent Authority',    false),
+    ('utility_request', 'scrutiny_review', 'returned',         'officer', 'revenue',  'tahsildar',     'Return for Technical Clarification',       false),
     ('utility_request', 'scrutiny_review', 'approved',         'officer', 'revenue',  'tahsildar',     'Sanction Utility Connection / Modification', true),
     ('utility_request', 'scrutiny_review', 'rejected',         'officer', 'revenue',  'tahsildar',     'Reject Utility Request',                   true),
     ('utility_request', 'in_review',       'approved',         'officer', 'revenue',  'tahsildar',     'Sanction Utility Connection / Modification', true),

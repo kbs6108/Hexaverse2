@@ -103,7 +103,7 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          'fixed top-4 left-4 right-4 z-50 mx-auto max-w-5xl grid grid-cols-[1fr_auto_1fr] items-center px-5 py-2 rounded-full bg-[#F4F1E7]/85 backdrop-blur-2xl border border-[#D5D2C7] shadow-[0_8px_32px_rgba(24,35,31,0.08)] text-[#18231F]',
+          'fixed top-4 left-4 right-4 z-50 mx-auto max-w-5xl grid grid-cols-[1fr_auto_1fr] items-center px-5 py-2 rounded-full bg-panel/90 backdrop-blur-2xl border border-line shadow-elevated text-ink',
           className,
         )}
       >
@@ -117,7 +117,7 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             aria-label="Land Stack home"
           >
             <LogoMark size={24} />
-            <span className="font-display text-sm font-bold tracking-tight text-[#18231F]">
+            <span className="font-display text-sm font-bold tracking-tight text-ink">
               Land Stack
             </span>
           </Link>
@@ -137,8 +137,8 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
                   to={item.to as any}
                   onClick={item.to === '/' ? () => useUI.getState().select(null) : undefined}
                   className={cn(
-                    'relative z-20 px-3.5 py-1.5 text-xs font-bold select-none transition-colors duration-200 outline-none focus-visible:ring-1 focus-visible:ring-[#176B52] rounded-md',
-                    isActive ? 'text-[#18231F]' : 'text-[#6F7768] hover:text-[#18231F]',
+                    'relative z-20 px-3.5 py-1.5 text-xs font-bold select-none transition-colors duration-200 outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-md',
+                    isActive ? 'text-ink' : 'text-ink-3 hover:text-ink',
                   )}
                 >
                   {isActive && (
@@ -148,20 +148,20 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     >
                       {/* 1. Top Lamp Fixture: Sharp Glowing Edge */}
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-[3px] bg-[#B38A4C] shadow-[0_0_12px_#B38A4C] rounded-full z-20" />
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-9 h-[3px] bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.8)] rounded-full z-20" />
 
                       {/* 2. Spreading Streetlight Light Cone (Trapezoidal clip-path polygon) */}
                       <div
                         className="absolute inset-0 z-10"
                         style={{
                           background:
-                            'radial-gradient(ellipse 90% 100% at 50% 0%, rgba(179,138,76,0.42) 0%, rgba(23,107,82,0.18) 60%, transparent 100%)',
+                            'radial-gradient(ellipse 90% 100% at 50% 0%, rgba(245,158,11,0.35) 0%, rgba(15,118,110,0.18) 60%, transparent 100%)',
                           clipPath: 'polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%)',
                         }}
                       />
 
                       {/* 3. Soft Bottom Floor & Text Glow */}
-                      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-[#B38A4C]/35 to-transparent blur-[2px] z-10" />
+                      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-amber-500/35 to-transparent blur-[2px] z-10" />
                     </motion.div>
                   )}
                   <span className="relative z-30">{item.label}</span>
@@ -182,19 +182,19 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             className={cn(
               'flex items-center gap-1.5 h-7 px-2.5 rounded-full transition-all cursor-pointer select-none text-xs font-semibold',
               isSearchOpen
-                ? 'bg-[#23483A] text-[#F4F1E7] border border-[#23483A] shadow-xs'
-                : 'bg-[#E9E5D8]/70 hover:bg-[#E1E6DE] text-[#18231F] border border-[#D5D2C7] hover:border-[#176B52]/40',
+                ? 'bg-primary text-white border border-primary shadow-xs'
+                : 'bg-ground-2 hover:bg-ground-3 text-ink border border-line',
             )}
           >
-            <Search size={12} className={isSearchOpen ? 'text-[#B38A4C]' : 'text-[#176B52]'} />
-            <span className="hidden md:inline text-[11px] text-[#4B5345]">Search</span>
+            <Search size={12} className={isSearchOpen ? 'text-white' : 'text-primary'} />
+            <span className={cn('hidden md:inline text-[11px]', isSearchOpen ? 'text-white' : 'text-ink-2')}>Search</span>
             <Kbd className="hidden md:inline-flex text-[8.5px] px-1 py-0 leading-none">⌘K</Kbd>
           </button>
 
           {/* Guide minimalist text button */}
           <Link
             to="/help"
-            className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#6F7768] hover:text-[#18231F] hover:bg-[#E9E5D8]/70 rounded-full transition-colors cursor-pointer"
+            className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-ink-3 hover:text-ink hover:bg-ground-2 rounded-full transition-colors cursor-pointer"
             title={t('nav.guide')}
             aria-label={t('nav.guide')}
           >
@@ -208,7 +208,7 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             onClick={toggleFullscreen}
             title={isFullscreen ? t('nav.exitFullscreen') : t('nav.fullscreen')}
             aria-label={isFullscreen ? t('nav.exitFullscreen') : t('nav.fullscreen')}
-            className="flex size-7 items-center justify-center rounded-full bg-[#E9E5D8]/70 hover:bg-[#E1E6DE] text-[#18231F] border border-[#D5D2C7] transition-colors cursor-pointer"
+            className="flex size-7 items-center justify-center rounded-full bg-ground-2 hover:bg-ground-3 text-ink border border-line transition-colors cursor-pointer"
           >
             {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>
@@ -217,19 +217,19 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
           <button
             type="button"
             onClick={onOpenAccount}
-            className="flex items-center gap-2 bg-[#23483A] text-[#F4F1E7] pl-2 pr-2.5 py-1 rounded-full text-xs font-semibold shadow-xs hover:bg-[#23483A]/90 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#176B52]"
+            className="flex items-center gap-2 bg-primary text-white pl-2 pr-2.5 py-1 rounded-full text-xs font-semibold shadow-xs hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label={t('nav.account')}
             title={`${t('nav.account')} • ${languages.find((l) => l.code === locale)?.native || 'Language'}`}
           >
-            <span className="flex size-5 items-center justify-center rounded-full bg-[#176B52] text-[10px] font-bold text-[#F4F1E7]">
+            <span className="flex size-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold text-white">
               {userInitials}
             </span>
-            <span className="hidden sm:inline font-medium tracking-tight truncate max-w-[80px] lg:max-w-[120px]">
+            <span className="hidden sm:inline font-semibold text-white tracking-tight truncate max-w-[80px] lg:max-w-[120px]">
               {userDisplayName}
             </span>
-            <span className="flex items-center gap-1 text-[10.5px] font-bold px-1.5 py-0.5 rounded-full bg-[#176B52]/70 text-[#E9E5D8] border border-[#176B52]">
-              <Globe size={10} className="text-[#D4AF37]" />
-              <span>{languages.find((l) => l.code === locale)?.short || 'EN'}</span>
+            <span className="flex items-center gap-1 text-[10.5px] font-bold px-1.5 py-0.5 rounded-full bg-white/20 text-white border border-white/25">
+              <Globe size={10} className="text-amber-300" />
+              <span className="text-white">{languages.find((l) => l.code === locale)?.short || 'EN'}</span>
             </span>
           </button>
         </div>

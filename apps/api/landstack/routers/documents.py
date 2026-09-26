@@ -141,6 +141,11 @@ async def get_document(
     if not meta:
         raise AppError(404, "not_found", f"document {doc_id} not found")
 
+    # Access control: officers and admins can view any uploaded document for official scrutiny;
+    # citizens may view documents they uploaded.
+    if principal is not None and principal.role not in ("officer", "admin") and principal.uid != meta.get("uploaded_by"):
+        raise AppError(403, "forbidden", "you do not have permission to view this document")
+
     file_path = meta.get("file_path")
     if not file_path or not os.path.exists(file_path):
         raise AppError(404, "file_missing", "document file is missing from storage")
@@ -162,6 +167,9 @@ async def get_document_meta(
     meta = _load_doc_meta(doc_id)
     if not meta:
         raise AppError(404, "not_found", f"document {doc_id} not found")
+
+    if principal.role not in ("officer", "admin") and principal.uid != meta.get("uploaded_by"):
+        raise AppError(403, "forbidden", "you do not have permission to view this document metadata")
 
     return {
         "id": meta["id"],

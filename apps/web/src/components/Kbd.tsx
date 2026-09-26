@@ -16,7 +16,7 @@ export function Kbd({ children, className, ...rest }: KbdProps) {
       {...rest}
       className={clsx(
         'inline-flex items-center justify-center rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-wide text-ink-2',
-        'bg-[#E9E5D8] border border-[#D5D2C7] shadow-[0_1px_0_0.5px_rgba(24,35,31,0.08),inset_0_1px_0_0_rgba(255,255,255,0.8)] select-none',
+        'bg-ground-2 border border-line shadow-2xs select-none',
         className,
       )}
     >

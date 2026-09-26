@@ -1,55 +1,55 @@
 @import 'tailwindcss';
 @import 'maplibre-gl/dist/maplibre-gl.css';
 
-/* ---------- Design tokens (Warm Sandstone & Heritage Forest Green) ---------- */
+/* ---------- Design tokens (Architectural Slate & Prestige Imperial Emerald) ---------- */
 :root {
-  --ground: #F5F2EB;
-  --ground-2: #EBE6DC;
-  --panel: #FCFAF6;
-  --panel-2: #F2ECE2;
-  --line: #E2DDD3;
-  --line-strong: #CDC5B4;
-  --ink: #1A1D1A;
-  --ink-2: #525853;
-  --ink-3: #7D857F;
-  --primary: #183B2B;
+  --ground: #F8FAFC;
+  --ground-2: #F1F5F9;
+  --panel: #FFFFFF;
+  --panel-2: #F8FAFC;
+  --line: #E2E8F0;
+  --line-strong: #CBD5E1;
+  --ink: #0F172A;
+  --ink-2: #334155;
+  --ink-3: #64748B;
+  --primary: #0A3A2A;
   --primary-ink: #FFFFFF;
-  --primary-soft: #E3ECE6;
-  --amber: #B0781C;
-  --amber-soft: #FAF1DE;
-  --brick: #A83C2F;
-  --brick-soft: #FBE8E5;
-  --violet: #5F4B7D;
-  --violet-soft: #F0EBF8;
-  --slate: #2C4C64;
-  --slate-soft: #E5EEF5;
-  --focus: #183B2B;
-  --shadow: 0 2px 4px rgb(40 36 28 / 0.04), 0 12px 28px -8px rgb(40 36 28 / 0.08);
+  --primary-soft: #ECFDF5;
+  --amber: #B45309;
+  --amber-soft: #FEF3C7;
+  --brick: #B91C1C;
+  --brick-soft: #FEE2E2;
+  --violet: #3730A3;
+  --violet-soft: #EEF2FF;
+  --slate: #1E293B;
+  --slate-soft: #F1F5F9;
+  --focus: #0A3A2A;
+  --shadow: 0 1px 3px 0 rgb(15 23 42 / 0.05), 0 10px 25px -5px rgb(15 23 42 / 0.06);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --ground: #121714;
-    --ground-2: #18201B;
-    --panel: #1D2621;
-    --panel-2: #242E28;
-    --line: #2D3932;
-    --line-strong: #425248;
-    --ink: #F5F3EF;
-    --ink-2: #B6C0B9;
-    --ink-3: #839188;
-    --primary: #52B788;
-    --primary-ink: #0A1C13;
-    --primary-soft: #1B3B2B;
-    --amber: #D9A441;
-    --amber-soft: #3A2F16;
-    --brick: #E0705F;
-    --brick-soft: #3F1F1A;
-    --violet: #AB93D6;
-    --violet-soft: #2C2440;
-    --slate: #7EA6E0;
-    --slate-soft: #1C2A3D;
-    --focus: #52B788;
-    --shadow: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+    --ground: #0B0F14;
+    --ground-2: #111822;
+    --panel: #16202C;
+    --panel-2: #1C2836;
+    --line: #243447;
+    --line-strong: #334860;
+    --ink: #F8FAFC;
+    --ink-2: #CBD5E1;
+    --ink-3: #94A3B8;
+    --primary: #10B981;
+    --primary-ink: #042F2E;
+    --primary-soft: #064E3B;
+    --amber: #F59E0B;
+    --amber-soft: #451A03;
+    --brick: #EF4444;
+    --brick-soft: #450A0A;
+    --violet: #818CF8;
+    --violet-soft: #1E1B4B;
+    --slate: #94A3B8;
+    --slate-soft: #0F172A;
+    --focus: #10B981;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 20px 25px -5px rgb(0 0 0 / 0.6);
   }
 }
 
@@ -65,7 +65,9 @@
   --color-ink-3: var(--ink-3);
   --color-primary: var(--primary);
   --color-primary-ink: var(--primary-ink);
+  --color-primary-contrast: var(--primary-ink);
   --color-primary-soft: var(--primary-soft);
+  --color-primary-hover: #134e3a;
   --color-amber: var(--amber);
   --color-amber-soft: var(--amber-soft);
   --color-brick: var(--brick);
