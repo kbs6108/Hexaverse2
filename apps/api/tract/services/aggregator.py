@@ -2,7 +2,7 @@
 
 Pipeline for `get_parcel_cdm(db, ulpin, principal)`:
 1. TTL cache lookup (unmasked CDM, keyed by ULPIN);
-2. base facts from `landstack.parcels` ⋈ `landstack.parcel_status`, buildings/units, alerts and
+2. base facts from `tract.parcels` ⋈ `tract.parcel_status`, buildings/units, alerts and
    intersecting `gis.restriction_zones`;
 3. `asyncio.gather` over the department adapters with a per-adapter timeout (`DEPT_TIMEOUT_S`);
    failures/timeouts become `provenance[dept].ok = false`;
@@ -19,18 +19,18 @@ import json
 import logging
 from typing import Any
 
-from landstack.adapters.base import AdapterResult, DepartmentAdapter
-from landstack.adapters.registry import get_adapters
-from landstack.auth import Principal, has_consent
-from landstack.cdm import ParcelCDM, empty_cdm
-from landstack.config import get_settings
-from landstack.db import DBLike
-from landstack.errors import not_found
-from landstack.services import consistency
-from landstack.services.cache import TTLCache
-from landstack.services.masking import is_parcel_owner, mask_cdm, should_mask
+from tract.adapters.base import AdapterResult, DepartmentAdapter
+from tract.adapters.registry import get_adapters
+from tract.auth import Principal, has_consent
+from tract.cdm import ParcelCDM, empty_cdm
+from tract.config import get_settings
+from tract.db import DBLike
+from tract.errors import not_found
+from tract.services import consistency
+from tract.services.cache import TTLCache
+from tract.services.masking import is_parcel_owner, mask_cdm, should_mask
 
-log = logging.getLogger("landstack.aggregator")
+log = logging.getLogger("tract.aggregator")
 
 _cache: TTLCache[dict[str, Any]] = TTLCache(ttl_s=60.0)
 
@@ -84,8 +84,8 @@ async def _base(db: DBLike, ulpin: str) -> dict[str, Any]:
                ST_XMin(p.geom) AS xmin, ST_YMin(p.geom) AS ymin, ST_XMax(p.geom) AS xmax, ST_YMax(p.geom) AS ymax,
                s.has_dispute, s.has_mortgage, s.tax_arrears, s.pending_mutation, s.registered,
                s.permission_status, s.change_alert
-        FROM landstack.parcels p
-        LEFT JOIN landstack.parcel_status s ON s.ulpin = p.ulpin
+        FROM tract.parcels p
+        LEFT JOIN tract.parcel_status s ON s.ulpin = p.ulpin
         WHERE p.ulpin = :ulpin
         """,
         ulpin=ulpin,
@@ -101,8 +101,8 @@ async def _buildings(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
         SELECT b.id, b.name, b.floors, b.height_m, b.width_m, b.depth_m, b.basement_floors,
                u.id AS unit_id, u.ulpin_3d, u.floor, u.unit_no, u.owner_name, u.base_m, u.height_m AS unit_height_m,
                round(ST_Area(u.geom::geography)::numeric, 1) AS unit_area_sqm
-        FROM landstack.buildings b
-        LEFT JOIN landstack.units u ON u.building_id = b.id
+        FROM tract.buildings b
+        LEFT JOIN tract.units u ON u.building_id = b.id
         WHERE b.ulpin = :ulpin
         ORDER BY b.id, u.floor, u.unit_no
         """,
@@ -143,7 +143,7 @@ async def _alerts(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
     rows = await db.fetch(
         """
         SELECT id, kind, severity, title, detail, status, created_at
-        FROM landstack.alerts WHERE ulpin = :ulpin AND status <> 'resolved' ORDER BY created_at DESC
+        FROM tract.alerts WHERE ulpin = :ulpin AND status <> 'resolved' ORDER BY created_at DESC
         """,
         ulpin=ulpin,
     )
@@ -154,7 +154,7 @@ async def _restriction_zones(db: DBLike, ulpin: str) -> list[dict[str, Any]]:
     return await db.fetch(
         """
         SELECT z.id, z.kind, z.name FROM gis.restriction_zones z
-        JOIN landstack.parcels p ON ST_Intersects(z.geom, p.geom) WHERE p.ulpin = :ulpin
+        JOIN tract.parcels p ON ST_Intersects(z.geom, p.geom) WHERE p.ulpin = :ulpin
         """,
         ulpin=ulpin,
     )
@@ -332,7 +332,7 @@ def build_base_cdm(
             "area_sqm": round(float(row["area_sqm"]), 2) if row.get("area_sqm") is not None else None,
             "centroid": [row["cx"], row["cy"]] if row.get("cx") is not None else None,
             "bbox": [row["xmin"], row["ymin"], row["xmax"], row["ymax"]] if row.get("xmin") is not None else None,
-            "geometry_ref": f"/landstack/collections/parcels/items/{row['ulpin']}",
+            "geometry_ref": f"/tract/collections/parcels/items/{row['ulpin']}",
         }
     )
     cdm["planning"]["land_use"] = row.get("land_use")
@@ -376,7 +376,7 @@ async def build_parcel_cdm(
 
 async def get_privacy_preferences(db: DBLike, ulpin: str) -> dict[str, Any]:
     try:
-        row = await db.fetchrow("SELECT * FROM landstack.parcel_privacy WHERE ulpin = :u", u=ulpin)
+        row = await db.fetchrow("SELECT * FROM tract.parcel_privacy WHERE ulpin = :u", u=ulpin)
         if row:
             return {
                 "public_owner_name": bool(row["public_owner_name"]),

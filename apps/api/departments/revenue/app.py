@@ -13,7 +13,7 @@ from fastapi import Depends
 from pydantic import BaseModel
 
 from departments.common import chaos, envelope, make_dept_app, require_found
-from landstack.db import DBLike, get_db, json_dumps
+from tract.db import DBLike, get_db, json_dumps
 
 SOURCE = "AP Meebhoomi"
 app = make_dept_app(

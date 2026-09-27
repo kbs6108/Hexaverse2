@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import Depends
 
 from departments.common import chaos, envelope, make_dept_app
-from landstack.db import DBLike, get_db
+from tract.db import DBLike, get_db
 
 SOURCE = "eCourts / NJDG"
 app = make_dept_app("legal", "Legal — Court Disputes", "Pending and disposed civil cases touching a parcel.", SOURCE)

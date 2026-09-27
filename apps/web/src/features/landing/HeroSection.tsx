@@ -49,7 +49,7 @@ export function HeroSection() {
         >
           <a href="#top" className="flex items-center gap-2 px-2 text-ink">
             <span className="size-2 rounded-full bg-primary" />
-            <span className="font-display text-sm font-bold tracking-tight">Land Stack</span>
+            <span className="font-display text-sm font-bold tracking-tight">Tract</span>
           </a>
           <nav ref={dockRef} className="atd-modern__dock hidden items-center gap-1 rounded-full border border-line bg-ground/80 p-1 md:flex" aria-label="Primary navigation">
             <a data-dock-item data-active={active === 'top'} href="#top" className={DOCK_ITEM}>Home</a>

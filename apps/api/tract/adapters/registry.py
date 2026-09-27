@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from landstack.adapters.base import DepartmentAdapter, HttpDepartmentAdapter
-from landstack.adapters.mapping import MAPPINGS_DIR
+from tract.adapters.base import DepartmentAdapter, HttpDepartmentAdapter
+from tract.adapters.mapping import MAPPINGS_DIR
 
 DEPARTMENTS: tuple[str, ...] = ("revenue", "registration", "planning", "fiscal", "legal", "utilities")
 DEFAULT_STATE = "ap"

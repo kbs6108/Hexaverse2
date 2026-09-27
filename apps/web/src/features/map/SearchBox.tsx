@@ -354,6 +354,8 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {[
+                        { label: 'Normal Freehold Land', ulpin: 'TFCM2ZW32A5044', desc: 'Sy. 438 · Clear Title · No Projects' },
+                        { label: 'Clean Farmland', ulpin: 'TFCM94MC5A7C1B', desc: 'Sy. 106/1 · Private Agriculture' },
                         { label: '3D Strata Unit', ulpin: 'TFCM91641E6C82', desc: 'ISO 19152 Volumetric' },
                         { label: 'Corridor Severance', ulpin: 'TFCM91KDED50FD', desc: 'RFCTLARR 2013 Take' },
                         { label: 'Satellite Alert', ulpin: 'TFCM91D3533DD2', desc: 'Sentinel-2 Built-up Surge' },

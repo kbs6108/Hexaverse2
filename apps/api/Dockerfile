@@ -1,10 +1,10 @@
-# Land Stack gateway API image.
+# Tract gateway API image.
 #
 # BUILD CONTEXT IS THE REPO ROOT, not apps/api:
-#     docker build -f apps/api/Dockerfile -t landstack-api .
+#     docker build -f apps/api/Dockerfile -t tract-api .
 #     gcloud builds submit . --config infra/cloudrun/cloudbuild.yaml
 #
-# Why: landstack/routers/admin.py resolves REPO_ROOT = parents[4] of its own path and shells out to
+# Why: tract/routers/admin.py resolves REPO_ROOT = parents[4] of its own path and shells out to
 # tools/demo_reset.py, so the image must mirror the monorepo layout (/app/apps/api, /app/tools, /app/db).
 FROM python:3.12-slim
 
@@ -23,7 +23,7 @@ COPY apps/api/requirements.txt ./requirements.txt
 COPY tools/requirements.txt /app/tools/requirements.txt
 RUN pip install -r requirements.txt -r /app/tools/requirements.txt "google-cloud-storage>=2.16"
 
-COPY apps/api/landstack ./landstack
+COPY apps/api/tract ./tract
 COPY apps/api/departments ./departments
 COPY apps/api/ai ./ai
 COPY tools /app/tools
@@ -36,4 +36,4 @@ USER appuser
 # Cloud Run injects $PORT (8080); compose overrides to 8000.
 ENV PORT=8080 STORAGE_LOCAL_DIR=/app/data/storage S2_DATA_DIR=/app/data/s2
 EXPOSE 8080
-CMD ["sh", "-c", "uvicorn landstack.main:app --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers --forwarded-allow-ips='*'"]
+CMD ["sh", "-c", "uvicorn tract.main:app --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers --forwarded-allow-ips='*'"]

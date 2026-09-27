@@ -1,4 +1,4 @@
-# Land Stack — Build Contracts (source of truth for every component)
+# Tract — Build Contracts (source of truth for every component)
 
 Read this fully before writing code. Any deviation must be reflected here first.
 
@@ -15,7 +15,7 @@ Satellite panel (Sentinel-2 change detection). 2D first; the data model and map 
 ## 1. Repo layout (monorepo)
 ```
 apps/api/                 FastAPI (Python 3.12). Package root = apps/api
-  landstack/              gateway package
+  tract/              gateway package
     main.py               creates app, mounts department sub-apps, CORS, /healthz
     config.py             pydantic-settings; all env below
     db.py                 asyncpg pool via SQLAlchemy 2 async engine; helper `fetch/fetchrow/execute`
@@ -59,7 +59,7 @@ Makefile                  up · migrate · seed · dev-api · dev-web · test ·
 ## 2. Environment variables
 API (apps/api/.env):
 ```
-DATABASE_URL=postgresql+asyncpg://landstack:landstack@localhost:5432/landstack   # Neon: postgresql+asyncpg://...?ssl=require
+DATABASE_URL=postgresql+asyncpg://tract:tract@localhost:5432/tract   # Neon: postgresql+asyncpg://...?ssl=require
 AUTH_MODE=dev | firebase
 FIREBASE_PROJECT_ID=            # required when AUTH_MODE=firebase
 GOOGLE_APPLICATION_CREDENTIALS= # service account json path (local) — on Cloud Run use default creds
@@ -90,33 +90,33 @@ Roles: `citizen`, `officer`, `admin`. Officers carry `department` ∈ {revenue, 
   `tools/set_claims.py --email x --role officer --department revenue` sets claims via firebase-admin.
   Users without claims default to `citizen`.
 - dev mode: header `X-Dev-User: <role>[:<department>][:<display name>]`, e.g. `officer:revenue:Anitha`.
-  Missing header = anonymous (public endpoints only). Dev uid = `dev-<slug(name)>` (e.g. `dev-ravi-kumar`, `dev-anitha`, `dev-admin`) — matches `landstack.users` seeded by tools/seed.py.
+  Missing header = anonymous (public endpoints only). Dev uid = `dev-<slug(name)>` (e.g. `dev-ravi-kumar`, `dev-anitha`, `dev-admin`) — matches `tract.users` seeded by tools/seed.py.
 `Principal { uid, name, role, department, consents: set[str] }`. `require("officer", department="revenue")`.
-Admin passes every check. Consent tokens (citizen full-detail access) are rows in `landstack.consents`.
+Admin passes every check. Consent tokens (citizen full-detail access) are rows in `tract.consents`.
 
 ## 4. Database (PostgreSQL 16/17 + PostGIS 3.4+). Owner: data lane. Exact DDL lives in db/migrations.
-Schemas: `landstack`, `dept_revenue`, `dept_registration`, `dept_planning`, `dept_fiscal`, `dept_legal`,
+Schemas: `tract`, `dept_revenue`, `dept_registration`, `dept_planning`, `dept_fiscal`, `dept_legal`,
 `dept_utilities`, `gis`. All geometry EPSG:4326; area computed via `ST_Area(geom::geography)`.
 Key tables (columns are authoritative in SQL; names here are what the API relies on):
-- landstack.parcels(ulpin PK text, state, district, taluk, village, survey_no, sub_division, geom MultiPolygon,
+- tract.parcels(ulpin PK text, state, district, taluk, village, survey_no, sub_division, geom MultiPolygon,
   area_sqm numeric, land_use text, zone_code text, status_flags jsonb default '{}', updated_at timestamptz)
-- landstack.buildings(id serial, ulpin FK, footprint MultiPolygon, floors int, height_m numeric, name,
+- tract.buildings(id serial, ulpin FK, footprint MultiPolygon, floors int, height_m numeric, name,
   width_m numeric, depth_m numeric, basement_floors int default 0 — migration 010; dims from the footprint's
   minimum rotated rectangle)
-- landstack.units(id serial, building_id FK, ulpin_3d text unique  -- '<ULPIN>-F<floor:02>-U<unit:02>',
+- tract.units(id serial, building_id FK, ulpin_3d text unique  -- '<ULPIN>-F<floor:02>-U<unit:02>',
   floor int, unit_no text, geom Polygon, base_m numeric, height_m numeric, owner_name text)
-- landstack.users(uid PK text, email, name, role, department, created_at)
-- landstack.consents(id, ulpin, granted_to_uid, granted_by, expires_at)
-- landstack.applications(id text PK 'APP-2026-000123', ulpin, type, applicant_uid, applicant_name, status,
+- tract.users(uid PK text, email, name, role, department, created_at)
+- tract.consents(id, ulpin, granted_to_uid, granted_by, expires_at)
+- tract.applications(id text PK 'APP-2026-000123', ulpin, type, applicant_uid, applicant_name, status,
   payload jsonb, assigned_department, created_at, updated_at)
   type ∈ mutation | building_permission | ownership_verification | field_review | boundary_correction | record_correction | land_complaint | succession
-- landstack.transitions(type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
-- landstack.audit_log(id bigserial, ts, actor_uid, actor_name, actor_role, action, entity_type, entity_id,
+- tract.transitions(type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
+- tract.audit_log(id bigserial, ts, actor_uid, actor_name, actor_role, action, entity_type, entity_id,
   ulpin, before jsonb, after jsonb, source) — INSERT only for app role
-- landstack.alerts(id serial, ulpin, kind, severity, title, detail jsonb, status open|assigned|resolved, created_at)
+- tract.alerts(id serial, ulpin, kind, severity, title, detail jsonb, status open|assigned|resolved, created_at)
   kind ∈ change_detected | inconsistency | pending_mutation
-- landstack.reports(id text PK, ulpin, issued_to_uid, issued_to_name, issued_at, sha256, signature, storage_key)
-- landstack.connector_status(name PK, ok bool, latency_ms int, last_sync timestamptz, note)
+- tract.reports(id text PK, ulpin, issued_to_uid, issued_to_name, issued_at, sha256, signature, storage_key)
+- tract.connector_status(name PK, ok bool, latency_ms int, last_sync timestamptz, note)
 - dept_revenue.ror(khata_no PK, ulpin, survey_no, owner_name, father_name, ownership_type, extent_sqm,
   classification, mutation_history jsonb, nominees jsonb default '[]' — migration 012,
   [{name, relation, share}]; surfaces in the CDM as rights.ror.nominees, names masked like owners, updated_at)
@@ -137,15 +137,15 @@ Key tables (columns are authoritative in SQL; names here are what the API relies
   the matching status_flags.resurvey = completed|in_progress|pending); gis.s2_change(ulpin PK, date_a,
   date_b, ndvi_a, ndvi_b, ndbi_a, ndbi_b, d_ndvi, d_ndbi, label, confidence)
 Indexes: GiST on every geom; gin_trgm on parcels.survey_no and ror.owner_name (pg_trgm).
-View landstack.parcel_status(ulpin, has_dispute, has_mortgage, tax_arrears, pending_mutation, registered, permission_status, change_alert)
-used for map colouring and stats. Tiles read `landstack.parcel_tile_features` view (parcels ⋈ parcel_status ⋈ ror.owner_name).
+View tract.parcel_status(ulpin, has_dispute, has_mortgage, tax_arrears, pending_mutation, registered, permission_status, change_alert)
+used for map colouring and stats. Tiles read `tract.parcel_tile_features` view (parcels ⋈ parcel_status ⋈ ror.owner_name).
 
-## 5. Common Data Model (gateway → UI). Pydantic in landstack/cdm.py; TS mirror in web/src/lib/cdm.ts
+## 5. Common Data Model (gateway → UI). Pydantic in tract/cdm.py; TS mirror in web/src/lib/cdm.ts
 ```json
 {
   "ulpin": "TDR1K3M9A2F7C1",
   "identifiers": {"state":"AP","district":"Guntur","taluk":"Mangalagiri","village":"Mangalagiri (R)","survey_no":"123/4","khata_no":"K-0421"},
-  "spatial": {"area_sqm":223.0,"centroid":[80.5683,16.4310],"crs":"EPSG:4326","bbox":[..4],"geometry_ref":"/landstack/collections/parcels/items/TDR1K3M9A2F7C1"},
+  "spatial": {"area_sqm":223.0,"centroid":[80.5683,16.4310],"crs":"EPSG:4326","bbox":[..4],"geometry_ref":"/tract/collections/parcels/items/TDR1K3M9A2F7C1"},
   "party": {"owners":[{"name":"Ravi Kumar","father_name":"...","share":1.0,"type":"patta"}],"masked":false},
   "rights": {"registration":{"status":"registered|unregistered","doc_no":"...","deed_type":"sale","registered_on":"2026-04-12","sro_code":"GNT-02"},
              "ror":{"khata_no":"K-0421","classification":"dry","extent_sqm":223.0,"ownership_type":"patta"}},
@@ -170,47 +170,47 @@ Masking (citizen without consent): owner names → first letter + '***' per word
 units.owner_name masked; `party.masked=true`.
 
 ## 6. Gateway API (prefix as shown; JSON; errors `{ "error": {"code","message","details"} }`)
-Public: `GET /healthz`, `GET /landstack/notices?village=` → village notice board: pending transfer-of-rights
+Public: `GET /healthz`, `GET /tract/notices?village=` → village notice board: pending transfer-of-rights
 applications (mutation | succession | boundary_correction) inside their 15-day objection window —
 `{items: [{id, ulpin, type, status, survey_no, village, published_on, window_closes, days_left, objection_count}], window_days}`
-(no personal data), `GET /landstack/collections`, `GET /landstack/collections/{layer}/items?bbox=&limit=&offset=&land_use=&status=`
-(layers: parcels, zones, restriction_zones, roads, projects, village_boundary, buildings, settlement_schemes), `GET /landstack/collections/parcels/items/{ulpin}`,
-`GET /landstack/tiles/{layer}/{z}/{x}/{y}.pbf` (ST_AsMVT; layers: parcels, zones, restriction_zones, roads, water_lines, projects, settlement_schemes, units),
-`GET /landstack/search?q=` (ulpin/survey/khata always; owner name only for officer+), `GET /verify/{report_id}` (JSON), `GET /reports/{id}.pdf`.
-Any signed-in: `GET /landstack/parcels/{ulpin}` (CDM, masked per role/consent), `GET /landstack/me`,
-`POST /landstack/verify-ownership {ulpin, claimed_name}` → `{match: bool, score, compared: ["ror","latest_deed"]}`,
-`POST /landstack/applications {ulpin, type, payload}`, `GET /landstack/applications?mine=1`, `GET /landstack/applications/{id}`,
-`POST /landstack/reports/{ulpin}` → `{id, url}`, `POST /landstack/consents/request {ulpin}`,
-`POST /landstack/applications/{id}/objections {reason}` (min 10 chars) → appends `{ts, by_uid, by_name, reason}`
+(no personal data), `GET /tract/collections`, `GET /tract/collections/{layer}/items?bbox=&limit=&offset=&land_use=&status=`
+(layers: parcels, zones, restriction_zones, roads, projects, village_boundary, buildings, settlement_schemes), `GET /tract/collections/parcels/items/{ulpin}`,
+`GET /tract/tiles/{layer}/{z}/{x}/{y}.pbf` (ST_AsMVT; layers: parcels, zones, restriction_zones, roads, water_lines, projects, settlement_schemes, units),
+`GET /tract/search?q=` (ulpin/survey/khata always; owner name only for officer+), `GET /verify/{report_id}` (JSON), `GET /reports/{id}.pdf`.
+Any signed-in: `GET /tract/parcels/{ulpin}` (CDM, masked per role/consent), `GET /tract/me`,
+`POST /tract/verify-ownership {ulpin, claimed_name}` → `{match: bool, score, compared: ["ror","latest_deed"]}`,
+`POST /tract/applications {ulpin, type, payload}`, `GET /tract/applications?mine=1`, `GET /tract/applications/{id}`,
+`POST /tract/reports/{ulpin}` → `{id, url}`, `POST /tract/consents/request {ulpin}`,
+`POST /tract/applications/{id}/objections {reason}` (min 10 chars) → appends `{ts, by_uid, by_name, reason}`
 to the application's `payload.objections` and audits it; 409 objection_window_closed after the window or a
 terminal status, 422 not_a_notice / own_application. Objections render in the officer's application drawer.
-`GET /landstack/parcels/{ulpin}/due-diligence` → buyer checklist over the (masked) CDM:
+`GET /tract/parcels/{ulpin}/due-diligence` → buyer checklist over the (masked) CDM:
 `{ulpin, engine:"rules", verdict: clear|caution|high_risk, checks: [{name, status: pass|caution|fail, text}] ×9,
 estimated_value}` — deterministic; a record summary, not legal advice (the signed report PDF is the artefact).
-Officer (revenue) / admin: `POST /landstack/parcels/{ulpin}/boundary/validate {geometry}` → bounded-edit checks
+Officer (revenue) / admin: `POST /tract/parcels/{ulpin}/boundary/validate {geometry}` → bounded-edit checks
 (valid geometry · 4–200 vertices · |Δarea| ≤ 15% · no overlap > 1 m² · within village boundary) + metrics and an
-assistive `suggestion` (snap-to-neighbours + overlap subtraction); `POST /landstack/parcels/{ulpin}/boundary
+assistive `suggestion` (snap-to-neighbours + overlap subtraction); `POST /tract/parcels/{ulpin}/boundary
 {geometry, reason}` → files a `boundary_correction` application (rejected up-front unless validation passes).
-Officer+: `GET /landstack/parcels/{ulpin}/timeline`, `GET /landstack/queue?department=`, `POST /landstack/applications/{id}/transition {action, remark}`,
-`GET /landstack/stats`, `GET /landstack/alerts?status=`, `POST /landstack/alerts/{id}/assign`, `POST /landstack/alerts/{id}/resolve`,
-`POST /landstack/ai/change-detection {ulpin | bbox, date_a?, date_b?}`, `POST /landstack/ai/extract-document (multipart)`,
-`POST /landstack/ai/application-advice {id}` → suggested next workflow action + rationale grounded in parcel flags.
-Any signed-in: `POST /landstack/ai/parcel-brief {ulpin}` → risk score/level, findings, narrative, recommendations —
+Officer+: `GET /tract/parcels/{ulpin}/timeline`, `GET /tract/queue?department=`, `POST /tract/applications/{id}/transition {action, remark}`,
+`GET /tract/stats`, `GET /tract/alerts?status=`, `POST /tract/alerts/{id}/assign`, `POST /tract/alerts/{id}/resolve`,
+`POST /tract/ai/change-detection {ulpin | bbox, date_a?, date_b?}`, `POST /tract/ai/extract-document (multipart)`,
+`POST /tract/ai/application-advice {id}` → suggested next workflow action + rationale grounded in parcel flags.
+Any signed-in: `POST /tract/ai/parcel-brief {ulpin}` → risk score/level, findings, narrative, recommendations —
 NVIDIA Build model when NVIDIA_API_KEY is set, deterministic rule engine otherwise; response carries `engine`.
 The web auto-runs the brief on flagged parcels and the advice on any open application.
-Any signed-in: `POST /landstack/ai/pre-check {ulpin, type}` → pre-submission triage for the citizen Apply wizard:
+Any signed-in: `POST /tract/ai/pre-check {ulpin, type}` → pre-submission triage for the citizen Apply wizard:
 `{ulpin, type, engine:"rules", risk_score, risk_level, blockers[], warnings[], notes[], ok_to_submit}` (items are
 `{text, action?}`). Always the deterministic rule engine; never prevents submission — the officer decides.
 422 unknown_type if `type` is not a known application type. The web auto-runs it once a parcel + intent are chosen.
-Any signed-in: `POST /landstack/ai/assistant {message (≤500 chars), ulpin?}` → Bhu-Sahayak chatbot:
+Any signed-in: `POST /tract/ai/assistant {message (≤500 chars), ulpin?}` → Bhu-Sahayak chatbot:
 `{reply, engine, intent, sources[{kind: parcel|application, id}], suggestions[]}`. Intent routing is pure regex/keyword
 (`ai_assist.route_intent`); replies are composed only from the caller's own view of the records (masked CDM, own
 applications, triage/due-diligence rules) — the LLM, when configured, only rephrases the templated answer and the
 `engine` field says which happened. One floating launcher in the web app chrome (signed-in, non-minimal pages).
-Admin: `GET /landstack/consistency`, `GET /landstack/connectors`, `GET /landstack/adapters` (mappings from yaml),
-`POST /landstack/consents/grant {ulpin, uid, hours}`, `POST /landstack/admin/simulate/deed {ulpin, claimant}` (calls registration POST /deeds),
-`POST /landstack/admin/demo-reset`.
-Service: `POST /landstack/events` with header `X-Events-Secret`.
+Admin: `GET /tract/consistency`, `GET /tract/connectors`, `GET /tract/adapters` (mappings from yaml),
+`POST /tract/consents/grant {ulpin, uid, hours}`, `POST /tract/admin/simulate/deed {ulpin, claimant}` (calls registration POST /deeds),
+`POST /tract/admin/demo-reset`.
+Service: `POST /tract/events` with header `X-Events-Secret`.
 Department sub-apps (mounted; each has its own OpenAPI at `/<dept>/docs`): see section 7. All department GETs accept `?delay_ms=&fail=1` in dev.
 
 ## 7. Department APIs (vocabulary is intentionally different per department)
@@ -219,7 +219,7 @@ revenue:      GET /revenue/ror?ulpin= | GET /revenue/ror/{khata_no} | POST /reve
               RoR rows carry `state` (migration 007) and are served in that state's dialect: AP Meebhoomi
               (khata_no/owner_name/extent_sqm), TN Patta Chitta (patta_no/pattadar_name/extent_hectares),
               TG Dharani (ppb_no/pattadar_name/extent_acres) — translated back by revenue_{ap,tn,tg}.yaml.
-registration: GET /registration/deeds?ulpin= | GET /registration/encumbrances?ulpin=&active=1 | POST /registration/deeds {ulpin,deed_type,executant,claimant,consideration} → writes outbox + POSTs /landstack/events
+registration: GET /registration/deeds?ulpin= | GET /registration/encumbrances?ulpin=&active=1 | POST /registration/deeds {ulpin,deed_type,executant,claimant,consideration} → writes outbox + POSTs /tract/events
 planning:     GET /planning/zone?ulpin= | GET /planning/permissions?ulpin= | POST /planning/permissions {ulpin,floors,built_up_sqm,application_id,status}
               GET /planning/check?ulpin=&use=residential&floors= → {permissible: bool, reasons[]}
 fiscal:       GET /fiscal/tax?ulpin= | GET /fiscal/valuation?ulpin=
@@ -228,13 +228,13 @@ utilities:    GET /utilities/connections?ulpin=
 Every response: header `X-Source-System`, body includes `as_of` (ISO). Events: `registration.deed_registered`,
 `revenue.ror_updated`, `planning.permission_issued`. Event body: `{event, ulpin, source, occurred_at, payload}`.
 
-## 8. Workflow (transitions seeded in 002_landstack.sql)
+## 8. Workflow (transitions seeded in 002_tract.sql)
 mutation: submitted → document_check → field_verification → approved | returned | rejected (revenue officer); returned → submitted (citizen resubmits)
 building_permission: submitted → planning_check → site_inspection → approved | rejected (planning officer); auto planning_check result stored in payload
 field_review: open → assigned → resolved (admin assigns, revenue/planning officer resolves)
 boundary_correction: submitted → geometry_check → approved | returned | rejected (revenue officer; migration 008).
   Approval RE-validates the proposal (409 boundary_invalid if it no longer passes), then applies the geometry to
-  landstack.parcels (area recomputed) and syncs the RoR extent via revenue POST /extent. Fully audited.
+  tract.parcels (area recomputed) and syncs the RoR extent via revenue POST /extent. Fully audited.
 record_correction: submitted → document_check → approved | returned | rejected (revenue officer; migration 011); returned → submitted (citizen resubmits)
 land_complaint: submitted → in_review → resolved | dismissed (any officer; migration 011; queued under revenue by default)
 succession: submitted → document_check → approved | returned | rejected (revenue officer; migration 012).
@@ -263,7 +263,7 @@ Three real bounding boxes, one per state, to demonstrate multi-state scaling (de
 Each region generates a dense cadastre then thins to ~150 parcels of whole blocks (staged-digitisation
 look: clear clusters with gaps). Per region: 6 master-plan zones, 3 restriction zones, 2 projects and a
 village boundary, all lightly localized (names, courts, projects per state); ≥3 buildings with units
-overall. `landstack.parcels.state` ∈ {AP, TN, TG}. Sequence bases per region keep khata/deed/permit/case
+overall. `tract.parcels.state` ∈ {AP, TN, TG}. Sequence bases per region keep khata/deed/permit/case
 ids collision-free (AP K-0001+, TN K-2001+, TG K-4001+, etc.).
 Story parcels (stable survey numbers; AP ULPINs unchanged from the single-region seed):
 AP: 123/4 clean residential (owner Ravi Kumar) · 124 agricultural with change alert (built-up 2025) ·

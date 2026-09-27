@@ -1,7 +1,7 @@
 """Registration department (IGRS/CARD-style deeds & encumbrances). Schema: `dept_registration`.
 
 GET /deeds?ulpin= · GET /encumbrances?ulpin=&active=1 · POST /deeds → inserts deed, writes outbox,
-POSTs `registration.deed_registered` to the gateway (`/landstack/events`) and marks the outbox delivered.
+POSTs `registration.deed_registered` to the gateway (`/tract/events`) and marks the outbox delivered.
 """
 
 from __future__ import annotations
@@ -14,9 +14,9 @@ from fastapi import Depends
 from pydantic import BaseModel
 
 from departments.common import chaos, envelope, make_dept_app, now_iso
-from landstack.adapters import client
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db, json_dumps
+from tract.adapters import client
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db, json_dumps
 
 log = logging.getLogger("departments.registration")
 SOURCE = "AP IGRS / CARD"
@@ -58,7 +58,7 @@ async def deliver_event(db: DBLike, outbox_id: int, event: dict[str, Any], setti
     """POST the event to the gateway; mark `delivered_at` on success. Failures leave the outbox row undelivered."""
     try:
         await client.post_json(
-            "/landstack/events", event, headers={"X-Events-Secret": settings.events_shared_secret}, timeout=10.0
+            "/tract/events", event, headers={"X-Events-Secret": settings.events_shared_secret}, timeout=10.0
         )
     except Exception as exc:
         log.warning("event delivery failed for outbox %s: %s", outbox_id, exc)

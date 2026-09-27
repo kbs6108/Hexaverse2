@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-log = logging.getLogger("landstack.errors")
+log = logging.getLogger("tract.errors")
 
 
 class AppError(Exception):

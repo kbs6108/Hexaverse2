@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synthetic cadastre generator for the Land Stack demo regions (CONTRACTS §10).
+"""Synthetic cadastre generator for the Tract demo regions (CONTRACTS §10).
 
 Builds a deterministic, believable peri-urban cadastre in each of THREE real bounding boxes —
 Mangalagiri (AP, the original demo AOI), Sriperumbudur (TN) and Shamshabad (TG) — to demonstrate
@@ -62,7 +62,7 @@ sys.path.insert(0, str(REPO_ROOT / "apps" / "api"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ai.change_detection import classify
-from landstack.services.ulpin import ulpin_3d, ulpin_style
+from tract.services.ulpin import ulpin_3d, ulpin_style
 
 # ---------------------------------------------------------------------------
 # Constants (CONTRACTS §10)
@@ -95,8 +95,9 @@ BANKS = ["State Bank of India", "Union Bank of India", "Canara Bank", "HDFC Bank
          "Andhra Pradesh Grameena Vikas Bank", "Guntur DCCB", "Indian Bank"]
 
 MUTABLE_TABLES = (
-    "landstack.applications", "landstack.audit_log", "landstack.alerts", "landstack.reports",
-    "landstack.consents", "dept_revenue.mutations", "dept_registration.outbox",
+    "tract.applications", "tract.audit_log", "tract.alerts", "tract.reports",
+    "tract.consents", "dept_revenue.mutations", "dept_registration.outbox",
+    "gis.acquisition_claims",
 )
 # Department tables the demo itself rewrites through department POSTs (mutations → ror,
 # simulate-deed → deeds, approvals → building_permissions); restored by demo reset too.
@@ -105,11 +106,12 @@ DEMO_DEPT_TABLES = (
     "dept_planning.building_permissions",
 )
 ALL_TABLES = (
-    "landstack.units", "landstack.buildings", "landstack.parcels", "landstack.users",
+    "tract.units", "tract.buildings", "tract.parcels", "tract.users",
     "dept_planning.zones", "dept_fiscal.property_tax",
     "dept_fiscal.valuation", "dept_legal.disputes", "dept_utilities.connections",
     "gis.roads", "gis.water_lines", "gis.restriction_zones", "gis.projects", "gis.village_boundary",
     "gis.settlement_schemes", "gis.s2_change",
+    "gis.project_parcel_impacts", "tract.parcel_privacy", "tract.connector_status",
 ) + DEMO_DEPT_TABLES + MUTABLE_TABLES
 
 # Story-parcel spec: survey_no → (key, land_use, subdivision group size, index of the story
@@ -148,7 +150,7 @@ DEMO_USERS = [
     ("dev-kavitha", "kavitha@revenue.tg.example", "Kavitha", "officer", "revenue"),
     ("dev-rajesh", "rajesh@planning.tg.example", "Rajesh", "officer", "planning"),
     # Platform Admin
-    ("dev-admin", "admin@landstack.example", "Admin", "admin", None),
+    ("dev-admin", "admin@tract.example", "Admin", "admin", None),
 ]
 
 
@@ -161,7 +163,7 @@ class Region:
     single-region generator" — required so AP reproduces its historical ULPINs.
     """
 
-    code: str                                   # "AP" | "TN" | "TG" (landstack.parcels.state)
+    code: str                                   # "AP" | "TN" | "TG" (tract.parcels.state)
     state_name: str
     district: str
     taluk: str
@@ -425,7 +427,7 @@ def osm_roads(aoi: Polygon, bbox: tuple[float, float, float, float] = AOI_BBOX, 
     """Fetch highway=* ways from Overpass; ``None`` when unreachable or too sparse."""
     minx, miny, maxx, maxy = bbox
     query = f'[out:json][timeout:{int(timeout_s)}];way["highway"]({miny},{minx},{maxy},{maxx});out geom;'
-    req = urllib.request.Request(OVERPASS_URL, data=query.encode(), headers={"User-Agent": "landstack-seed/1.0"})
+    req = urllib.request.Request(OVERPASS_URL, data=query.encode(), headers={"User-Agent": "tract-seed/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             payload = json.loads(resp.read().decode())
@@ -1521,10 +1523,10 @@ def summary(frames: list[Frame]) -> str:
         return sum(len(getattr(f, attr)) for f in frames)
 
     counts = [
-        ("landstack.parcels", total("parcels")), ("landstack.buildings", total("buildings")),
-        ("landstack.units", total("units")), ("landstack.users", total("users")),
-        ("landstack.applications", total("applications")), ("landstack.alerts", total("alerts")),
-        ("landstack.audit_log", total("audit_log")), ("dept_revenue.ror", total("ror")),
+        ("tract.parcels", total("parcels")), ("tract.buildings", total("buildings")),
+        ("tract.units", total("units")), ("tract.users", total("users")),
+        ("tract.applications", total("applications")), ("tract.alerts", total("alerts")),
+        ("tract.audit_log", total("audit_log")), ("dept_revenue.ror", total("ror")),
         ("dept_revenue.mutations", total("mutations")), ("dept_registration.deeds", total("deeds")),
         ("dept_registration.encumbrances", total("encumbrances")), ("dept_planning.zones", total("zones")),
         ("dept_planning.building_permissions", total("permissions")), ("dept_fiscal.property_tax", total("property_tax")),
@@ -1650,7 +1652,7 @@ JSONB = "%s::jsonb"
 
 def write_department_demo_tables(cur, frames: list[Frame]) -> dict[str, int]:
     """Reload the department tables that demo actions modify (ror, deeds, encumbrances, permissions)."""
-    cur.execute("TRUNCATE " + ", ".join(DEMO_DEPT_TABLES) + " RESTART IDENTITY")
+    cur.execute("TRUNCATE " + ", ".join(DEMO_DEPT_TABLES) + " RESTART IDENTITY CASCADE")
     n: dict[str, int] = {}
     n["dept_revenue.ror"] = _insert(cur, "dept_revenue.ror",
         ["khata_no", "ulpin", "survey_no", "owner_name", "father_name", "ownership_type", "extent_sqm", "classification", "mutation_history", "state", "updated_at"],
@@ -1672,18 +1674,18 @@ def write_department_demo_tables(cur, frames: list[Frame]) -> dict[str, int]:
 
 def write_mutable(cur, frames: list[Frame]) -> dict[str, int]:
     """Truncate and reload the mutable gateway tables (alerts, applications, audit, mutations, outbox, ...)."""
-    cur.execute("TRUNCATE " + ", ".join(MUTABLE_TABLES) + " RESTART IDENTITY")
+    cur.execute("TRUNCATE " + ", ".join(MUTABLE_TABLES) + " RESTART IDENTITY CASCADE")
     n: dict[str, int] = {}
     apps = [a for f in frames for a in f.applications]
-    n["landstack.applications"] = _insert(cur, "landstack.applications",
+    n["tract.applications"] = _insert(cur, "tract.applications",
         ["id", "ulpin", "type", "applicant_uid", "applicant_name", "status", "payload", "assigned_department", "created_at", "updated_at"],
         [(a["id"], a["ulpin"], a["type"], a["applicant_uid"], a["applicant_name"], a["status"], _j(a["payload"]),
           a["assigned_department"], a["created_at"], a["updated_at"]) for a in apps], {"payload": JSONB})
-    n["landstack.alerts"] = _insert(cur, "landstack.alerts",
+    n["tract.alerts"] = _insert(cur, "tract.alerts",
         ["ulpin", "kind", "severity", "title", "detail", "status", "created_at"],
         [(a["ulpin"], a["kind"], a["severity"], a["title"], _j(a["detail"]), a["status"], a["created_at"]) for f in frames for a in f.alerts],
         {"detail": JSONB})
-    n["landstack.audit_log"] = _insert(cur, "landstack.audit_log",
+    n["tract.audit_log"] = _insert(cur, "tract.audit_log",
         ["ts", "actor_uid", "actor_name", "actor_role", "action", "entity_type", "entity_id", "ulpin", "before", "after", "source"],
         [(a["ts"], a["actor_uid"], a["actor_name"], a["actor_role"], a["action"], a["entity_type"], a["entity_id"], a["ulpin"],
           _j(a["before"]) if a["before"] is not None else None, _j(a["after"]) if a["after"] is not None else None, a["source"])
@@ -1693,7 +1695,7 @@ def write_mutable(cur, frames: list[Frame]) -> dict[str, int]:
         [(m["ulpin"], m["from_owner"], m["to_owner"], m["reason"], m["application_id"], m["created_at"]) for f in frames for m in f.mutations])
     # Advance the id sequence past the highest seeded numeric suffix (ids are APP-2026-%06d).
     top = max((int(a["id"].rsplit("-", 1)[-1]) for a in apps), default=1)
-    cur.execute("SELECT setval('landstack.application_id_seq', %s, true)", (max(1, top),))
+    cur.execute("SELECT setval('tract.application_id_seq', %s, true)", (max(1, top),))
     return n
 
 
@@ -1709,22 +1711,22 @@ def write_db(conn, frames: Frame | list[Frame], only_mutable: bool = False) -> d
             return n
         cur.execute("TRUNCATE " + ", ".join(ALL_TABLES) + " RESTART IDENTITY CASCADE")
         n: dict[str, int] = {}
-        n["landstack.parcels"] = _insert(cur, "landstack.parcels",
+        n["tract.parcels"] = _insert(cur, "tract.parcels",
             ["ulpin", "state", "district", "taluk", "village", "survey_no", "sub_division", "geom", "area_sqm", "land_use", "zone_code", "status_flags"],
             [(p.ulpin, f.region.code, f.region.district, f.region.taluk, f.region.village, p.survey_no, p.sub_division,
               _wkt(p.geom), p.area_sqm, p.land_use, p.zone_code,
               _j(({"story": p.story} if p.story else {}) | {"resurvey": p.resurvey})) for f in frames for p in f.parcels], {"geom": MULTI, "status_flags": JSONB})
         buildings = [b for f in frames for b in f.buildings]
-        n["landstack.buildings"] = _insert(cur, "landstack.buildings",
+        n["tract.buildings"] = _insert(cur, "tract.buildings",
             ["id", "ulpin", "footprint", "floors", "height_m", "name", "width_m", "depth_m", "basement_floors"],
             [(b["id"], b["ulpin"], _wkt(b["footprint"]), b["floors"], b["height_m"], b["name"],
               b["width_m"], b["depth_m"], b["basement_floors"]) for b in buildings], {"footprint": MULTI})
-        cur.execute("SELECT setval('landstack.buildings_id_seq', %s, true)", (max([b["id"] for b in buildings], default=1),))
-        n["landstack.units"] = _insert(cur, "landstack.units",
+        cur.execute("SELECT setval('tract.buildings_id_seq', %s, true)", (max([b["id"] for b in buildings], default=1),))
+        n["tract.units"] = _insert(cur, "tract.units",
             ["building_id", "ulpin", "ulpin_3d", "floor", "unit_no", "geom", "base_m", "height_m", "owner_name"],
             [(u["building_id"], u["ulpin"], u["ulpin_3d"], u["floor"], u["unit_no"], _wkt(u["geom"]), u["base_m"], u["height_m"], u["owner_name"])
              for f in frames for u in f.units], {"geom": GEOM})
-        n["landstack.users"] = _insert(cur, "landstack.users", ["uid", "email", "name", "role", "department"],
+        n["tract.users"] = _insert(cur, "tract.users", ["uid", "email", "name", "role", "department"],
             [(u["uid"], u["email"], u["name"], u["role"], u["department"]) for f in frames for u in f.users])
 
         n["dept_planning.zones"] = _insert(cur, "dept_planning.zones", ["zone_code", "name", "permissible_uses", "geom"],

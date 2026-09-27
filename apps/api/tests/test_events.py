@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from landstack.services import aggregator
-from landstack.services.events import handle_event
+from tract.services import aggregator
+from tract.services.events import handle_event
 
 
 def _deed(claimant: str) -> dict:
@@ -18,12 +18,12 @@ def _deed(claimant: str) -> dict:
 
 def _prime(fake_db, owner: str) -> None:
     fake_db.on("SELECT owner_name FROM dept_revenue.ror", [{"owner_name": owner}])
-    fake_db.on("FROM landstack.alerts WHERE ulpin = :u AND kind = 'pending_mutation'", [])
-    fake_db.on("FROM landstack.applications WHERE ulpin = :u AND type = 'mutation'", [])
-    fake_db.on("SELECT 1 FROM landstack.parcels", [{"?column?": 1}])
+    fake_db.on("FROM tract.alerts WHERE ulpin = :u AND kind = 'pending_mutation'", [])
+    fake_db.on("FROM tract.applications WHERE ulpin = :u AND type = 'mutation'", [])
+    fake_db.on("SELECT 1 FROM tract.parcels", [{"?column?": 1}])
     fake_db.on("SELECT max(substring(id from", [{"max": 41}])
     fake_db.on(
-        "INSERT INTO landstack.applications",
+        "INSERT INTO tract.applications",
         lambda p: [
             {
                 "id": p["id"],
@@ -44,13 +44,13 @@ async def test_deed_with_mismatch_opens_alert_and_application(fake_db) -> None:
     assert out["accepted"] and out["mismatch"] is True and out["score"] < 85
     assert out["application_id"].startswith("APP-") and out["application_id"].endswith("000042")
     assert "alert_created" in out["actions"] and "mutation_application_created" in out["actions"]
-    assert fake_db.executed_like("INSERT INTO landstack.alerts")
-    assert fake_db.executed_like("INSERT INTO landstack.audit_log")
+    assert fake_db.executed_like("INSERT INTO tract.alerts")
+    assert fake_db.executed_like("INSERT INTO tract.audit_log")
     assert aggregator._cache.get("U1") is None  # cache invalidated
     app_sql, params = (
         fake_db.queries[-1]
         if "applications" in fake_db.queries[-1][0]
-        else next(q for q in fake_db.queries if "INSERT INTO landstack.applications" in q[0])
+        else next(q for q in fake_db.queries if "INSERT INTO tract.applications" in q[0])
     )
     assert '"system_initiated": true' in params["payload"] and params["name"] == "Lakshmi Devi"
 
@@ -59,7 +59,7 @@ async def test_deed_matching_owner_is_quiet(fake_db) -> None:
     _prime(fake_db, "Ravi Kumar")
     out = await handle_event(fake_db, _deed("Kumar Ravi"))
     assert out["mismatch"] is False and out["score"] >= 85
-    assert not fake_db.executed_like("INSERT INTO landstack.alerts")
+    assert not fake_db.executed_like("INSERT INTO tract.alerts")
 
 
 async def test_other_and_bad_events(fake_db) -> None:

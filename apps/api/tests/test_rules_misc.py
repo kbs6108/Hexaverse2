@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 
 from departments.planning.app import evaluate_permissibility
-from landstack.routers.consistency import findings_from_rows
-from landstack.services.reports import mini_map_svg, render_html, sign, verify_signature
-from landstack.services.ulpin import split_ulpin_3d, ulpin_3d, ulpin_style
+from tract.routers.consistency import findings_from_rows
+from tract.services.reports import mini_map_svg, render_html, sign, verify_signature
+from tract.services.ulpin import split_ulpin_3d, ulpin_3d, ulpin_style
 
 R1 = {"zone_code": "R1", "name": "Residential", "permissible_uses": ["residential", "mixed"]}
 R2 = {**R1, "zone_code": "R2"}

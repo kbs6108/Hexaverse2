@@ -11,8 +11,8 @@ import math
 from dataclasses import dataclass
 from typing import Any
 
-from landstack.db import DBLike
-from landstack.services.cache import TTLCache
+from tract.db import DBLike
+from tract.services.cache import TTLCache
 
 TILE_EXTENT = 4096
 EARTH_HALF_CIRCUMFERENCE = 20037508.342789244
@@ -33,7 +33,7 @@ class Layer:
 
 LAYERS: dict[str, Layer] = {
     "parcels": Layer(
-        "parcels", "landstack.parcel_tile_features", "landstack.parcels", id_col="ulpin", title="Land parcels"
+        "parcels", "tract.parcel_tile_features", "tract.parcels", id_col="ulpin", title="Land parcels"
     ),
     "zones": Layer("zones", "dept_planning.zones", title="Planning zones"),
     "restriction_zones": Layer("restriction_zones", "gis.restriction_zones", title="Restriction zones"),
@@ -42,9 +42,9 @@ LAYERS: dict[str, Layer] = {
     "projects": Layer("projects", "gis.projects", title="Government projects"),
     "village_boundary": Layer("village_boundary", "gis.village_boundary", title="Village boundary", tiles=False),
     "settlement_schemes": Layer("settlement_schemes", "gis.settlement_schemes", title="Land settlement / resurvey schemes"),
-    "buildings": Layer("buildings", "landstack.buildings", geom_col="footprint", title="Buildings", tiles=False),
+    "buildings": Layer("buildings", "tract.buildings", geom_col="footprint", title="Buildings", tiles=False),
     "units": Layer(
-        "units", "landstack.unit_tile_features", "landstack.units", title="3D units", collections=False, min_zoom=14
+        "units", "tract.unit_tile_features", "tract.units", title="3D units", collections=False, min_zoom=14
     ),
 }
 

@@ -428,12 +428,12 @@ export const TRANSLATIONS = {
 
     // Guide & Help Page
     'guide.title': 'Guide & Walkthrough',
-    'guide.subtitle': 'How Land Stack works across revenue, registration, survey, planning, and legal systems.',
+    'guide.subtitle': 'How Tract works across revenue, registration, survey, planning, and legal systems.',
     'guide.home': 'Home',
     'guide.openMap': 'Open live map',
     'guide.citizenPortal': 'Citizen Portal',
     'guide.aiQuestion': 'Have a specific question or land problem?',
-    'guide.aiDesc': 'Bhu-Sahayak can diagnose your situation and guide you directly to the solution in Land Stack.',
+    'guide.aiDesc': 'Bhu-Sahayak can diagnose your situation and guide you directly to the solution in Tract.',
     'guide.askAssistant': 'Ask Bhu-Sahayak',
     'guide.scrollHorizontal': 'Scroll horizontally',
     'guide.sec.quickstart': 'Quick start',

@@ -20,11 +20,11 @@ from typing import Any
 
 import httpx
 
-from landstack.auth import Principal
-from landstack.config import get_settings
-from landstack.db import DBLike
+from tract.auth import Principal
+from tract.config import get_settings
+from tract.db import DBLike
 
-log = logging.getLogger("landstack.ai")
+log = logging.getLogger("tract.ai")
 
 CHAT_TIMEOUT_S = 18.0
 
@@ -176,7 +176,7 @@ def triage(
             if p_name and o_name:
                 is_match = (p_name in o_name) or (o_name in p_name)
                 if not is_match:
-                    from landstack.services.consistency import name_score
+                    from tract.services.consistency import name_score
                     is_match = name_score(owner_candidate, principal.name or "") >= 60
             if not is_match:
                 add(
@@ -270,7 +270,7 @@ def triage(
 
 async def pre_check(db: DBLike, ulpin: str, app_type: str, principal: Principal) -> dict[str, Any]:
     """Triage against the CDM the caller is allowed to see (masking applies first)."""
-    from landstack.services import aggregator
+    from tract.services import aggregator
 
     cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
     ror_owner = await db.fetchval(
@@ -376,7 +376,7 @@ async def due_diligence_report(cdm: dict[str, Any]) -> dict[str, Any]:
     if s.gemini_api_key or s.nvidia_api_key:
         lines = [f"• {c['name']}: {c['text']} ({c['status']})" for c in res["checks"]]
         sys_prompt = (
-            "You are an expert AI land records analyst on Land Stack.\n"
+            "You are an expert AI land records analyst on Tract.\n"
             "Given the 9-point due diligence checklist below for an Indian land parcel, "
             "write a crisp 1 to 2 sentence executive buyer summary highlighting the main clearance or primary risk. "
             "Be direct, neutral, and compact. Output strictly 1-2 sentences; never write greetings, preamble, or disclaimers."
@@ -625,7 +625,7 @@ async def assistant(
     """Grounded chatbot reply: route the intent, fetch the app's verified records
     (masked CDM / caller's applications), resolve conversational context from prior chat history,
     and generate a warm, flexible, context-aware answer powered by Gemini/NVIDIA."""
-    from landstack.services import aggregator, workflow
+    from tract.services import aggregator, workflow
 
     routed = route_intent(message)
     intent = routed["intent"]
@@ -656,7 +656,7 @@ async def assistant(
     # Survey number → ULPIN, when a survey number is in context and no ULPIN is specified yet
     if not target_ulpin and target_survey:
         rows = await db.fetch(
-            "SELECT ulpin, village FROM landstack.parcels WHERE survey_no = :s ORDER BY ulpin LIMIT 3",
+            "SELECT ulpin, village FROM tract.parcels WHERE survey_no = :s ORDER BY ulpin LIMIT 3",
             s=target_survey,
         )
         if len(rows) == 1:
@@ -701,7 +701,7 @@ async def assistant(
                 suggestions = ["What happens next?", "Show my other applications"]
         else:
             rows = await db.fetch(
-                "SELECT id, type, status FROM landstack.applications WHERE applicant_uid = :u "
+                "SELECT id, type, status FROM tract.applications WHERE applicant_uid = :u "
                 "ORDER BY updated_at DESC LIMIT 3", u=principal.uid,
             )
             if rows:
@@ -744,7 +744,7 @@ async def assistant(
 
     elif intent == "doc_verify":
         reply = (
-            "On Land Stack, every uploaded title deed or certificate undergoes automated forensic AI extraction and "
+            "On Tract, every uploaded title deed or certificate undergoes automated forensic AI extraction and "
             "cadastral cross-verification. The engine checks: 1) Executant vs official 1-B RoR owner, 2) Deed extent vs digital cadastre area, "
             "3) Boundary alignment with village FMB, and 4) Registration stamps & encumbrances. "
             "You can upload your deed for instant pre-screening at [Citizen Services → Apply](/citizen/request) or check title at [Verify Ownership](/citizen/verify)."
@@ -843,7 +843,7 @@ async def assistant(
             "**[Ownership Mutation after Property Purchase]**\n"
             "To update your name on government revenue records (Pahani / RoR / Patta / Khata) after deed registration:\n\n"
             "• **1. File Mutation Application**: [Apply for Mutation](/citizen/request?type=mutation) under Citizen Services.\n"
-            "• **2. Automated Cross-Check**: Land Stack instantly reconciles your Sub-Registrar deed against the Revenue RoR and validates mortgage clearance.\n"
+            "• **2. Automated Cross-Check**: Tract instantly reconciles your Sub-Registrar deed against the Revenue RoR and validates mortgage clearance.\n"
             "• **3. 15-Day Notice & Tahsildar Approval**: Follow real-time milestone transitions on [Track Application](/citizen/track).\n\n"
             "💡 *Provide your survey number or ULPIN to verify if your registered deed is already on record.*"
         )
@@ -938,7 +938,7 @@ async def assistant(
         else:
             reply = (
                 "**[Municipal Utility Services & Infrastructure]**\n"
-                "Land Stack monitors and manages 6 major utility lifelines per parcel:\n\n"
+                "Tract monitors and manages 6 major utility lifelines per parcel:\n\n"
                 "• **1. Electricity (DISCOM)**: Consumer Service Connection (USC), sanctioned load (kW), tariff category (LT-I/II), phase, and meter serial.\n"
                 "• **2. Water Supply**: Consumer Account Number (CAN), pipe diameter (15–50mm), daily supply schedule, and water quality index.\n"
                 "• **3. Sewerage (UGD)**: Underground drainage connection, nearest manhole distance, and inspection chamber clearance.\n"
@@ -1032,7 +1032,7 @@ async def assistant(
     elif intent == "threed_cadastre":
         reply = (
             "**[3D Cadastre & Spatial Unit Registry]**\n"
-            "Land Stack integrates 3D spatial cadastre for high-rise and multi-unit parcels:\n\n"
+            "Tract integrates 3D spatial cadastre for high-rise and multi-unit parcels:\n\n"
             "• **3D ULPINs**: Each apartment or floor unit has a unique sub-cadastre ID (e.g. `AP071234567890-F02-U01`).\n"
             "• **Floor Area Ratio (FAR)**: Pre-submission checks verify permissible built-up area and height limits against Master Plan zoning.\n"
             "• **Unit Transfers**: Upon parcel title transfer, all associated 3D building units are automatically retitled to the new title holder."
@@ -1120,7 +1120,7 @@ async def assistant(
     engine = "rules"
     if s.gemini_api_key or s.nvidia_api_key:
         sys_prompt = (
-            "You are Bhu-Sahayak, the intelligent, authoritative, and compact AI land governance assistant on Land Stack.\n\n"
+            "You are Bhu-Sahayak, the intelligent, authoritative, and compact AI land governance assistant on Tract.\n\n"
             "STRICT TUNING & COMPACTNESS RULES:\n"
             "1. MAXIMUM COMPACTNESS: Keep total response under 150 words. Zero pleasantry fluff (NO 'Hello!', 'Certainly!', 'I would be happy to help'). Jump straight into the diagnostic assessment.\n"
             "2. HIGH INFORMATION DENSITY STRUCTURE:\n"
@@ -1130,7 +1130,7 @@ async def assistant(
             "3. STRICT GROUNDING: Cite exact Survey No, ULPIN, Khata, and amounts from the verified record when present. Never fabricate data.\n"
             "4. PRIVACY MASKING: If an owner name is masked (e.g. R*** K***), explain that privacy masking protects identity and direct the user to [Verify Ownership](/citizen/verify).\n"
             "5. GOVERNMENT ACQUISITION PROJECTS: If the user inquires about government project compensation or acquisition, note that RFCTLARR Act 2013 claims apply exclusively to citizens whose parcels have an official Gazette corridor notification. Direct eligible titleholders to [Land Acquisition Claim](/citizen/request?type=acquisition_claim).\n"
-            "6. DOCUMENT VERIFICATION: If the user asks about uploaded deeds or title chains, explain that Land Stack auto-screens deed numbers, parties, boundaries, and SHA-256 tamper seals against the digital cadastre during [Citizen Services → Apply](/citizen/request).\n"
+            "6. DOCUMENT VERIFICATION: If the user asks about uploaded deeds or title chains, explain that Tract auto-screens deed numbers, parties, boundaries, and SHA-256 tamper seals against the digital cadastre during [Citizen Services → Apply](/citizen/request).\n"
             "7. INTERACTIVE LINKS: Always format app destinations as clickable markdown links [Label](/path) so the UI renders interactive action buttons.\n"
             "8. LOCAL LANGUAGE & FARMER CONNECTION: If the user asks in Telugu or Hindi, or the conversation includes Telugu/Hindi, respond directly in that language using respectful, local terminology familiar to farmers and landowners (e.g. in Telugu: పట్టాదారు పాస్ పుస్తకం, 1-B అడంగల్ / పహణీ, రికార్డు మార్పిడి / మ్యుటేషన్, హద్దుల కొలత / ఎఫ్-లైన్ పిటిషన్, తహసీల్దార్; in Hindi: खतौनी, खसरा संख्या, दाखिल-खारिज / नामांतरण, मेढ़ पैमाइश, लेखपाल / पटवारी, तहसीलदार). Keep explanations clear, supportive, and free of confusing bureaucratic jargon."
         )
@@ -1190,7 +1190,7 @@ def _fact_sheet(cdm: dict[str, Any], findings: list[dict[str, Any]]) -> str:
 # ----------------------------------------------------------------------------- features
 async def parcel_brief(db: DBLike, ulpin: str, principal: Principal) -> dict[str, Any]:
     """Risk brief for one parcel: score + findings always; LLM narrative when configured."""
-    from landstack.services import aggregator
+    from tract.services import aggregator
 
     cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
     findings, score = rule_findings(cdm)
@@ -1201,7 +1201,7 @@ async def parcel_brief(db: DBLike, ulpin: str, principal: Principal) -> dict[str
     text = await chat(
         [
             {"role": "system",
-             "content": "You are an expert land records analyst on Land Stack. Write for a revenue officer. "
+             "content": "You are an expert land records analyst on Tract. Write for a revenue officer. "
                         "Be factual, ultra-compact, and neutral. Do not invent facts beyond the sheet. Output JSON only: "
                         '{"narrative": "<max 2 compact sentences highlighting primary risk or clean clearance>", "recommendations": ["<max 3 short imperative actions under 8 words each>"]}'},
             {"role": "user", "content": "Parcel fact sheet:\n" + _fact_sheet(cdm, findings)},
@@ -1247,7 +1247,7 @@ async def parcel_brief(db: DBLike, ulpin: str, principal: Principal) -> dict[str
 
 async def application_advice(db: DBLike, app_id: str, principal: Principal) -> dict[str, Any]:
     """Recommend the next workflow action for an application, grounded in the parcel's flags."""
-    from landstack.services import workflow
+    from tract.services import workflow
 
     app = await workflow.get_application(db, app_id)
     rows = await workflow.load_transitions(db)
@@ -1326,7 +1326,7 @@ async def draft_speaking_order(
     """Generate formal quasi-judicial statutory speaking orders or field inspection reports for officers."""
     from datetime import date
 
-    from landstack.services import aggregator, workflow
+    from tract.services import aggregator, workflow
 
     app = await workflow.get_application(db, app_id)
     cdm = await aggregator.get_parcel_cdm(db, app["ulpin"], principal)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from landstack.services.ai_assist import due_diligence
+from tract.services.ai_assist import due_diligence
 
 
 def _cdm(**over: object) -> dict:

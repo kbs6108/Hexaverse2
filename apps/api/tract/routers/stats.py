@@ -1,4 +1,4 @@
-"""`GET /landstack/stats` — officer KPIs: counts, land-use/status breakdowns, applications, alerts."""
+"""`GET /tract/stats` — officer KPIs: counts, land-use/status breakdowns, applications, alerts."""
 
 from __future__ import annotations
 
@@ -7,37 +7,37 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from landstack.auth import Principal, require_officer
-from landstack.db import DBLike, get_db
+from tract.auth import Principal, require_officer
+from tract.db import DBLike, get_db
 
-router = APIRouter(prefix="/landstack", tags=["stats"])
+router = APIRouter(prefix="/tract", tags=["stats"])
 
 
 @router.get("/stats")
 async def stats(principal: Principal = Depends(require_officer), db: DBLike = Depends(get_db)) -> dict[str, Any]:
     totals, land_use, status, apps, alerts, per_dept = await asyncio.gather(
         db.fetchrow(
-            "SELECT (SELECT count(*) FROM landstack.parcels) AS parcels, "
-            "(SELECT COALESCE(sum(area_sqm), 0) FROM landstack.parcels) AS total_area_sqm, "
-            "(SELECT count(*) FROM landstack.buildings) AS buildings, (SELECT count(*) FROM landstack.units) AS units, "
-            "(SELECT count(*) FROM landstack.applications) AS applications, "
-            "(SELECT count(*) FROM landstack.alerts WHERE status <> 'resolved') AS open_alerts"
+            "SELECT (SELECT count(*) FROM tract.parcels) AS parcels, "
+            "(SELECT COALESCE(sum(area_sqm), 0) FROM tract.parcels) AS total_area_sqm, "
+            "(SELECT count(*) FROM tract.buildings) AS buildings, (SELECT count(*) FROM tract.units) AS units, "
+            "(SELECT count(*) FROM tract.applications) AS applications, "
+            "(SELECT count(*) FROM tract.alerts WHERE status <> 'resolved') AS open_alerts"
         ),
         db.fetch(
             "SELECT COALESCE(land_use, 'unknown') AS land_use, count(*) AS count, COALESCE(sum(area_sqm), 0) AS area_sqm "
-            "FROM landstack.parcels GROUP BY 1 ORDER BY 2 DESC"
+            "FROM tract.parcels GROUP BY 1 ORDER BY 2 DESC"
         ),
         db.fetchrow(
             "SELECT count(*) FILTER (WHERE registered) AS registered, count(*) FILTER (WHERE NOT COALESCE(registered, false)) AS unregistered, "
             "count(*) FILTER (WHERE has_dispute) AS disputed, count(*) FILTER (WHERE has_mortgage) AS mortgaged, "
             "count(*) FILTER (WHERE COALESCE(tax_arrears, 0) > 0) AS tax_arrears, "
             "count(*) FILTER (WHERE pending_mutation) AS pending_mutation, count(*) FILTER (WHERE change_alert) AS change_alert, "
-            "COALESCE(sum(tax_arrears), 0) AS total_arrears FROM landstack.parcel_status"
+            "COALESCE(sum(tax_arrears), 0) AS total_arrears FROM tract.parcel_status"
         ),
-        db.fetch("SELECT type, status, count(*) AS count FROM landstack.applications GROUP BY 1, 2 ORDER BY 1, 2"),
-        db.fetch("SELECT kind, status, count(*) AS count FROM landstack.alerts GROUP BY 1, 2 ORDER BY 1, 2"),
+        db.fetch("SELECT type, status, count(*) AS count FROM tract.applications GROUP BY 1, 2 ORDER BY 1, 2"),
+        db.fetch("SELECT kind, status, count(*) AS count FROM tract.alerts GROUP BY 1, 2 ORDER BY 1, 2"),
         db.fetch(
-            "SELECT COALESCE(assigned_department, 'unassigned') AS department, count(*) AS count FROM landstack.applications "
+            "SELECT COALESCE(assigned_department, 'unassigned') AS department, count(*) AS count FROM tract.applications "
             "WHERE status NOT IN ('approved', 'rejected', 'resolved', 'completed') GROUP BY 1 ORDER BY 1"
         ),
     )

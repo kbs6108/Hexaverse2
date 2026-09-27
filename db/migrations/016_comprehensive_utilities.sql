@@ -26,7 +26,7 @@ WITH numbered AS (
         p.taluk,
         p.zone_code,
         ROW_NUMBER() OVER (ORDER BY p.ulpin) AS rn
-    FROM landstack.parcels p
+    FROM tract.parcels p
 )
 UPDATE dept_utilities.connections u
 SET
@@ -177,13 +177,13 @@ SET
 WHERE ulpin = 'TFCM916196F0FE';
 
 -- Workflow support for utility_request
-ALTER TABLE landstack.applications DROP CONSTRAINT IF EXISTS applications_type_check;
-ALTER TABLE landstack.applications ADD CONSTRAINT applications_type_check
+ALTER TABLE tract.applications DROP CONSTRAINT IF EXISTS applications_type_check;
+ALTER TABLE tract.applications ADD CONSTRAINT applications_type_check
     CHECK (type IN ('mutation', 'building_permission', 'ownership_verification', 'field_review',
                     'boundary_correction', 'record_correction', 'land_complaint', 'succession',
                     'utility_request', 'acquisition_claim'));
 
-INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal)
+INSERT INTO tract.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal)
 SELECT v.type, v.from_status, v.to_status, v.allowed_role, v.allowed_department, v.allowed_designation, v.action_label, v.is_terminal
 FROM (VALUES
     ('utility_request', 'returned',        'submitted',        'citizen', NULL,       NULL,            'Resubmit Utility Request',                 false),
@@ -200,6 +200,6 @@ FROM (VALUES
     ('utility_request', 'submitted',       'approved',         'admin',   NULL,       NULL,            'Admin Fast-Track Approval',                true)
 ) AS v(type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal)
 WHERE NOT EXISTS (
-    SELECT 1 FROM landstack.transitions t
+    SELECT 1 FROM tract.transitions t
     WHERE t.type = v.type AND t.from_status = v.from_status AND t.to_status = v.to_status
 );

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from landstack.auth import Principal
-from landstack.services.workflow import run_side_effects
+from tract.auth import Principal
+from tract.services.workflow import run_side_effects
 
 TAHSILDAR = Principal(uid="o1", name="Anitha", role="officer", department="revenue", designation="tahsildar")
 
@@ -48,9 +48,9 @@ async def test_full_land_transfer_side_effects() -> None:
     }
 
     mock_db = MockDB()
-    with patch("landstack.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
+    with patch("tract.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = {"ok": True, "item": {"id": 1}}
-        with patch("landstack.services.audit.record", new_callable=AsyncMock):
+        with patch("tract.services.audit.record", new_callable=AsyncMock):
             res = await run_side_effects(mock_db, app, TAHSILDAR)
 
     assert res is not None
@@ -73,7 +73,7 @@ async def test_full_land_transfer_side_effects() -> None:
     assert u_body["consumer_name"] == "Ravi Kumar"
 
     # Check 2: Building units updated
-    assert any("UPDATE landstack.units" in sql and params.get("to_owner") == "Ravi Kumar" for sql, params in executed_statements)
+    assert any("UPDATE tract.units" in sql and params.get("to_owner") == "Ravi Kumar" for sql, params in executed_statements)
 
     # Check 3: Registered deed created for claimant = Ravi Kumar
     assert any("INSERT INTO dept_registration.deeds" in sql and params.get("cl") == "Ravi Kumar" for sql, params in executed_statements)
@@ -82,11 +82,11 @@ async def test_full_land_transfer_side_effects() -> None:
     assert any("UPDATE dept_planning.building_permissions" in sql and params.get("to_owner") == "Ravi Kumar" for sql, params in executed_statements)
 
     # Check 5: Pending mutation alerts resolved
-    assert any("UPDATE landstack.alerts" in sql and params.get("u") == "TFCM91641E6C82" for sql, params in executed_statements)
+    assert any("UPDATE tract.alerts" in sql and params.get("u") == "TFCM91641E6C82" for sql, params in executed_statements)
 
     # Check 6: Pending mutation on parcels cleared
-    assert any("UPDATE landstack.parcels SET pending_mutation = false" in sql for sql, params in executed_statements)
+    assert any("UPDATE tract.parcels SET pending_mutation = false" in sql for sql, params in executed_statements)
 
     # Check 7: Consents cleared and privacy reset
-    assert any("DELETE FROM landstack.consents" in sql for sql, params in executed_statements)
-    assert any("INSERT INTO landstack.parcel_privacy" in sql for sql, params in executed_statements)
+    assert any("DELETE FROM tract.consents" in sql for sql, params in executed_statements)
+    assert any("INSERT INTO tract.parcel_privacy" in sql for sql, params in executed_statements)

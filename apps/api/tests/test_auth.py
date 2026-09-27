@@ -6,8 +6,8 @@ import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from landstack.auth import Principal, current_principal, parse_dev_header, principal_from_claims, require
-from landstack.errors import AppError, install_error_handlers
+from tract.auth import Principal, current_principal, parse_dev_header, principal_from_claims, require
+from tract.errors import AppError, install_error_handlers
 
 
 def test_parse_dev_header_variants() -> None:
@@ -79,4 +79,4 @@ def test_require_dependency(fake_db) -> None:
     assert r.status_code == 200 and r.json()["role"] == "officer"
     assert client.get("/officer", headers={"X-Dev-User": "admin"}).status_code == 200
     # first sight upserts the user (best effort)
-    assert fake_db.executed_like("INSERT INTO landstack.users")
+    assert fake_db.executed_like("INSERT INTO tract.users")

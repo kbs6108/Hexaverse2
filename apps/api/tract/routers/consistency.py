@@ -1,4 +1,4 @@
-"""`GET /landstack/consistency` — cross-department findings computed in SQL (parcels vs RoR vs deeds)."""
+"""`GET /tract/consistency` — cross-department findings computed in SQL (parcels vs RoR vs deeds)."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 
-from landstack.auth import Principal, require_admin
-from landstack.db import DBLike, get_db
-from landstack.services.consistency import AREA_TOLERANCE, OWNER_THRESHOLD, name_score
+from tract.auth import Principal, require_admin
+from tract.db import DBLike, get_db
+from tract.services.consistency import AREA_TOLERANCE, OWNER_THRESHOLD, name_score
 
-router = APIRouter(prefix="/landstack", tags=["consistency"])
+router = APIRouter(prefix="/tract", tags=["consistency"])
 
 SQL = """
 SELECT p.ulpin, p.survey_no, p.village, p.land_use,
@@ -19,7 +19,7 @@ SELECT p.ulpin, p.survey_no, p.village, p.land_use,
        d.doc_no, d.claimant AS deed_claimant, d.registered_on, d.extent_sqm AS deed_extent_sqm,
        (SELECT count(*) FROM dept_registration.deeds dd WHERE dd.ulpin = p.ulpin) AS deed_count,
        (SELECT count(*) FROM dept_revenue.ror rr WHERE rr.ulpin = p.ulpin) AS ror_count
-FROM landstack.parcels p
+FROM tract.parcels p
 LEFT JOIN LATERAL (SELECT * FROM dept_revenue.ror rr WHERE rr.ulpin = p.ulpin ORDER BY updated_at DESC NULLS LAST LIMIT 1) r ON TRUE
 LEFT JOIN LATERAL (SELECT * FROM dept_registration.deeds dd WHERE dd.ulpin = p.ulpin ORDER BY registered_on DESC LIMIT 1) d ON TRUE
 ORDER BY p.survey_no

@@ -1,4 +1,4 @@
-# Land Stack — Setup Guide
+# Tract — Setup Guide
 
 Written for someone who has never used Docker, Neon, Firebase or Cloud Run. Follow (a)→(b) to run
 it on your laptop in five minutes; (c)→(f) put it on the internet for free; (g)–(i) are optional
@@ -62,7 +62,7 @@ department docs http://localhost:8000/revenue/docs (also `/registration`, `/plan
 | Farida (planning officer) | `officer:planning:Farida` | Officer Console, building-permission queue |
 | Admin | `admin::Admin` | Everything + Admin & Integration Console |
 
-Try it with curl: `curl -H 'X-Dev-User: officer:revenue:Anitha' localhost:8000/landstack/queue`.
+Try it with curl: `curl -H 'X-Dev-User: officer:revenue:Anitha' localhost:8000/tract/queue`.
 
 ### The entry flow
 
@@ -83,7 +83,7 @@ processes: keep `db` running (`docker compose -f infra/docker-compose.yml up -d 
 
 ## (c) Neon — the hosted PostGIS database
 
-1. Sign up at https://neon.tech → **New project**. Name `landstack`, Postgres **16**, region
+1. Sign up at https://neon.tech → **New project**. Name `tract`, Postgres **16**, region
    **AWS ap-southeast-1 (Singapore)** — nearest to Cloud Run `asia-south1`.
 2. On the project dashboard click **Connect**, choose *Connection string*, and copy it. It looks like
    `postgresql://neondb_owner:npg_xxx@ep-quiet-sun-a1b2c3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`.
@@ -108,8 +108,8 @@ Neon auto-suspends after 5 idle minutes; the first query afterwards takes ~1 s.
 ## (d) Firebase — hosting, auth and roles
 
 1. https://console.firebase.google.com → **Add project** (or reuse the existing Blaze project). Note
-   the **Project ID** (e.g. `landstack-demo-4f2a`).
-2. **Project settings → General → Your apps → Web (</>)**. Register app `landstack-web`, tick
+   the **Project ID** (e.g. `tract-demo-4f2a`).
+2. **Project settings → General → Your apps → Web (</>)**. Register app `tract-web`, tick
    *Also set up Firebase Hosting*. Copy the config values into `apps/web/.env`:
    ```
    VITE_AUTH_MODE=firebase
@@ -117,7 +117,7 @@ Neon auto-suspends after 5 idle minutes; the first query afterwards takes ~1 s.
    VITE_FIREBASE_AUTH_DOMAIN=<project-id>.firebaseapp.com
    VITE_FIREBASE_PROJECT_ID=<project-id>
    VITE_FIREBASE_APP_ID=1:1234:web:abcd
-   VITE_API_URL=https://landstack-api-xxxx-el.a.run.app   # after step (e); localhost:8000 until then
+   VITE_API_URL=https://tract-api-xxxx-el.a.run.app   # after step (e); localhost:8000 until then
    ```
 3. **Build → Authentication → Get started → Sign-in method**: enable **Google** (pick a support
    email) and **Email/Password**. Under **Settings → Authorized domains** make sure
@@ -159,9 +159,9 @@ Neon auto-suspends after 5 idle minutes; the first query afterwards takes ~1 s.
    ```
 3. `make deploy-api PROJECT_ID=<project-id>` — enables APIs, creates the Artifact Registry repo and
    the reports bucket, builds the image with Cloud Build (5–8 min the first time), pushes the secrets
-   to Secret Manager and deploys `landstack-api` in `asia-south1` (512 MiB, 0–3 instances,
+   to Secret Manager and deploys `tract-api` in `asia-south1` (512 MiB, 0–3 instances,
    concurrency 80, unauthenticated). The script ends with the service URL.
-4. `curl https://landstack-api-…run.app/healthz` → `{"status":"ok",…}`.
+4. `curl https://tract-api-…run.app/healthz` → `{"status":"ok",…}`.
 5. CORS and `PUBLIC_WEB_URL` default to `https://<project-id>.web.app` and `.firebaseapp.com`. Custom
    domain? `CORS_ORIGINS=https://land.example.org,https://<project-id>.web.app PUBLIC_WEB_URL=https://land.example.org SKIP_BUILD=1 make deploy-api`.
 
@@ -209,7 +209,7 @@ Keys upgrade specific capabilities:
 
 - [ ] **T-30 min** `make neon-reset NEON_DATABASE_URL=...` (or Admin Console → *Reset demo*) so the
       queue, alerts and audit log are in the scripted state. Locally: `make demo-reset`.
-- [ ] **Warm Cloud Run**: `gcloud run services update landstack-api --region asia-south1 --min-instances 1`
+- [ ] **Warm Cloud Run**: `gcloud run services update tract-api --region asia-south1 --min-instances 1`
       (revert to 0 afterwards; 1 warm instance ≈ ₹1–2/hour) *or* open the app 5 min before and hit
       `/healthz` + the map once. This also wakes Neon.
 - [ ] Open the app in two browser profiles: citizen (Ravi) and officer (Anitha); admin in a third.

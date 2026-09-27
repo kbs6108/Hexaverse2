@@ -8,13 +8,13 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from landstack.adapters.mapping import available_mappings, load_mapping, mapping_table
-from landstack.adapters.registry import DEPARTMENTS, get_adapter
-from landstack.auth import Principal, require_admin
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db
+from tract.adapters.mapping import available_mappings, load_mapping, mapping_table
+from tract.adapters.registry import DEPARTMENTS, get_adapter
+from tract.auth import Principal, require_admin
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db
 
-router = APIRouter(prefix="/landstack", tags=["connectors"])
+router = APIRouter(prefix="/tract", tags=["connectors"])
 
 
 @router.get("/connectors")
@@ -30,7 +30,7 @@ async def connectors(
         try:
             await db.execute(
                 """
-                INSERT INTO landstack.connector_status (name, ok, latency_ms, last_sync, note)
+                INSERT INTO tract.connector_status (name, ok, latency_ms, last_sync, note)
                 VALUES (:name, :ok, :latency_ms, now(), :note)
                 ON CONFLICT (name) DO UPDATE SET ok = EXCLUDED.ok, latency_ms = EXCLUDED.latency_ms,
                     last_sync = EXCLUDED.last_sync, note = EXCLUDED.note
@@ -55,7 +55,7 @@ async def connectors(
         )
     try:
         persisted = await db.fetch(
-            "SELECT name, ok, latency_ms, last_sync, note FROM landstack.connector_status ORDER BY name"
+            "SELECT name, ok, latency_ms, last_sync, note FROM tract.connector_status ORDER BY name"
         )
     except Exception:
         persisted = []

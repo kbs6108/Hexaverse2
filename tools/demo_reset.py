@@ -11,7 +11,7 @@ Usage::
     python tools/demo_reset.py            # mutable tables only (default, ~5 s)
     python tools/demo_reset.py --full     # full re-seed of every table (~20 s)
 
-Called by ``POST /landstack/admin/demo-reset`` (gateway shells out or imports :func:`reset`).
+Called by ``POST /tract/admin/demo-reset`` (gateway shells out or imports :func:`reset`).
 """
 
 from __future__ import annotations

@@ -48,7 +48,7 @@ def test_thresholds_contract() -> None:
 
 
 class _FakeDB:
-    """Minimal stand-in for landstack.db exposing fetchrow/fetch with :name params."""
+    """Minimal stand-in for tract.db exposing fetchrow/fetch with :name params."""
 
     def __init__(self, rows: dict[str, dict]) -> None:
         self.rows = rows

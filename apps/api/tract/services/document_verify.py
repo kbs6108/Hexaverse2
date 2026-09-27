@@ -8,11 +8,11 @@ import re
 from typing import Any
 
 from ai.extract import extract_ror
-from landstack.db import DBLike
-from landstack.routers.documents import _load_doc_meta
-from landstack.services.consistency import OWNER_THRESHOLD, name_score
+from tract.db import DBLike
+from tract.routers.documents import _load_doc_meta
+from tract.services.consistency import OWNER_THRESHOLD, name_score
 
-log = logging.getLogger("landstack.services.document_verify")
+log = logging.getLogger("tract.services.document_verify")
 
 # Standard unit multipliers to square meters (EPSG:4326 / ST_Area)
 EXTENT_TO_SQM = {
@@ -56,7 +56,7 @@ async def build_parcel_context(
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     """Fetch ground truth parcel record, RoR, encumbrances, and disputes from PostGIS."""
     parcel = await db.fetchrow(
-        "SELECT survey_no, sub_division, area_sqm, land_use, village FROM landstack.parcels WHERE ulpin = :u",
+        "SELECT survey_no, sub_division, area_sqm, land_use, village FROM tract.parcels WHERE ulpin = :u",
         u=ulpin,
     )
     ror = await db.fetchrow(

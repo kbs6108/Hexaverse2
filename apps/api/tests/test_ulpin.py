@@ -1,11 +1,11 @@
-"""Unit tests for landstack.services.ulpin."""
+"""Unit tests for tract.services.ulpin."""
 
 from __future__ import annotations
 
 import pytest
 from shapely.geometry import Polygon
 
-from landstack.services.ulpin import ULPIN_RE, geohash_encode, split_ulpin_3d, ulpin_3d, ulpin_style
+from tract.services.ulpin import ULPIN_RE, geohash_encode, split_ulpin_3d, ulpin_3d, ulpin_style
 
 
 def test_geohash_known_value() -> None:

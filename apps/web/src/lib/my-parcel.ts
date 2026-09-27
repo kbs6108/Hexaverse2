@@ -8,7 +8,7 @@ export type { OwnedParcel };
 
 /**
  * Hook to retrieve the parcel(s) dynamically owned by the authenticated citizen
- * directly from statutory land records (dept_revenue.ror via GET /landstack/citizen/my-parcels).
+ * directly from statutory land records (dept_revenue.ror via GET /tract/citizen/my-parcels).
  * Completely eliminates static dictionaries: title ownership reflects real-time database mutations.
  */
 export function useMyParcel() {

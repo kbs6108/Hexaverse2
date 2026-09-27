@@ -166,7 +166,7 @@ export function HelpPage() {
         </div>
         <button
           type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent('open-assistant', { detail: { prompt: 'How does Land Stack help me resolve a land problem?' } }))}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-assistant', { detail: { prompt: 'How does Tract help me resolve a land problem?' } }))}
           className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:brightness-105 active:scale-95 cursor-pointer"
         >
           <Compass size={13} /> {t('guide.askAssistant')}

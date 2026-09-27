@@ -3,7 +3,7 @@
 GET /zone?ulpin= · GET /permissions?ulpin= · POST /permissions · GET /check?ulpin=&use=&floors=
 
 The zone for a parcel is found spatially (parcel point-on-surface ∩ zone polygon, falling back to
-`landstack.parcels.zone_code`); the restriction test intersects `gis.restriction_zones`. Those two
+`tract.parcels.zone_code`); the restriction test intersects `gis.restriction_zones`. Those two
 read-only cross-schema lookups are the only data this app touches outside `dept_planning`.
 """
 
@@ -16,7 +16,7 @@ from fastapi import Depends
 from pydantic import BaseModel
 
 from departments.common import chaos, envelope, make_dept_app
-from landstack.db import DBLike, get_db
+from tract.db import DBLike, get_db
 
 SOURCE = "APCRDA / DTCP"
 app = make_dept_app(
@@ -65,14 +65,14 @@ async def zone_for(db: DBLike, ulpin: str) -> dict[str, Any] | None:
     row = await db.fetchrow(
         """
         SELECT z.id, z.zone_code, z.name, z.permissible_uses FROM dept_planning.zones z
-        JOIN landstack.parcels p ON ST_Intersects(z.geom, ST_PointOnSurface(p.geom)) WHERE p.ulpin = :u LIMIT 1
+        JOIN tract.parcels p ON ST_Intersects(z.geom, ST_PointOnSurface(p.geom)) WHERE p.ulpin = :u LIMIT 1
         """,
         u=ulpin,
     )
     if row is None:
         row = await db.fetchrow(
             "SELECT z.id, z.zone_code, z.name, z.permissible_uses FROM dept_planning.zones z "
-            "JOIN landstack.parcels p ON p.zone_code = z.zone_code WHERE p.ulpin = :u LIMIT 1",
+            "JOIN tract.parcels p ON p.zone_code = z.zone_code WHERE p.ulpin = :u LIMIT 1",
             u=ulpin,
         )
     return row
@@ -125,7 +125,7 @@ async def check(
 ) -> dict[str, Any]:
     zone_row = await zone_for(db, ulpin)
     hits = await db.fetch(
-        "SELECT r.id, r.kind, r.name FROM gis.restriction_zones r JOIN landstack.parcels p ON ST_Intersects(r.geom, p.geom) "
+        "SELECT r.id, r.kind, r.name FROM gis.restriction_zones r JOIN tract.parcels p ON ST_Intersects(r.geom, p.geom) "
         "WHERE p.ulpin = :u",
         u=ulpin,
     )

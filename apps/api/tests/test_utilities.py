@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from landstack.auth import Principal
-from landstack.services.ai_assist import triage
-from landstack.services.workflow import run_side_effects
+from tract.auth import Principal
+from tract.services.ai_assist import triage
+from tract.services.workflow import run_side_effects
 
 TAHSILDAR = Principal(uid="o1", name="Anitha", role="officer", department="revenue", designation="tahsildar")
 
@@ -59,12 +59,12 @@ async def test_utility_request_side_effects() -> None:
     }
 
     mock_db = MockDB()
-    with patch("landstack.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
+    with patch("tract.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = {
             "source": "ULB Utilities",
             "item": {"ulpin": "TFCM916196F0FE", "electricity": True},
         }
-        with patch("landstack.services.audit.record", new_callable=AsyncMock):
+        with patch("tract.services.audit.record", new_callable=AsyncMock):
             res = await run_side_effects(mock_db, app, TAHSILDAR)
 
     assert res is not None
@@ -111,14 +111,14 @@ async def test_record_correction_syncs_utilities() -> None:
     }
 
     mock_db = MockDB()
-    with patch("landstack.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
+    with patch("tract.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = {
             "ok": True,
             "field": "owner_name",
             "from_value": "Jatin Baral",
             "to_value": "Jatin barali",
         }
-        with patch("landstack.services.audit.record", new_callable=AsyncMock):
+        with patch("tract.services.audit.record", new_callable=AsyncMock):
             res = await run_side_effects(mock_db, app, TAHSILDAR)
 
     assert res is not None

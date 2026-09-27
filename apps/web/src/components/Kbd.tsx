@@ -8,7 +8,7 @@ export interface KbdProps extends HTMLAttributes<HTMLElement> {
 
 /**
  * Tactile, embossed keyboard shortcut badge inspired by Shadcn UI & Linear.
- * Matches Land Stack's warm sandstone & ink palette.
+ * Matches Tract's warm sandstone & ink palette.
  */
 export function Kbd({ children, className, ...rest }: KbdProps) {
   return (

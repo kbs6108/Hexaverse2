@@ -23,7 +23,7 @@ export const SRC = {
   units: 'units',
   village: 'village_boundary',
 } as const;
-export const tileUrl = (layer: string) => `${env.apiUrl}/landstack/tiles/${layer}/{z}/{x}/{y}.pbf`;
+export const tileUrl = (layer: string) => `${env.apiUrl}/tract/tiles/${layer}/{z}/{x}/{y}.pbf`;
 
 /* ---------- Basemaps ---------- */
 export const STREETS_STYLE = 'https://tiles.openfreemap.org/styles/liberty';

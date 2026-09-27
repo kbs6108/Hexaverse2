@@ -20,7 +20,7 @@ make down                                   # stop (keeps the pgdata volume; `ma
 
 - API: http://localhost:8000/docs · health http://localhost:8000/healthz · department docs at `/revenue/docs` etc.
 - Web: http://localhost:5173 (dev mode: pick a role in the header; it sets `X-Dev-User`).
-- Postgres: `postgresql://landstack:landstack@localhost:5432/landstack`.
+- Postgres: `postgresql://tract:tract@localhost:5432/tract`.
 - `docker compose -f infra/docker-compose.yml --profile prod up web-prod` serves the nginx build on :8080.
 - `--profile tiles` starts martin on :3000 (`http://localhost:3000/catalog`); the API's own MVT endpoint is the default.
 

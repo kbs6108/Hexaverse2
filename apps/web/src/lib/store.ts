@@ -164,7 +164,7 @@ export const useUI = create<UIState>()(
       setUsecaseTierOpen: (open) => set({ usecaseTierOpen: open }),
     }),
     {
-      name: 'landstack-ui',
+      name: 'tract-ui',
       partialize: (s) => ({
         layers: s.layers,
         colourBy: s.colourBy,

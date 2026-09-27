@@ -17,15 +17,15 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse, Response
 
-from landstack.auth import Principal, current_principal, require_user
-from landstack.config import get_settings
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError
-from landstack.services import audit
+from tract.auth import Principal, current_principal, require_user
+from tract.config import get_settings
+from tract.db import DBLike, get_db
+from tract.errors import AppError
+from tract.services import audit
 
-log = logging.getLogger("landstack.documents")
+log = logging.getLogger("tract.documents")
 
-router = APIRouter(prefix="/landstack/documents", tags=["documents"])
+router = APIRouter(prefix="/tract/documents", tags=["documents"])
 
 # In-memory document metadata cache for fast retrieval (backed by disk metadata files)
 DOC_INDEX: dict[str, dict[str, Any]] = {}
@@ -127,7 +127,7 @@ async def upload_document(
         "mime": mime,
         "size": len(data),
         "sha256": sha256,
-        "url": f"/landstack/documents/{doc_id}",
+        "url": f"/tract/documents/{doc_id}",
     }
 
 
@@ -180,5 +180,5 @@ async def get_document_meta(
         "uploaded_by": meta.get("uploaded_by"),
         "uploaded_by_name": meta.get("uploaded_by_name"),
         "created_at": meta.get("created_at"),
-        "url": f"/landstack/documents/{doc_id}",
+        "url": f"/tract/documents/{doc_id}",
     }

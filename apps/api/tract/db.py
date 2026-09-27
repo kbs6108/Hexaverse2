@@ -25,9 +25,9 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
-from landstack.config import get_settings
+from tract.config import get_settings
 
-log = logging.getLogger("landstack.db")
+log = logging.getLogger("tract.db")
 
 
 class DBLike(Protocol):
@@ -104,7 +104,7 @@ class DB:
 
     def __init__(self, engine: AsyncEngine) -> None:
         self.engine = engine
-        self._tx: ContextVar[AsyncConnection | None] = ContextVar("landstack_tx", default=None)
+        self._tx: ContextVar[AsyncConnection | None] = ContextVar("tract_tx", default=None)
 
     @classmethod
     def from_url(cls, url: str) -> DB:

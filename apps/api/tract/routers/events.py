@@ -1,4 +1,4 @@
-"""`POST /landstack/events` — department webhooks authenticated with `X-Events-Secret`."""
+"""`POST /tract/events` — department webhooks authenticated with `X-Events-Secret`."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel, Field
 
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db
-from landstack.errors import unauthorized
-from landstack.services.events import handle_event
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db
+from tract.errors import unauthorized
+from tract.services.events import handle_event
 
-router = APIRouter(prefix="/landstack", tags=["events"])
+router = APIRouter(prefix="/tract", tags=["events"])
 
 
 class EventBody(BaseModel):

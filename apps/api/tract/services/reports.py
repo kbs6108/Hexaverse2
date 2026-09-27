@@ -15,12 +15,12 @@ from typing import Any
 
 import segno
 
-from landstack.auth import Principal
-from landstack.config import get_settings
-from landstack.db import DBLike
-from landstack.errors import AppError, not_found
-from landstack.services import audit
-from landstack.services.storage import get_storage
+from tract.auth import Principal
+from tract.config import get_settings
+from tract.db import DBLike
+from tract.errors import AppError, not_found
+from tract.services import audit
+from tract.services.storage import get_storage
 
 
 def new_report_id() -> str:
@@ -153,7 +153,7 @@ def render_html(
         for z in cdm.get("restrictions", {}).get("restriction_zones") or []
     )
     now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    return f"""<!doctype html><html><head><meta charset="utf-8"><title>Land Stack report {_e(report_id)}</title>
+    return f"""<!doctype html><html><head><meta charset="utf-8"><title>Tract report {_e(report_id)}</title>
 <style>
 @page {{ size: A4; margin: 18mm; }}
 body {{ font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10.5pt; color: #111827; }}
@@ -162,7 +162,7 @@ table {{ border-collapse: collapse; width: 100%; }} th, td {{ border: 1px solid 
 th {{ background: #f1f5f9; width: 34%; }} .head {{ display: flex; justify-content: space-between; align-items: flex-start; }}
 .muted {{ color: #64748b; font-size: 9pt; }} .prov td {{ font-size: 9pt; }} .masked {{ color: #b45309; }}
 </style></head><body>
-<div class="head"><div><h1>Land Stack · Parcel Report</h1>
+<div class="head"><div><h1>Tract · Parcel Report</h1>
 <div class="muted">Report {_e(report_id)} · issued to {_e(issued_to)} · {now}</div>
 {'<div class="masked">Owner details masked (no consent on file).</div>' if party.get("masked") else ""}</div>
 <div>{qr_svg(verify_url)}</div></div>
@@ -172,7 +172,7 @@ th {{ background: #f1f5f9; width: 34%; }} .head {{ display: flex; justify-conten
 <h2>Source provenance</h2><table class="prov">
 <tr><th>Department</th><th>Status</th><th>Source</th><th>As of</th><th>Latency</th><th>Error</th></tr>{prov}</table>
 <p class="muted">Verify at {_e(verify_url)}.
-This report aggregates integrated department systems for the Land Stack unified cadastral platform.</p>
+This report aggregates integrated department systems for the Tract unified cadastral platform.</p>
 </body></html>"""
 
 
@@ -186,11 +186,11 @@ def html_to_pdf(html_doc: str) -> bytes:
 
 async def create_report(db: DBLike, ulpin: str, principal: Principal) -> dict[str, Any]:
     """Aggregate, render, sign, store and register a report; returns `{id, url, sha256, signature}`."""
-    from landstack.services import aggregator
+    from tract.services import aggregator
 
     settings = get_settings()
     cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
-    geom_json = await db.fetchval("SELECT ST_AsGeoJSON(geom)::json FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
+    geom_json = await db.fetchval("SELECT ST_AsGeoJSON(geom)::json FROM tract.parcels WHERE ulpin = :u", u=ulpin)
     geometry = geom_json if isinstance(geom_json, dict) else None
     report_id = new_report_id()
     verify_url = f"{settings.public_web_url.rstrip('/')}/verify/{report_id}"
@@ -201,7 +201,7 @@ async def create_report(db: DBLike, ulpin: str, principal: Principal) -> dict[st
     await get_storage().put(key, pdf, "application/pdf")
     await db.execute(
         """
-        INSERT INTO landstack.reports (id, ulpin, issued_to_uid, issued_to_name, issued_at, sha256, signature, storage_key)
+        INSERT INTO tract.reports (id, ulpin, issued_to_uid, issued_to_name, issued_at, sha256, signature, storage_key)
         VALUES (:id, :ulpin, :uid, :name, now(), :sha, :sig, :key)
         """,
         id=report_id,
@@ -223,7 +223,7 @@ async def create_report(db: DBLike, ulpin: str, principal: Principal) -> dict[st
 
 
 async def get_report_row(db: DBLike, report_id: str) -> dict[str, Any]:
-    row = await db.fetchrow("SELECT * FROM landstack.reports WHERE id = :id", id=report_id)
+    row = await db.fetchrow("SELECT * FROM tract.reports WHERE id = :id", id=report_id)
     if row is None:
         raise not_found("report", report_id)
     return row
@@ -237,7 +237,7 @@ async def verify_report(db: DBLike, report_id: str) -> dict[str, Any]:
     issued_at = row.get("issued_at")
     parcel = None
     try:
-        parcel = await db.fetchrow("SELECT survey_no, village FROM landstack.parcels WHERE ulpin = :u", u=row["ulpin"])
+        parcel = await db.fetchrow("SELECT survey_no, village FROM tract.parcels WHERE ulpin = :u", u=row["ulpin"])
     except Exception:
         parcel = None
     valid = bool(sig_ok and file_ok)

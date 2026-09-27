@@ -9,14 +9,14 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from pydantic import BaseModel, model_validator
 
-from landstack.auth import Principal, current_principal, require_officer, require_user
-from landstack.config import get_settings
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError
-from landstack.services import ai_assist, audit
+from tract.auth import Principal, current_principal, require_officer, require_user
+from tract.config import get_settings
+from tract.db import DBLike, get_db
+from tract.errors import AppError
+from tract.services import ai_assist, audit
 
-log = logging.getLogger("landstack.routers.ai")
-router = APIRouter(prefix="/landstack/ai", tags=["ai"])
+log = logging.getLogger("tract.routers.ai")
+router = APIRouter(prefix="/tract/ai", tags=["ai"])
 
 
 class ParcelBriefBody(BaseModel):
@@ -66,7 +66,7 @@ async def pre_check(
 ) -> dict[str, Any]:
     """Instant pre-submission triage for the citizen Apply wizard: blockers / warnings / notes
     from the deterministic rule engine. Never prevents submission — the officer decides."""
-    from landstack.services import workflow
+    from tract.services import workflow
 
     if body.type not in workflow.APPLICATION_TYPES:
         raise AppError(422, "unknown_type", f"unknown application type: {body.type}")
@@ -158,7 +158,7 @@ async def extract_document(
     db: DBLike = Depends(get_db),
 ) -> dict[str, Any]:
     from ai.extract import NotConfigured, extract_ror
-    from landstack.services.document_verify import build_parcel_context, evaluate_cross_verification
+    from tract.services.document_verify import build_parcel_context, evaluate_cross_verification
 
     data = await file.read()
     if not data:

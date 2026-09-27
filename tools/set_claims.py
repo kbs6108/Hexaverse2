@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Set Land Stack role claims on Firebase Auth users (CONTRACTS §3).
+"""Set Tract role claims on Firebase Auth users (CONTRACTS §3).
 
 Usage::
 

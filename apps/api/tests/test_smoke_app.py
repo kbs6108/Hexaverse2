@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from landstack.main import DEPARTMENT_APPS
-from landstack.services import aggregator
+from tract.main import DEPARTMENT_APPS
+from tract.services import aggregator
 
 ULPIN = "TDR1K3M9A2F7C1"
 
@@ -20,12 +20,12 @@ def test_root_and_health(client) -> None:
 
 
 def test_collections_listing(client) -> None:
-    body = client.get("/landstack/collections").json()
+    body = client.get("/tract/collections").json()
     ids = {c["id"] for c in body["collections"]}
     assert ids == {"parcels", "zones", "restriction_zones", "roads", "projects", "village_boundary", "buildings", "settlement_schemes"}
     parcels = next(c for c in body["collections"] if c["id"] == "parcels")
     assert any(link["rel"] == "tiles" for link in parcels["links"])
-    assert client.get("/landstack/collections/nope").json()["error"]["code"] == "not_found"
+    assert client.get("/tract/collections/nope").json()["error"]["code"] == "not_found"
 
 
 @pytest.mark.parametrize("dept", sorted(DEPARTMENT_APPS))
@@ -51,15 +51,15 @@ def test_department_endpoint_envelope_and_chaos(client, fake_db) -> None:
 
 
 def test_auth_gates_and_me(client) -> None:
-    assert client.get("/landstack/me").status_code == 401
-    me = client.get("/landstack/me", headers={"X-Dev-User": "officer:revenue:Anitha"}).json()
+    assert client.get("/tract/me").status_code == 401
+    me = client.get("/tract/me", headers={"X-Dev-User": "officer:revenue:Anitha"}).json()
     assert me["role"] == "officer" and me["department"] == "revenue" and me["consents"] == []
-    assert client.get("/landstack/stats", headers={"X-Dev-User": "citizen:Ravi Kumar"}).status_code == 403
-    assert client.get("/landstack/consistency", headers={"X-Dev-User": "officer:revenue:Anitha"}).status_code == 403
-    r = client.post("/landstack/events", json={"event": "revenue.ror_updated", "ulpin": ULPIN})
+    assert client.get("/tract/stats", headers={"X-Dev-User": "citizen:Ravi Kumar"}).status_code == 403
+    assert client.get("/tract/consistency", headers={"X-Dev-User": "officer:revenue:Anitha"}).status_code == 403
+    r = client.post("/tract/events", json={"event": "revenue.ror_updated", "ulpin": ULPIN})
     assert r.status_code == 401
     r = client.post(
-        "/landstack/events",
+        "/tract/events",
         json={"event": "revenue.ror_updated", "ulpin": ULPIN},
         headers={"X-Events-Secret": "change-me"},
     )
@@ -68,7 +68,7 @@ def test_auth_gates_and_me(client) -> None:
 
 def _prime_parcel(fake_db) -> None:
     fake_db.on(
-        "FROM landstack.parcels p LEFT JOIN landstack.parcel_status",
+        "FROM tract.parcels p LEFT JOIN tract.parcel_status",
         lambda p: (
             []
             if p.get("ulpin") not in (None, ULPIN)
@@ -133,7 +133,7 @@ def _prime_parcel(fake_db) -> None:
         ],
     )
     fake_db.on(
-        "FROM dept_planning.zones z JOIN landstack.parcels p ON ST_Intersects",
+        "FROM dept_planning.zones z JOIN tract.parcels p ON ST_Intersects",
         [{"id": 1, "zone_code": "R1", "name": "Residential", "permissible_uses": ["residential"]}],
     )
     fake_db.on(
@@ -154,7 +154,7 @@ def _prime_parcel(fake_db) -> None:
 def test_parcel_cdm_end_to_end_through_in_process_adapters(client, fake_db) -> None:
     aggregator.invalidate()
     _prime_parcel(fake_db)
-    officer = client.get(f"/landstack/parcels/{ULPIN}", headers={"X-Dev-User": "officer:revenue:Anitha"})
+    officer = client.get(f"/tract/parcels/{ULPIN}", headers={"X-Dev-User": "officer:revenue:Anitha"})
     assert officer.status_code == 200, officer.text
     cdm = officer.json()
     assert all(cdm["provenance"][d]["ok"] for d in DEPARTMENT_APPS), cdm["provenance"]
@@ -170,23 +170,23 @@ def test_parcel_cdm_end_to_end_through_in_process_adapters(client, fake_db) -> N
     )
     assert cdm["fiscal"]["estimated_value"] == 18000 * 223.0 and cdm["utilities"]["road_access_m"] == 12
     assert cdm["consistency"]["area_match"] and cdm["consistency"]["owner_match"]
-    citizen = client.get(f"/landstack/parcels/{ULPIN}", headers={"X-Dev-User": "citizen:Lakshmi Devi"}).json()
+    citizen = client.get(f"/tract/parcels/{ULPIN}", headers={"X-Dev-User": "citizen:Lakshmi Devi"}).json()
     assert citizen["party"]["masked"] is True and citizen["party"]["owners"][0]["name"] == "R*** K***"
     assert citizen["rights"]["registration"]["doc_no"] == "****0042"
-    missing = client.get("/landstack/parcels/NOPE", headers={"X-Dev-User": "admin"})
+    missing = client.get("/tract/parcels/NOPE", headers={"X-Dev-User": "admin"})
     assert missing.status_code == 404 and missing.json()["error"]["code"] == "not_found"
 
 
 def test_adapters_and_connectors_admin_views(client) -> None:
-    ad = client.get("/landstack/adapters", headers={"X-Dev-User": "admin"}).json()
+    ad = client.get("/tract/adapters", headers={"X-Dev-User": "admin"}).json()
     assert {m["name"] for m in ad["items"]} >= {"revenue_ap", "revenue_tn", "registration_ap"}
-    conn = client.get("/landstack/connectors", headers={"X-Dev-User": "admin"}).json()
+    conn = client.get("/tract/connectors", headers={"X-Dev-User": "admin"}).json()
     assert {c["name"] for c in conn["items"]} == set(DEPARTMENT_APPS) and all(c["ok"] for c in conn["items"])
 
 
 def test_planning_check_rule_via_http(client, fake_db) -> None:
     fake_db.on(
-        "FROM dept_planning.zones z JOIN landstack.parcels p ON ST_Intersects",
+        "FROM dept_planning.zones z JOIN tract.parcels p ON ST_Intersects",
         [{"id": 1, "zone_code": "R1", "name": "Residential", "permissible_uses": ["residential"]}],
     )
     fake_db.on("FROM gis.restriction_zones r", [])
@@ -197,9 +197,9 @@ def test_planning_check_rule_via_http(client, fake_db) -> None:
 
 
 def test_validation_error_envelope(client) -> None:
-    r = client.post("/landstack/applications", json={"ulpin": ULPIN}, headers={"X-Dev-User": "citizen:Ravi Kumar"})
+    r = client.post("/tract/applications", json={"ulpin": ULPIN}, headers={"X-Dev-User": "citizen:Ravi Kumar"})
     assert r.status_code == 422 and r.json()["error"]["code"] == "validation_error"
-    r = client.get("/landstack/tiles/nope/1/0/0.pbf")
+    r = client.get("/tract/tiles/nope/1/0/0.pbf")
     assert r.status_code == 404
-    r = client.get("/landstack/tiles/parcels/3/9/0.pbf")
+    r = client.get("/tract/tiles/parcels/3/9/0.pbf")
     assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_tile"

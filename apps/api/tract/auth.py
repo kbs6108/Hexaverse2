@@ -6,7 +6,7 @@
 
 `current_principal` is optional (None for anonymous); `require(*roles, department=None)` builds a
 dependency that enforces role/department — admin passes every check. On first sight the user is
-upserted into `landstack.users` (best effort).
+upserted into `tract.users` (best effort).
 """
 
 from __future__ import annotations
@@ -20,11 +20,11 @@ from typing import Any
 from fastapi import Depends, Request
 from pydantic import BaseModel, Field
 
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db
-from landstack.errors import forbidden, unauthorized
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db
+from tract.errors import forbidden, unauthorized
 
-log = logging.getLogger("landstack.auth")
+log = logging.getLogger("tract.auth")
 
 ROLES = ("citizen", "officer", "admin")
 DEPARTMENTS = ("revenue", "registration", "planning")
@@ -175,18 +175,18 @@ def _verify_firebase(token: str, settings: Settings) -> Principal:
 
 
 async def upsert_user(db: DBLike, principal: Principal) -> None:
-    """Best-effort `landstack.users` upsert; DB errors are logged, never raised."""
+    """Best-effort `tract.users` upsert; DB errors are logged, never raised."""
     try:
-        existing = await db.fetchrow("SELECT name FROM landstack.users WHERE uid = :uid", uid=principal.uid)
+        existing = await db.fetchrow("SELECT name FROM tract.users WHERE uid = :uid", uid=principal.uid)
         if existing and existing.get("name"):
             principal.name = existing["name"]
         else:
             await db.execute(
                 """
-                INSERT INTO landstack.users (uid, email, name, role, department, created_at)
+                INSERT INTO tract.users (uid, email, name, role, department, created_at)
                 VALUES (:uid, :email, :name, :role, :department, now())
                 ON CONFLICT (uid) DO UPDATE SET role = EXCLUDED.role,
-                    department = EXCLUDED.department, email = COALESCE(EXCLUDED.email, landstack.users.email)
+                    department = EXCLUDED.department, email = COALESCE(EXCLUDED.email, tract.users.email)
                 """,
                 uid=principal.uid,
                 email=principal.email,
@@ -209,7 +209,7 @@ async def has_consent(db: DBLike, principal: Principal | None, ulpin: str) -> bo
     try:
         row = await db.fetchrow(
             """
-            SELECT id FROM landstack.consents
+            SELECT id FROM tract.consents
             WHERE ulpin = :ulpin AND granted_to_uid = :uid AND (expires_at IS NULL OR expires_at > now())
             LIMIT 1
             """,

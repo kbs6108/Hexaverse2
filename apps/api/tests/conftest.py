@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from landstack import db as dbmod
+from tract import db as dbmod
 
 Rows = list[dict[str, Any]] | Callable[[dict[str, Any]], list[dict[str, Any]]]
 
@@ -72,7 +72,7 @@ def fake_db() -> Any:
 def client(fake_db: Any) -> Any:
     from fastapi.testclient import TestClient
 
-    from landstack.main import create_app
+    from tract.main import create_app
 
     app = create_app()
     with TestClient(app, raise_server_exceptions=False) as c:

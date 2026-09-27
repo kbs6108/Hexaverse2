@@ -11,7 +11,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 __all__ = ["connect", "normalise_database_url", "resolve_database_url"]
 
-_DEFAULT_URL = "postgresql://landstack:landstack@localhost:5432/landstack"
+_DEFAULT_URL = "postgresql://tract:tract@localhost:5432/tract"
 
 
 def normalise_database_url(url: str) -> str:

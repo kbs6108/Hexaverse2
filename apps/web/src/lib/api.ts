@@ -114,79 +114,79 @@ export const apiUrl = (path: string) => `${env.apiUrl}${path}`;
 /* ---------- Public ---------- */
 export const api = {
   health: () => request<{ ok: boolean }>('/healthz', { auth: false }),
-  collections: () => request<CollectionsList>('/landstack/collections', { auth: false }),
+  collections: () => request<CollectionsList>('/tract/collections', { auth: false }),
   items: <P = Record<string, unknown>>(layer: string, query?: Query) =>
-    request<GeoJSONFeatureCollection<P>>(`/landstack/collections/${layer}/items`, { query, auth: false }),
+    request<GeoJSONFeatureCollection<P>>(`/tract/collections/${layer}/items`, { query, auth: false }),
   parcelFeature: (ulpin: string) =>
-    request<GeoJSONFeature>(`/landstack/collections/parcels/items/${encodeURIComponent(ulpin)}`, { auth: false }),
+    request<GeoJSONFeature>(`/tract/collections/parcels/items/${encodeURIComponent(ulpin)}`, { auth: false }),
   search: (q: string, signal?: AbortSignal) =>
-    request<SearchHit[] | { items?: SearchHit[]; results?: SearchHit[] }>('/landstack/search', { query: { q }, signal }).then((r) =>
+    request<SearchHit[] | { items?: SearchHit[]; results?: SearchHit[] }>('/tract/search', { query: { q }, signal }).then((r) =>
       Array.isArray(r) ? r : r.items ?? r.results ?? [],
     ),
   verifyReport: (id: string) => request<VerifyReportResult>(`/verify/${encodeURIComponent(id)}`, { auth: false }),
   reportPdfUrl: (id: string) => apiUrl(`/reports/${encodeURIComponent(id)}.pdf`),
 
   /* ---------- Any signed-in ---------- */
-  me: () => request<Me>('/landstack/me'),
-  parcel: (ulpin: string) => request<ParcelCDM>(`/landstack/parcels/${encodeURIComponent(ulpin)}`),
+  me: () => request<Me>('/tract/me'),
+  parcel: (ulpin: string) => request<ParcelCDM>(`/tract/parcels/${encodeURIComponent(ulpin)}`),
   verifyOwnership: (ulpin: string, claimed_name: string) =>
-    request<VerifyOwnershipResult>('/landstack/verify-ownership', { method: 'POST', body: { ulpin, claimed_name } }),
+    request<VerifyOwnershipResult>('/tract/verify-ownership', { method: 'POST', body: { ulpin, claimed_name } }),
   createApplication: (ulpin: string, type: ApplicationType, payload: Record<string, unknown>) =>
-    request<Application>('/landstack/applications', { method: 'POST', body: { ulpin, type, payload } }),
+    request<Application>('/tract/applications', { method: 'POST', body: { ulpin, type, payload } }),
   myApplications: () =>
-    request<Application[] | { items: Application[] }>('/landstack/applications', { query: { mine: 1 } }).then(unwrapList),
+    request<Application[] | { items: Application[] }>('/tract/applications', { query: { mine: 1 } }).then(unwrapList),
   myParcels: () =>
-    request<{ items: OwnedParcel[] }>('/landstack/citizen/my-parcels'),
-  application: (id: string) => request<Application>(`/landstack/applications/${encodeURIComponent(id)}`),
-  issueReport: (ulpin: string) => request<ReportIssued>(`/landstack/reports/${encodeURIComponent(ulpin)}`, { method: 'POST' }),
+    request<{ items: OwnedParcel[] }>('/tract/citizen/my-parcels'),
+  application: (id: string) => request<Application>(`/tract/applications/${encodeURIComponent(id)}`),
+  issueReport: (ulpin: string) => request<ReportIssued>(`/tract/reports/${encodeURIComponent(ulpin)}`, { method: 'POST' }),
   validateBoundary: (ulpin: string, geometry: Record<string, unknown>) =>
-    request<BoundaryValidation>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary/validate`, { method: 'POST', body: { geometry } }),
+    request<BoundaryValidation>(`/tract/parcels/${encodeURIComponent(ulpin)}/boundary/validate`, { method: 'POST', body: { geometry } }),
   proposeBoundary: (ulpin: string, geometry: Record<string, unknown>, reason: string) =>
-    request<BoundaryProposalResult>(`/landstack/parcels/${encodeURIComponent(ulpin)}/boundary`, { method: 'POST', body: { geometry, reason } }),
-  requestConsent: (ulpin: string) => request<{ ok: boolean }>('/landstack/consents/request', { method: 'POST', body: { ulpin } }),
+    request<BoundaryProposalResult>(`/tract/parcels/${encodeURIComponent(ulpin)}/boundary`, { method: 'POST', body: { geometry, reason } }),
+  requestConsent: (ulpin: string) => request<{ ok: boolean }>('/tract/consents/request', { method: 'POST', body: { ulpin } }),
   getPrivacy: (ulpin: string) =>
-    request<{ ulpin: string; preferences: ParcelPrivacyPreferences }>(`/landstack/parcels/${encodeURIComponent(ulpin)}/privacy`),
+    request<{ ulpin: string; preferences: ParcelPrivacyPreferences }>(`/tract/parcels/${encodeURIComponent(ulpin)}/privacy`),
   updatePrivacy: (ulpin: string, body: ParcelPrivacyPreferences) =>
     request<{ ulpin: string; preferences: ParcelPrivacyPreferences; status: string }>(
-      `/landstack/parcels/${encodeURIComponent(ulpin)}/privacy`,
+      `/tract/parcels/${encodeURIComponent(ulpin)}/privacy`,
       { method: 'PUT', body },
     ),
   notices: (village?: string) =>
-    request<{ items: Notice[]; count: number; window_days: number }>('/landstack/notices', { query: { village }, auth: false }),
+    request<{ items: Notice[]; count: number; window_days: number }>('/tract/notices', { query: { village }, auth: false }),
   fileObjection: (id: string, reason: string) =>
-    request<{ ok: boolean; objection_count: number }>(`/landstack/applications/${encodeURIComponent(id)}/objections`, { method: 'POST', body: { reason } }),
+    request<{ ok: boolean; objection_count: number }>(`/tract/applications/${encodeURIComponent(id)}/objections`, { method: 'POST', body: { reason } }),
   dueDiligence: (ulpin: string) =>
-    request<DueDiligence>(`/landstack/parcels/${encodeURIComponent(ulpin)}/due-diligence`),
+    request<DueDiligence>(`/tract/parcels/${encodeURIComponent(ulpin)}/due-diligence`),
   assistant: (message: string, ulpin?: string | null, history?: { role: string; content: string }[]) =>
-    request<AssistantReply>('/landstack/ai/assistant', {
+    request<AssistantReply>('/tract/ai/assistant', {
       method: 'POST',
       body: { message, ulpin: ulpin || undefined, history: history || [] },
     }),
   preCheck: (ulpin: string, type: ApplicationType) =>
-    request<PreCheck>('/landstack/ai/pre-check', { method: 'POST', body: { ulpin, type } }),
+    request<PreCheck>('/tract/ai/pre-check', { method: 'POST', body: { ulpin, type } }),
 
   /* ---------- Officer+ ---------- */
   timeline: (ulpin: string) =>
-    request<TimelineEvent[] | { events: TimelineEvent[] }>(`/landstack/parcels/${encodeURIComponent(ulpin)}/timeline`).then(
+    request<TimelineEvent[] | { events: TimelineEvent[] }>(`/tract/parcels/${encodeURIComponent(ulpin)}/timeline`).then(
       (r) => (Array.isArray(r) ? r : r.events ?? []),
     ),
   queue: (department?: string) =>
-    request<Application[] | { items: Application[] }>('/landstack/queue', { query: { department } }).then(unwrapList),
+    request<Application[] | { items: Application[] }>('/tract/queue', { query: { department } }).then(unwrapList),
   transition: (id: string, action: string, remark: string) =>
-    request<Application>(`/landstack/applications/${encodeURIComponent(id)}/transition`, {
+    request<Application>(`/tract/applications/${encodeURIComponent(id)}/transition`, {
       method: 'POST',
       body: { action, remark },
     }),
-  stats: () => request<Stats>('/landstack/stats'),
-  alerts: (status?: string) => request<Alert[] | { items: Alert[] }>('/landstack/alerts', { query: { status } }).then(unwrapList),
-  assignAlert: (id: number) => request<Alert>(`/landstack/alerts/${id}/assign`, { method: 'POST', body: {} }),
-  resolveAlert: (id: number) => request<Alert>(`/landstack/alerts/${id}/resolve`, { method: 'POST', body: {} }),
+  stats: () => request<Stats>('/tract/stats'),
+  alerts: (status?: string) => request<Alert[] | { items: Alert[] }>('/tract/alerts', { query: { status } }).then(unwrapList),
+  assignAlert: (id: number) => request<Alert>(`/tract/alerts/${id}/assign`, { method: 'POST', body: {} }),
+  resolveAlert: (id: number) => request<Alert>(`/tract/alerts/${id}/resolve`, { method: 'POST', body: {} }),
   changeDetection: (body: { ulpin?: string; bbox?: number[]; date_a?: string; date_b?: string }) =>
-    request<ChangeDetectionResult>('/landstack/ai/change-detection', { method: 'POST', body }),
-  parcelBrief: (ulpin: string) => request<ParcelBrief>('/landstack/ai/parcel-brief', { method: 'POST', body: { ulpin } }),
-  applicationAdvice: (id: string) => request<ApplicationAdvice>('/landstack/ai/application-advice', { method: 'POST', body: { id } }),
+    request<ChangeDetectionResult>('/tract/ai/change-detection', { method: 'POST', body }),
+  parcelBrief: (ulpin: string) => request<ParcelBrief>('/tract/ai/parcel-brief', { method: 'POST', body: { ulpin } }),
+  applicationAdvice: (id: string) => request<ApplicationAdvice>('/tract/ai/application-advice', { method: 'POST', body: { id } }),
   draftOrder: (app_id: string, action: string) =>
-    request<import('./cdm').DraftOrderResult>('/landstack/ai/draft-order', { method: 'POST', body: { app_id, action } }),
+    request<import('./cdm').DraftOrderResult>('/tract/ai/draft-order', { method: 'POST', body: { app_id, action } }),
   uploadDocument: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);
@@ -197,13 +197,13 @@ export const api = {
       size: number;
       sha256: string;
       url: string;
-    }>('/landstack/documents/upload', { method: 'POST', body: fd });
+    }>('/tract/documents/upload', { method: 'POST', body: fd });
   },
-  documentUrl: (docId: string) => `${env.apiUrl}/landstack/documents/${encodeURIComponent(docId)}`,
+  documentUrl: (docId: string) => `${env.apiUrl}/tract/documents/${encodeURIComponent(docId)}`,
   extractDocument: (file: File, ulpin?: string) => {
     const fd = new FormData();
     fd.append('file', file);
-    return request<Record<string, unknown>>('/landstack/ai/extract-document', {
+    return request<Record<string, unknown>>('/tract/ai/extract-document', {
       method: 'POST',
       body: fd,
       query: ulpin?.trim() ? { ulpin: ulpin.trim() } : undefined,
@@ -216,10 +216,10 @@ export const api = {
 
   /* ---------- Admin ---------- */
   consistency: () =>
-    request<ConsistencyFinding[] | { items: ConsistencyFinding[] }>('/landstack/consistency').then(unwrapList),
-  connectors: () => request<Connector[] | { items: Connector[] }>('/landstack/connectors').then(unwrapList),
+    request<ConsistencyFinding[] | { items: ConsistencyFinding[] }>('/tract/consistency').then(unwrapList),
+  connectors: () => request<Connector[] | { items: Connector[] }>('/tract/connectors').then(unwrapList),
   adapters: () =>
-    request<AdapterMapping[] | { items: AdapterMapping[] } | Record<string, AdapterMapping>>('/landstack/adapters').then(
+    request<AdapterMapping[] | { items: AdapterMapping[] } | Record<string, AdapterMapping>>('/tract/adapters').then(
       (r) => {
         if (Array.isArray(r)) return r;
         if ('items' in r && Array.isArray((r as { items: unknown }).items)) return (r as { items: AdapterMapping[] }).items;
@@ -227,10 +227,10 @@ export const api = {
       },
     ),
   grantConsent: (ulpin: string, uid: string, hours: number) =>
-    request<{ ok: boolean }>('/landstack/consents/grant', { method: 'POST', body: { ulpin, uid, hours } }),
+    request<{ ok: boolean }>('/tract/consents/grant', { method: 'POST', body: { ulpin, uid, hours } }),
   simulateDeed: (ulpin: string, claimant: string) =>
-    request<Record<string, unknown>>('/landstack/admin/simulate/deed', { method: 'POST', body: { ulpin, claimant } }),
-  demoReset: () => request<{ ok: boolean }>('/landstack/admin/demo-reset', { method: 'POST', body: {} }),
+    request<Record<string, unknown>>('/tract/admin/simulate/deed', { method: 'POST', body: { ulpin, claimant } }),
+  demoReset: () => request<{ ok: boolean }>('/tract/admin/demo-reset', { method: 'POST', body: {} }),
 };
 
 function unwrapList<T>(r: T[] | { items: T[] }): T[] {

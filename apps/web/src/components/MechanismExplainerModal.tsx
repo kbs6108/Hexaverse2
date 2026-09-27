@@ -45,10 +45,10 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
             </div>
             <div>
               <h2 id="mechanism-guide-title" className="text-base font-semibold">
-                How Land Stack Mechanisms Work
+                How Tract Mechanisms Work
               </h2>
               <p className="text-xs text-ink-3">
-                Ground Reality in India vs. Land Stack Automated Interoperability
+                Ground Reality in India vs. Tract Automated Interoperability
               </p>
             </div>
           </div>
@@ -129,7 +129,7 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
 
                 <div className="rounded-xl border border-primary/30 bg-primary-soft/40 p-4">
                   <div className="flex items-center gap-2 text-primary font-semibold text-xs uppercase tracking-wide">
-                    <CheckCircle2 size={14} /> Hexaverse / Land Stack Automation
+                    <CheckCircle2 size={14} /> Hexaverse / Tract Automation
                   </div>
                   <ul className="mt-2.5 space-y-2 text-xs text-ink-2">
                     <li className="flex items-start gap-1.5">
@@ -138,7 +138,7 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
                     </li>
                     <li className="flex items-start gap-1.5">
                       <span className="text-primary font-bold">•</span>
-                      <span><strong>Discrepancy Caught:</strong> If deed claimant ≠ RoR owner, Land Stack raises an Alert AND opens a <strong>System-Initiated Mutation Application</strong>.</span>
+                      <span><strong>Discrepancy Caught:</strong> If deed claimant ≠ RoR owner, Tract raises an Alert AND opens a <strong>System-Initiated Mutation Application</strong>.</span>
                     </li>
                     <li className="flex items-start gap-1.5">
                       <span className="text-primary font-bold">•</span>
@@ -185,7 +185,7 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
                   <Info size={16} /> Why Clicking “Resolve” on an Alert Does Not Update Title
                 </h3>
                 <p className="mt-1 text-xs leading-relaxed text-ink-2">
-                  Understanding this distinction is key to testing and evaluating Land Stack. In government administration, notifications have no statutory power to alter ownership registers.
+                  Understanding this distinction is key to testing and evaluating Tract. In government administration, notifications have no statutory power to alter ownership registers.
                 </p>
               </div>
 
@@ -309,7 +309,7 @@ export function MechanismExplainerModal({ open, onClose, initialTab = 'registrat
                   <Scale size={16} /> Quasi-Judicial Hierarchy & Automated Speaking Orders
                 </h3>
                 <p className="mt-1 text-xs leading-relaxed text-ink-2">
-                  In Indian revenue administration, title changes cannot occur through single-click officer approvals without statutory due process. Land Stack enforces a four-stage administrative gate ending in formal, legally binding speaking orders.
+                  In Indian revenue administration, title changes cannot occur through single-click officer approvals without statutory due process. Tract enforces a four-stage administrative gate ending in formal, legally binding speaking orders.
                 </p>
               </div>
 

@@ -8,14 +8,14 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from landstack.auth import Principal, require, require_officer, require_user
-from landstack.db import DBLike, get_db
-from landstack.services import aggregator, audit, boundary, workflow
-from landstack.services.consistency import OWNER_THRESHOLD, name_score
+from tract.auth import Principal, require, require_officer, require_user
+from tract.db import DBLike, get_db
+from tract.services import aggregator, audit, boundary, workflow
+from tract.services.consistency import OWNER_THRESHOLD, name_score
 
 require_revenue = require("officer", department="revenue")
 
-router = APIRouter(prefix="/landstack", tags=["parcels"])
+router = APIRouter(prefix="/tract", tags=["parcels"])
 
 
 @router.get("/parcels/{ulpin}")
@@ -42,7 +42,7 @@ async def my_parcels(
                ST_XMin(p.geom) AS minx, ST_YMin(p.geom) AS miny,
                ST_XMax(p.geom) AS maxx, ST_YMax(p.geom) AS maxy
         FROM dept_revenue.ror r
-        JOIN landstack.parcels p ON p.ulpin = r.ulpin
+        JOIN tract.parcels p ON p.ulpin = r.ulpin
         WHERE r.owner_name ILIKE :like OR similarity(r.owner_name, :name) > 0.5
         ORDER BY r.updated_at DESC
         LIMIT 10
@@ -122,7 +122,7 @@ async def due_diligence(
 ) -> dict[str, Any]:
     """Buyer due-diligence checklist over the CDM the caller may see (masking applies first).
     Deterministic 9-point checks enhanced with AI executive summary when configured."""
-    from landstack.services import ai_assist
+    from tract.services import ai_assist
 
     cdm = await aggregator.get_parcel_cdm(db, ulpin, principal)
     return {"ulpin": ulpin, **(await ai_assist.due_diligence_report(cdm))}
@@ -179,7 +179,7 @@ async def timeline(
     )
     push(
         await db.fetch(
-            "SELECT id, type, status, applicant_name, created_at FROM landstack.applications WHERE ulpin = :u", u=ulpin
+            "SELECT id, type, status, applicant_name, created_at FROM tract.applications WHERE ulpin = :u", u=ulpin
         ),
         "application",
         "gateway",
@@ -188,7 +188,7 @@ async def timeline(
     )
     push(
         await db.fetch(
-            "SELECT id, kind, severity, title, status, created_at FROM landstack.alerts WHERE ulpin = :u", u=ulpin
+            "SELECT id, kind, severity, title, status, created_at FROM tract.alerts WHERE ulpin = :u", u=ulpin
         ),
         "alert",
         "gateway",
@@ -197,7 +197,7 @@ async def timeline(
     )
     push(
         await db.fetch(
-            "SELECT ts, action, actor_name, actor_role, source FROM landstack.audit_log WHERE ulpin = :u "
+            "SELECT ts, action, actor_name, actor_role, source FROM tract.audit_log WHERE ulpin = :u "
             "ORDER BY ts DESC LIMIT 50",
             u=ulpin,
         ),
@@ -274,9 +274,9 @@ class UpdatePrivacyBody(BaseModel):
 async def get_privacy(
     ulpin: str, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
 ) -> dict[str, Any]:
-    exists = await db.fetchval("SELECT 1 FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
+    exists = await db.fetchval("SELECT 1 FROM tract.parcels WHERE ulpin = :u", u=ulpin)
     if not exists:
-        from landstack.errors import not_found
+        from tract.errors import not_found
         raise not_found("parcel", ulpin)
     prefs = await aggregator.get_privacy_preferences(db, ulpin)
     return {"ulpin": ulpin, "preferences": prefs}
@@ -286,9 +286,9 @@ async def get_privacy(
 async def update_privacy(
     ulpin: str, body: UpdatePrivacyBody, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
 ) -> dict[str, Any]:
-    exists = await db.fetchval("SELECT 1 FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
+    exists = await db.fetchval("SELECT 1 FROM tract.parcels WHERE ulpin = :u", u=ulpin)
     if not exists:
-        from landstack.errors import not_found
+        from tract.errors import not_found
         raise not_found("parcel", ulpin)
 
     # Permission check: must be admin or the verified owner of the parcel
@@ -300,12 +300,12 @@ async def update_privacy(
         if not is_owner and ror_owner:
             is_owner = name_score(ror_owner, principal.name or "") >= 60
         if not is_owner:
-            from landstack.errors import forbidden
+            from tract.errors import forbidden
             raise forbidden("Only the verified title owner or an administrator can update public disclosure preferences.")
 
     await db.execute(
         """
-        INSERT INTO landstack.parcel_privacy (
+        INSERT INTO tract.parcel_privacy (
             ulpin, owner_uid, public_owner_name, public_nominees, public_deed_details,
             public_building_units, public_utilities, updated_at
         ) VALUES (

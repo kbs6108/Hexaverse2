@@ -1,14 +1,14 @@
-"""`GET /landstack/me` — who am I (role, department, consents)."""
+"""`GET /tract/me` — who am I (role, department, consents)."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from landstack.auth import Principal, require_user
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db
+from tract.auth import Principal, require_user
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db
 
-router = APIRouter(prefix="/landstack", tags=["auth"])
+router = APIRouter(prefix="/tract", tags=["auth"])
 
 
 @router.get("/me")
@@ -19,7 +19,7 @@ async def me(
 ) -> dict:
     try:
         rows = await db.fetch(
-            "SELECT ulpin FROM landstack.consents WHERE granted_to_uid = :uid AND (expires_at IS NULL OR expires_at > now())",
+            "SELECT ulpin FROM tract.consents WHERE granted_to_uid = :uid AND (expires_at IS NULL OR expires_at > now())",
             uid=principal.uid,
         )
         principal.consents.update(r["ulpin"] for r in rows)

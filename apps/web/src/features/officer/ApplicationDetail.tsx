@@ -209,7 +209,7 @@ function StatutoryImpactCard({ app, pending }: { app: { type: string; status: st
       {
         dept: 'Cadastral & Common Data Model',
         impact: 'Synchronizes Master Parcel Registry across all state portals',
-        records: 'landstack.parcels & CDM cache invalidated and updated in real-time',
+        records: 'tract.parcels & CDM cache invalidated and updated in real-time',
       },
     ];
   } else if (app.type === 'boundary_correction') {
@@ -217,7 +217,7 @@ function StatutoryImpactCard({ app, pending }: { app: { type: string; status: st
       {
         dept: 'Survey & Land Records (GIS)',
         impact: 'Commits high-precision PostGIS polygon coordinates to official Cadastral map',
-        records: 'landstack.parcels.geom · Replaces boundary vertices after 5 spatial topology checks',
+        records: 'tract.parcels.geom · Replaces boundary vertices after 5 spatial topology checks',
       },
       {
         dept: 'Revenue Department (Extent)',
@@ -238,7 +238,7 @@ function StatutoryImpactCard({ app, pending }: { app: { type: string; status: st
       {
         dept: 'Ground Enforcement & Earth Observation',
         impact: 'Concludes site inspection and dismisses satellite change detection alert',
-        records: 'landstack.alerts marked resolved with officer inspection remarks',
+        records: 'tract.alerts marked resolved with officer inspection remarks',
       },
     ];
   } else if (app.type === 'utility_request') {

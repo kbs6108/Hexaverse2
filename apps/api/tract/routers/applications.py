@@ -9,14 +9,14 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from landstack.adapters import client
-from landstack.auth import Principal, require_officer, require_user
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError, forbidden
-from landstack.services import audit, workflow
-from landstack.services.consistency import OWNER_THRESHOLD, name_score
+from tract.adapters import client
+from tract.auth import Principal, require_officer, require_user
+from tract.db import DBLike, get_db
+from tract.errors import AppError, forbidden
+from tract.services import audit, workflow
+from tract.services.consistency import OWNER_THRESHOLD, name_score
 
-router = APIRouter(prefix="/landstack", tags=["applications"])
+router = APIRouter(prefix="/tract", tags=["applications"])
 
 # Statutory public-notice window: transfers of rights are published for objections
 # while pending, up to NOTICE_DAYS from filing (mirrors the RoR objection period).
@@ -62,7 +62,7 @@ async def _auto_checks(db: DBLike, body: CreateApplication, principal: Principal
 
     if "document" in payload and isinstance(payload["document"], dict) and payload["document"].get("id"):
         try:
-            from landstack.services.document_verify import verify_application_document
+            from tract.services.document_verify import verify_application_document
             app_ctx = {
                 "applicant_name": principal.name,
                 "applicant_uid": principal.uid,
@@ -144,7 +144,7 @@ async def notices(
     survey number, village, type, days left and objection count only."""
     rows = await db.fetch(
         "SELECT a.id, a.ulpin, a.type, a.status, a.created_at, a.payload, p.survey_no, p.village "
-        "FROM landstack.applications a JOIN landstack.parcels p ON p.ulpin = a.ulpin "
+        "FROM tract.applications a JOIN tract.parcels p ON p.ulpin = a.ulpin "
         "WHERE a.type = ANY(:types) AND a.created_at > now() - make_interval(days => :days) "
         + ("AND p.village = :village " if village else "")
         + "ORDER BY a.created_at DESC LIMIT 100",
@@ -205,7 +205,7 @@ async def file_objection(
     })
     payload["objections"] = objections
     await db.execute(
-        "UPDATE landstack.applications SET payload = CAST(:payload AS jsonb), updated_at = now() WHERE id = :id",
+        "UPDATE tract.applications SET payload = CAST(:payload AS jsonb), updated_at = now() WHERE id = :id",
         payload=json.dumps(payload),
         id=app_id,
     )

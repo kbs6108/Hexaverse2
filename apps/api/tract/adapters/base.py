@@ -12,8 +12,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-from landstack.adapters import client, postprocess
-from landstack.adapters.mapping import apply_mapping, load_mapping
+from tract.adapters import client, postprocess
+from tract.adapters.mapping import apply_mapping, load_mapping
 
 
 @dataclass

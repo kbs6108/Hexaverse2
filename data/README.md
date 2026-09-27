@@ -36,11 +36,11 @@ data/
 
 ## Swapping in real data
 
-1. **Real cadastre** — load polygons with `survey_no`, `village` into `landstack.parcels`
-   (EPSG:4326 MultiPolygon), compute `ulpin` with `landstack.services.ulpin.ulpin_style` (or use
+1. **Real cadastre** — load polygons with `survey_no`, `village` into `tract.parcels`
+   (EPSG:4326 MultiPolygon), compute `ulpin` with `tract.services.ulpin.ulpin_style` (or use
    DILRMP ULPINs directly, any 14-char id works), `area_sqm = ST_Area(geom::geography)`. Then run
    only the department generators from `tools/seed.py` (`make_department_records`) or point the
-   department adapters (`apps/api/landstack/adapters/*.yaml`) at the real APIs.
+   department adapters (`apps/api/tract/adapters/*.yaml`) at the real APIs.
 2. **Real zoning** — replace `dept_planning.zones` with the APCRDA / DTCP master-plan layer; the
    `zone_code` vocabulary (R1, R2, C1, AG, IND, PUB) is free-form text.
 3. **Real imagery** — `python tools/fetch_s2.py --compute` (needs internet, ~200 MB download) fills

@@ -1,4 +1,4 @@
-# Land Stack Web
+# Tract Web
 
 Vite 7 · React 19 · TypeScript · MapLibre GL (via react-map-gl) · TanStack Router + Query ·
 Zustand · Tailwind v4 · ECharts · Firebase Auth.
@@ -20,11 +20,11 @@ npm run dev                 # http://localhost:5173
 
 - **Map** — basemap from OpenFreeMap (no key) with an optional Esri World Imagery layer when
   `VITE_ESRI_API_KEY` is set. Parcels and every other GIS layer come from the API as vector tiles
-  (`/landstack/tiles/{layer}/{z}/{x}/{y}.pbf`) with `promoteId: 'ulpin'`, so hover/selection use
+  (`/tract/tiles/{layer}/{z}/{x}/{y}.pbf`) with `promoteId: 'ulpin'`, so hover/selection use
   MapLibre feature-state and never refetch. The layer panel is organised in the three tiers the
   problem statement names: Base · Essential governance · Use-case. "3D units · preview" extrudes
   building units (`base_m`/`height_m`) with a 55° pitch.
-- **Parcel drawer** — renders the CDM from `GET /landstack/parcels/{ulpin}`; every section shows a
+- **Parcel drawer** — renders the CDM from `GET /tract/parcels/{ulpin}`; every section shows a
   provenance badge (source system, latency, as-of) and degrades to "Source unavailable" per block.
 - **Auth** — `VITE_AUTH_MODE=dev` shows a role switcher with 17 demo identities spanning AP, TN, and TG (citizens and statutory officers) and sends `X-Dev-User`; `firebase` mode uses Google / email sign-in and sends the ID token. Roles and department come from custom claims.
 - **Routes** — `/` (Cinematic landing page with living topo shader) · `/map` (3-tier MapLibre GIS explorer with 3D strata) · `/citizen/*` (Apply wizard, track application, verify ownership) · `/officer/*` (4-stage desk queue, application detail, satellite change alerts) · `/admin/*` (Connectors, adapter mapping, event simulation) · `/help` (Interactive simulators: Statutory Hierarchy, ULPIN Decoder, 3D Strata Explorer, Provenance Matrix) · `/verify/:id` (Public report verification) · `/login`.

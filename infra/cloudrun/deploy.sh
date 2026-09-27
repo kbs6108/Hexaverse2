@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Build and deploy the Land Stack API to Cloud Run (free-tier sized).
+# Build and deploy the Tract API to Cloud Run (free-tier sized).
 #
 #   PROJECT_ID=my-firebase-project ./infra/cloudrun/deploy.sh
 #   ./infra/cloudrun/deploy.sh --project my-firebase-project --region asia-south1
 #
-# Env / flags:  PROJECT_ID (required)  REGION=asia-south1  SERVICE=landstack-api  REPO=landstack
+# Env / flags:  PROJECT_ID (required)  REGION=asia-south1  SERVICE=tract-api  REPO=tract
 #               CORS_ORIGINS, PUBLIC_WEB_URL (default: https://$PROJECT_ID.web.app + .firebaseapp.com)
-#               GCS_BUCKET (default: $PROJECT_ID-landstack-reports; created if missing)
+#               GCS_BUCKET (default: $PROJECT_ID-tract-reports; created if missing)
 #               SKIP_BUILD=1 to redeploy the last image, TAG=<tag> to pin an image tag.
 # Secrets: infra/cloudrun/secrets.env (gitignored; see secrets.env.example) → Secret Manager.
 set -euo pipefail
@@ -16,8 +16,8 @@ root="$(cd "$here/../.." && pwd)"
 
 PROJECT_ID="${PROJECT_ID:-}"
 REGION="${REGION:-asia-south1}"
-SERVICE="${SERVICE:-landstack-api}"
-REPO="${REPO:-landstack}"
+SERVICE="${SERVICE:-tract-api}"
+REPO="${REPO:-tract}"
 TAG="${TAG:-$(git -C "$root" rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 
@@ -41,7 +41,7 @@ command -v gcloud >/dev/null || { echo "gcloud CLI not found: https://cloud.goog
 
 CORS_ORIGINS="${CORS_ORIGINS:-https://${PROJECT_ID}.web.app,https://${PROJECT_ID}.firebaseapp.com}"
 PUBLIC_WEB_URL="${PUBLIC_WEB_URL:-https://${PROJECT_ID}.web.app}"
-GCS_BUCKET="${GCS_BUCKET:-${PROJECT_ID}-landstack-reports}"
+GCS_BUCKET="${GCS_BUCKET:-${PROJECT_ID}-tract-reports}"
 IMAGE_BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${SERVICE}"
 IMAGE="${IMAGE_BASE}:${TAG}"
 
@@ -57,7 +57,7 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com \
 log "Artifact Registry repo ${REPO}"
 if ! gcloud artifacts repositories describe "$REPO" --location "$REGION" >/dev/null 2>&1; then
   gcloud artifacts repositories create "$REPO" --repository-format docker --location "$REGION" \
-    --description "Land Stack images" --quiet
+    --description "Tract images" --quiet
 fi
 
 log "Report bucket gs://${GCS_BUCKET}"
@@ -139,7 +139,7 @@ gcloud run deploy "$SERVICE" \
   --execution-environment gen2 \
   --set-env-vars "^|^${env_vars}" \
   --set-secrets "$secrets_arg" \
-  --labels "app=landstack,env=demo" \
+  --labels "app=tract,env=demo" \
   --quiet
 
 URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.url)')"

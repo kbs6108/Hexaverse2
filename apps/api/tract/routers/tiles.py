@@ -1,14 +1,14 @@
-"""Mapbox Vector Tiles: `GET /landstack/tiles/{layer}/{z}/{x}/{y}.pbf` via ST_TileEnvelope + ST_AsMVT."""
+"""Mapbox Vector Tiles: `GET /tract/tiles/{layer}/{z}/{x}/{y}.pbf` via ST_TileEnvelope + ST_AsMVT."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Response
 
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError, not_found
-from landstack.services import layers as L
+from tract.db import DBLike, get_db
+from tract.errors import AppError, not_found
+from tract.services import layers as L
 
-router = APIRouter(prefix="/landstack/tiles", tags=["tiles"])
+router = APIRouter(prefix="/tract/tiles", tags=["tiles"])
 MVT_TYPE = "application/vnd.mapbox-vector-tile"
 
 

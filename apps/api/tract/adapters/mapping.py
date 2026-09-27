@@ -150,7 +150,7 @@ def apply_mapping(mapping: dict[str, Any], doc: dict[str, Any]) -> dict[str, Any
 
 
 def mapping_table(mapping: dict[str, Any]) -> dict[str, Any]:
-    """JSON-friendly rendering for `GET /landstack/adapters`."""
+    """JSON-friendly rendering for `GET /tract/adapters`."""
     rows = []
     for src, targets in (mapping.get("map") or {}).items():
         for t in targets if isinstance(targets, list) else [targets]:

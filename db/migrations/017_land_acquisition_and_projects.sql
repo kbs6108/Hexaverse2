@@ -97,7 +97,7 @@ WHERE id = 6;
 -- 2. Project Parcel Impacts Table (Exact geometric intersection & statutory award calculation)
 CREATE TABLE IF NOT EXISTS gis.project_parcel_impacts (
     id                          serial PRIMARY KEY,
-    ulpin                       text NOT NULL REFERENCES landstack.parcels(ulpin) ON DELETE CASCADE,
+    ulpin                       text NOT NULL REFERENCES tract.parcels(ulpin) ON DELETE CASCADE,
     project_id                  integer NOT NULL REFERENCES gis.projects(id) ON DELETE CASCADE,
     impact_type                 text NOT NULL CHECK (impact_type IN ('partial_road_widening', 'partial_metro_corridor', 'total_acquisition', 'civic_complex')),
     total_area_sqm              numeric(10, 2) NOT NULL,
@@ -128,8 +128,8 @@ CREATE INDEX IF NOT EXISTS idx_project_parcel_impacts_project ON gis.project_par
 -- 3. Acquisition Claims & Citizen Response Log Table
 CREATE TABLE IF NOT EXISTS gis.acquisition_claims (
     id                  serial PRIMARY KEY,
-    application_id      text REFERENCES landstack.applications(id) ON DELETE SET NULL,
-    ulpin               text NOT NULL REFERENCES landstack.parcels(ulpin) ON DELETE CASCADE,
+    application_id      text REFERENCES tract.applications(id) ON DELETE SET NULL,
+    ulpin               text NOT NULL REFERENCES tract.parcels(ulpin) ON DELETE CASCADE,
     project_id          integer NOT NULL REFERENCES gis.projects(id) ON DELETE CASCADE,
     response_type       text NOT NULL CHECK (response_type IN ('consent_settlement', 'compensation_negotiation', 'statutory_objection', 'tdr_opt_in')),
     applicant_name      text NOT NULL,
@@ -261,7 +261,7 @@ SELECT
     )::geography)) < 150.0) AS severance_risk,
     'notice_published' AS status,
     prj.objection_deadline + INTERVAL '5 days' AS hearing_date
-FROM landstack.parcels p
+FROM tract.parcels p
 JOIN gis.projects prj ON ST_Intersects(p.geom,
     CASE
         WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry
@@ -305,7 +305,7 @@ DECLARE
     s_prj_id integer;
 BEGIN
     -- For Mangalagiri (Survey 126)
-    SELECT geom INTO m_geom FROM landstack.parcels WHERE ulpin = m_ulpin;
+    SELECT geom INTO m_geom FROM tract.parcels WHERE ulpin = m_ulpin;
     IF m_geom IS NOT NULL THEN
         -- Check if road project exists or create "Amaravati Inner Expressway 6-Laning & Service Corridor"
         INSERT INTO gis.projects (
@@ -378,7 +378,7 @@ BEGIN
     END IF;
 
     -- For Shamshabad (Survey 104/6, Agricultural 12,742 m²)
-    SELECT geom INTO s_geom FROM landstack.parcels WHERE ulpin = s_ulpin;
+    SELECT geom INTO s_geom FROM tract.parcels WHERE ulpin = s_ulpin;
     IF s_geom IS NOT NULL THEN
         INSERT INTO gis.projects (
             name, kind, status, executing_agency, statutory_act, notification_section,
@@ -444,11 +444,11 @@ BEGIN
 END $$;
 
 
--- 6. Update landstack.applications check constraint to include 'acquisition_claim'
-ALTER TABLE landstack.applications
+-- 6. Update tract.applications check constraint to include 'acquisition_claim'
+ALTER TABLE tract.applications
     DROP CONSTRAINT IF EXISTS applications_type_check;
 
-ALTER TABLE landstack.applications
+ALTER TABLE tract.applications
     ADD CONSTRAINT applications_type_check CHECK (type IN (
         'mutation',
         'building_permission',
@@ -463,7 +463,7 @@ ALTER TABLE landstack.applications
     ));
 
 -- 7. Add workflow transitions for acquisition_claim
-INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal) VALUES
+INSERT INTO tract.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal) VALUES
     ('acquisition_claim', 'returned',          'submitted',         'citizen', NULL,      NULL,         'Resubmit Claim / Objection',               false),
     ('acquisition_claim', 'submitted',         'in_review',         'officer', 'revenue', 'vro',        'Scrutinize Claim & Verify Parcel Take',    false),
     ('acquisition_claim', 'submitted',         'approved',          'officer', 'revenue', 'tahsildar',  'Approve Direct Consent Settlement Award',  true),
@@ -476,7 +476,7 @@ INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, a
 ON CONFLICT DO NOTHING;
 
 -- 8. Add statutory workflow transitions for building_permission and boundary_correction
-INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal) VALUES
+INSERT INTO tract.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal) VALUES
     ('building_permission', 'planning_check',  'rejected',          'officer', 'planning', 'town_planner', 'Reject Prohibited Building Proposal',        true),
     ('building_permission', 'planning_check',  'returned',          'officer', 'planning', 'town_planner', 'Return for Plan Revision / Clearances',     false),
     ('building_permission', 'scrutiny_review', 'returned',          'officer', 'planning', 'town_planner', 'Return for Structural Revision',            false),

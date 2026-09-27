@@ -1,6 +1,6 @@
 """Gateway application factory: routers, CORS, department sub-app mounts, health, error envelope.
 
-Run with `uvicorn landstack.main:app --reload`.
+Run with `uvicorn tract.main:app --reload`.
 """
 
 from __future__ import annotations
@@ -15,12 +15,12 @@ from typing import Any
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from landstack import __version__
-from landstack.adapters import client as dept_client
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError, install_error_handlers
-from landstack.routers import (
+from tract import __version__
+from tract.adapters import client as dept_client
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db
+from tract.errors import AppError, install_error_handlers
+from tract.routers import (
     admin,
     ai,
     alerts,
@@ -39,7 +39,7 @@ from landstack.routers import (
     tiles,
 )
 
-log = logging.getLogger("landstack")
+log = logging.getLogger("tract")
 
 DEPARTMENT_APPS: dict[str, str] = {
     "revenue": "departments.revenue.app",
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings: Settings = app.state.settings
     logging.basicConfig(level=settings.log_level.upper(), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     log.info(
-        "Land Stack API %s starting · auth_mode=%s · departments=%s · storage=%s",
+        "Tract API %s starting · auth_mode=%s · departments=%s · storage=%s",
         __version__,
         settings.auth_mode,
         settings.dept_base_url or "in-process",
@@ -79,7 +79,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     app = FastAPI(
-        title="Land Stack Gateway API",
+        title="Tract Gateway API",
         description="Parcel-centric aggregation of six department systems into one Common Data Model (SIH 2026 prototype).",
         version=__version__,
         lifespan=lifespan,
@@ -142,13 +142,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def index(request: Request) -> dict[str, Any]:
         base = str(request.base_url).rstrip("/")
         return {
-            "name": "Land Stack Gateway API",
+            "name": "Tract Gateway API",
             "version": __version__,
             "auth_mode": settings.auth_mode,
             "docs": f"{base}/docs",
             "openapi": f"{base}/openapi.json",
             "health": f"{base}/healthz",
-            "collections": f"{base}/landstack/collections",
+            "collections": f"{base}/tract/collections",
             "departments": {
                 name: {"docs": f"{base}/{name}/docs", "openapi": f"{base}/{name}/openapi.json"}
                 for name in DEPARTMENT_APPS

@@ -1,4 +1,4 @@
-"""OGC API Features-shaped read access: `/landstack/collections`, `/{layer}/items`, `/parcels/items/{ulpin}`."""
+"""OGC API Features-shaped read access: `/tract/collections`, `/{layer}/items`, `/parcels/items/{ulpin}`."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError, not_found
-from landstack.services import layers as L
+from tract.db import DBLike, get_db
+from tract.errors import AppError, not_found
+from tract.services import layers as L
 
-router = APIRouter(prefix="/landstack/collections", tags=["collections"])
+router = APIRouter(prefix="/tract/collections", tags=["collections"])
 
 STATUS_FILTERS = {
     "registered": 's."registered" IS TRUE',
@@ -44,16 +44,16 @@ def _collection_doc(layer: L.Layer, base: str) -> dict[str, Any]:
         "itemType": "feature",
         "crs": ["http://www.opengis.net/def/crs/OGC/1.3/CRS84"],
         "links": [
-            {"href": f"{base}/landstack/collections/{layer.name}", "rel": "self", "type": "application/json"},
+            {"href": f"{base}/tract/collections/{layer.name}", "rel": "self", "type": "application/json"},
             {
-                "href": f"{base}/landstack/collections/{layer.name}/items",
+                "href": f"{base}/tract/collections/{layer.name}/items",
                 "rel": "items",
                 "type": "application/geo+json",
             },
             *(
                 [
                     {
-                        "href": f"{base}/landstack/tiles/{layer.name}/{{z}}/{{x}}/{{y}}.pbf",
+                        "href": f"{base}/tract/tiles/{layer.name}/{{z}}/{{x}}/{{y}}.pbf",
                         "rel": "tiles",
                         "type": "application/vnd.mapbox-vector-tile",
                     }
@@ -73,7 +73,7 @@ def _base(request: Request) -> str:
 async def list_collections(request: Request) -> dict[str, Any]:
     base = _base(request)
     return {
-        "links": [{"href": f"{base}/landstack/collections", "rel": "self", "type": "application/json"}],
+        "links": [{"href": f"{base}/tract/collections", "rel": "self", "type": "application/json"}],
         "collections": [_collection_doc(layer, base) for layer in L.LAYERS.values() if layer.collections],
     }
 
@@ -99,8 +99,8 @@ async def _query(
         raise AppError(503, "layer_unavailable", f"relation {relation} not found (migrations applied?)")
     props = L.property_exprs(cols, layer.geom_col, "t")
     join = ""
-    if layer.name == "parcels" and relation == "landstack.parcels":
-        join = "LEFT JOIN landstack.parcel_status s ON s.ulpin = t.ulpin"
+    if layer.name == "parcels" and relation == "tract.parcels":
+        join = "LEFT JOIN tract.parcel_status s ON s.ulpin = t.ulpin"
         props += [
             's."has_dispute"',
             's."has_mortgage"',
@@ -185,7 +185,7 @@ async def items(
     if offset + limit < doc["numberMatched"]:
         doc["links"].append(
             {
-                "href": f"{base}/landstack/collections/{layer}/items?limit={limit}&offset={offset + limit}"
+                "href": f"{base}/tract/collections/{layer}/items?limit={limit}&offset={offset + limit}"
                 + (f"&bbox={bbox}" if bbox else ""),
                 "rel": "next",
                 "type": "application/geo+json",

@@ -60,7 +60,7 @@ export function LoginPage() {
       <div className="flex items-center gap-3">
         <LogoMark size={36} />
         <div>
-          <h1 className="text-2xl font-semibold">Land Stack</h1>
+          <h1 className="text-2xl font-semibold">Tract</h1>
           <p className="text-sm text-ink-3">Parcel-centric land governance · AP · TN · TG Pilot Jurisdictions</p>
         </div>
       </div>
@@ -124,7 +124,7 @@ export function LoginPage() {
                 </Button>
               </div>
               <p className="text-[11px] text-ink-3">
-                Open Land Stack in another browser or incognito window with a different name to test simultaneous multi-citizen actions.
+                Open Tract in another browser or incognito window with a different name to test simultaneous multi-citizen actions.
               </p>
             </form>
           </CardBody>

@@ -68,7 +68,7 @@ const DEPARTMENTS: DeptConfig[] = [
       },
     },
     sampleJsonLd: {
-      '@context': 'https://landstack.gov.in/contexts/clm-v1.jsonld',
+      '@context': 'https://tract.gov.in/contexts/clm-v1.jsonld',
       '@type': 'CadastralRecord',
       ulpin: 'TFCM91641E6C82',
       ror: {
@@ -127,7 +127,7 @@ const DEPARTMENTS: DeptConfig[] = [
       },
     },
     sampleJsonLd: {
-      '@context': 'https://landstack.gov.in/contexts/clm-v1.jsonld',
+      '@context': 'https://tract.gov.in/contexts/clm-v1.jsonld',
       '@type': 'RegistrationDossier',
       ulpin: 'TFCM91641E6C82',
       registeredDeed: {
@@ -185,7 +185,7 @@ const DEPARTMENTS: DeptConfig[] = [
       },
     },
     sampleJsonLd: {
-      '@context': 'https://landstack.gov.in/contexts/clm-v1.jsonld',
+      '@context': 'https://tract.gov.in/contexts/clm-v1.jsonld',
       '@type': 'PlanningZoningRecord',
       ulpin: 'TFCM91641E6C82',
       planning: {
@@ -242,7 +242,7 @@ const DEPARTMENTS: DeptConfig[] = [
       },
     },
     sampleJsonLd: {
-      '@context': 'https://landstack.gov.in/contexts/clm-v1.jsonld',
+      '@context': 'https://tract.gov.in/contexts/clm-v1.jsonld',
       '@type': 'FiscalAssessmentRecord',
       ulpin: 'TFCM91641E6C82',
       fiscal: {
@@ -299,7 +299,7 @@ const DEPARTMENTS: DeptConfig[] = [
       },
     },
     sampleJsonLd: {
-      '@context': 'https://landstack.gov.in/contexts/clm-v1.jsonld',
+      '@context': 'https://tract.gov.in/contexts/clm-v1.jsonld',
       '@type': 'JudicialEncumbranceRecord',
       ulpin: 'TFCM91641E6C82',
       legal: {
@@ -355,7 +355,7 @@ const DEPARTMENTS: DeptConfig[] = [
       },
     },
     sampleJsonLd: {
-      '@context': 'https://landstack.gov.in/contexts/clm-v1.jsonld',
+      '@context': 'https://tract.gov.in/contexts/clm-v1.jsonld',
       '@type': 'UtilityAndCorridorRecord',
       ulpin: 'TFCM91641E6C82',
       utilities: {
@@ -409,7 +409,7 @@ export function DepartmentProvenanceExplorer() {
             </Badge>
           </div>
           <p className="mt-1 text-xs text-ink-2 max-w-2xl">
-            Explore how Land Stack harmonizes isolated state departmental databases into a unified, 
+            Explore how Tract harmonizes isolated state departmental databases into a unified, 
             ISO 19152 compliant record without centralized data duplication.
           </p>
         </div>
@@ -536,7 +536,7 @@ export function DepartmentProvenanceExplorer() {
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-line pt-2 text-[10px] text-ink-3 font-mono">
-            <span>Schema: https://landstack.gov.in/contexts/clm-v1.jsonld</span>
+            <span>Schema: https://tract.gov.in/contexts/clm-v1.jsonld</span>
             <span className="text-primary font-bold">SHA-256 Validated</span>
           </div>
         </div>

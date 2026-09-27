@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from landstack.routers.tiles import tile_sql
-from landstack.services import layers as L
+from tract.routers.tiles import tile_sql
+from tract.services import layers as L
 
 HALF = L.EARTH_HALF_CIRCUMFERENCE
 
@@ -44,8 +44,8 @@ def test_validity_and_tolerance() -> None:
 
 def test_tile_sql_shape() -> None:
     layer = L.LAYERS["parcels"]
-    low = tile_sql(layer, "landstack.parcel_tile_features", ['t."ulpin"', 't."land_use"'], z=12)
-    high = tile_sql(layer, "landstack.parcel_tile_features", ['t."ulpin"'], z=15)
+    low = tile_sql(layer, "tract.parcel_tile_features", ['t."ulpin"', 't."land_use"'], z=12)
+    high = tile_sql(layer, "tract.parcel_tile_features", ['t."ulpin"'], z=15)
     assert "ST_SimplifyPreserveTopology" in low and ":tol" in low
     assert "ST_SimplifyPreserveTopology" not in high
     for sql in (low, high):

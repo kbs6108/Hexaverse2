@@ -1,21 +1,21 @@
 -- 013_hierarchy_transitions.sql — Multi-tier administrative hierarchy & designation-gated workflow transitions.
 -- Introduces VRO, Surveyor, RI, and Tahsildar statutory separation of powers.
 
-ALTER TABLE landstack.transitions ADD COLUMN IF NOT EXISTS allowed_designation text;
-ALTER TABLE landstack.users ADD COLUMN IF NOT EXISTS designation text;
+ALTER TABLE tract.transitions ADD COLUMN IF NOT EXISTS allowed_designation text;
+ALTER TABLE tract.users ADD COLUMN IF NOT EXISTS designation text;
 
 -- Drop old unique index that did not account for designations
-DROP INDEX IF EXISTS landstack.transitions_unique_idx;
+DROP INDEX IF EXISTS tract.transitions_unique_idx;
 
 -- Recreate unique index including allowed_designation
 CREATE UNIQUE INDEX IF NOT EXISTS transitions_unique_idx
-    ON landstack.transitions (type, from_status, to_status, allowed_role, COALESCE(allowed_department, '*'), COALESCE(allowed_designation, '*'));
+    ON tract.transitions (type, from_status, to_status, allowed_role, COALESCE(allowed_department, '*'), COALESCE(allowed_designation, '*'));
 
 -- Remove legacy un-gated transitions so they don't allow officers to bypass the statutory chain
-DELETE FROM landstack.transitions;
+DELETE FROM tract.transitions;
 
 -- Insert complete statutory hierarchy transitions
-INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal) VALUES
+INSERT INTO tract.transitions (type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal) VALUES
     -- 1. MUTATION (Revenue Department: VRO -> Surveyor -> RI -> Tahsildar)
     ('mutation', 'returned',              'submitted',             'citizen', NULL,       NULL,            'Resubmit Application',                           false),
     ('mutation', 'submitted',             'field_inspection',      'officer', 'revenue',  'vro',           'Conduct VRO Field Inspection & Panchanama',       false),

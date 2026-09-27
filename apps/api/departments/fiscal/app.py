@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import Depends
 
 from departments.common import chaos, envelope, make_dept_app
-from landstack.db import DBLike, get_db
+from tract.db import DBLike, get_db
 
 SOURCE = "AP CDMA Property Tax"
 app = make_dept_app(

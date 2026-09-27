@@ -1,22 +1,22 @@
-# Land Stack — Standard Technical Document (STD)
+# Tract — Standard Technical Document (STD)
 
-Version 0.1 · September 2026 · SIH 2026 problem statement "Land Stack" (GIS-based land-governance
+Version 0.1 · September 2026 · SIH 2026 problem statement "Tract" (GIS-based land-governance
 platform). This document follows the section list the problem statement requires. Normative detail
 lives in `docs/CONTRACTS.md` and in the code paths cited; this document explains the standards and
 the reasoning.
 
 ## 1. System architecture
 
-Land Stack is a **parcel-centric integration platform**: the ULPIN-style parcel id is the join key
+Tract is a **parcel-centric integration platform**: the ULPIN-style parcel id is the join key
 across every department, and no department's data is copied into another's schema. Six department
 services (revenue, registration, planning, fiscal, legal, utilities) are independent FastAPI
 applications (`apps/api/departments/<name>/app.py`), each reading and writing **only** its own
 PostgreSQL schema `dept_<name>` and speaking its own vocabulary (RoR/khata, deed/encumbrance,
-zone/permit, assessment/valuation, case, connection). A **gateway** (`apps/api/landstack`) exposes
+zone/permit, assessment/valuation, case, connection). A **gateway** (`apps/api/tract`) exposes
 the public API, authenticates users, calls the departments through *adapters*
-(`landstack/adapters/*.py` + YAML field mappings) and merges the answers into one Common Data Model
+(`tract/adapters/*.py` + YAML field mappings) and merges the answers into one Common Data Model
 per parcel with per-source provenance, latency and consistency findings (`services/aggregator.py`,
-`services/consistency.py`). Departments push change events back (`POST /landstack/events`,
+`services/consistency.py`). Departments push change events back (`POST /tract/events`,
 `X-Events-Secret`) via a transactional outbox, so a deed registered in the registration system can
 open a system-initiated mutation in revenue within seconds.
 
@@ -31,7 +31,7 @@ See the Mermaid diagram in the root `README.md`.
 
 ## 2. Data schemas
 
-**Three-state data model.** `landstack.parcels.state` ∈ {AP, TN, TG}; `dept_revenue.ror.state`
+**Three-state data model.** `tract.parcels.state` ∈ {AP, TN, TG}; `dept_revenue.ror.state`
 (migration 007) selects the dialect each RoR row is served in; `gis.settlement_schemes`
 (migration 006) holds each state's resurvey-programme areas (phase: notified/in_progress/completed)
 and parcels carry the matching `status_flags.resurvey`. Buildings carry footprint width/depth and
@@ -39,11 +39,11 @@ and parcels carry the matching `status_flags.resurvey`. Buildings carry footprin
 
 The database is split into eight schemas applied by idempotent SQL migrations
 (`db/migrations/001_extensions.sql` … `005_views.sql`, run by `tools/migrate.py` in filename order and
-recorded in `landstack.schema_migrations`):
+recorded in `tract.schema_migrations`):
 
 | Schema | Tables | Role |
 |---|---|---|
-| `landstack` | parcels, buildings, units, users, consents, applications, transitions, audit_log, alerts, reports, connector_status, schema_migrations | Platform core: cadastre geometry, 3D units, workflow, audit, alerts, signed reports |
+| `tract` | parcels, buildings, units, users, consents, applications, transitions, audit_log, alerts, reports, connector_status, schema_migrations | Platform core: cadastre geometry, 3D units, workflow, audit, alerts, signed reports |
 | `dept_revenue` | ror, mutations | Record of Rights (khata) and mutation ledger |
 | `dept_registration` | deeds, encumbrances, outbox | Registered instruments, charges, event outbox |
 | `dept_planning` | zones, building_permissions | Master-plan zoning and permits |
@@ -55,11 +55,11 @@ recorded in `landstack.schema_migrations`):
 Conventions: every geometry column is `geometry(<Type>, 4326)` with a GiST index; areas are computed
 as `ST_Area(geom::geography)` in m²; free-text search columns (`parcels.survey_no`, `ror.owner_name`)
 carry `pg_trgm` GIN indexes; JSONB is used only for open-ended payloads (`applications.payload`,
-`audit_log.before/after`, `parcels.status_flags`). The view `landstack.parcel_status` derives the
+`audit_log.before/after`, `parcels.status_flags`). The view `tract.parcel_status` derives the
 map/KPI flags (registered, dispute, mortgage, arrears, pending mutation, permission status, change
-alert) and `landstack.parcel_tile_features` feeds the vector tiles. Identifiers: `ulpin` (14-char,
+alert) and `tract.parcel_tile_features` feeds the vector tiles. Identifiers: `ulpin` (14-char,
 geohash + geometry hash, `services/ulpin.py`), 3D units `<ULPIN>-F<floor:02>-U<unit:02>`, applications
-`APP-<year>-<seq:06>`. The gateway-facing **Common Data Model** (`landstack/cdm.py`, mirrored in
+`APP-<year>-<seq:06>`. The gateway-facing **Common Data Model** (`tract/cdm.py`, mirrored in
 `apps/web/src/lib/cdm.ts`) has the blocks `identifiers · spatial · party · rights · restrictions ·
 planning · fiscal · utilities · buildings · alerts · provenance · consistency · status`; its JSON shape
 is fixed in CONTRACTS §5.
@@ -68,41 +68,41 @@ is fixed in CONTRACTS §5.
 
 All endpoints are HTTP/JSON with OpenAPI 3.1 documents generated by FastAPI (`/docs`, `/openapi.json`,
 plus one per department at `/<dept>/docs`). Errors use one envelope
-`{"error": {"code", "message", "details"}}` (`landstack/errors.py`); every response carries
+`{"error": {"code", "message", "details"}}` (`tract/errors.py`); every response carries
 `X-Request-ID` and `X-Response-Time-Ms`; department responses carry `X-Source-System` and an `as_of`
 timestamp. Authentication is `Authorization: Bearer <Firebase ID token>`; roles come from custom
 claims and are enforced by `require(*roles, department=)` dependencies.
 
-Gateway surface (`apps/api/landstack/routers/`): **meta** `GET /healthz`, `GET /`; **auth** `GET
-/landstack/me`; **collections (OGC API – Features style)** `GET /landstack/collections`,
+Gateway surface (`apps/api/tract/routers/`): **meta** `GET /healthz`, `GET /`; **auth** `GET
+/tract/me`; **collections (OGC API – Features style)** `GET /tract/collections`,
 `/{layer}`, `/{layer}/items?bbox&limit&offset&land_use&status`, `/parcels/items/{ulpin}`; **tiles**
-`GET /landstack/tiles/{layer}/{z}/{x}/{y}.pbf`; **search** `GET /landstack/search?q=`; **parcels**
-`GET /landstack/parcels/{ulpin}`, `/{ulpin}/timeline`, `POST /landstack/verify-ownership`;
-**applications** `POST/GET /landstack/applications`, `GET /applications/{id}`, `POST
-/applications/{id}/transition`, `GET /landstack/queue`; **stats** `GET /landstack/stats`; **alerts**
-`GET /landstack/alerts`, `POST /alerts/{id}/assign|resolve`; **consistency** `GET
-/landstack/consistency`; **connectors** `GET /landstack/connectors`, `GET /landstack/adapters`;
-**events** `POST /landstack/events`; **reports** `POST /landstack/reports/{ulpin}`, `GET
-/reports/{id}.pdf`, `GET /verify/{id}`; **consents** `POST /landstack/consents/request|grant`, `GET
-/landstack/consents`; **admin** `POST /landstack/admin/simulate/deed`, `/demo-reset`,
-`/cache/invalidate`; **ai** `POST /landstack/ai/change-detection`, `/extract-document`. Department APIs
+`GET /tract/tiles/{layer}/{z}/{x}/{y}.pbf`; **search** `GET /tract/search?q=`; **parcels**
+`GET /tract/parcels/{ulpin}`, `/{ulpin}/timeline`, `POST /tract/verify-ownership`;
+**applications** `POST/GET /tract/applications`, `GET /applications/{id}`, `POST
+/applications/{id}/transition`, `GET /tract/queue`; **stats** `GET /tract/stats`; **alerts**
+`GET /tract/alerts`, `POST /alerts/{id}/assign|resolve`; **consistency** `GET
+/tract/consistency`; **connectors** `GET /tract/connectors`, `GET /tract/adapters`;
+**events** `POST /tract/events`; **reports** `POST /tract/reports/{ulpin}`, `GET
+/reports/{id}.pdf`, `GET /verify/{id}`; **consents** `POST /tract/consents/request|grant`, `GET
+/tract/consents`; **admin** `POST /tract/admin/simulate/deed`, `/demo-reset`,
+`/cache/invalidate`; **ai** `POST /tract/ai/change-detection`, `/extract-document`. Department APIs
 (CONTRACTS §7) are deliberately heterogeneous to prove the adapter layer. Pagination is
 `limit/offset`; filters are query parameters; writes are POST with Pydantic-validated bodies;
 state changes are explicit `transition {action, remark}` calls governed by the `transitions` table.
 
 ### 3.x AI assistance endpoints
 
-`POST /landstack/ai/parcel-brief` (any signed-in) and `POST /landstack/ai/application-advice`
+`POST /tract/ai/parcel-brief` (any signed-in) and `POST /tract/ai/application-advice`
 (officer+) provide risk briefs and next-action recommendations. Generation runs on NVIDIA Build
 (OpenAI-compatible chat completions; `NVIDIA_MODEL`, default `nvidia/nemotron-3-super-120b-a12b`) when
 `NVIDIA_API_KEY` is configured, and on a deterministic rule engine otherwise; every response carries
 an `engine` field and the UI labels the provenance. The model receives only a compact fact sheet
 derived from the caller's own (masked) CDM view. Document extraction
-(`POST /landstack/ai/extract-document`) prefers the NVIDIA vision model.
+(`POST /tract/ai/extract-document`) prefers the NVIDIA vision model.
 
 ### 3.y Bounded boundary correction
 
-`POST /landstack/parcels/{ulpin}/boundary/validate` and `POST .../boundary` implement bounded
+`POST /tract/parcels/{ulpin}/boundary/validate` and `POST .../boundary` implement bounded
 parcel-geometry editing: validity, 4–200 vertices, |Δarea| ≤ 15%, no overlap > 1 m², containment in
 the village boundary, plus an assistive snap/overlap-subtraction suggestion. Proposals flow through
 the `boundary_correction` workflow (submitted → geometry_check → approved/returned/rejected, revenue
@@ -126,7 +126,7 @@ overview (cluster markers below z8, parcel tiles z10+) and per-region village bo
   sync via a transactional outbox and a signed webhook (`X-Events-Secret`) with event names
   `registration.deed_registered`, `revenue.ror_updated`, `planning.permission_issued`; per-call timeouts
   (`DEPT_TIMEOUT_S`) and cached-last-good fallbacks surfaced in `provenance`.
-- **India Stack alignment**: consent-token based data sharing (`landstack.consents`) mirrors the
+- **India Stack alignment**: consent-token based data sharing (`tract.consents`) mirrors the
   DEPA/Account-Aggregator consent pattern; roles map to e-Pramaan style departmental identities;
   masked public views follow the "open by default, personal data by consent" principle of the
   National Data Sharing and Accessibility Policy. Bhuvan WMS can be layered behind a flag.
@@ -217,7 +217,7 @@ seven hues; status layers use the semantic tokens above; the neutral parcel fill
 hot reload, Vite dev server, optional nginx and martin profiles); CI (GitHub Actions: ruff, migrations
 + seed against a PostGIS service container, pytest with integration tests, TypeScript typecheck and
 production build, `pglast` parse of every migration, compose/firebase config sanity); cloud (Firebase
-Hosting for the SPA, Cloud Run `landstack-api` in asia-south1 with 512 MiB, concurrency 80, 0–3
+Hosting for the SPA, Cloud Run `tract-api` in asia-south1 with 512 MiB, concurrency 80, 0–3
 instances, Secret Manager, Cloud Storage for reports, Neon serverless PostGIS). Deployment is
 `make deploy-api` (Cloud Build from `infra/cloudrun/cloudbuild.yaml`, `gcloud run deploy`) and
 `make deploy-web` (`firebase deploy --only hosting`); `infra/cloudrun/service.yaml` is the equivalent

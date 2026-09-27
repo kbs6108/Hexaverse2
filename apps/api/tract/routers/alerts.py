@@ -7,12 +7,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from landstack.auth import Principal, require_officer
-from landstack.db import DBLike, get_db, json_dumps
-from landstack.errors import not_found
-from landstack.services import aggregator, audit
+from tract.auth import Principal, require_officer
+from tract.db import DBLike, get_db, json_dumps
+from tract.errors import not_found
+from tract.services import aggregator, audit
 
-router = APIRouter(prefix="/landstack/alerts", tags=["alerts"])
+router = APIRouter(prefix="/tract/alerts", tags=["alerts"])
 
 
 class AssignBody(BaseModel):
@@ -43,14 +43,14 @@ async def list_alerts(
     rows = await db.fetch(
         f"""
         SELECT a.*, p.survey_no, p.village,
-               (SELECT app.id FROM landstack.applications app
+               (SELECT app.id FROM tract.applications app
                 WHERE app.ulpin = a.ulpin AND app.status NOT IN ('approved','rejected','resolved','dismissed')
                 ORDER BY app.created_at DESC LIMIT 1) AS open_application_id,
-               (SELECT app.type FROM landstack.applications app
+               (SELECT app.type FROM tract.applications app
                 WHERE app.ulpin = a.ulpin AND app.status NOT IN ('approved','rejected','resolved','dismissed')
                 ORDER BY app.created_at DESC LIMIT 1) AS open_application_type
-        FROM landstack.alerts a
-        LEFT JOIN landstack.parcels p ON p.ulpin = a.ulpin
+        FROM tract.alerts a
+        LEFT JOIN tract.parcels p ON p.ulpin = a.ulpin
         WHERE {' AND '.join(clauses)} ORDER BY a.created_at DESC LIMIT :limit
         """,
         **params,
@@ -61,13 +61,13 @@ async def list_alerts(
 async def _update(
     db: DBLike, alert_id: int, status: str, extra: dict[str, Any], principal: Principal, action: str
 ) -> dict:
-    before = await db.fetchrow("SELECT * FROM landstack.alerts WHERE id = :id", id=alert_id)
+    before = await db.fetchrow("SELECT * FROM tract.alerts WHERE id = :id", id=alert_id)
     if before is None:
         raise not_found("alert", str(alert_id))
     detail = {**(before.get("detail") or {}), **extra}
     after = await db.fetchrow(
         """
-        UPDATE landstack.alerts
+        UPDATE tract.alerts
            SET status = :status,
                detail = CAST(:detail AS jsonb),
                assigned_to_uid = CASE WHEN :status = 'assigned' THEN :uid ELSE assigned_to_uid END,

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from landstack.auth import Principal
-from landstack.services.workflow import run_side_effects
+from tract.auth import Principal
+from tract.services.workflow import run_side_effects
 
 TAHSILDAR = Principal(uid="o1", name="Anitha", role="officer", department="revenue", designation="tahsildar")
 
@@ -39,14 +39,14 @@ async def test_record_correction_owner_name_side_effects() -> None:
     }
 
     mock_db = MockDB()
-    with patch("landstack.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
+    with patch("tract.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = {
             "ok": True,
             "field": "owner_name",
             "from_value": "Jatin Baral",
             "to_value": "Jatin barali",
         }
-        with patch("landstack.services.audit.record", new_callable=AsyncMock):
+        with patch("tract.services.audit.record", new_callable=AsyncMock):
             res = await run_side_effects(mock_db, app, TAHSILDAR)
 
     assert res is not None
@@ -66,13 +66,13 @@ async def test_record_correction_owner_name_side_effects() -> None:
     assert rev_body["corrected_value"] == "Jatin barali"
 
     # 2. Units updated
-    assert any("UPDATE landstack.units" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)
+    assert any("UPDATE tract.units" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)
 
     # 3. User account updated
-    assert any("UPDATE landstack.users SET name = :new_name" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)
+    assert any("UPDATE tract.users SET name = :new_name" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)
 
     # 4. Applications updated
-    assert any("UPDATE landstack.applications SET applicant_name = :new_name" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)
+    assert any("UPDATE tract.applications SET applicant_name = :new_name" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)
 
     # 5. Deed claimant updated
     assert any("UPDATE dept_registration.deeds SET claimant = :new_name" in sql and params.get("new_name") == "Jatin barali" for sql, params in executed_statements)
@@ -107,16 +107,16 @@ async def test_record_correction_extent_side_effects() -> None:
     }
 
     mock_db = MockDB()
-    with patch("landstack.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
+    with patch("tract.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = {"ok": True}
-        with patch("landstack.services.audit.record", new_callable=AsyncMock):
+        with patch("tract.services.audit.record", new_callable=AsyncMock):
             res = await run_side_effects(mock_db, app, TAHSILDAR)
 
     assert res is not None
     assert res.get("ok") is True
 
     # Check parcel area updated
-    assert any("UPDATE landstack.parcels SET area_sqm = :a" in sql and params.get("a") == 600.5 for sql, params in executed_statements)
+    assert any("UPDATE tract.parcels SET area_sqm = :a" in sql and params.get("a") == 600.5 for sql, params in executed_statements)
 
 
 @pytest.mark.asyncio
@@ -136,12 +136,12 @@ async def test_complaint_and_review_resolution() -> None:
     }
 
     mock_db = MockDB()
-    with patch("landstack.services.audit.record", new_callable=AsyncMock):
+    with patch("tract.services.audit.record", new_callable=AsyncMock):
         res = await run_side_effects(mock_db, complaint_app, TAHSILDAR)
 
     assert res is not None
     assert res.get("ok") is True
-    assert any("UPDATE landstack.alerts SET status = 'resolved'" in sql for sql, _ in executed_statements)
+    assert any("UPDATE tract.alerts SET status = 'resolved'" in sql for sql, _ in executed_statements)
     assert any("UPDATE dept_legal.disputes SET status = 'disposed'" in sql for sql, _ in executed_statements)
 
 

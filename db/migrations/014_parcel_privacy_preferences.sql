@@ -1,8 +1,8 @@
 -- 014_parcel_privacy_preferences.sql — Landowner configurable privacy preferences for public visibility.
 -- Gives title owners control over optional public disclosures while strictly enforcing mandatory statutory records.
 
-CREATE TABLE IF NOT EXISTS landstack.parcel_privacy (
-    ulpin                 text PRIMARY KEY REFERENCES landstack.parcels (ulpin) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS tract.parcel_privacy (
+    ulpin                 text PRIMARY KEY REFERENCES tract.parcels (ulpin) ON DELETE CASCADE,
     owner_uid             text,
     public_owner_name     boolean NOT NULL DEFAULT false, -- false = privacy masked (R*** K***), true = full name visible
     public_nominees       boolean NOT NULL DEFAULT false, -- false = hidden from public, true = visible (masked)

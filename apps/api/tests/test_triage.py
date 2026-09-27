@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from landstack.services.ai_assist import triage
+from tract.services.ai_assist import triage
 
 CLEAN = {"status": {}, "consistency": {}, "rights": {"registration": {"status": "registered"}}}
 

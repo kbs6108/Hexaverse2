@@ -12,9 +12,9 @@ from typing import Any
 
 import httpx
 
-from landstack.config import get_settings
+from tract.config import get_settings
 
-log = logging.getLogger("landstack.adapters.client")
+log = logging.getLogger("tract.adapters.client")
 
 _root_app: Any = None
 _client: httpx.AsyncClient | None = None
@@ -45,7 +45,7 @@ def internal_client() -> httpx.AsyncClient:
         if _root_app is None:
             raise RuntimeError("root app not registered; call set_root_app(app) or set DEPT_BASE_URL")
         transport = httpx.ASGITransport(app=_root_app, raise_app_exceptions=False)
-        _client = httpx.AsyncClient(transport=transport, base_url="http://landstack.internal", timeout=timeout)
+        _client = httpx.AsyncClient(transport=transport, base_url="http://tract.internal", timeout=timeout)
     return _client
 
 

@@ -9,9 +9,9 @@ import logging
 import re
 from typing import Any
 
-from landstack.config import get_settings
+from tract.config import get_settings
 
-log = logging.getLogger("landstack.ai.extract")
+log = logging.getLogger("tract.ai.extract")
 
 FIELDS = [
     "survey_no",

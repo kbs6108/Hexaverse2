@@ -1,4 +1,4 @@
-# CLAUDE.md — Land Stack (Hexaverse2, branch `experiment-branch`)
+# CLAUDE.md — Tract (Hexaverse2, branch `experiment-branch`)
 
 **The living context file for this repo** — read by Claude Code, Cursor, Antigravity, and any other agent/IDE
 (`AGENTS.md` symlinks here). Read this first, then `docs/CONTRACTS.md` (the binding spec every
@@ -14,12 +14,12 @@ file in the same commit as the change it describes.
 
 Smart India Hackathon 2026, problem statement **SIH26014** (Ministry of Rural Development / Dept.
 of Land Resources): *"An Integrated GIS-based Digital Public Infrastructure for Land Governance"*.
-Product name: **Land Stack (Hexaverse)**. One sentence: click a land parcel on a map and get everything
+Product name: **Tract (Hexaverse)**. One sentence: click a land parcel on a map and get everything
 government knows about it — record of rights, registration & encumbrance, zoning & building
 permission, property tax & valuation, disputes, utilities — aggregated live from six separate
 "department" systems through one ULPIN-style parcel key, with per-source provenance.
 
-Judges grade six things (all traced in `docs/plan/landstack-plan.html` §1): three-tier GIS layers
+Judges grade six things (all traced in `docs/plan/tract-plan.html` §1): three-tier GIS layers
 (base / essential governance / use-case), sample datasets with interoperable cross-department
 workflows, role-based dashboards, citizen services (search, ownership verification, status tracking,
 service requests), open APIs + auth + RBAC + audit, and a Standard Technical Document.
@@ -39,9 +39,9 @@ fill-extrusion behind the "3D units · preview" toggle). Future: 3D-ULPIN blocks
 docs/CONTRACTS.md     THE spec: layout, env vars, auth, DB schema, CDM JSON, every endpoint, workflow, layers, demo data
 docs/SETUP.md         step-by-step for a human: Docker local run, Neon, Firebase Auth, Cloud Run, Hosting, demo prep
 docs/STD.md           Standard Technical Document (markdown source; docx in docs/plan/)
-docs/plan/            landstack-plan.html (full architecture + 7-day plan), STD .docx, pitch deck .pptx, seed-preview.png
+docs/plan/            tract-plan.html (full architecture + 7-day plan), STD .docx, pitch deck .pptx, seed-preview.png
 apps/api/             FastAPI 0.115+, Python 3.12, SQLAlchemy 2 async (text SQL, no ORM), asyncpg
-  landstack/          gateway: config, db, auth (firebase|dev), cdm, routers/, adapters/ (+ *.yaml mappings), services/
+  tract/          gateway: config, db, auth (firebase|dev), cdm, routers/, adapters/ (+ *.yaml mappings), services/
   departments/        revenue · registration · planning · fiscal · legal · utilities — FastAPI sub-apps, own schemas
   ai/                 change_detection.py (Sentinel-2 NDVI/NDBI, offline mode), extract.py (vision OCR / extraction)
   tests/              111 unit & integration tests (full workflow, masking, due diligence, triage, dynamic pricing)
@@ -111,7 +111,7 @@ Running end-to-end on the local Docker stack and 100% green in tests (**111 pass
 - 2026-09-20 AI tuning, responses & compactness: hyperparameter optimization (Assistant max_tokens 650, advice 180, DD summary 200), high-density structured prompt engineering, interactive deep-link action buttons in chat, compact view toggle, copy response utility, and lean fact-sheet pruning.
 - 2026-09-20 workflow clarity & governance: visual lifecycle pipeline in Admin, linked queue applications in Alerts, upfront statutory record impact preview in Queue, citizen parcel linkage (Sy 123/4 fly-to), dead-center limelight dock, and MechanismExplainerModal.
 - 2026-09-17 readable values everywhere: consistency callout, admin findings, timeline details, report PDF (utilities yes/no, flags humanized, None-safe rows).
-- 2026-09-17 `ae1d829` Bhu-Sahayak chatbot: POST /landstack/ai/assistant (pure intent router + grounded templated replies, LLM rephrase only) + floating launcher in the shell (6 routing tests, 92 total).
+- 2026-09-17 `ae1d829` Bhu-Sahayak chatbot: POST /tract/ai/assistant (pure intent router + grounded templated replies, LLM rephrase only) + floating launcher in the shell (6 routing tests, 92 total).
 - 2026-09-17 `b187cb3` public notices: GET /notices (15-day statutory window over pending transfers) + POST objections into payload.objections; notice board on the citizen home, objections in the officer drawer.
 - 2026-09-17 `ab2ea2d` succession flow: nominees on the RoR (migration 012, masked, all 3 dialects) + `succession` type — wizard card, triage (dispute/pending-blocked), officer evidence, approval runs the mutation (86 tests).
 - 2026-09-17 `4087548` buyer due-diligence: GET /parcels/{ulpin}/due-diligence (9-point deterministic checklist) + on-demand "Thinking of buying?" card in the parcel Overview (5 tests, 84 total).
@@ -141,9 +141,9 @@ Running end-to-end on the local Docker stack and 100% green in tests (**111 pass
   of existing authentic routes, never replace them with dummy or unrouted tabs. Header navigation tabs
   must maintain true dynamic mathematical center alignment (`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`).
 - **Strict Governance Layer Separation (Alerts vs. Applications)**:
-  - **Alerts** are automated detection/sensor flags (`landstack.alerts`). Resolving an alert merely dismisses
+  - **Alerts** are automated detection/sensor flags (`tract.alerts`). Resolving an alert merely dismisses
     the notification notice; it has NO statutory authority to modify property titles, extents, or land records.
-  - **Applications** (`landstack.applications`) are legally binding quasi-judicial administrative workflows.
+  - **Applications** (`tract.applications`) are legally binding quasi-judicial administrative workflows.
     Official title mutation and boundary alterations strictly require reviewing and approving applications
     in the Officer **Work Queue**. UI components must never imply that resolving an alert alters the RoR.
 - **Statutory Side-Effect Transparency**: Application transition buttons must clearly preview the exact
@@ -157,7 +157,7 @@ Running end-to-end on the local Docker stack and 100% green in tests (**111 pass
   - **Lean Context Serialization**: Fact-sheets provided to models must omit empty, null, or zero keys to keep prompt overhead under 350 tokens and prevent context bloat.
   - **Deterministic Rule Fallback Parity**: Fallback responses (`engine: "rules"`) must maintain the exact same structured, clickable, compact standard as LLM-generated output.
 - **Backend Architecture Rules**:
-  - Backend SQL is plain `text()` with `:named` params through `landstack/db.py` (`fetch/fetchrow/fetchval/execute/transaction`). No ORM models.
+  - Backend SQL is plain `text()` with `:named` params through `tract/db.py` (`fetch/fetchrow/fetchval/execute/transaction`). No ORM models.
   - Migrations are idempotent plain SQL in `db/migrations/`; always add `018_*.sql`, never edit applied migrations.
   - Departments must only touch their own `dept_<name>` schema and communicate with the gateway over HTTP (in-process via `DEPT_BASE_URL=""`). That separation *is* the interoperability story.
   - The aggregator (`services/aggregator.py`) fans out to adapters with a per-source timeout and returns partial results with `provenance`; masking (`services/masking.py`) is applied after the role-independent cache. Keep that order.
@@ -175,7 +175,7 @@ Running end-to-end on the local Docker stack and 100% green in tests (**111 pass
     - TG Citizens & Officers: Pardhasaradhi Naik (Sy 77, Shamshabad), Kavitha (Revenue / Tahsildar), Rajesh (Planning / TPO), Srinivas (Utilities / Engineer).
     - National: Admin (DoLR System Administrator).
 - **Testing & Verification**:
-  - Run full test suite: `apps/api/.venv/bin/pytest` (all 111 tests). Note: `test_full_e2e_workflows.py` verifies live workflow transitions against `http://localhost:8000`, so ensure the Docker API container (`landstack-api-1`) is up and healthy.
+  - Run full test suite: `apps/api/.venv/bin/pytest` (all 111 tests). Note: `test_full_e2e_workflows.py` verifies live workflow transitions against `http://localhost:8000`, so ensure the Docker API container (`tract-api-1`) is up and healthy.
   - Frontend typecheck and build: `npm run typecheck && npm run build` in `apps/web`.
 - **Git Branching Strategy**:
   - Active development branch is `experiment-branch`.
@@ -184,7 +184,7 @@ Running end-to-end on the local Docker stack and 100% green in tests (**111 pass
 
 ## Sources the plan relies on (for the pitch and the STD)
 
-PS text mirrors: sih2026.vuce.in/ps/SIH26014 · Land Stack pilot: PIB PRID 2210204 (31 Dec 2025) ·
+PS text mirrors: sih2026.vuce.in/ps/SIH26014 · Tract pilot: PIB PRID 2210204 (31 Dec 2025) ·
 ULPIN/NGDRS/GoRT: dolr.gov.in · Bhu-Naksha: nic.gov.in/project/bhunaksha · Planetary Computer STAC ·
 OGC API Features 17-069r4 · GeoJSON RFC 7946 · ISO 19152 LADM · MeitY MDDS · DEPA (India Stack).
-Full list with URLs at the end of docs/plan/landstack-plan.html.
+Full list with URLs at the end of docs/plan/tract-plan.html.

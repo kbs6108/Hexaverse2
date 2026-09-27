@@ -11,14 +11,14 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from landstack.adapters import client
-from landstack.auth import Principal, require_admin
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError
-from landstack.services import aggregator, audit
+from tract.adapters import client
+from tract.auth import Principal, require_admin
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db
+from tract.errors import AppError
+from tract.services import aggregator, audit
 
-router = APIRouter(prefix="/landstack/admin", tags=["admin"])
+router = APIRouter(prefix="/tract/admin", tags=["admin"])
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEMO_RESET = REPO_ROOT / "tools" / "demo_reset.py"

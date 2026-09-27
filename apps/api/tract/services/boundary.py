@@ -20,8 +20,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from landstack.db import DBLike
-from landstack.errors import AppError, not_found
+from tract.db import DBLike
+from tract.errors import AppError, not_found
 
 AREA_CAP_PCT = 15.0
 OVERLAP_TOL_SQM = 1.0
@@ -53,7 +53,7 @@ async def validate(db: DBLike, ulpin: str, geometry: dict[str, Any]) -> dict[str
                GeometryType({_geom_sql()})                                  AS gtype,
                ST_NPoints({_geom_sql()})                                    AS npoints,
                round(ST_Area({_geom_sql()}::geography)::numeric, 2)::float  AS new_area
-        FROM landstack.parcels p WHERE p.ulpin = :u
+        FROM tract.parcels p WHERE p.ulpin = :u
         """,
         u=ulpin,
         g=gj,
@@ -85,7 +85,7 @@ async def validate(db: DBLike, ulpin: str, geometry: dict[str, Any]) -> dict[str
             f"""
             SELECT q.ulpin, q.survey_no,
                    round(ST_Area(ST_Intersection(q.geom, {_geom_sql()})::geography)::numeric, 2)::float AS overlap_sqm
-            FROM landstack.parcels q
+            FROM tract.parcels q
             WHERE q.ulpin <> :u AND ST_Intersects(q.geom, {_geom_sql()})
               AND ST_Area(ST_Intersection(q.geom, {_geom_sql()})::geography) > (:tol)::float
             ORDER BY 3 DESC LIMIT 8
@@ -108,7 +108,7 @@ async def validate(db: DBLike, ulpin: str, geometry: dict[str, Any]) -> dict[str
                 f"""
                 SELECT ST_Covers(ST_Buffer(vb.geom, (:vtol)::float), {_geom_sql()})
                 FROM gis.village_boundary vb
-                JOIN landstack.parcels p ON p.ulpin = :u
+                JOIN tract.parcels p ON p.ulpin = :u
                 ORDER BY vb.geom <-> p.geom LIMIT 1
                 """,
                 u=ulpin,
@@ -138,7 +138,7 @@ async def validate(db: DBLike, ulpin: str, geometry: dict[str, Any]) -> dict[str
             f"""
             WITH nb AS (
                 SELECT ST_Collect(q.geom) AS geoms, ST_Union(q.geom) AS merged
-                FROM landstack.parcels q
+                FROM tract.parcels q
                 WHERE q.ulpin <> :u AND ST_DWithin(q.geom, {_geom_sql()}, 0.001)
             )
             SELECT ST_AsGeoJSON(
@@ -167,11 +167,11 @@ async def validate(db: DBLike, ulpin: str, geometry: dict[str, Any]) -> dict[str
 
 
 async def apply_geometry(db: DBLike, ulpin: str, geometry: dict[str, Any]) -> dict[str, Any]:
-    """Write the approved geometry to landstack.parcels; returns before/after areas."""
+    """Write the approved geometry to tract.parcels; returns before/after areas."""
     gj = geometry_json(geometry)
     row = await db.fetchrow(
         f"""
-        UPDATE landstack.parcels
+        UPDATE tract.parcels
         SET geom = ST_Multi({_geom_sql()}),
             area_sqm = round(ST_Area({_geom_sql()}::geography)::numeric, 2),
             updated_at = now()

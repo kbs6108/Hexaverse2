@@ -1,6 +1,6 @@
 /**
  * TypeScript mirror of the Common Data Model (CONTRACTS §5) and the other
- * JSON shapes returned by the gateway (§6). Keep in sync with landstack/cdm.py.
+ * JSON shapes returned by the gateway (§6). Keep in sync with tract/cdm.py.
  */
 
 export type Role = 'citizen' | 'officer' | 'admin';

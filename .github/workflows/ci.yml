@@ -22,17 +22,17 @@ jobs:
       postgis:
         image: postgis/postgis:16-3.4
         env:
-          POSTGRES_USER: landstack
-          POSTGRES_PASSWORD: landstack
-          POSTGRES_DB: landstack
+          POSTGRES_USER: tract
+          POSTGRES_PASSWORD: tract
+          POSTGRES_DB: tract
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U landstack -d landstack"
+          --health-cmd "pg_isready -U tract -d tract"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
     env:
-      DATABASE_URL: postgresql+asyncpg://landstack:landstack@localhost:5432/landstack
+      DATABASE_URL: postgresql+asyncpg://tract:tract@localhost:5432/tract
       AUTH_MODE: dev
       S2_OFFLINE: "1"
     steps:

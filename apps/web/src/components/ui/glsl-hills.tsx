@@ -181,7 +181,7 @@ const GLSLHills = ({
         // Normalized elevation: 0.0 at valley base, 1.0 at highest peaks
         float t = clamp((vElevation - 1.0) / 38.0, 0.0, 1.0);
 
-        // Light, subtle palette tailored to Land Stack design system:
+        // Light, subtle palette tailored to Tract design system:
         // Warm Sandstone ground (#F6F3ED) -> Pale Sage Mist (#E6EFE7) -> Celadon Sandstone (#D9E5D9) -> Soft Champagne (#EAE1CF)
         vec3 valleyGround  = vec3(0.965, 0.953, 0.929); // Warm Sandstone ground
         vec3 sageMist      = vec3(0.902, 0.937, 0.906); // Pale Sage Mist

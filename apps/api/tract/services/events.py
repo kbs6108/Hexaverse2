@@ -1,4 +1,4 @@
-"""Department → gateway event handling (`POST /landstack/events`).
+"""Department → gateway event handling (`POST /tract/events`).
 
 * `registration.deed_registered`: invalidate the CDM cache, audit, compare the deed claimant with the
   RoR owner; on mismatch raise a `pending_mutation` alert and open a system-initiated mutation application.
@@ -10,19 +10,19 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from landstack.auth import Principal
-from landstack.db import DBLike, json_dumps
-from landstack.services import audit, workflow
-from landstack.services.consistency import name_score
+from tract.auth import Principal
+from tract.db import DBLike, json_dumps
+from tract.services import audit, workflow
+from tract.services.consistency import name_score
 
-log = logging.getLogger("landstack.events")
+log = logging.getLogger("tract.events")
 
 KNOWN_EVENTS = ("registration.deed_registered", "revenue.ror_updated", "planning.permission_issued")
-SYSTEM = Principal(uid="system", name="Land Stack events", role="admin")
+SYSTEM = Principal(uid="system", name="Tract events", role="admin")
 
 
 def _invalidate(ulpin: str) -> None:
-    from landstack.services import aggregator
+    from tract.services import aggregator
 
     aggregator.invalidate(ulpin)
 
@@ -69,7 +69,7 @@ async def _on_deed_registered(db: DBLike, ulpin: str, payload: dict[str, Any]) -
         "deed_type": payload.get("deed_type"),
     }
     open_app = await db.fetchval(
-        "SELECT id FROM landstack.applications WHERE ulpin = :u AND type = 'mutation' "
+        "SELECT id FROM tract.applications WHERE ulpin = :u AND type = 'mutation' "
         "AND status NOT IN ('approved','rejected') LIMIT 1",
         u=ulpin,
     )
@@ -89,13 +89,13 @@ async def _on_deed_registered(db: DBLike, ulpin: str, payload: dict[str, Any]) -
         actions.append("mutation_application_created")
     detail["application_id"] = app_id
     existing = await db.fetchval(
-        "SELECT id FROM landstack.alerts WHERE ulpin = :u AND kind = 'pending_mutation' AND status <> 'resolved' LIMIT 1",
+        "SELECT id FROM tract.alerts WHERE ulpin = :u AND kind = 'pending_mutation' AND status <> 'resolved' LIMIT 1",
         u=ulpin,
     )
     if not existing:
         await db.execute(
             """
-            INSERT INTO landstack.alerts (ulpin, kind, severity, title, detail, status, created_at)
+            INSERT INTO tract.alerts (ulpin, kind, severity, title, detail, status, created_at)
             VALUES (:u, 'pending_mutation', 'medium', :title, CAST(:detail AS jsonb), 'open', now())
             """,
             u=ulpin,

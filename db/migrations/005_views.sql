@@ -2,14 +2,14 @@
 -- plus an application role that is created only when the connected user may do so (safe on Neon).
 
 -- ---------------------------------------------------------------------------
--- landstack.parcel_status — one row per parcel, all flags derived from department tables.
+-- tract.parcel_status — one row per parcel, all flags derived from department tables.
 --   pending_mutation : an application of type 'mutation' whose status is not a terminal
---                      to_status in landstack.transitions.
+--                      to_status in tract.transitions.
 --   registered       : at least one deed exists for the parcel.
 --   permission_status: status of the most recently applied building permission, else 'none'.
 --   change_alert     : an OPEN alert of kind 'change_detected' exists.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE VIEW landstack.parcel_status AS
+CREATE OR REPLACE VIEW tract.parcel_status AS
 SELECT
     p.ulpin,
     EXISTS (
@@ -24,11 +24,11 @@ SELECT
         SELECT sum(t.arrears) FROM dept_fiscal.property_tax t WHERE t.ulpin = p.ulpin
     ), 0)::numeric(12, 2) AS tax_arrears,
     EXISTS (
-        SELECT 1 FROM landstack.applications a
+        SELECT 1 FROM tract.applications a
         WHERE a.ulpin = p.ulpin
           AND a.type = 'mutation'
           AND a.status NOT IN (
-              SELECT tr.to_status FROM landstack.transitions tr
+              SELECT tr.to_status FROM tract.transitions tr
               WHERE tr.type = 'mutation' AND tr.is_terminal
           )
     ) AS pending_mutation,
@@ -42,15 +42,15 @@ SELECT
         LIMIT 1
     ), 'none') AS permission_status,
     EXISTS (
-        SELECT 1 FROM landstack.alerts al
+        SELECT 1 FROM tract.alerts al
         WHERE al.ulpin = p.ulpin AND al.kind = 'change_detected' AND al.status = 'open'
     ) AS change_alert
-FROM landstack.parcels p;
+FROM tract.parcels p;
 
 -- ---------------------------------------------------------------------------
--- landstack.parcel_tile_features — parcels ⋈ parcel_status ⋈ ror (owner). Feature id = ulpin.
+-- tract.parcel_tile_features — parcels ⋈ parcel_status ⋈ ror (owner). Feature id = ulpin.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE VIEW landstack.parcel_tile_features AS
+CREATE OR REPLACE VIEW tract.parcel_tile_features AS
 SELECT
     p.ulpin,
     p.survey_no,
@@ -68,8 +68,8 @@ SELECT
     s.permission_status,
     s.change_alert,
     p.geom
-FROM landstack.parcels p
-JOIN landstack.parcel_status s ON s.ulpin = p.ulpin
+FROM tract.parcels p
+JOIN tract.parcel_status s ON s.ulpin = p.ulpin
 LEFT JOIN LATERAL (
     SELECT ror.owner_name, ror.ownership_type
     FROM dept_revenue.ror
@@ -79,9 +79,9 @@ LEFT JOIN LATERAL (
 ) r ON true;
 
 -- ---------------------------------------------------------------------------
--- landstack.unit_tile_features — units ⋈ buildings for the 3D extrusion layer.
+-- tract.unit_tile_features — units ⋈ buildings for the 3D extrusion layer.
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE VIEW landstack.unit_tile_features AS
+CREATE OR REPLACE VIEW tract.unit_tile_features AS
 SELECT
     u.ulpin_3d,
     b.ulpin,
@@ -92,8 +92,8 @@ SELECT
     u.height_m,
     u.owner_name,
     u.geom
-FROM landstack.units u
-JOIN landstack.buildings b ON b.id = u.building_id;
+FROM tract.units u
+JOIN tract.buildings b ON b.id = u.building_id;
 
 -- ---------------------------------------------------------------------------
 -- Application role. Skipped with a NOTICE when the current user lacks CREATEROLE
@@ -101,19 +101,19 @@ JOIN landstack.buildings b ON b.id = u.building_id;
 -- ---------------------------------------------------------------------------
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'landstack_app') THEN
-        CREATE ROLE landstack_app NOLOGIN;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tract_app') THEN
+        CREATE ROLE tract_app NOLOGIN;
     END IF;
-    GRANT USAGE ON SCHEMA landstack, dept_revenue, dept_registration, dept_planning,
-                          dept_fiscal, dept_legal, dept_utilities, gis TO landstack_app;
+    GRANT USAGE ON SCHEMA tract, dept_revenue, dept_registration, dept_planning,
+                          dept_fiscal, dept_legal, dept_utilities, gis TO tract_app;
     GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA
-        landstack, dept_revenue, dept_registration, dept_planning,
-        dept_fiscal, dept_legal, dept_utilities, gis TO landstack_app;
+        tract, dept_revenue, dept_registration, dept_planning,
+        dept_fiscal, dept_legal, dept_utilities, gis TO tract_app;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA
-        landstack, dept_revenue, dept_registration, dept_planning,
-        dept_fiscal, dept_legal, dept_utilities, gis TO landstack_app;
-    REVOKE UPDATE, DELETE, TRUNCATE ON landstack.audit_log FROM landstack_app;
+        tract, dept_revenue, dept_registration, dept_planning,
+        dept_fiscal, dept_legal, dept_utilities, gis TO tract_app;
+    REVOKE UPDATE, DELETE, TRUNCATE ON tract.audit_log FROM tract_app;
 EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'landstack_app role setup skipped: %', SQLERRM;
+    RAISE NOTICE 'tract_app role setup skipped: %', SQLERRM;
 END
 $$;

@@ -9,7 +9,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from landstack.auth import Principal
+from tract.auth import Principal
 
 
 def mask_name(name: str | None) -> str | None:
@@ -38,7 +38,7 @@ def is_parcel_owner(principal: Principal | None, cdm: dict[str, Any] | None) -> 
         if p_name == o_name or p_name in o_name or o_name in p_name:
             return True
         try:
-            from landstack.services.consistency import name_score
+            from tract.services.consistency import name_score
             if name_score(p_name, o_name) >= 60:
                 return True
         except Exception:

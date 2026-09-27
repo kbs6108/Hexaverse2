@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from landstack.auth import Principal
-from landstack.services.masking import mask_cdm, mask_doc_no, mask_name, should_mask
+from tract.auth import Principal
+from tract.services.masking import mask_cdm, mask_doc_no, mask_name, should_mask
 
 
 def test_mask_name_and_doc_no() -> None:

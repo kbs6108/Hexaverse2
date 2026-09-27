@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from landstack.adapters.mapping import (
+from tract.adapters.mapping import (
     apply_mapping,
     available_mappings,
     convert_to_sqm,
@@ -13,8 +13,8 @@ from landstack.adapters.mapping import (
     mapping_table,
     set_path,
 )
-from landstack.adapters.registry import DEPARTMENTS, get_adapter, mapping_name_for
-from landstack.cdm import ParcelCDM
+from tract.adapters.registry import DEPARTMENTS, get_adapter, mapping_name_for
+from tract.cdm import ParcelCDM
 
 
 def test_unit_conversions() -> None:

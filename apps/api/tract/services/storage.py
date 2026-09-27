@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 from typing import Protocol
 
-from landstack.config import Settings, get_settings
+from tract.config import Settings, get_settings
 
 
 class Storage(Protocol):

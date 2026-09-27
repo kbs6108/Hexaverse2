@@ -1,10 +1,10 @@
--- 002_landstack.sql — gateway schema (CONTRACTS §4, §8). Idempotent.
+-- 002_tract.sql — gateway schema (CONTRACTS §4, §8). Idempotent.
 -- Conventions: all geometry EPSG:4326; area via ST_Area(geom::geography).
 
-CREATE SCHEMA IF NOT EXISTS landstack;
+CREATE SCHEMA IF NOT EXISTS tract;
 
 -- Applied-migration ledger (also bootstrapped by tools/migrate.py before 001 runs).
-CREATE TABLE IF NOT EXISTS landstack.schema_migrations (
+CREATE TABLE IF NOT EXISTS tract.schema_migrations (
     filename    text PRIMARY KEY,
     checksum    text,
     applied_at  timestamptz NOT NULL DEFAULT now()
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS landstack.schema_migrations (
 -- ---------------------------------------------------------------------------
 -- Cadastre
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS landstack.parcels (
+CREATE TABLE IF NOT EXISTS tract.parcels (
     ulpin         text PRIMARY KEY,
     state         text NOT NULL DEFAULT 'AP',
     district      text NOT NULL DEFAULT 'Guntur',
@@ -29,27 +29,27 @@ CREATE TABLE IF NOT EXISTS landstack.parcels (
     created_at    timestamptz NOT NULL DEFAULT now(),
     updated_at    timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS parcels_geom_gist ON landstack.parcels USING gist (geom);
-CREATE INDEX IF NOT EXISTS parcels_survey_no_trgm ON landstack.parcels USING gin (survey_no gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS parcels_village_survey_idx ON landstack.parcels (village, survey_no);
-CREATE INDEX IF NOT EXISTS parcels_land_use_idx ON landstack.parcels (land_use);
+CREATE INDEX IF NOT EXISTS parcels_geom_gist ON tract.parcels USING gist (geom);
+CREATE INDEX IF NOT EXISTS parcels_survey_no_trgm ON tract.parcels USING gin (survey_no gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS parcels_village_survey_idx ON tract.parcels (village, survey_no);
+CREATE INDEX IF NOT EXISTS parcels_land_use_idx ON tract.parcels (land_use);
 
-CREATE TABLE IF NOT EXISTS landstack.buildings (
+CREATE TABLE IF NOT EXISTS tract.buildings (
     id         serial PRIMARY KEY,
-    ulpin      text NOT NULL REFERENCES landstack.parcels (ulpin) ON DELETE CASCADE,
+    ulpin      text NOT NULL REFERENCES tract.parcels (ulpin) ON DELETE CASCADE,
     footprint  geometry(MultiPolygon, 4326) NOT NULL,
     floors     integer NOT NULL CHECK (floors > 0),
     height_m   numeric(6, 2) NOT NULL,
     name       text
 );
-CREATE INDEX IF NOT EXISTS buildings_footprint_gist ON landstack.buildings USING gist (footprint);
-CREATE INDEX IF NOT EXISTS buildings_ulpin_idx ON landstack.buildings (ulpin);
+CREATE INDEX IF NOT EXISTS buildings_footprint_gist ON tract.buildings USING gist (footprint);
+CREATE INDEX IF NOT EXISTS buildings_ulpin_idx ON tract.buildings (ulpin);
 
 -- units.ulpin is denormalised from buildings.ulpin so tiles/search never need the join.
-CREATE TABLE IF NOT EXISTS landstack.units (
+CREATE TABLE IF NOT EXISTS tract.units (
     id           serial PRIMARY KEY,
-    building_id  integer NOT NULL REFERENCES landstack.buildings (id) ON DELETE CASCADE,
-    ulpin        text NOT NULL REFERENCES landstack.parcels (ulpin) ON DELETE CASCADE,
+    building_id  integer NOT NULL REFERENCES tract.buildings (id) ON DELETE CASCADE,
+    ulpin        text NOT NULL REFERENCES tract.parcels (ulpin) ON DELETE CASCADE,
     ulpin_3d     text NOT NULL UNIQUE,              -- '<ULPIN>-F<floor:02>-U<unit:02>'
     floor        integer NOT NULL,
     unit_no      text NOT NULL,
@@ -58,13 +58,13 @@ CREATE TABLE IF NOT EXISTS landstack.units (
     height_m     numeric(6, 2) NOT NULL,
     owner_name   text
 );
-CREATE INDEX IF NOT EXISTS units_geom_gist ON landstack.units USING gist (geom);
-CREATE INDEX IF NOT EXISTS units_building_idx ON landstack.units (building_id);
+CREATE INDEX IF NOT EXISTS units_geom_gist ON tract.units USING gist (geom);
+CREATE INDEX IF NOT EXISTS units_building_idx ON tract.units (building_id);
 
 -- ---------------------------------------------------------------------------
 -- Identity, consent
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS landstack.users (
+CREATE TABLE IF NOT EXISTS tract.users (
     uid         text PRIMARY KEY,
     email       text,
     name        text NOT NULL,
@@ -73,25 +73,25 @@ CREATE TABLE IF NOT EXISTS landstack.users (
     created_at  timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS landstack.consents (
+CREATE TABLE IF NOT EXISTS tract.consents (
     id              serial PRIMARY KEY,
-    ulpin           text NOT NULL REFERENCES landstack.parcels (ulpin) ON DELETE CASCADE,
+    ulpin           text NOT NULL REFERENCES tract.parcels (ulpin) ON DELETE CASCADE,
     granted_to_uid  text NOT NULL,
     granted_by      text,
     expires_at      timestamptz NOT NULL,
     created_at      timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS consents_lookup_idx ON landstack.consents (granted_to_uid, ulpin, expires_at);
+CREATE INDEX IF NOT EXISTS consents_lookup_idx ON tract.consents (granted_to_uid, ulpin, expires_at);
 
 -- ---------------------------------------------------------------------------
 -- Workflow
 -- ---------------------------------------------------------------------------
--- Backend may mint ids as 'APP-2026-' || lpad(nextval('landstack.application_id_seq')::text, 6, '0').
-CREATE SEQUENCE IF NOT EXISTS landstack.application_id_seq;
+-- Backend may mint ids as 'APP-2026-' || lpad(nextval('tract.application_id_seq')::text, 6, '0').
+CREATE SEQUENCE IF NOT EXISTS tract.application_id_seq;
 
-CREATE TABLE IF NOT EXISTS landstack.applications (
+CREATE TABLE IF NOT EXISTS tract.applications (
     id                   text PRIMARY KEY,                    -- 'APP-2026-000123'
-    ulpin                text NOT NULL REFERENCES landstack.parcels (ulpin) ON DELETE CASCADE,
+    ulpin                text NOT NULL REFERENCES tract.parcels (ulpin) ON DELETE CASCADE,
     type                 text NOT NULL CHECK (type IN ('mutation', 'building_permission', 'ownership_verification', 'field_review')),
     applicant_uid        text,
     applicant_name       text,
@@ -101,11 +101,11 @@ CREATE TABLE IF NOT EXISTS landstack.applications (
     created_at           timestamptz NOT NULL DEFAULT now(),
     updated_at           timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS applications_ulpin_idx ON landstack.applications (ulpin);
-CREATE INDEX IF NOT EXISTS applications_queue_idx ON landstack.applications (assigned_department, status, created_at);
-CREATE INDEX IF NOT EXISTS applications_applicant_idx ON landstack.applications (applicant_uid, created_at);
+CREATE INDEX IF NOT EXISTS applications_ulpin_idx ON tract.applications (ulpin);
+CREATE INDEX IF NOT EXISTS applications_queue_idx ON tract.applications (assigned_department, status, created_at);
+CREATE INDEX IF NOT EXISTS applications_applicant_idx ON tract.applications (applicant_uid, created_at);
 
-CREATE TABLE IF NOT EXISTS landstack.transitions (
+CREATE TABLE IF NOT EXISTS tract.transitions (
     id                  serial PRIMARY KEY,
     type                text NOT NULL,
     from_status         text NOT NULL,
@@ -116,9 +116,9 @@ CREATE TABLE IF NOT EXISTS landstack.transitions (
     is_terminal         boolean NOT NULL DEFAULT false   -- to_status ends the workflow
 );
 CREATE UNIQUE INDEX IF NOT EXISTS transitions_unique_idx
-    ON landstack.transitions (type, from_status, to_status, allowed_role, COALESCE(allowed_department, '*'));
+    ON tract.transitions (type, from_status, to_status, allowed_role, COALESCE(allowed_department, '*'));
 
-INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal) VALUES
+INSERT INTO tract.transitions (type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal) VALUES
     -- mutation (revenue officer); citizen resubmits a returned application
     ('mutation', 'submitted',          'document_check',     'officer', 'revenue',  'Start document check',        false),
     ('mutation', 'document_check',     'field_verification', 'officer', 'revenue',  'Send for field verification', false),
@@ -140,7 +140,7 @@ ON CONFLICT (type, from_status, to_status, allowed_role, COALESCE(allowed_depart
 -- ---------------------------------------------------------------------------
 -- Audit, alerts, reports, connectors
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS landstack.audit_log (
+CREATE TABLE IF NOT EXISTS tract.audit_log (
     id           bigserial PRIMARY KEY,
     ts           timestamptz NOT NULL DEFAULT now(),
     actor_uid    text,
@@ -154,12 +154,12 @@ CREATE TABLE IF NOT EXISTS landstack.audit_log (
     after        jsonb,
     source       text NOT NULL DEFAULT 'gateway'
 );
-CREATE INDEX IF NOT EXISTS audit_log_ulpin_ts_idx ON landstack.audit_log (ulpin, ts DESC);
-CREATE INDEX IF NOT EXISTS audit_log_entity_idx ON landstack.audit_log (entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS audit_log_ulpin_ts_idx ON tract.audit_log (ulpin, ts DESC);
+CREATE INDEX IF NOT EXISTS audit_log_entity_idx ON tract.audit_log (entity_type, entity_id);
 
-CREATE TABLE IF NOT EXISTS landstack.alerts (
+CREATE TABLE IF NOT EXISTS tract.alerts (
     id               serial PRIMARY KEY,
-    ulpin            text NOT NULL REFERENCES landstack.parcels (ulpin) ON DELETE CASCADE,
+    ulpin            text NOT NULL REFERENCES tract.parcels (ulpin) ON DELETE CASCADE,
     kind             text NOT NULL CHECK (kind IN ('change_detected', 'inconsistency', 'pending_mutation')),
     severity         text NOT NULL DEFAULT 'medium' CHECK (severity IN ('low', 'medium', 'high')),
     title            text NOT NULL,
@@ -169,12 +169,12 @@ CREATE TABLE IF NOT EXISTS landstack.alerts (
     resolved_at      timestamptz,
     created_at       timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS alerts_ulpin_idx ON landstack.alerts (ulpin);
-CREATE INDEX IF NOT EXISTS alerts_status_idx ON landstack.alerts (status, kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS alerts_ulpin_idx ON tract.alerts (ulpin);
+CREATE INDEX IF NOT EXISTS alerts_status_idx ON tract.alerts (status, kind, created_at DESC);
 
-CREATE TABLE IF NOT EXISTS landstack.reports (
+CREATE TABLE IF NOT EXISTS tract.reports (
     id              text PRIMARY KEY,
-    ulpin           text NOT NULL REFERENCES landstack.parcels (ulpin) ON DELETE CASCADE,
+    ulpin           text NOT NULL REFERENCES tract.parcels (ulpin) ON DELETE CASCADE,
     issued_to_uid   text,
     issued_to_name  text,
     issued_at       timestamptz NOT NULL DEFAULT now(),
@@ -182,9 +182,9 @@ CREATE TABLE IF NOT EXISTS landstack.reports (
     signature       text NOT NULL,
     storage_key     text NOT NULL
 );
-CREATE INDEX IF NOT EXISTS reports_ulpin_idx ON landstack.reports (ulpin);
+CREATE INDEX IF NOT EXISTS reports_ulpin_idx ON tract.reports (ulpin);
 
-CREATE TABLE IF NOT EXISTS landstack.connector_status (
+CREATE TABLE IF NOT EXISTS tract.connector_status (
     name        text PRIMARY KEY,
     ok          boolean NOT NULL DEFAULT true,
     latency_ms  integer,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS landstack.connector_status (
     note        text
 );
 
-INSERT INTO landstack.connector_status (name, ok, latency_ms, last_sync, note) VALUES
+INSERT INTO tract.connector_status (name, ok, latency_ms, last_sync, note) VALUES
     ('revenue',      true, 41, now(), 'AP Meebhoomi (mock) — RoR / khata'),
     ('registration', true, 55, now(), 'IGRS AP (mock) — deeds, encumbrances'),
     ('planning',     true, 38, now(), 'APCRDA / DTCP (mock) — zoning, permissions'),

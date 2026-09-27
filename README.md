@@ -1,4 +1,4 @@
-# Land Stack (Hexaverse) · Integrated Cadastral GIS & Digital Public Infrastructure for Land Governance
+# Tract (Hexaverse) · Integrated Cadastral GIS & Digital Public Infrastructure for Land Governance
 
 [![CI Status](https://img.shields.io/badge/CI-111%20Passed%20(100%25)-emerald?style=for-the-badge&logo=github-actions)](https://github.com/kbs6108/Hexaverse2/actions)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -18,7 +18,7 @@
 
 In India, **over 66% of all civil court cases are land and property disputes**, locking an estimated **$200 Billion in dead capital** and taking an average of **20 years to resolve**. This crisis stems from severe administrative fragmentation: land records are scattered across disconnected institutional silos—Revenue, Registration (SRO), Cadastral Survey, Town Planning, Utilities, and Forest Departments—operating under incompatible vocabularies and isolated databases.
 
-**Land Stack (Hexaverse)** unifies this landscape into a sovereign Digital Public Infrastructure. By assigning every land parcel a unique 14-character **ULPIN (Unique Land Parcel Identification Number)**, Land Stack stitches institutional records into an interoperable **Common Data Model (CLM 1.0 JSON-LD)** with cryptographic provenance hashes, automated Sentinel-2 satellite change detection, ISO 19152 3D volumetric cadastre, linear corridor severance analysis, and stage-gated quasi-judicial scrutiny under the **ROR Act §5** and **DPDP Act 2023**.
+**Tract (Hexaverse)** unifies this landscape into a sovereign Digital Public Infrastructure. By assigning every land parcel a unique 14-character **ULPIN (Unique Land Parcel Identification Number)**, Tract stitches institutional records into an interoperable **Common Data Model (CLM 1.0 JSON-LD)** with cryptographic provenance hashes, automated Sentinel-2 satellite change detection, ISO 19152 3D volumetric cadastre, linear corridor severance analysis, and stage-gated quasi-judicial scrutiny under the **ROR Act §5** and **DPDP Act 2023**.
 
 ---
 
@@ -79,14 +79,14 @@ flowchart TB
   subgraph Client["Client Tier · apps/web (React 19 + TypeScript + MapLibre GL)"]
     direction TB
     LP["Landing Page & Topo Shader"]
-    MAP["3-Tier GIS Map Explorer<br/>(Vector MVT + 3D Strata)"]
-    CIT["Citizen Portal & Tracking<br/>(Stage-Gated ROR Desk)"]
-    OFF["Officer Console & Work Queue<br/>(Quasi-Judicial Scrutiny)"]
-    SIM["Interactive Sandbox Tools<br/>(Hierarchy · ULPIN Decoder)"]
+    MAP["3-Tier GIS Map Explorer<br/>Vector MVT + 3D Strata"]
+    CIT["Citizen Portal & Tracking<br/>Stage-Gated ROR Desk"]
+    OFF["Officer Console & Work Queue<br/>Quasi-Judicial Scrutiny"]
+    SIM["Interactive Sandbox Tools<br/>Hierarchy · ULPIN Decoder"]
   end
 
   subgraph Gateway["API Gateway Tier · apps/api (FastAPI + Python 3.12)"]
-    GW["FastAPI Core Gateway (:8000)"]
+    GW["FastAPI Core Gateway :8000"]
     AGG["CLM 1.0 JSON-LD Aggregator"]
     WF["Statutory Workflow State Machine"]
     DOC["Forensic Document Cross-Verify"]
@@ -94,29 +94,25 @@ flowchart TB
     S2["Sentinel-2 Multispectral Engine"]
   end
 
-  subgraph Depts["Federated Department Sub-Services (In-Process ASGI)"]
-    REV["dept_revenue<br/>(RoR · 1-B · Khata)"]
-    REG["dept_registration<br/>(Deeds · SRO Encumbrance)"]
-    SUR["dept_survey<br/>(FMB · Boundaries)"]
-    PLN["dept_planning<br/>(Zoning · Master Plan)"]
-    FIS["dept_fiscal<br/>(Taxes · Guideline Values)"]
-    LEG["dept_legal<br/>(Court Stays · Lis Pendens)"]
-    UTL["dept_utilities<br/>(Power · Water Lines)"]
+  subgraph Depts["Federated Department Sub-Services · In-Process ASGI"]
+    REV["dept_revenue<br/>RoR · 1-B · Khata"]
+    REG["dept_registration<br/>Deeds · SRO Encumbrance"]
+    SUR["dept_survey<br/>FMB · Boundaries"]
+    PLN["dept_planning<br/>Zoning · Master Plan"]
+    FIS["dept_fiscal<br/>Taxes · Guideline Values"]
+    LEG["dept_legal<br/>Court Stays · Lis Pendens"]
+    UTL["dept_utilities<br/>Power · Water Lines"]
   end
 
-  subgraph Storage["Data & Spatial Tier (PostgreSQL 16 + PostGIS 3.4)"]
-    DB[("PostGIS Spatial Cluster (:5432)<br/>Schemas: landstack · dept_* · gis")]
-    S2DATA[("Satellite Raster COGs<br/>(Sentinel-2 10m NDVI/NDBI)")]
+  subgraph Storage["Data & Spatial Tier · PostgreSQL 16 + PostGIS 3.4"]
+    DB[("PostGIS Spatial Cluster :5432<br/>Schemas: tract · dept_* · gis")]
+    S2DATA[("Satellite Raster COGs<br/>Sentinel-2 10m NDVI / NDBI")]
   end
 
-  Client -->|HTTPS / REST / Vector MVT| GW
-  GW --> AGG
-  GW --> WF
-  GW --> DOC
-  GW --> MASK
-  GW --> S2
-  AGG --> Depts
-  Depts -->|Direct asyncpg (Schema-Isolated)| DB
+  MAP & CIT & OFF -->|"HTTPS / REST / Vector MVT"| GW
+  GW --> AGG & WF & DOC & MASK & S2
+  AGG --> REV & REG & SUR & PLN & FIS & LEG & UTL
+  REV & REG & SUR & PLN & FIS & LEG & UTL -->|"Direct asyncpg · Schema-Isolated"| DB
   S2 --> S2DATA
 ```
 
@@ -167,9 +163,9 @@ docker compose -f infra/docker-compose.yml ps
 
 | Service | Container | Internal Port | Host URL |
 | :--- | :--- | :--- | :--- |
-| **Web Frontend** | `landstack-web-1` | 5173 | [http://localhost:5173](http://localhost:5173) |
-| **API Gateway** | `landstack-api-1` | 8000 | [http://localhost:8000](http://localhost:8000) ([Swagger Docs](http://localhost:8000/docs)) |
-| **Spatial Database**| `landstack-db-1` | 5432 | `localhost:5432` (`landstack/landstack`) |
+| **Web Frontend** | `tract-web-1` | 5173 | [http://localhost:5173](http://localhost:5173) |
+| **API Gateway** | `tract-api-1` | 8000 | [http://localhost:8000](http://localhost:8000) ([Swagger Docs](http://localhost:8000/docs)) |
+| **Spatial Database**| `tract-db-1` | 5432 | `localhost:5432` (`tract/tract`) |
 
 ---
 
@@ -199,7 +195,7 @@ cd apps/web && npm run typecheck && npm run build
 Hexaverse2/
 ├── apps/
 │   ├── api/                           # FastAPI Gateway & Department Services (Python 3.12)
-│   │   ├── landstack/                 # Core gateway: routers, services, config, db, cdm
+│   │   ├── tract/                 # Core gateway: routers, services, config, db, cdm
 │   │   │   ├── routers/               # parcels, applications, ai, documents, alerts, tiles
 │   │   │   ├── services/              # aggregator, workflow, boundary, document_verify, masking
 │   │   │   └── adapters/              # state revenue adapters (AP, TN, TG)

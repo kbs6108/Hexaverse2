@@ -268,7 +268,7 @@ class AcquisitionImpact(_Leaf):
 
 
 class ParcelCDM(_Leaf):
-    """The aggregated per-parcel profile served by `GET /landstack/parcels/{ulpin}`."""
+    """The aggregated per-parcel profile served by `GET /tract/parcels/{ulpin}`."""
 
     ulpin: str
     identifiers: Identifiers = Field(default_factory=Identifiers)

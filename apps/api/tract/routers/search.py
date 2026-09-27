@@ -1,4 +1,4 @@
-"""`GET /landstack/search?q=` — ULPIN / survey no / khata always; owner names for officer+ only."""
+"""`GET /tract/search?q=` — ULPIN / survey no / khata always; owner names for officer+ only."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 
-from landstack.auth import Principal, current_principal
-from landstack.db import DBLike, get_db
+from tract.auth import Principal, current_principal
+from tract.db import DBLike, get_db
 
-router = APIRouter(prefix="/landstack", tags=["search"])
+router = APIRouter(prefix="/tract", tags=["search"])
 
 
 @router.get("/search")
@@ -34,7 +34,7 @@ async def search(
     base_cols = "p.ulpin, p.survey_no, p.village, p.land_use, ST_X(ST_PointOnSurface(p.geom)) AS lon, ST_Y(ST_PointOnSurface(p.geom)) AS lat"
     add(
         await db.fetch(
-            f"SELECT {base_cols}, p.ulpin AS label FROM landstack.parcels p WHERE p.ulpin ILIKE :like "
+            f"SELECT {base_cols}, p.ulpin AS label FROM tract.parcels p WHERE p.ulpin ILIKE :like "
             "ORDER BY p.ulpin LIMIT :limit",
             like=f"{term}%",
             limit=limit,
@@ -43,7 +43,7 @@ async def search(
     )
     add(
         await db.fetch(
-            f"SELECT {base_cols}, 'Survey ' || p.survey_no AS label FROM landstack.parcels p "
+            f"SELECT {base_cols}, 'Survey ' || p.survey_no AS label FROM tract.parcels p "
             "WHERE p.survey_no ILIKE :like ORDER BY similarity(p.survey_no, :term) DESC, p.survey_no LIMIT :limit",
             like=like,
             term=term,
@@ -54,7 +54,7 @@ async def search(
     add(
         await db.fetch(
             f"SELECT {base_cols}, 'Khata ' || r.khata_no AS label FROM dept_revenue.ror r "
-            "JOIN landstack.parcels p ON p.ulpin = r.ulpin WHERE r.khata_no ILIKE :like LIMIT :limit",
+            "JOIN tract.parcels p ON p.ulpin = r.ulpin WHERE r.khata_no ILIKE :like LIMIT :limit",
             like=like,
             limit=limit,
         ),
@@ -65,7 +65,7 @@ async def search(
         add(
             await db.fetch(
                 f"SELECT {base_cols}, r.owner_name AS label FROM dept_revenue.ror r "
-                "JOIN landstack.parcels p ON p.ulpin = r.ulpin WHERE r.owner_name ILIKE :like "
+                "JOIN tract.parcels p ON p.ulpin = r.ulpin WHERE r.owner_name ILIKE :like "
                 "OR similarity(r.owner_name, :term) > 0.3 ORDER BY similarity(r.owner_name, :term) DESC LIMIT :limit",
                 like=like,
                 term=term,

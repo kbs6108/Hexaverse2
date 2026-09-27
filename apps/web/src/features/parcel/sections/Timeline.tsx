@@ -9,7 +9,7 @@ import { fmtDate, fmtVal, titleCase } from '@/lib/format';
 import { Badge, type Tone } from '@/components/Badge';
 import { useTranslation } from '@/lib/i18n';
 
-const srcTone: Record<string, Tone> = { revenue: 'primary', registration: 'slate', planning: 'amber', fiscal: 'neutral', legal: 'brick', utilities: 'neutral', landstack: 'violet', satellite: 'brick' };
+const srcTone: Record<string, Tone> = { revenue: 'primary', registration: 'slate', planning: 'amber', fiscal: 'neutral', legal: 'brick', utilities: 'neutral', tract: 'violet', satellite: 'brick' };
 
 export function Timeline({ ulpin }: { ulpin: string }) {
   const { t } = useTranslation();

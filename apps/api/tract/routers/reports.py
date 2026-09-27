@@ -6,16 +6,16 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Response
 
-from landstack.auth import Principal, require_user
-from landstack.db import DBLike, get_db
-from landstack.errors import not_found
-from landstack.services import reports
-from landstack.services.storage import get_storage
+from tract.auth import Principal, require_user
+from tract.db import DBLike, get_db
+from tract.errors import not_found
+from tract.services import reports
+from tract.services.storage import get_storage
 
 router = APIRouter(tags=["reports"])
 
 
-@router.post("/landstack/reports/{ulpin}", status_code=201)
+@router.post("/tract/reports/{ulpin}", status_code=201)
 async def issue_report(
     ulpin: str, principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)
 ) -> dict[str, Any]:

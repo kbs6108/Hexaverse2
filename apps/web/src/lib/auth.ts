@@ -22,7 +22,7 @@ import type { Department, Me, Role } from './cdm';
 
 async function fetchMe(devUser: string): Promise<Me | null> {
   try {
-    const res = await fetch(`${env.apiUrl}/landstack/me`, {
+    const res = await fetch(`${env.apiUrl}/tract/me`, {
       headers: { 'X-Dev-User': devUser },
     });
     if (!res.ok) return null;

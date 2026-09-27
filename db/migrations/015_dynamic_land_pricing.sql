@@ -68,7 +68,7 @@ WITH factors AS (
             WHEN p.zone_code = 'AG' THEN 'Peri-Urban Agricultural Zone'
             ELSE 'Developing Growth Node'
         END AS tier
-    FROM landstack.parcels p
+    FROM tract.parcels p
     LEFT JOIN dept_utilities.connections u ON u.ulpin = p.ulpin
 )
 UPDATE dept_fiscal.valuation v

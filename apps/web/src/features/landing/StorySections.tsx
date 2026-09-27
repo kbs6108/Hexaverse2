@@ -523,7 +523,7 @@ function ProblemBreakthroughSection() {
                 bad: true,
               },
               {
-                head: 'With Land Stack',
+                head: 'With Tract',
                 sub: 'One 14-digit ULPIN queries Revenue, Registration, Court, Planning, Tax, and Utilities live through an open gateway.',
                 bad: false,
               },
@@ -632,7 +632,7 @@ function DepartmentsSection() {
           Six departments. One authoritative record.
         </h2>
         <p className="mt-3.5 text-sm sm:text-base text-ink-2 max-w-2xl mx-auto leading-relaxed">
-          No state department database is replaced or duplicated. Land Stack queries all six systems live through open micro-adapters and cites where every field originated.
+          No state department database is replaced or duplicated. Tract queries all six systems live through open micro-adapters and cites where every field originated.
         </p>
       </div>
 
@@ -711,7 +711,7 @@ const SHOWCASE_CARDS = [
     engine: 'PostGIS 3D Vector',
     icon: Boxes,
     lead: 'True 3D-ULPIN for multi-storey apartments, basements, and air rights.',
-    body: 'Land is no longer flat. Land Stack binds vertical property units to their elevation band, unit floor area, common areas, and underground basements with authoritative sub-parcel keys under ISO 19152 LADM.',
+    body: 'Land is no longer flat. Tract binds vertical property units to their elevation band, unit floor area, common areas, and underground basements with authoritative sub-parcel keys under ISO 19152 LADM.',
     metric: 'Full 3D Stratum Registry',
   },
   {
@@ -1297,7 +1297,7 @@ function FinalCTASection() {
     <section className="relative overflow-hidden bg-primary px-6 py-16 sm:py-20 text-center text-white sm:px-12 lg:px-20">
       <div className="mx-auto max-w-3xl relative z-10">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.25em] text-primary-soft">
-          09 / Explore Land Stack
+          09 / Explore Tract
         </p>
         <h2 className="mt-3 font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
           The next layer of public infrastructure.
@@ -1354,7 +1354,7 @@ export function StorySections() {
         id="fragmentation"
         kicker="The Land · Human Reality"
         statement={<>For a farmer, a boundary is not a line. <span className="text-primary">It is a livelihood.</span></>}
-        detail="The mutation that takes weeks. The record that lives in three offices. Land Stack brings the answer closer to the people waiting for it."
+        detail="The mutation that takes weeks. The record that lives in three offices. Tract brings the answer closer to the people waiting for it."
       />
 
       {/* 03 / Federated Systems: Six departments */}

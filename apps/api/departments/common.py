@@ -9,9 +9,9 @@ from typing import Any
 
 from fastapi import Depends, FastAPI, Query, Request, Response
 
-from landstack.config import Settings, get_settings
-from landstack.db import DBLike, get_db
-from landstack.errors import AppError, install_error_handlers
+from tract.config import Settings, get_settings
+from tract.db import DBLike, get_db
+from tract.errors import AppError, install_error_handlers
 
 
 def now_iso() -> str:

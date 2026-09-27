@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Apply ``db/migrations/*.sql`` in filename order and record them in ``landstack.schema_migrations``.
+"""Apply ``db/migrations/*.sql`` in filename order and record them in ``tract.schema_migrations``.
 
 Usage::
 
     python tools/migrate.py                 # apply pending migrations (DATABASE_URL)
-    python tools/migrate.py --reset         # drop all Land Stack schemas first, then apply everything
+    python tools/migrate.py --reset         # drop all Tract schemas first, then apply everything
     python tools/migrate.py --dry-run       # list what would run
     python tools/migrate.py --database-url postgresql://...
 
@@ -26,13 +26,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS_DIR = REPO_ROOT / "db" / "migrations"
 
 SCHEMAS = (
-    "landstack", "dept_revenue", "dept_registration", "dept_planning",
+    "tract", "dept_revenue", "dept_registration", "dept_planning",
     "dept_fiscal", "dept_legal", "dept_utilities", "gis",
 )
 
 BOOTSTRAP_SQL = """
-CREATE SCHEMA IF NOT EXISTS landstack;
-CREATE TABLE IF NOT EXISTS landstack.schema_migrations (
+CREATE SCHEMA IF NOT EXISTS tract;
+CREATE TABLE IF NOT EXISTS tract.schema_migrations (
     filename   text PRIMARY KEY,
     checksum   text,
     applied_at timestamptz NOT NULL DEFAULT now()
@@ -51,7 +51,7 @@ def migration_files() -> list[Path]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--database-url", help="overrides DATABASE_URL")
-    ap.add_argument("--reset", action="store_true", help="DROP SCHEMA ... CASCADE for all Land Stack schemas first")
+    ap.add_argument("--reset", action="store_true", help="DROP SCHEMA ... CASCADE for all Tract schemas first")
     ap.add_argument("--force", action="store_true", help="re-run files even if already recorded")
     ap.add_argument("--dry-run", action="store_true", help="show pending files without applying")
     ap.add_argument("--yes", action="store_true", help="do not prompt before --reset")
@@ -82,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
 
         with conn.cursor() as cur:
             cur.execute(BOOTSTRAP_SQL)
-            cur.execute("SELECT filename FROM landstack.schema_migrations")
+            cur.execute("SELECT filename FROM tract.schema_migrations")
             applied = {row[0] for row in cur.fetchall()}
         conn.commit()
 
@@ -104,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
                 with conn.cursor() as cur:
                     cur.execute(sql)
                     cur.execute(
-                        "INSERT INTO landstack.schema_migrations (filename, checksum) VALUES (%s, %s) "
+                        "INSERT INTO tract.schema_migrations (filename, checksum) VALUES (%s, %s) "
                         "ON CONFLICT (filename) DO UPDATE SET checksum = EXCLUDED.checksum, applied_at = now()",
                         (f.name, checksum),
                     )

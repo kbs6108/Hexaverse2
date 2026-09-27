@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "landstack-api"
+name = "tract-api"
 version = "0.1.0"
-description = "Land Stack gateway API + six mock department services (SIH 2026 prototype)"
+description = "Tract gateway API + six mock department services (SIH 2026 prototype)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -35,10 +35,10 @@ dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.6"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["landstack*", "departments*", "ai*"]
+include = ["tract*", "departments*", "ai*"]
 
 [tool.setuptools.package-data]
-landstack = ["adapters/mappings/*.yaml"]
+tract = ["adapters/mappings/*.yaml"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

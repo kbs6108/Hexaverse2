@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fetch Sentinel-2 L2A imagery for the demo AOI from Microsoft Planetary Computer and (optionally)
-compute per-parcel NDVI/NDBI change into ``gis.s2_change`` + ``landstack.alerts``.
+compute per-parcel NDVI/NDBI change into ``gis.s2_change`` + ``tract.alerts``.
 
 Run this on a machine with internet access; the sandbox that generated the seed cannot reach
 Planetary Computer. Two windows are searched (dry-season, low cloud):
@@ -131,14 +131,14 @@ def download(out_dir: Path) -> dict[str, Any]:
 # Compute per-parcel change
 # ---------------------------------------------------------------------------
 def load_parcels(parcels_path: Path | None, database_url: str | None) -> list[tuple[str, dict[str, Any]]]:
-    """Return ``[(ulpin, geometry_geojson)]`` from a GeoJSON file or from landstack.parcels."""
+    """Return ``[(ulpin, geometry_geojson)]`` from a GeoJSON file or from tract.parcels."""
     if parcels_path:
         fc = json.loads(parcels_path.read_text())
         return [(f["properties"]["ulpin"], f["geometry"]) for f in fc["features"]]
     from dburl import connect, resolve_database_url
 
     with connect(resolve_database_url(database_url)) as conn, conn.cursor() as cur:
-        cur.execute("SELECT ulpin, ST_AsGeoJSON(geom)::text FROM landstack.parcels")
+        cur.execute("SELECT ulpin, ST_AsGeoJSON(geom)::text FROM tract.parcels")
         return [(u, json.loads(g)) for u, g in cur.fetchall()]
 
 
@@ -219,10 +219,10 @@ def write_results(rows: list[dict[str, Any]], database_url: str | None) -> None:
             confidence = EXCLUDED.confidence, computed_at = now()
     """
     alert = """
-        INSERT INTO landstack.alerts (ulpin, kind, severity, title, detail, status)
+        INSERT INTO tract.alerts (ulpin, kind, severity, title, detail, status)
         SELECT %(ulpin)s, 'change_detected', 'high', 'Possible unrecorded land-use change', %(detail)s::jsonb, 'open'
-        WHERE EXISTS (SELECT 1 FROM landstack.parcels p WHERE p.ulpin = %(ulpin)s)
-          AND NOT EXISTS (SELECT 1 FROM landstack.alerts a WHERE a.ulpin = %(ulpin)s AND a.kind = 'change_detected' AND a.status <> 'resolved')
+        WHERE EXISTS (SELECT 1 FROM tract.parcels p WHERE p.ulpin = %(ulpin)s)
+          AND NOT EXISTS (SELECT 1 FROM tract.alerts a WHERE a.ulpin = %(ulpin)s AND a.kind = 'change_detected' AND a.status <> 'resolved')
     """
     with connect(resolve_database_url(database_url)) as conn, conn.cursor() as cur:
         cur.executemany(upsert, rows)

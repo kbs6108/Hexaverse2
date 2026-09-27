@@ -1,36 +1,36 @@
-# Land Stack local stack. Run from the repo root via the Makefile (`make up`) or:
+# Tract local stack. Run from the repo root via the Makefile (`make up`) or:
 #   docker compose --env-file infra/.env -f infra/docker-compose.yml up -d
 # Profiles: (none) = db + migrate + api + web(dev server) · prod = nginx build of the web app · tiles = martin
-name: landstack
+name: tract
 
 x-api-image: &api-image
   build:
     context: ..
     dockerfile: apps/api/Dockerfile
-  image: landstack-api:dev
+  image: tract-api:dev
 
-x-db-url: &db-url postgresql+asyncpg://${POSTGRES_USER:-landstack}:${POSTGRES_PASSWORD:-landstack}@db:5432/${POSTGRES_DB:-landstack}
+x-db-url: &db-url postgresql+asyncpg://${POSTGRES_USER:-tract}:${POSTGRES_PASSWORD:-tract}@db:5432/${POSTGRES_DB:-tract}
 
 services:
   db:
     image: postgis/postgis:16-3.4
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-landstack}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-landstack}
-      POSTGRES_DB: ${POSTGRES_DB:-landstack}
+      POSTGRES_USER: ${POSTGRES_USER:-tract}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tract}
+      POSTGRES_DB: ${POSTGRES_DB:-tract}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-landstack} -d ${POSTGRES_DB:-landstack}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tract} -d ${POSTGRES_DB:-tract}"]
       interval: 5s
       timeout: 5s
       retries: 12
       start_period: 10s
     restart: unless-stopped
 
-  # One-shot, idempotent: applies db/migrations/*.sql, then seeds only when landstack.parcels is empty.
+  # One-shot, idempotent: applies db/migrations/*.sql, then seeds only when tract.parcels is empty.
   migrate:
     <<: *api-image
     working_dir: /app
@@ -53,9 +53,9 @@ services:
         import sys; sys.path.insert(0, "tools")
         from dburl import connect, resolve_database_url
         with connect(resolve_database_url()) as c, c.cursor() as cur:
-            cur.execute("SELECT count(*) FROM landstack.parcels")
+            cur.execute("SELECT count(*) FROM tract.parcels")
             n = cur.fetchone()[0]
-        print(f"landstack.parcels has {n} rows")
+        print(f"tract.parcels has {n} rows")
         sys.exit(0 if n == 0 else 1)
         PY
           then python tools/seed.py; else echo "seed skipped (already seeded; run 'make seed' to force)"; fi
@@ -85,7 +85,7 @@ services:
       - ../db:/app/db:ro
       - ../data:/app/data
     command: >
-      uvicorn landstack.main:app --host 0.0.0.0 --port 8000 --reload
+      uvicorn tract.main:app --host 0.0.0.0 --port 8000 --reload
       --reload-dir /app/apps/api --proxy-headers --forwarded-allow-ips='*'
     depends_on:
       db:
@@ -152,13 +152,13 @@ services:
       timeout: 5s
       retries: 5
 
-  # Optional vector-tile server straight from PostGIS (the API already serves MVT at /landstack/tiles).
+  # Optional vector-tile server straight from PostGIS (the API already serves MVT at /tract/tiles).
   martin:
     profiles: ["tiles"]
     image: ghcr.io/maplibre/martin:v0.15.0
     command: ["--listen-addresses", "0.0.0.0:3000", "--default-srid", "4326"]
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-landstack}:${POSTGRES_PASSWORD:-landstack}@db:5432/${POSTGRES_DB:-landstack}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tract}:${POSTGRES_PASSWORD:-tract}@db:5432/${POSTGRES_DB:-tract}
     ports:
       - "${MARTIN_PORT:-3000}:3000"
     depends_on:

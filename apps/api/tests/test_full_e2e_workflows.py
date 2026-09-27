@@ -1,4 +1,4 @@
-"""Comprehensive End-to-End Workflow Tests against Live Land Stack Services.
+"""Comprehensive End-to-End Workflow Tests against Live Tract Services.
 
 Validates the complete lifecycle:
 1. Multi-user / multi-device identity isolation (different citizens / officers).
@@ -29,6 +29,12 @@ def anyio_backend():
 @pytest.fixture
 async def app_client():
     async with AsyncClient(base_url="http://localhost:8000", timeout=15.0) as client:
+        try:
+            h = await client.get("/healthz")
+            if h.status_code != 200:
+                pytest.skip("Live Tract server at http://localhost:8000 is not healthy")
+        except Exception:
+            pytest.skip("Live Tract server at http://localhost:8000 is not running")
         yield client
 
 
@@ -39,8 +45,8 @@ async def test_multi_user_registration_and_isolation(app_client: AsyncClient):
     headers_citizen_b = {"X-Dev-User": "citizen::Priya Sharma"}
 
     # Both users fetch their identity
-    me_a = (await app_client.get("/landstack/me", headers=headers_citizen_a)).json()
-    me_b = (await app_client.get("/landstack/me", headers=headers_citizen_b)).json()
+    me_a = (await app_client.get("/tract/me", headers=headers_citizen_a)).json()
+    me_b = (await app_client.get("/tract/me", headers=headers_citizen_b)).json()
 
     assert me_a["name"] == "Kiran Naidu"
     assert me_a["role"] == "citizen"
@@ -53,7 +59,7 @@ async def test_multi_user_registration_and_isolation(app_client: AsyncClient):
 
     # Citizen A submits a land complaint
     sub_res = await app_client.post(
-        "/landstack/applications",
+        "/tract/applications",
         headers=headers_citizen_a,
         json={
             "ulpin": PARCEL_ULPIN,
@@ -70,11 +76,11 @@ async def test_multi_user_registration_and_isolation(app_client: AsyncClient):
     assert app_a["applicant_name"] == "Kiran Naidu"
 
     # Citizen A sees it in their application list
-    apps_a = (await app_client.get("/landstack/applications", headers=headers_citizen_a)).json()["items"]
+    apps_a = (await app_client.get("/tract/applications", headers=headers_citizen_a)).json()["items"]
     assert any(a["id"] == app_a["id"] for a in apps_a)
 
     # Citizen B cannot see Citizen A's application in their personal listing
-    apps_b = (await app_client.get("/landstack/applications", headers=headers_citizen_b)).json()["items"]
+    apps_b = (await app_client.get("/tract/applications", headers=headers_citizen_b)).json()["items"]
     assert not any(a["id"] == app_a["id"] for a in apps_b)
 
 
@@ -88,7 +94,7 @@ async def test_rejection_reason_transparency_in_order(app_client: AsyncClient):
 
     # 1. Citizen submits a mutation application
     sub = await app_client.post(
-        "/landstack/applications",
+        "/tract/applications",
         headers=citizen_headers,
         json={
             "ulpin": PARCEL_ULPIN,
@@ -106,7 +112,7 @@ async def test_rejection_reason_transparency_in_order(app_client: AsyncClient):
 
     # 2. VRO cannot issue final quasi-judicial rejection directly
     vro_bad = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=vro_headers,
         json={"action": "rejected", "remark": "Premature rejection by field staff"},
     )
@@ -114,7 +120,7 @@ async def test_rejection_reason_transparency_in_order(app_client: AsyncClient):
 
     # 3. VRO performs legitimate field inspection and ground panchanama
     vro_ok = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=vro_headers,
         json={"action": "field_inspection", "remark": "Conducted ground panchanama with village elders."},
     )
@@ -123,7 +129,7 @@ async def test_rejection_reason_transparency_in_order(app_client: AsyncClient):
 
     # 4. VRO forwards to Cadastral Surveyor for Demarcation
     vro_fwd = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=vro_headers,
         json={"action": "boundary_demarcation", "remark": "Submitted panchanama, request FMB demarcation."},
     )
@@ -131,7 +137,7 @@ async def test_rejection_reason_transparency_in_order(app_client: AsyncClient):
 
     # 5. Surveyor submits FMB Cadastral Verification
     surv_ok = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=surveyor_headers,
         json={"action": "scrutiny_review", "remark": "FMB boundaries checked. Notice of discrepancy flagged."},
     )
@@ -140,7 +146,7 @@ async def test_rejection_reason_transparency_in_order(app_client: AsyncClient):
     # 6. Tahsildar reviews scrutiny report and rejects with speaking order
     rejection_grounds = "Title deed encumbrance mismatch: prior mortgage unpaid at SBI Mangalagiri branch. Khata 421 dispute."
     rej = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=tahsildar_headers,
         json={"action": "rejected", "remark": rejection_grounds},
     )
@@ -153,7 +159,7 @@ async def test_rejection_reason_transparency_in_order(app_client: AsyncClient):
     assert "rejected_at" in rej_data["payload"]
 
     # 7. Citizen tracks application and receives full statutory order & grounds
-    track_res = await app_client.get(f"/landstack/applications/{app_id}", headers=citizen_headers)
+    track_res = await app_client.get(f"/tract/applications/{app_id}", headers=citizen_headers)
     assert track_res.status_code == 200
     citizen_view = track_res.json()
     assert citizen_view["status"] == "rejected"
@@ -174,7 +180,7 @@ async def test_record_correction_approval_and_appwide_reflection(app_client: Asy
     # Submit record correction for survey extent
     new_extent = "265.50 sqm"
     sub = await app_client.post(
-        "/landstack/applications",
+        "/tract/applications",
         headers=citizen_headers,
         json={
             "ulpin": CORRECTION_ULPIN,
@@ -192,7 +198,7 @@ async def test_record_correction_approval_and_appwide_reflection(app_client: Asy
     # Order of verification:
     # 1. VRO inspects
     r1 = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=vro_headers,
         json={"action": "field_inspection", "remark": "Verified survey stones on ground."},
     )
@@ -200,7 +206,7 @@ async def test_record_correction_approval_and_appwide_reflection(app_client: Asy
 
     # 2. VRO forwards for boundary demarcation
     r2 = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=vro_headers,
         json={"action": "boundary_demarcation", "remark": "Forwarded to Surveyor for Cadastral Check."},
     )
@@ -208,7 +214,7 @@ async def test_record_correction_approval_and_appwide_reflection(app_client: Asy
 
     # 3. Surveyor submits FMB cadastral verification
     r3 = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=surveyor_headers,
         json={"action": "scrutiny_review", "remark": "FMB sketch verified: area discrepancy confirmed."},
     )
@@ -216,7 +222,7 @@ async def test_record_correction_approval_and_appwide_reflection(app_client: Asy
 
     # 4. RI provides supervisory endorsement
     r4 = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=ri_headers,
         json={"action": "statutory_sanction", "remark": "Endorsed to Tahsildar for statutory sanction."},
     )
@@ -225,7 +231,7 @@ async def test_record_correction_approval_and_appwide_reflection(app_client: Asy
     # 5. Tahsildar passes final statutory approval order
     approval_remark = "Statutory record correction sanctioned as per G.O. Ms. No. 42 Revenue Dept."
     appr = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=tahsildar_headers,
         json={"action": "approved", "remark": approval_remark},
     )
@@ -235,7 +241,7 @@ async def test_record_correction_approval_and_appwide_reflection(app_client: Asy
     assert appr_data["payload"]["approval_remark"] == approval_remark
 
     # Verify app-wide reflection: parcel CDM reflects updated area in spatial block
-    parcel_res = await app_client.get(f"/landstack/parcels/{CORRECTION_ULPIN}", headers=citizen_headers)
+    parcel_res = await app_client.get(f"/tract/parcels/{CORRECTION_ULPIN}", headers=citizen_headers)
     assert parcel_res.status_code == 200
     p_data = parcel_res.json()
     assert float(p_data["spatial"]["area_sqm"]) == 265.50
@@ -250,7 +256,7 @@ async def test_utility_request_approval_and_cdm_reflection(app_client: AsyncClie
 
     # Submit utility request
     sub = await app_client.post(
-        "/landstack/applications",
+        "/tract/applications",
         headers=citizen_headers,
         json={
             "ulpin": PARCEL_ULPIN,
@@ -271,7 +277,7 @@ async def test_utility_request_approval_and_cdm_reflection(app_client: AsyncClie
 
     # Order of verification: VRO takes up for review
     r1 = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=vro_headers,
         json={"action": "in_review", "remark": "Verified feasibility of service line connection."},
     )
@@ -279,7 +285,7 @@ async def test_utility_request_approval_and_cdm_reflection(app_client: AsyncClie
 
     # Tahsildar approves from in_review
     appr = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=tahsildar_headers,
         json={"action": "approved", "remark": "Sanctioned connection under LT-1 domestic quota."},
     )
@@ -287,7 +293,7 @@ async def test_utility_request_approval_and_cdm_reflection(app_client: AsyncClie
     assert appr.json()["status"] == "approved"
 
     # Verify parcel CDM includes utility connection (via Tahsildar statutory officer view for unmasked verification)
-    p_res = await app_client.get(f"/landstack/parcels/{PARCEL_ULPIN}", headers=tahsildar_headers)
+    p_res = await app_client.get(f"/tract/parcels/{PARCEL_ULPIN}", headers=tahsildar_headers)
     assert p_res.status_code == 200
     p_cdm = p_res.json()
     u_details = p_cdm.get("utilities", {})
@@ -296,7 +302,7 @@ async def test_utility_request_approval_and_cdm_reflection(app_client: AsyncClie
     assert any(h.get("consumer_name") == "Ravi Kumar" for h in u_details.get("history", []))
 
     # Verify DPDP Act 2023 masking applies for citizen view without consent token
-    p_res_cit = await app_client.get(f"/landstack/parcels/{PARCEL_ULPIN}", headers=citizen_headers)
+    p_res_cit = await app_client.get(f"/tract/parcels/{PARCEL_ULPIN}", headers=citizen_headers)
     assert p_res_cit.status_code == 200
     assert p_res_cit.json().get("utilities", {}).get("electricity_details", {}).get("consumer_name") in ["R*** K***", "Ravi Kumar"]
 
@@ -310,7 +316,7 @@ async def test_acquisition_claim_approval_and_impact_reflection(app_client: Asyn
 
     # Submit consent claim
     sub = await app_client.post(
-        "/landstack/applications",
+        "/tract/applications",
         headers=citizen_headers,
         json={
             "ulpin": VERIFY_ULPIN,
@@ -328,7 +334,7 @@ async def test_acquisition_claim_approval_and_impact_reflection(app_client: Asyn
 
     # Scrutinize claim
     r1 = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=vro_headers,
         json={"action": "in_review", "remark": "Verified title and extent affected by project alignment."},
     )
@@ -336,7 +342,7 @@ async def test_acquisition_claim_approval_and_impact_reflection(app_client: Asyn
 
     # Tahsildar approves direct consent settlement award
     appr = await app_client.post(
-        f"/landstack/applications/{app_id}/transition",
+        f"/tract/applications/{app_id}/transition",
         headers=tahsildar_headers,
         json={"action": "approved", "remark": "Sanctioned direct consent compensation award under Sec 23A."},
     )
@@ -344,7 +350,7 @@ async def test_acquisition_claim_approval_and_impact_reflection(app_client: Asyn
     assert appr.json()["status"] == "approved"
 
     # Verify CDM reflects updated acquisition impact status
-    p_res = await app_client.get(f"/landstack/parcels/{VERIFY_ULPIN}", headers=citizen_headers)
+    p_res = await app_client.get(f"/tract/parcels/{VERIFY_ULPIN}", headers=citizen_headers)
     assert p_res.status_code == 200
     p_data = p_res.json()
     impacts = p_data.get("projects", {}).get("affected_projects", [])
@@ -359,7 +365,7 @@ async def test_ownership_verification_precision(app_client: AsyncClient):
 
     # 1. Successful verification with exact match
     valid_res = await app_client.post(
-        "/landstack/verify-ownership",
+        "/tract/verify-ownership",
         headers=citizen_headers,
         json={
             "ulpin": VERIFY_ULPIN,
@@ -373,7 +379,7 @@ async def test_ownership_verification_precision(app_client: AsyncClient):
 
     # 2. Failed verification with incorrect name
     invalid_res = await app_client.post(
-        "/landstack/verify-ownership",
+        "/tract/verify-ownership",
         headers=citizen_headers,
         json={
             "ulpin": VERIFY_ULPIN,

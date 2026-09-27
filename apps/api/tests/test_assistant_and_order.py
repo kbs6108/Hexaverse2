@@ -1,4 +1,4 @@
-from landstack.services.ai_assist import route_intent
+from tract.services.ai_assist import route_intent
 
 
 def test_route_intent_new_features():

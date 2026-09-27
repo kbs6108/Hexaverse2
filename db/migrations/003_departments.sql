@@ -1,6 +1,6 @@
 -- 003_departments.sql — six department schemas (CONTRACTS §4, §7). Idempotent.
 -- Each department sub-app reads ONLY its own schema. Vocabulary intentionally differs per department.
--- No foreign keys to landstack.parcels: departments are independent systems joined by ulpin.
+-- No foreign keys to tract.parcels: departments are independent systems joined by ulpin.
 
 -- ---------------------------------------------------------------------------
 -- Revenue (Record of Rights)

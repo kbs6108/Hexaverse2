@@ -1,7 +1,7 @@
-# Cloud Run — Land Stack API
+# Cloud Run — Tract API
 
 The gateway (FastAPI + six in-process department sub-apps) runs as **one** Cloud Run service,
-`landstack-api`, in the same GCP project as Firebase Hosting. Sized for the free tier: 1 vCPU,
+`tract-api`, in the same GCP project as Firebase Hosting. Sized for the free tier: 1 vCPU,
 512 MiB, min 0 / max 3 instances, concurrency 80, request timeout 300 s, port `$PORT` (8080).
 
 ## Files
@@ -49,10 +49,10 @@ covers warming.
 
 ## Neon database
 
-1. https://console.neon.tech → *New project*: name `landstack`, region **AWS ap-southeast-1 (Singapore)**
+1. https://console.neon.tech → *New project*: name `tract`, region **AWS ap-southeast-1 (Singapore)**
    (closest to asia-south1), Postgres 16.
 2. Copy the connection string (**pooled** or direct both work; direct is simpler for migrations).
-   It looks like `postgresql://landstack_owner:***@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`.
+   It looks like `postgresql://tract_owner:***@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`.
 3. Migrations enable PostGIS themselves (`db/migrations/001_extensions.sql` runs `CREATE EXTENSION IF NOT EXISTS postgis`;
    Neon ships PostGIS 3.4 pre-installed, no console toggle needed).
 4. From your machine:
@@ -67,10 +67,10 @@ covers warming.
 ## Operations
 
 ```bash
-gcloud run services logs tail landstack-api --region asia-south1
-gcloud run services describe landstack-api --region asia-south1 --format 'value(status.url)'
-gcloud run services update landstack-api --region asia-south1 --min-instances 1     # demo day, revert after
-gcloud run revisions list --service landstack-api --region asia-south1
+gcloud run services logs tail tract-api --region asia-south1
+gcloud run services describe tract-api --region asia-south1 --format 'value(status.url)'
+gcloud run services update tract-api --region asia-south1 --min-instances 1     # demo day, revert after
+gcloud run revisions list --service tract-api --region asia-south1
 ```
 
-Roll back: `gcloud run services update-traffic landstack-api --region asia-south1 --to-revisions <rev>=100`.
+Roll back: `gcloud run services update-traffic tract-api --region asia-south1 --to-revisions <rev>=100`.

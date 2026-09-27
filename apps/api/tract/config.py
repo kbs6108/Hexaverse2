@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    database_url: str = "postgresql+asyncpg://landstack:landstack@localhost:5432/landstack"
+    database_url: str = "postgresql+asyncpg://tract:tract@localhost:5432/tract"
     auth_mode: Literal["dev", "firebase"] = "dev"
     firebase_project_id: str = ""
     google_application_credentials: str = ""

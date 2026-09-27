@@ -114,11 +114,11 @@ export function FloatingDock({ onOpenAccount, className }: FloatingDockProps = {
             search={() => ({})}
             onClick={() => useUI.getState().select(null)}
             className="flex items-center gap-2 hover:opacity-90 transition-opacity select-none shrink-0"
-            aria-label="Land Stack home"
+            aria-label="Tract home"
           >
             <LogoMark size={24} />
             <span className="font-display text-sm font-bold tracking-tight text-ink">
-              Land Stack
+              Tract
             </span>
           </Link>
         </div>

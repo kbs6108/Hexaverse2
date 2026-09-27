@@ -1,14 +1,14 @@
-"""Append-only audit trail into `landstack.audit_log`."""
+"""Append-only audit trail into `tract.audit_log`."""
 
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-from landstack.auth import Principal
-from landstack.db import DBLike, json_dumps
+from tract.auth import Principal
+from tract.db import DBLike, json_dumps
 
-log = logging.getLogger("landstack.audit")
+log = logging.getLogger("tract.audit")
 
 
 async def record(
@@ -26,7 +26,7 @@ async def record(
     try:
         await db.execute(
             """
-            INSERT INTO landstack.audit_log
+            INSERT INTO tract.audit_log
                 (ts, actor_uid, actor_name, actor_role, action, entity_type, entity_id, ulpin, before, after, source)
             VALUES (now(), :actor_uid, :actor_name, :actor_role, :action, :entity_type, :entity_id, :ulpin,
                     CAST(:before AS jsonb), CAST(:after AS jsonb), :source)

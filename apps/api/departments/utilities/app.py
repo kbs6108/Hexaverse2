@@ -13,7 +13,7 @@ from fastapi import Depends
 from pydantic import BaseModel, Field
 
 from departments.common import chaos, envelope, make_dept_app
-from landstack.db import DBLike, get_db
+from tract.db import DBLike, get_db
 
 SOURCE = "ULB Utilities"
 app = make_dept_app(

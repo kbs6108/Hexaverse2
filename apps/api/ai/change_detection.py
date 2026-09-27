@@ -16,7 +16,7 @@ Classification (:func:`classify`) is a pure function shared by both modes and by
 
 Database access is injected: ``db`` must expose ``await db.fetchrow(sql, **params)`` and
 ``await db.fetch(sql, **params)`` where ``sql`` uses ``:name`` bound parameters (the gateway's
-``landstack.db`` module provides exactly that). Rows may be any mapping-like object.
+``tract.db`` module provides exactly that). Rows may be any mapping-like object.
 """
 
 from __future__ import annotations
@@ -219,7 +219,7 @@ _SQL_ONE = f"SELECT {_S2_COLS} FROM gis.s2_change s WHERE s.ulpin = :ulpin"
 
 _SQL_BBOX = f"""
 SELECT {_S2_COLS}
-FROM landstack.parcels p
+FROM tract.parcels p
 JOIN gis.s2_change s ON s.ulpin = p.ulpin
 WHERE p.geom && ST_MakeEnvelope(:minx, :miny, :maxx, :maxy, 4326)
 ORDER BY s.label <> 'no_significant_change' DESC, s.confidence DESC NULLS LAST
@@ -396,7 +396,7 @@ async def detect(
     # ---- online ----------------------------------------------------------
     if ulpin:
         prow = await db.fetchrow(
-            "SELECT ulpin, ST_AsGeoJSON(geom)::text AS gj FROM landstack.parcels WHERE ulpin = :ulpin",
+            "SELECT ulpin, ST_AsGeoJSON(geom)::text AS gj FROM tract.parcels WHERE ulpin = :ulpin",
             ulpin=ulpin,
         )
         if prow is None:
@@ -406,7 +406,7 @@ async def detect(
         minx, miny, maxx, maxy = (float(v) for v in bbox)  # type: ignore[misc]
         parcels = list(
             await db.fetch(
-                "SELECT ulpin, ST_AsGeoJSON(geom)::text AS gj FROM landstack.parcels "
+                "SELECT ulpin, ST_AsGeoJSON(geom)::text AS gj FROM tract.parcels "
                 "WHERE geom && ST_MakeEnvelope(:minx, :miny, :maxx, :maxy, 4326) LIMIT :limit",
                 minx=minx,
                 miny=miny,

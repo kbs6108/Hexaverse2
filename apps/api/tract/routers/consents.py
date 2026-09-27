@@ -1,4 +1,4 @@
-"""Consent tokens: citizens request, admins grant (rows in `landstack.consents`)."""
+"""Consent tokens: citizens request, admins grant (rows in `tract.consents`)."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from landstack.auth import Principal, require_admin, require_user
-from landstack.db import DBLike, get_db
-from landstack.services import audit
+from tract.auth import Principal, require_admin, require_user
+from tract.db import DBLike, get_db
+from tract.services import audit
 
-router = APIRouter(prefix="/landstack/consents", tags=["consents"])
+router = APIRouter(prefix="/tract/consents", tags=["consents"])
 
 
 class RequestBody(BaseModel):
@@ -49,7 +49,7 @@ async def grant_consent(
 ) -> dict[str, Any]:
     row = await db.fetchrow(
         """
-        INSERT INTO landstack.consents (ulpin, granted_to_uid, granted_by, expires_at)
+        INSERT INTO tract.consents (ulpin, granted_to_uid, granted_by, expires_at)
         VALUES (:ulpin, :uid, :by, now() + make_interval(hours => :hours)) RETURNING id, ulpin, granted_to_uid, expires_at
         """,
         ulpin=body.ulpin,
@@ -64,7 +64,7 @@ async def grant_consent(
 @router.get("")
 async def my_consents(principal: Principal = Depends(require_user), db: DBLike = Depends(get_db)) -> dict[str, Any]:
     rows = await db.fetch(
-        "SELECT id, ulpin, granted_by, expires_at FROM landstack.consents WHERE granted_to_uid = :uid "
+        "SELECT id, ulpin, granted_by, expires_at FROM tract.consents WHERE granted_to_uid = :uid "
         "AND (expires_at IS NULL OR expires_at > now()) ORDER BY expires_at DESC",
         uid=principal.uid,
     )

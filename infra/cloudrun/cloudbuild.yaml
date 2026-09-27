@@ -17,8 +17,8 @@ images:
   - ${_IMAGE}
   - ${_IMAGE_LATEST}
 substitutions:
-  _IMAGE: asia-south1-docker.pkg.dev/PROJECT/landstack/landstack-api:manual
-  _IMAGE_LATEST: asia-south1-docker.pkg.dev/PROJECT/landstack/landstack-api:latest
+  _IMAGE: asia-south1-docker.pkg.dev/PROJECT/tract/tract-api:manual
+  _IMAGE_LATEST: asia-south1-docker.pkg.dev/PROJECT/tract/tract-api:latest
 options:
   logging: CLOUD_LOGGING_ONLY
 timeout: 1200s

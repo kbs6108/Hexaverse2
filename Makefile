@@ -1,4 +1,4 @@
-# Land Stack — developer entry points. `make help` lists targets.
+# Tract — developer entry points. `make help` lists targets.
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
@@ -10,8 +10,8 @@ VENV         ?= .venv
 VENV_PY      := $(VENV)/bin/python
 PROJECT_ID   ?= $(shell gcloud config get-value project 2>/dev/null)
 REGION       ?= asia-south1
-SERVICE      ?= landstack-api
-DATABASE_URL ?= postgresql+asyncpg://landstack:landstack@localhost:5432/landstack
+SERVICE      ?= tract-api
+DATABASE_URL ?= postgresql+asyncpg://tract:tract@localhost:5432/tract
 NEON_DATABASE_URL ?=
 
 .PHONY: help up down logs ps migrate seed demo-reset venv dev-api dev-web test lint build-web deploy-api deploy-web neon-migrate neon-reset firebase-login clean
@@ -52,7 +52,7 @@ venv: ## Create .venv with API + tools + dev dependencies
 	$(VENV_PY) -m pip install -q -r apps/api/requirements.txt -r tools/requirements.txt pytest pytest-asyncio ruff
 
 dev-api: venv ## Run the API with uvicorn --reload from .venv (uses apps/api/.env)
-	cd apps/api && ../../$(VENV_PY) -m uvicorn landstack.main:app --reload --port 8000
+	cd apps/api && ../../$(VENV_PY) -m uvicorn tract.main:app --reload --port 8000
 
 dev-web: ## Run the Vite dev server (apps/web/.env)
 	cd apps/web && npm install --no-audit --no-fund && npm run dev

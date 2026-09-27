@@ -250,7 +250,7 @@ function SimulateDeed({ initialUlpin }: { initialUlpin: string }) {
               <div className="flex items-start gap-2.5 text-xs">
                 <span className="grid size-5 shrink-0 place-items-center rounded-full bg-panel border border-line text-ink font-semibold text-[10.5px]">2</span>
                 <div>
-                  <p className="font-semibold text-ink">Land Stack Gateway Ingestion & RoR Mismatch</p>
+                  <p className="font-semibold text-ink">Tract Gateway Ingestion & RoR Mismatch</p>
                   <p className="text-ink-3 text-[11px]">
                     Event <span className="font-mono text-violet font-medium">registration.deed_registered</span> ingested. Title divergence confirmed: RoR shows <span className="font-medium text-ink">{executantName}</span> ≠ Deed shows <span className="font-medium text-ink">{claimantName}</span>.
                   </p>

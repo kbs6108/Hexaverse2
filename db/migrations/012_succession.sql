@@ -4,12 +4,12 @@
 
 ALTER TABLE dept_revenue.ror ADD COLUMN IF NOT EXISTS nominees jsonb NOT NULL DEFAULT '[]'::jsonb;
 
-ALTER TABLE landstack.applications DROP CONSTRAINT IF EXISTS applications_type_check;
-ALTER TABLE landstack.applications ADD CONSTRAINT applications_type_check
+ALTER TABLE tract.applications DROP CONSTRAINT IF EXISTS applications_type_check;
+ALTER TABLE tract.applications ADD CONSTRAINT applications_type_check
     CHECK (type IN ('mutation', 'building_permission', 'ownership_verification', 'field_review',
                     'boundary_correction', 'record_correction', 'land_complaint', 'succession'));
 
-INSERT INTO landstack.transitions (type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
+INSERT INTO tract.transitions (type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
 SELECT v.type, v.from_status, v.to_status, v.allowed_role, v.allowed_department, v.action_label, v.is_terminal
 FROM (VALUES
     ('succession', 'submitted',      'document_check', 'officer', 'revenue', 'Start document check', false),
@@ -19,7 +19,7 @@ FROM (VALUES
     ('succession', 'returned',       'submitted',      'citizen', NULL,      'Resubmit',             false)
 ) AS v(type, from_status, to_status, allowed_role, allowed_department, action_label, is_terminal)
 WHERE NOT EXISTS (
-    SELECT 1 FROM landstack.transitions t
+    SELECT 1 FROM tract.transitions t
     WHERE t.type = v.type AND t.from_status = v.from_status AND t.to_status = v.to_status
 );
 

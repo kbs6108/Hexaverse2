@@ -1,6 +1,6 @@
 """route_intent (Bhu-Sahayak) is pure — regexes and keywords, no DB, no LLM."""
 
-from landstack.services.ai_assist import route_intent
+from tract.services.ai_assist import route_intent
 
 
 def test_extracts_application_id_and_defaults_to_status():

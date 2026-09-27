@@ -1,4 +1,4 @@
-"""Application workflow (CONTRACTS §8) driven by the `landstack.transitions` table.
+"""Application workflow (CONTRACTS §8) driven by the `tract.transitions` table.
 
 Pure rule helpers (`find_transition`, `is_allowed`, `next_actions`) operate on plain transition rows so
 they are unit-testable with an in-memory list; the async functions wrap them with persistence, audit
@@ -12,14 +12,14 @@ import json
 import logging
 from typing import Any
 
-from landstack.adapters import client
-from landstack.auth import Principal
-from landstack.db import DBLike, json_dumps
-from landstack.errors import AppError, forbidden, not_found
-from landstack.services import audit
-from landstack.services.cache import TTLCache
+from tract.adapters import client
+from tract.auth import Principal
+from tract.db import DBLike, json_dumps
+from tract.errors import AppError, forbidden, not_found
+from tract.services import audit
+from tract.services.cache import TTLCache
 
-log = logging.getLogger("landstack.workflow")
+log = logging.getLogger("tract.workflow")
 
 APPLICATION_TYPES = (
     "mutation",
@@ -176,12 +176,12 @@ async def load_transitions(db: DBLike, force: bool = False) -> list[dict[str, An
         try:
             rows = await db.fetch(
                 "SELECT type, from_status, to_status, allowed_role, allowed_department, allowed_designation, action_label, is_terminal "
-                "FROM landstack.transitions ORDER BY type, from_status, to_status"
+                "FROM tract.transitions ORDER BY type, from_status, to_status"
             )
         except Exception:
             rows = await db.fetch(
                 "SELECT type, from_status, to_status, allowed_role, allowed_department, NULL AS allowed_designation, action_label, is_terminal "
-                "FROM landstack.transitions ORDER BY type, from_status, to_status"
+                "FROM tract.transitions ORDER BY type, from_status, to_status"
             )
         _transitions_cache.set("all", rows)
     return rows
@@ -191,11 +191,11 @@ async def next_application_id(db: DBLike, year: int | None = None) -> str:
     """`APP-<year>-<6 digits>`; serialised with an advisory lock inside the caller's transaction."""
     year = year or dt.date.today().year
     prefix = f"APP-{year}-"
-    await db.execute("SELECT pg_advisory_xact_lock(hashtext('landstack.applications.id'))")
+    await db.execute("SELECT pg_advisory_xact_lock(hashtext('tract.applications.id'))")
     # (:n)::int — asyncpg sends untyped params, and substring(text from $1) cannot
     # infer the type, which fails at the driver (CLAUDE.md first-run issue #1).
     last = await db.fetchval(
-        "SELECT max(substring(id from (:n)::int)::int) FROM landstack.applications WHERE id LIKE :like",
+        "SELECT max(substring(id from (:n)::int)::int) FROM tract.applications WHERE id LIKE :like",
         n=len(prefix) + 1,
         like=prefix + "%",
     )
@@ -204,8 +204,8 @@ async def next_application_id(db: DBLike, year: int | None = None) -> str:
 
 async def get_application(db: DBLike, app_id: str) -> dict[str, Any]:
     row = await db.fetchrow(
-        "SELECT a.*, p.survey_no, p.village FROM landstack.applications a "
-        "LEFT JOIN landstack.parcels p ON p.ulpin = a.ulpin WHERE a.id = :id",
+        "SELECT a.*, p.survey_no, p.village FROM tract.applications a "
+        "LEFT JOIN tract.parcels p ON p.ulpin = a.ulpin WHERE a.id = :id",
         id=app_id,
     )
     if row is None:
@@ -227,7 +227,7 @@ async def create_application(
 ) -> dict[str, Any]:
     if app_type not in APPLICATION_TYPES:
         raise AppError(422, "invalid_type", f"type must be one of {', '.join(APPLICATION_TYPES)}")
-    exists = await db.fetchval("SELECT 1 FROM landstack.parcels WHERE ulpin = :u", u=ulpin)
+    exists = await db.fetchval("SELECT 1 FROM tract.parcels WHERE ulpin = :u", u=ulpin)
     if not exists:
         raise not_found("parcel", ulpin)
 
@@ -242,7 +242,7 @@ async def create_application(
             o_name = ror_owner.strip().lower()
             is_match = (p_name in o_name) or (o_name in p_name)
             if not is_match:
-                from landstack.services.consistency import name_score
+                from tract.services.consistency import name_score
                 is_match = name_score(ror_owner, applicant_name or principal.name or "") >= 60
             if not is_match:
                 raise AppError(
@@ -261,7 +261,7 @@ async def create_application(
         app_id = await next_application_id(db)
         row = await db.fetchrow(
             """
-            INSERT INTO landstack.applications
+            INSERT INTO tract.applications
                 (id, ulpin, type, applicant_uid, applicant_name, status, payload, assigned_department, created_at, updated_at)
             VALUES (:id, :ulpin, :type, :uid, :name, :status, CAST(:payload AS jsonb), :dept, now(), now())
             RETURNING *
@@ -332,7 +332,7 @@ async def create_application(
                 zone=payload.get("tdr_preferred_zone"),
                 docs=json_dumps(payload.get("supporting_docs") or []),
             )
-            from landstack.services import aggregator
+            from tract.services import aggregator
 
             aggregator.invalidate(ulpin)
     if row is not None:
@@ -363,8 +363,8 @@ async def list_applications(
             clauses.append(f"a.{col} = :{col}")
             params[col] = val
     rows = await db.fetch(
-        f"SELECT a.*, p.survey_no, p.village FROM landstack.applications a "
-        f"LEFT JOIN landstack.parcels p ON p.ulpin = a.ulpin "
+        f"SELECT a.*, p.survey_no, p.village FROM tract.applications a "
+        f"LEFT JOIN tract.parcels p ON p.ulpin = a.ulpin "
         f"WHERE {' AND '.join(clauses)} ORDER BY a.updated_at DESC LIMIT :limit OFFSET :offset",
         **params,
     )
@@ -395,7 +395,7 @@ async def transition(
     """Apply `action`, enforce role/department/from_status, audit, run terminal side effects."""
     rows = await load_transitions(db)
     async with db.transaction():
-        app = await db.fetchrow("SELECT * FROM landstack.applications WHERE id = :id FOR UPDATE", id=app_id)
+        app = await db.fetchrow("SELECT * FROM tract.applications WHERE id = :id FOR UPDATE", id=app_id)
         if app is None:
             raise not_found("application", app_id)
         row = find_transition(rows, app["type"], app["status"], action, principal, app)
@@ -413,7 +413,7 @@ async def transition(
         if app["type"] == "boundary_correction" and row["to_status"] == "approved":
             # Re-validate at approval time (neighbours may have changed since filing);
             # a failing proposal cannot be approved — the transaction aborts here.
-            from landstack.services import boundary
+            from tract.services import boundary
 
             geom = payload.get("proposed_geometry")
             if geom and isinstance(geom, dict) and geom.get("type") in ("Polygon", "MultiPolygon"):
@@ -446,7 +446,7 @@ async def transition(
             payload["approved_by"] = principal.name
             payload["approved_by_designation"] = principal.designation
         updated = await db.fetchrow(
-            "UPDATE landstack.applications SET status = :status, payload = CAST(:payload AS jsonb), updated_at = now() "
+            "UPDATE tract.applications SET status = :status, payload = CAST(:payload AS jsonb), updated_at = now() "
             "WHERE id = :id RETURNING *",
             status=row["to_status"],
             payload=json_dumps(payload),
@@ -467,11 +467,11 @@ async def transition(
         if side:
             payload["side_effect"] = side
             updated = await db.fetchrow(
-                "UPDATE landstack.applications SET payload = CAST(:payload AS jsonb) WHERE id = :id RETURNING *",
+                "UPDATE tract.applications SET payload = CAST(:payload AS jsonb) WHERE id = :id RETURNING *",
                 payload=json_dumps(payload),
                 id=app_id,
             )
-    from landstack.services import aggregator
+    from tract.services import aggregator
 
     aggregator.invalidate(app["ulpin"])
     result = updated or app
@@ -518,9 +518,9 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
             # 2. Transfer 3D Building Units to new owner
             await db.execute(
                 """
-                UPDATE landstack.units u
+                UPDATE tract.units u
                 SET owner_name = :to_owner
-                FROM landstack.buildings b
+                FROM tract.buildings b
                 WHERE b.id = u.building_id AND b.ulpin = :u
                 """,
                 to_owner=to_owner,
@@ -542,7 +542,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 )
                 doc_no = payload.get("doc_no") or f"DOC-{year}-{int(seq or 1):05d}"
                 parcel_row = await db.fetchrow(
-                    "SELECT area_sqm, district, taluk FROM landstack.parcels WHERE ulpin = :u",
+                    "SELECT area_sqm, district, taluk FROM tract.parcels WHERE ulpin = :u",
                     u=app["ulpin"],
                 )
                 valuation = await db.fetchval(
@@ -588,24 +588,24 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
             # 5. Resolve Pending Mutation Alerts
             await db.execute(
                 """
-                UPDATE landstack.alerts
+                UPDATE tract.alerts
                 SET status = 'resolved'
                 WHERE ulpin = :u AND kind = 'pending_mutation' AND status <> 'resolved'
                 """,
                 u=app["ulpin"],
             )
 
-            # 6. Clear pending_mutation flag on landstack.parcels
+            # 6. Clear pending_mutation flag on tract.parcels
             await db.execute(
-                "UPDATE landstack.parcels SET pending_mutation = false, updated_at = now() WHERE ulpin = :u",
+                "UPDATE tract.parcels SET pending_mutation = false, updated_at = now() WHERE ulpin = :u",
                 u=app["ulpin"],
             )
 
             # 7. Reset Consents & Privacy Preferences for new owner
-            await db.execute("DELETE FROM landstack.consents WHERE ulpin = :u", u=app["ulpin"])
+            await db.execute("DELETE FROM tract.consents WHERE ulpin = :u", u=app["ulpin"])
             await db.execute(
                 """
-                INSERT INTO landstack.parcel_privacy (ulpin, public_owner_name, public_nominees, public_deed_details, public_building_units, public_utilities, updated_at)
+                INSERT INTO tract.parcel_privacy (ulpin, public_owner_name, public_nominees, public_deed_details, public_building_units, public_utilities, updated_at)
                 VALUES (:u, false, false, false, true, true, now())
                 ON CONFLICT (ulpin) DO UPDATE SET
                     public_owner_name = false,
@@ -639,7 +639,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
             )
             return {"department": "revenue", "ok": True, "transferred": True, "to_owner": to_owner, "result": res}
         if app["type"] == "boundary_correction":
-            from landstack.services import boundary
+            from tract.services import boundary
 
             geom = payload.get("proposed_geometry")
             if not geom or not isinstance(geom, dict) or geom.get("type") not in ("Polygon", "MultiPolygon"):
@@ -691,9 +691,9 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 # 2a. Building units
                 await db.execute(
                     """
-                    UPDATE landstack.units u
+                    UPDATE tract.units u
                     SET owner_name = :new_name
-                    FROM landstack.buildings b
+                    FROM tract.buildings b
                     WHERE b.id = u.building_id AND b.ulpin = :u
                     """,
                     new_name=corrected_val,
@@ -703,12 +703,12 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 # 2b. User account if applicant is a registered user
                 if app.get("applicant_uid"):
                     await db.execute(
-                        "UPDATE landstack.users SET name = :new_name WHERE uid = :uid",
+                        "UPDATE tract.users SET name = :new_name WHERE uid = :uid",
                         new_name=corrected_val,
                         uid=app["applicant_uid"],
                     )
                     await db.execute(
-                        "UPDATE landstack.applications SET applicant_name = :new_name WHERE applicant_uid = :uid",
+                        "UPDATE tract.applications SET applicant_name = :new_name WHERE applicant_uid = :uid",
                         new_name=corrected_val,
                         uid=app["applicant_uid"],
                     )
@@ -760,7 +760,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                     elif "cent" in corrected_val.lower():
                         val_num = round(val_num * 40.468564224, 2)
                     await db.execute(
-                        "UPDATE landstack.parcels SET area_sqm = :a, updated_at = now() WHERE ulpin = :u",
+                        "UPDATE tract.parcels SET area_sqm = :a, updated_at = now() WHERE ulpin = :u",
                         a=val_num,
                         u=app["ulpin"],
                     )
@@ -770,7 +770,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
             # 4. If survey_no changed, sync parcels.survey_no
             elif field in ("survey_no", "sy_no"):
                 await db.execute(
-                    "UPDATE landstack.parcels SET survey_no = :s, updated_at = now() WHERE ulpin = :u",
+                    "UPDATE tract.parcels SET survey_no = :s, updated_at = now() WHERE ulpin = :u",
                     s=corrected_val,
                     u=app["ulpin"],
                 )
@@ -790,7 +790,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
         if app["type"] == "land_complaint":
             # Resolve alerts and disputes
             await db.execute(
-                "UPDATE landstack.alerts SET status = 'resolved' WHERE ulpin = :u AND status <> 'resolved'",
+                "UPDATE tract.alerts SET status = 'resolved' WHERE ulpin = :u AND status <> 'resolved'",
                 u=app["ulpin"],
             )
             await db.execute(
@@ -804,7 +804,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
 
         if app["type"] == "field_review":
             await db.execute(
-                "UPDATE landstack.alerts SET status = 'resolved' WHERE ulpin = :u AND kind = 'change_detected' AND status <> 'resolved'",
+                "UPDATE tract.alerts SET status = 'resolved' WHERE ulpin = :u AND kind = 'change_detected' AND status <> 'resolved'",
                 u=app["ulpin"],
             )
             await audit.record(
@@ -830,7 +830,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 "application_id": app["id"],
             }
             res = await client.post_json("/utilities/modify", body, timeout=5.0)
-            from landstack.services import aggregator
+            from tract.services import aggregator
             aggregator.invalidate(app["ulpin"])
             await audit.record(
                 db, principal, "utilities.request_sanctioned", "application", app["id"], app["ulpin"], None, res
@@ -865,7 +865,7 @@ async def run_side_effects(db: DBLike, app: dict[str, Any], principal: Principal
                 """,
                 aid=app["id"],
             )
-            from landstack.services import aggregator
+            from tract.services import aggregator
 
             aggregator.invalidate(app["ulpin"])
             await audit.record(
