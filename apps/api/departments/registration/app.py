@@ -19,7 +19,7 @@ from landstack.config import Settings, get_settings
 from landstack.db import DBLike, get_db, json_dumps
 
 log = logging.getLogger("departments.registration")
-SOURCE = "AP IGRS / CARD (mock)"
+SOURCE = "AP IGRS / CARD"
 app = make_dept_app(
     "registration",
     "Registration Department — Deeds & Encumbrances",

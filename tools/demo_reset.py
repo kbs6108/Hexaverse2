@@ -23,8 +23,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dburl import connect, resolve_database_url  # noqa: E402
-from seed import DEFAULT_SEED, build_frames, write_db  # noqa: E402
+from dburl import connect, resolve_database_url
+from seed import DEFAULT_SEED, build_frames, write_db
 
 
 def reset(database_url: str | None = None, *, full: bool = False, seed: int = DEFAULT_SEED, verbose: bool = True) -> dict[str, int]:

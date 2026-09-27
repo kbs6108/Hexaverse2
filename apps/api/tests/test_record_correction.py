@@ -60,7 +60,7 @@ async def test_record_correction_owner_name_side_effects() -> None:
     assert "/revenue/correction" in called_paths
     assert "/utilities/modify" in called_paths
 
-    rev_body = [c[0][1] for c in mock_post.call_args_list if c[0][0] == "/revenue/correction"][0]
+    rev_body = next(c[0][1] for c in mock_post.call_args_list if c[0][0] == "/revenue/correction")
     assert rev_body["ulpin"] == "TFCM916196F0FE"
     assert rev_body["field"] == "owner_name"
     assert rev_body["corrected_value"] == "Jatin barali"

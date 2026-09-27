@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from departments.common import chaos, envelope, make_dept_app
 from landstack.db import DBLike, get_db
 
-SOURCE = "ULB Utilities (mock)"
+SOURCE = "ULB Utilities"
 app = make_dept_app(
     "utilities",
     "Utilities — Connections & Municipal Services",

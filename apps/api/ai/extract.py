@@ -517,7 +517,7 @@ def _fallback_extraction(
     doc_no = f"DOC-{dt.date.today().year}-{int(sha256[:6], 16) % 90000 + 10000}"
     reg_date = dt.date.today().isoformat()
 
-    return {
+    res = {
         "document_type": doc_type,
         "sha256": sha256,
         "core_anchors": {
@@ -743,7 +743,7 @@ async def extract_ror_nvidia_text(
         if context.get("village"):
             parts.append(f"Village: {context['village']}")
         if parts:
-            ctx_hint = f"\n[Official Cadastral Context for Cross-Check]\n" + "\n".join(f"- {p}" for p in parts)
+            ctx_hint = "\n[Official Cadastral Context for Cross-Check]\n" + "\n".join(f"- {p}" for p in parts)
 
     user_content = f"Filename: {filename or 'document.pdf'}{ctx_hint}\n\n[Document Text Content]:\n{text[:7000]}"
 
@@ -777,6 +777,7 @@ async def extract_ror_nvidia(
 ) -> dict[str, Any]:
     """Dynamic vision extraction via NVIDIA Build (OpenAI-compatible, base64 content)."""
     import base64
+
     import httpx
 
     settings = get_settings()

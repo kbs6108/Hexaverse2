@@ -72,8 +72,8 @@ the "one source is down" state — the parcel profile degrades per block instead
 ## Tests and lint
 
 ```bash
-pytest -q                 # 73 unit tests, no DB required
-DATABASE_URL=… pytest -q  # also runs integration tests against a seeded PostGIS
+apps/api/.venv/bin/pytest -q  # 111 comprehensive tests (workflows, due diligence, masking, triage)
+DATABASE_URL=… pytest -q      # also runs integration tests against a seeded PostGIS
 ruff check . && ruff format --check .
 ```
 

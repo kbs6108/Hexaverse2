@@ -44,7 +44,7 @@ def make_dept_app(name: str, title: str, description: str, source_system: str) -
         version="0.1.0",
         docs_url="/docs",
         openapi_url="/openapi.json",
-        contact={"name": f"{source_system} (mock)"},
+        contact={"name": source_system},
     )
     app.state.source_system = source_system
     app.state.dept_name = name

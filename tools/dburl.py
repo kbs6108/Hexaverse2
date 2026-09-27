@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-__all__ = ["normalise_database_url", "resolve_database_url", "connect"]
+__all__ = ["connect", "normalise_database_url", "resolve_database_url"]
 
 _DEFAULT_URL = "postgresql://landstack:landstack@localhost:5432/landstack"
 

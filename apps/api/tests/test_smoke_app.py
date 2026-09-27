@@ -43,7 +43,7 @@ def test_department_endpoint_envelope_and_chaos(client, fake_db) -> None:
         [{"khata_no": "K-0421", "ulpin": ULPIN, "owner_name": "Ravi Kumar", "extent_sqm": 223.0}],
     )
     r = client.get("/revenue/ror", params={"ulpin": ULPIN})
-    assert r.status_code == 200 and r.headers["X-Source-System"] == "AP Meebhoomi (mock)"
+    assert r.status_code == 200 and r.headers["X-Source-System"] == "AP Meebhoomi"
     body = r.json()
     assert body["as_of"] and body["items"][0]["owner_name"] == "Ravi Kumar"
     bad = client.get("/revenue/ror", params={"ulpin": ULPIN, "fail": 1})
@@ -158,7 +158,7 @@ def test_parcel_cdm_end_to_end_through_in_process_adapters(client, fake_db) -> N
     assert officer.status_code == 200, officer.text
     cdm = officer.json()
     assert all(cdm["provenance"][d]["ok"] for d in DEPARTMENT_APPS), cdm["provenance"]
-    assert cdm["provenance"]["revenue"]["source"] == "AP Meebhoomi (mock)" and cdm["provenance"]["revenue"]["as_of"]
+    assert cdm["provenance"]["revenue"]["source"] == "AP Meebhoomi" and cdm["provenance"]["revenue"]["as_of"]
     assert cdm["party"]["owners"][0]["name"] == "Ravi Kumar" and cdm["identifiers"]["khata_no"] == "K-0421"
     assert (
         cdm["rights"]["registration"]["status"] == "registered"

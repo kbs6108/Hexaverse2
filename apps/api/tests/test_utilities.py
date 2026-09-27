@@ -1,6 +1,7 @@
 """Test comprehensive utility connections, modifications, and citizen workflows."""
 
 from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from landstack.auth import Principal
@@ -60,7 +61,7 @@ async def test_utility_request_side_effects() -> None:
     mock_db = MockDB()
     with patch("landstack.adapters.client.post_json", new_callable=AsyncMock) as mock_post:
         mock_post.return_value = {
-            "source": "ULB Utilities (mock)",
+            "source": "ULB Utilities",
             "item": {"ulpin": "TFCM916196F0FE", "electricity": True},
         }
         with patch("landstack.services.audit.record", new_callable=AsyncMock):
@@ -128,6 +129,6 @@ async def test_record_correction_syncs_utilities() -> None:
     assert "/revenue/correction" in called_paths
     assert "/utilities/modify" in called_paths
 
-    util_call = [call[0][1] for call in mock_post.call_args_list if call[0][0] == "/utilities/modify"][0]
+    util_call = next(call[0][1] for call in mock_post.call_args_list if call[0][0] == "/utilities/modify")
     assert util_call["action"] == "name_transfer"
     assert util_call["consumer_name"] == "Jatin barali"

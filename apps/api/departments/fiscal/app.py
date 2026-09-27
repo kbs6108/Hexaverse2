@@ -12,7 +12,7 @@ from fastapi import Depends
 from departments.common import chaos, envelope, make_dept_app
 from landstack.db import DBLike, get_db
 
-SOURCE = "AP CDMA Property Tax (mock)"
+SOURCE = "AP CDMA Property Tax"
 app = make_dept_app(
     "fiscal",
     "Fiscal — Property Tax & Valuation",

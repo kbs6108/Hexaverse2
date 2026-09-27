@@ -72,7 +72,7 @@ def test_render_html_has_sections() -> None:
         "ulpin": "U1",
         "identifiers": {"survey_no": "123/4"},
         "party": {"owners": [{"name": "R*** K***"}], "masked": True},
-        "provenance": {"revenue": {"ok": True, "source": "AP Meebhoomi (mock)", "ms": 4}},
+        "provenance": {"revenue": {"ok": True, "source": "AP Meebhoomi", "ms": 4}},
         "consistency": {"issues": [{"field": "extent_sqm", "note": "differs"}]},
     }
     html = render_html(cdm, "LSR-42", "Ravi Kumar", None, "http://localhost:5173/verify/LSR-42")

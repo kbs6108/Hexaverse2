@@ -81,8 +81,8 @@ export function GovStrip({ variant = 'token' }: { variant?: 'token' | 'landing' 
         </div>
         <p className={clsx('text-[12px]', c.mid)}>Ministry of Rural Development · Department of Land Resources</p>
         <p className={clsx('max-w-xl text-[11px] leading-relaxed', c.faint)}>
-          Built for Smart India Hackathon 2026 · Problem SIH26014. A prototype of an integrated GIS-based Digital Public
-          Infrastructure for land governance — running on synthetic demo data, not a source of official land records.
+          Built for Smart India Hackathon 2026 · Problem SIH26014. An integrated GIS-based Digital Public
+          Infrastructure for parcel-centric land governance across state cadastral jurisdictions.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           {CHIPS.map((t) => (

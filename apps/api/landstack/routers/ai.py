@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
@@ -14,6 +15,7 @@ from landstack.db import DBLike, get_db
 from landstack.errors import AppError
 from landstack.services import ai_assist, audit
 
+log = logging.getLogger("landstack.routers.ai")
 router = APIRouter(prefix="/landstack/ai", tags=["ai"])
 
 

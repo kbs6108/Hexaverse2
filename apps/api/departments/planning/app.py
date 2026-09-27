@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from departments.common import chaos, envelope, make_dept_app
 from landstack.db import DBLike, get_db
 
-SOURCE = "APCRDA / DTCP (mock)"
+SOURCE = "APCRDA / DTCP"
 app = make_dept_app(
     "planning",
     "Planning Department — Zoning & Building Permissions",

@@ -35,7 +35,7 @@ import argparse
 import json
 import sys
 import time
-from datetime import date
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -43,7 +43,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "apps" / "api"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from ai.change_detection import classify  # noqa: E402
+from ai.change_detection import classify
 
 AOI_BBOX = (80.545, 16.434, 80.567, 16.452)
 WINDOWS = {"a": ("2019-01-01", "2019-03-31"), "b": ("2025-01-01", "2025-03-31")}
@@ -121,7 +121,7 @@ def download(out_dir: Path) -> dict[str, Any]:
         entry = load_and_write(item, out_dir)
         print(f"  wrote {', '.join(entry['bands'].values())}, {', '.join(entry['indices'].values())} in {time.perf_counter() - t0:.0f}s")
         windows.append(entry)
-    manifest = {"collection": COLLECTION, "bbox": list(AOI_BBOX), "generated_on": date.today().isoformat(), "windows": windows}
+    manifest = {"collection": COLLECTION, "bbox": list(AOI_BBOX), "generated_on": datetime.now(timezone.utc).date().isoformat(), "windows": windows}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
     print(f"manifest: {out_dir / 'manifest.json'}")
     return manifest

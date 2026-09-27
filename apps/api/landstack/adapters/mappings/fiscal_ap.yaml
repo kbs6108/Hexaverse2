@@ -1,4 +1,4 @@
-source: "AP CDMA Property Tax (mock)"
+source: "AP CDMA Property Tax"
 department: fiscal
 state: AP
 id_field: ulpin

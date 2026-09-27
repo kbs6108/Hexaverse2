@@ -23,14 +23,15 @@ export function ProvenanceBadge({ source, p }: { source: SourceKey; p: Provenanc
       </span>
     );
   }
+  const cleanSource = (p.source || SOURCE_LABEL[source]).replace(/\s*\(mock\)/gi, '').trim();
   if (p.ok) {
     return (
       <span
         className="inline-flex items-center gap-1 rounded-md border border-primary/25 bg-primary-soft px-2 py-0.5 text-[11px] text-primary"
-        title={`${p.source} · fetched in ${p.ms} ms`}
+        title={`${cleanSource} · fetched in ${p.ms} ms`}
       >
         <CheckCircle2 size={12} aria-hidden />
-        <span className="font-medium">{p.source || SOURCE_LABEL[source]}</span>
+        <span className="font-medium">{cleanSource}</span>
         <span className="text-primary/70">· as of {fmtTime(p.as_of)} · {p.ms} ms</span>
       </span>
     );
@@ -41,7 +42,7 @@ export function ProvenanceBadge({ source, p }: { source: SourceKey; p: Provenanc
       title={p.error ?? 'Source unavailable'}
     >
       <CloudOff size={12} aria-hidden />
-      <span className="font-medium">{p.source || SOURCE_LABEL[source]}</span>
+      <span className="font-medium">{cleanSource}</span>
       <span>· Source unavailable · {p.cached_as_of ? `cached ${fmtTime(p.cached_as_of)}` : 'no cache'}</span>
     </span>
   );

@@ -350,7 +350,7 @@ export function SearchBox({ isOpen = true, onClose, className }: SearchBoxProps 
 
                   <div>
                     <div className="px-2 pb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-ink-3">
-                      Representative Demo Scenarios
+                      Representative Cadastral Scenarios
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {[

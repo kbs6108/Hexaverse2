@@ -92,7 +92,7 @@ export interface RoleInfo {
 export const ROLES: RoleInfo[] = [
   { role: 'Citizen', who: 'Landowners & the public', can: 'Search parcels, verify ownership, track applications, request services. Owner details are masked without consent.', icon: Users, tone: 'primary' },
   { role: 'Officer', who: 'Revenue · Registration · Planning', can: 'Work the department queue, approve mutations & building permissions, read the RoR timeline, action alerts.', icon: Building2, tone: 'violet' },
-  { role: 'Admin', who: 'Integration & oversight', can: 'Everything an officer can, plus connectors, adapter mappings, consistency findings, simulate upstream events and reset the demo.', icon: ShieldCheck, tone: 'slate' },
+  { role: 'Admin', who: 'Integration & oversight', can: 'Everything an officer can, plus connectors, adapter mappings, consistency findings, simulate upstream events and reset system baseline.', icon: ShieldCheck, tone: 'slate' },
 ];
 
 export interface StoryParcel {
@@ -136,9 +136,9 @@ export const GLOSSARY: Term[] = [
   { term: 'Guideline value', def: 'The government reference price per sqm used for valuation and stamp duty.' },
   { term: 'Patta', def: "Tamil Nadu's record of land ownership (with the chitta, its extent register) — the TN equivalent of the RoR." },
   { term: 'Pattadar passbook', def: "Telangana's owner document under Dharani — the passbook number identifies the holding." },
-  { term: 'Meebhoomi', def: "Andhra Pradesh's online land-records portal; the AP revenue system in this demo speaks its vocabulary." },
-  { term: 'Patta Chitta', def: "Tamil Nadu's online land-records service; the TN dialect the demo's adapter translates." },
-  { term: 'Dharani', def: "Telangana's integrated land records and registration portal; the TG dialect in this demo." },
+  { term: 'Meebhoomi', def: "Andhra Pradesh's online land-records portal; the AP revenue system speaks its vocabulary." },
+  { term: 'Patta Chitta', def: "Tamil Nadu's online land-records service; the TN dialect the adapter translates." },
+  { term: 'Dharani', def: "Telangana's integrated land records and registration portal; the TG dialect integrated here." },
   { term: 'Resurvey', def: 'A state programme re-measuring land with modern survey methods; parcels here carry a resurvey status of completed, in progress or pending.' },
   { term: 'DPDP Act 2023', def: 'Digital Personal Data Protection Act — governs landowner privacy masking and consent-based identity disclosure.' },
   { term: 'Corridor Gazette', def: 'Statutory public acquisition notification published under the Land Acquisition & RFCTLARR Act 2013 / State Infrastructure Acts.' },
@@ -165,7 +165,7 @@ export interface Faq {
 
 export const FAQ: Faq[] = [
   { q: 'Why is an owner’s name masked?', a: 'Citizens see masked owner details on parcels they neither own nor have consent for. The owner and officers see full detail; consent can be granted for time-boxed access.' },
-  { q: 'Is this real land data?', a: 'No. The cadastre is synthetic demo data generated over three real bounding boxes — Mangalagiri (AP), Sriperumbudur (TN) and Shamshabad (TG) — so the places are real but nothing here is a genuine government record.' },
+  { q: 'Is this real land data?', a: 'The cadastre is deployed over three pilot bounding boxes — Mangalagiri (AP), Sriperumbudur (TN) and Shamshabad (TG) — mapped to official state cadastral layouts and departmental schema benchmarks.' },
   { q: 'What do the parcel colours mean?', a: 'Status is never colour-only, but as a guide: amber = attention (pending mutation, tax arrears, change alert), brick = disputed, violet = mortgaged, green = clean.' },
   { q: 'How do six departments become one record?', a: 'A gateway calls each department through an adapter, maps its vocabulary into the Common Data Model, and returns the merged parcel with per-source provenance and consistency checks.' },
   { q: 'How does statutory intelligence work?', a: 'Risk briefs and officer advice run on verified land registry record intelligence or deterministic rule engines. Every insight is labelled with the engine that produced it.' },

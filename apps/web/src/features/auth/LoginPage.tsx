@@ -61,13 +61,13 @@ export function LoginPage() {
         <LogoMark size={36} />
         <div>
           <h1 className="text-2xl font-semibold">Land Stack</h1>
-          <p className="text-sm text-ink-3">Parcel-centric land governance · AP · TN · TG demo</p>
+          <p className="text-sm text-ink-3">Parcel-centric land governance · AP · TN · TG Pilot Jurisdictions</p>
         </div>
       </div>
 
       {mode === 'dev' ? (
         <Card>
-          <CardHeader title="Development identities" subtitle="AUTH_MODE=dev · identity is sent as X-Dev-User" />
+          <CardHeader title="Authorized identities" subtitle="Select an authenticated citizen or departmental officer identity" />
           <CardBody className="flex flex-col gap-1.5 max-h-[480px] overflow-y-auto scroll-thin">
             {devUsers.map((d) => (
               <button

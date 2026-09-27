@@ -37,17 +37,17 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any
 
 import numpy as np
 import shapely
 from shapely import STRtree, affinity, make_valid, wkt
 from shapely.geometry import (
     LineString,
-    MultiLineString,
     MultiPolygon,
     Point,
     Polygon,
@@ -61,8 +61,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "apps" / "api"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from ai.change_detection import classify  # noqa: E402
-from landstack.services.ulpin import ulpin_3d, ulpin_style  # noqa: E402
+from ai.change_detection import classify
+from landstack.services.ulpin import ulpin_3d, ulpin_style
 
 # ---------------------------------------------------------------------------
 # Constants (CONTRACTS §10)
@@ -356,8 +356,8 @@ def synthetic_roads(aoi: Polygon, rng: random.Random) -> list[Road]:
     """Two arterials, a highway clipping the NE corner, minor roads forming irregular blocks, lanes."""
     minx, miny, maxx, maxy = aoi.bounds
     W, H = maxx - minx, maxy - miny
-    fx = lambda f: minx + f * W  # noqa: E731
-    fy = lambda f: miny + f * H  # noqa: E731
+    fx = lambda f: minx + f * W
+    fy = lambda f: miny + f * H
     roads: list[Road] = []
 
     def add(name: str | None, cls: str, line: LineString, width: float | None = None) -> None:
@@ -1393,7 +1393,7 @@ def make_mutable(frame: Frame, rng: random.Random) -> None:
         return row
 
     def advance(row: dict[str, Any], statuses: Sequence[str], officer: tuple[str, str, str]) -> None:
-        uid, name, dept = officer
+        uid, name, _dept = officer
         prev = row["status"]
         for i, st in enumerate(statuses):
             ts = row["created_at"] + timedelta(days=i + 1)

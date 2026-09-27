@@ -1,5 +1,5 @@
 # Tamil Nadu "Patta/Chitta" vocabulary: pattadar instead of owner, extent in hectares.
-source: "TN Patta Chitta (mock)"
+source: "TN Patta Chitta"
 department: revenue
 state: TN
 id_field: ulpin

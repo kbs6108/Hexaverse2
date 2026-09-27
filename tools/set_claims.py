@@ -44,7 +44,7 @@ def _init(project: str | None) -> None:
         from firebase_admin import credentials
     except ImportError as exc:  # pragma: no cover
         raise SystemExit("firebase-admin is required: pip install firebase-admin") from exc
-    if firebase_admin._apps:  # noqa: SLF001
+    if firebase_admin._apps:
         return
     options = {"projectId": project} if project else None
     key_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")

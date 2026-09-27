@@ -33,7 +33,7 @@ export function AdminConsole() {
     <div className="mx-auto w-full max-w-7xl px-6 py-6">
       <PageTitle
         title="Admin & integration console"
-        subtitle="Connector health, adapter mappings, consistency findings and demo controls"
+        subtitle="Connector health, adapter mappings, consistency findings and administrative controls"
         action={
           <Button
             variant="secondary"
@@ -321,20 +321,20 @@ function DemoReset() {
   const qc = useQueryClient();
   const m = useMutation({
     mutationFn: api.demoReset,
-    onSuccess: () => { toast.success('Demo data reset'); setConfirm(false); qc.clear(); },
+    onSuccess: () => { toast.success('Baseline state restored'); setConfirm(false); qc.clear(); },
     onError: (e: Error) => toast.error('Reset failed', e.message),
   });
   return (
     <Card>
-      <CardHeader title="Demo reset" subtitle="Re-seeds departments, applications, alerts and audit log to the deterministic seed=42 state." />
+      <CardHeader title="System Baseline Reset" subtitle="Restores departments, applications, alerts and audit log to baseline statutory state." />
       <CardBody>
         {!confirm ? (
-          <Button variant="secondary" icon={<RotateCcw size={15} />} onClick={() => setConfirm(true)}>Reset demo data…</Button>
+          <Button variant="secondary" icon={<RotateCcw size={15} />} onClick={() => setConfirm(true)}>Reset to baseline state…</Button>
         ) : (
           <div className="rounded-md border border-brick/30 bg-brick-soft/60 p-3">
-            <p className="text-sm font-medium text-brick">This discards every application and transition made during the demo.</p>
+            <p className="text-sm font-medium text-brick">This restores baseline records across all departments.</p>
             <div className="mt-2 flex gap-2">
-              <Button variant="danger" loading={m.isPending} onClick={() => m.mutate()}>Yes, reset</Button>
+              <Button variant="danger" loading={m.isPending} onClick={() => m.mutate()}>Yes, restore baseline</Button>
               <Button variant="ghost" onClick={() => setConfirm(false)}>Cancel</Button>
             </div>
           </div>

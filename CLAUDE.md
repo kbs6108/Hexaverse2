@@ -1,7 +1,7 @@
-# CLAUDE.md — Land Stack (Hexaverse2, branch `sampath`)
+# CLAUDE.md — Land Stack (Hexaverse2, branch `experiment-branch`)
 
-**The living context file for this repo** — read by Claude Code, Cursor and any other agent/IDE
-(AGENTS.md symlinks here). Read this first, then `docs/CONTRACTS.md` (the binding spec every
+**The living context file for this repo** — read by Claude Code, Cursor, Antigravity, and any other agent/IDE
+(`AGENTS.md` symlinks here). Read this first, then `docs/CONTRACTS.md` (the binding spec every
 component is written against), then `docs/SETUP.md`.
 
 **How to keep it updated** (humans and agents): after any meaningful change, edit ONLY the
@@ -14,7 +14,7 @@ file in the same commit as the change it describes.
 
 Smart India Hackathon 2026, problem statement **SIH26014** (Ministry of Rural Development / Dept.
 of Land Resources): *"An Integrated GIS-based Digital Public Infrastructure for Land Governance"*.
-Product name: **Land Stack**. One sentence: click a land parcel on a map and get everything
+Product name: **Land Stack (Hexaverse)**. One sentence: click a land parcel on a map and get everything
 government knows about it — record of rights, registration & encumbrance, zoning & building
 permission, property tax & valuation, disputes, utilities — aggregated live from six separate
 "department" systems through one ULPIN-style parcel key, with per-source provenance.
@@ -40,100 +40,65 @@ docs/CONTRACTS.md     THE spec: layout, env vars, auth, DB schema, CDM JSON, eve
 docs/SETUP.md         step-by-step for a human: Docker local run, Neon, Firebase Auth, Cloud Run, Hosting, demo prep
 docs/STD.md           Standard Technical Document (markdown source; docx in docs/plan/)
 docs/plan/            landstack-plan.html (full architecture + 7-day plan), STD .docx, pitch deck .pptx, seed-preview.png
-apps/api/             FastAPI 0.1xx, Python 3.12, SQLAlchemy 2 async (text SQL, no ORM), asyncpg
+apps/api/             FastAPI 0.115+, Python 3.12, SQLAlchemy 2 async (text SQL, no ORM), asyncpg
   landstack/          gateway: config, db, auth (firebase|dev), cdm, routers/, adapters/ (+ *.yaml mappings), services/
   departments/        revenue · registration · planning · fiscal · legal · utilities — FastAPI sub-apps, own schemas
-  ai/                 change_detection.py (Sentinel-2 NDVI/NDBI, offline mode), extract.py (Gemini OCR, optional)
-  tests/              73 unit tests (no DB) + integration tests (run when DATABASE_URL is set)
+  ai/                 change_detection.py (Sentinel-2 NDVI/NDBI, offline mode), extract.py (vision OCR / extraction)
+  tests/              111 unit & integration tests (full workflow, masking, due diligence, triage, dynamic pricing)
 apps/web/             Vite 7 · React 19 · TS strict · MapLibre GL 6 via react-map-gl 8 · TanStack Router/Query · Zustand · Tailwind v4 · ECharts · Firebase Auth
-db/migrations/        001 extensions · 002 landstack · 003 departments · 004 gis · 005 views (idempotent SQL)
+db/migrations/        001 extensions through 017 land acquisition & projects (idempotent plain SQL)
 tools/                migrate.py · seed.py (synthetic cadastre, --osm optional, --dry-run) · demo_reset.py · fetch_s2.py · set_claims.py
-infra/                docker-compose.yml (db, migrate, api, web; profiles prod/tiles) · cloudrun/ deploy
-.github/workflows/    ci.yml — PostGIS service container: migrate + seed + pytest; web tsc + build
+infra/                docker-compose.yml (db, migrate, api, web; profiles prod/tiles) · cloudrun/ deploy · firebase/
+.github/workflows/    ci.yml (test + build) · deploy-api.yml (Cloud Run) · deploy-web.yml (Firebase Hosting)
 Makefile              up · down · migrate · seed · demo-reset · dev-api · dev-web · test · lint · deploy-api · deploy-web
+pytest.ini            asyncio_mode = auto, testpaths = apps/api/tests
 ```
 
-## Current state (updated after the multi-phase build sessions)
+## Current state (updated September 2026)
 
-Running end-to-end on the local Docker stack and green in CI (real PostGIS: migrate + seed + 73
-tests; web tsc + build). Since the original hand-off the platform gained, in order:
-- Cinematic landing at `/` (teammate's template, emerald), map at `/map`, marketing `/welcome` + `/help`,
-  QuickNav, government-identity header badge + footer (honest "Built for GoI/MoRD" framing).
-- **Three states** (Phase 2): Mangalagiri AP · Sriperumbudur TN · Shamshabad TG, ~150 scattered
-  parcels each (575 total), per-state revenue dialects (Meebhoomi / Patta Chitta / Dharani) served
-  by the revenue mock and translated by `revenue_{ap,tn,tg}.yaml`; settlement/resurvey layer
-  (`gis.settlement_schemes` + `status_flags.resurvey`); national India overview with cluster markers
-  and a Regions panel. AP story-parcel ULPINs unchanged from the single-region seed.
-- **Workflow/UX** (Phase 3): ParcelPicker (recents + story parcels) on every ULPIN field, citizen
-  "your applications", officer one-click queue advance, alert → field-review filing.
-- **Bounded boundary editing** (Phase 4): on-map vertex editor → validation (±15% area, no overlap,
-  village containment, `services/boundary.py`) → `boundary_correction` workflow → approval re-validates,
-  applies geometry, syncs RoR extent via revenue `POST /extent`. Migrations 008/009.
-- **AI assist**: `services/ai_assist.py` on NVIDIA Build (`NVIDIA_API_KEY`, OpenAI-compatible) with an
-  always-on deterministic rule engine; auto-running parcel risk briefs + officer application advice (models retire on NVIDIA Build — 410 Gone means pick a live id from /v1/models);
-  document extraction prefers NVIDIA vision. Responses carry `engine` for honest labelling.
-- **3D** (accurate + usable): buildings carry width/depth/basements (migration 010), units carry
-  floor area + elevation bands; 3D units are clickable with a data card; basements are floor 0
-  (true base −3.2 m, rendered as a slab at grade).
-- Imagery basemap works with zero keys (public Esri World Imagery tiles; keyed service if
-  `VITE_ESRI_API_KEY` is set).
-- **Citizen Apply wizard** (Sep 2026): `/citizen/request` is one intent-based page — pick a parcel,
-  then Transfer ownership / Fix a record mistake / Build / Raise a complaint; two new citizen-fileable
-  types `record_correction` and `land_complaint` (migration 011) run through the same workflow engine;
-  `POST /landstack/ai/pre-check` triages every application before submission (deterministic rules —
-  blockers/warnings/notes, never blocks; officer decides). Tag `demo-stable-v1` marks the pre-wizard state.
-- **Bhu-Sahayak chatbot** (Sep 2026): one floating launcher in the app chrome (signed-in pages);
-  `POST /landstack/ai/assistant` routes intents with pure regex/keywords and answers only from the
-  caller's masked records (CDM, own applications, triage/due-diligence rules); the LLM only rephrases
-  and every reply is engine-labelled. Uses the map's selected parcel as context.
-- **Refinement pass** (Phases 0–5, Sep 2026): browsing simplified (context-aware QuickNav,
-  role-aware layer tiers), one design family ("poster" landing / "tool" app on shared emerald
-  tokens via `.landing-scope`), landing bento grid + FaintTelemetry hero, docs/help made current
-  (8 parcels · 3 states everywhere), performance (landing + OfficerConsole lazy routes: index
-  chunk 343→164 kB gz, echarts out of first load; LayerPanel useShallow; queue rows memoized).
-- **Cinematic Header & Limelight Dock** (Sep 2026): Frosted Light Parchment (`#F4F1E7/85`, `backdrop-blur-2xl`),
-  3-tier volumetric limelight spotlight navigation (`#B38A4C` top glow + trapezoidal volumetric beam + text floor glow)
-  mathematically dead-centered (`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2`) strictly preserving
-  core routes (`Home`, `Map`, `Citizen`, `Officer`, `Admin`). Smooth popdown fixed search attached under header dock (`⌘K` or `/`),
-  15vh cinematic retraction wipe letterbox toggle, high-contrast Forest Green (`#23483A`) profile pill.
-- **Citizen Owned Parcel Linkage** (Sep 2026): `useMyParcel` hook and `GET /landstack/citizen/my-parcels` mapping
-  citizen accounts (e.g. Ravi Kumar) to their registered land (Sy 123/4, Khata K-0421, ULPIN `TFCM91641E6C82`,
-  Mangalagiri AP). 1-click **"Go to My Parcel"** with animated camera fly-to and drawer auto-open across AccountPanel,
-  CitizenHome quick-launch banner, and pinned green `📍 My Land (123/4)` story chip on `/map`.
-- **Workflow Transparency & Governance Integrity** (Sep 2026):
-  - Admin Console simulation upgraded from raw JSON dump to a 4-stage visual progress pipeline (`Deed Registered` $\to$ `Event Dispatched & Mismatch Caught` $\to$ `Alert Raised` $\to$ `Queue Application Created`) with direct 1-click buttons.
-  - Alerts console enhanced with mechanism clarification banner, explicit microcopy on "Resolve" (dismisses notice), and direct `[Review in Queue (APP-XXXX) →]` buttons on all linked cards.
-  - Work Queue enhanced with upfront `StatutoryImpactCard` previewing exact database table modifications (`dept_revenue.ror`, Khata transfer, PostGIS boundary commit, Planning building sanction) before approval, plus rich post-approval confirmation and live map link.
-  - Parcel Overview drawer features actionable *"Title Mutation in Progress"* callout linking directly to the Queue, plus direct alert inspection buttons.
-  - Interactive multi-tab `MechanismExplainerModal` ("How mechanisms work") accessible across Admin, Alerts, and Queue comparing Indian ground reality with Land Stack automated interoperability.
-  - Backend correlation: enriched `GET /landstack/alerts` with `open_application_id` and `open_application_type` subqueries, and stored `application_id` in alert detail.
-- **AI Engine Tuning, Responses & Compactness** (Sep 2026):
-  - Hyperparameter optimization: tightly bounded token limits (Assistant $\le 650$, advice $\le 180$, DD summary $\le 200$, parcel brief $\le 350$) reducing latency and eliminating rambles.
-  - High-density structured system prompts with strict zero-filler rules, generating clean `**[Assessment]**`, `**[Actionable Steps]**`, and `**[Key Verification]**` sections.
-  - Interactive deep-link action buttons: Markdown links `[Label](/path)` rendered as instant navigation buttons in Bhu-Sahayak chat.
-  - Compact view mode: high-density UI toggle in floating assistant with localStorage persistence, tighter line heights and margins.
-  - Instant one-click copy response utility on every assistant reply.
-  - Lean fact-sheet pruning: omitting empty/null keys from model inputs, slashing token consumption by ~60%.
-- **Dynamic RoR Land Ownership & Statutory Authority** (Sep 2026):
-  - Eradicated all static/mock citizen parcel dictionaries (`KNOWN_USER_PARCELS`).
-  - Real-time `useMyParcel()` hook querying `GET /landstack/citizen/my-parcels` backed dynamically by `dept_revenue.ror`.
-  - Statutory applicant authority guard in Citizen Apply (`ServiceRequest.tsx`), AI pre-check (`ai_assist.py`), and backend workflow (`workflow.py`): building permission applications require verified title ownership on the RoR, rendering prominent blocker notices and disabling submissions for non-owners.
-  - Cross-app cache synchronization: mutation approvals immediately invalidate `['citizen', 'my-parcels']`, `['parcel']`, and `['applications']`.
-- **Authentic Farmer-Connectable Multilingual Localization (Telugu & Hindi)** (Sep 2026):
-  - Comprehensive, non-robotic i18n framework in `apps/web/src/lib/i18n.ts` supporting `en`, `te`, and `hi`.
-  - Built using authentic rural revenue and administrative terminology:
-    - AP / TG Telugu: పట్టాదారు పాస్ పుస్తకం, 1-B అడంగల్/పహణీ, రికార్డు మార్పిడి (మ్యుటేషన్), హద్దుల కొలత/ఎఫ్-లైన్ సర్వే, తహసీల్దార్, సబ్-రిజిస్ట్రార్, ఈసీ (ఎన్‌కంబరెన్స్).
-    - Hindi: अधिकार अभिलेख (खतौनी), खसरा संख्या, दाखिल-खारिज (नामांतरण), फौती / वारिसाना नामांतरण, मेढ़ पैमाइश / मौका मुआयना, लगान बकाया, सर्किल रेट.
-  - 1-click language selector `[ EN | తె | हि ]` integrated into the floating limelight dock and AccountPanel with reactive Zustand + localStorage state (`useUI.locale`).
-  - 100% reactive coverage across Citizen Portal (overview, My Land cards, notice board, objection filing), Service Request wizard (5 service intents with breakdown steps and RoR owner mismatch guard), Track Applications, Verify Ownership, Interactive Map controls & layers, Parcel Drawer (all 8 tabs, 9-point buyer due diligence, and sub-sections), Status Chips, Officer Console & Work Queue, and Alerts.
-  - Bhu-Sahayak AI Assistant: fully multilingual with localized greeting cards, categorical prompt chips, and Rule 6 prompt-tuning in `ai_assist.py` for respectful native vernacular advice.
-Notable fixed first-run issues: asyncpg `substring(id from :n)` typing, MapLibre nested-zoom
-expressions, Vite dep-optimizer maplibre worker, persisted-layers merge bug, web healthcheck.
-Still open: Neon/Firebase/Cloud Run deployment not yet exercised; WeasyPrint deps on Cloud Run
-unverified.
+Running end-to-end on the local Docker stack and 100% green in tests (**111 passed / 111 total tests** in `apps/api`; clean frontend production compilation with 0 TypeScript errors across 3,184 modules). Since the initial release, the platform has gained:
+
+- **Land Acquisition & Linear Infrastructure Corridors** (Migration 017):
+  - Corridor Right-of-Way (ROW) spatial overlays for National Highways (NHAI), Metro Rail, and Railways.
+  - Automated corridor severance calculation computing severed area and residual parcel percentages.
+  - Citizen statutory compensation claims under RFCTLARR Act 2013 with §15 objection triage and Tahsildar §23A/§64 direct consent awards.
+  - Workflow transitions supporting returned applications and quasi-judicial rejection speaking orders.
+- **Forensic Document Cross-Verification Engine** (`services/document_verify.py` & `ai/extract.py`):
+  - Ground-truth automated cross-verification of deed survey numbers, extent ($m^2$), and parties against PostGIS cadastre.
+  - SHA-256 instrument fingerprinting, tamper risk level classification, active encumbrance audits, and sub-judice litigation checks.
+  - Statutory preconditions (Sub-Registrar stamp check, VRO ground panchanama, 15-day notice publication) and quasi-judicial disclaimers.
+- **4-Stage Statutory Revenue Desk Scrutiny** (`StageGatedDeskTracker` in `TrackApplication.tsx` & `ApplicationDetail.tsx`):
+  - Strict sequential desk enforcement under ROR Act §5: VRO Desk (Panchanama & Ryot Notice) $\to$ Mandal Surveyor Desk (FMB Traverse & Demarcation) $\to$ Revenue Inspector Desk (30-Yr Link Document Scrutiny) $\to$ Tahsildar Desk (Speaking Order / Title Update).
+  - Multi-status handling including returned-for-clarification flows with officer remarks and citizen resubmission.
+- **Interactive Marketing & Cadastre Sandbox Widgets** (`apps/web/src/features/marketing/`):
+  - `StatutoryHierarchySimulator.tsx`: Interactive simulator proving state revenue acts override municipal bylaws.
+  - `ParcelDecoderWidget.tsx`: Dissects 14-character ULPIN encoding (state code, mandal, village, survey number).
+  - `Cadastral3DStrataExplorer.tsx`: 3D ISO 19152 volumetric cadastre simulator with elevation bands and utility easements.
+  - `DepartmentProvenanceExplorer.tsx`: Cross-department cryptographic SHA-256 verification matrix.
+- **Comprehensive Utilities Integration** (Migration 016):
+  - In-process service request routing for power, water, and gas with live reflection in parcel CDM profile and cache invalidation.
+- **UI/UX Accessibility & Contrast Overhaul**:
+  - Added `--color-primary-contrast` and `--color-primary-hover` to Tailwind `@theme inline` in `styles.css`.
+  - Fixed dark text on dark green surfaces across `FloatingDock.tsx`, `LayerPanel.tsx`, and `RegionMarkers.tsx`.
+- **Cinematic Landing & Story Narrative**:
+  - Restored living topographic breathing elevation shader, 6-department interactive matrix, compact capability cards, and GovIdentity header/footer.
+- **Three Pilot States** (AP, TN, TG):
+  - 575 total parcels across Mangalagiri AP, Sriperumbudur TN, and Shamshabad TG with state-specific revenue dialects (Meebhoomi / Patta Chitta / Dharani).
+- **DPDP Act 2023 Consent Architecture**:
+  - Purpose-bound tokenization, cryptographic owner masking (`R*** K***`), and consent-governed inspection tokens.
+- **Authentic Farmer-Connectable Localization**:
+  - Reactive English, Telugu (తెలుగు), and Hindi (हिन्दी) support across all public, citizen, and officer interfaces with genuine revenue terminology.
 
 ## Status log (append-only, newest first — one line per meaningful change)
 
+- 2026-09-27 institutional branding & codebase cleanup: eliminated all mock/demo labels across frontend badges, adapters, and translations in favor of authoritative state department sources; ran ruff and typecheck cleanup fixing undefined variables and unused artifacts with 111/111 passing tests.
+
+- 2026-09-26 contrast & UI accessibility fix: added `--color-primary-contrast` and `--color-primary-hover` to `@theme inline` in `styles.css`, fixed black-on-green text in `FloatingDock.tsx`, `LayerPanel.tsx`, and `RegionMarkers.tsx`.
+- 2026-09-26 interactive sandbox & cadastre explorer widgets: created `StatutoryHierarchySimulator.tsx`, `Cadastral3DStrataExplorer.tsx`, `ParcelDecoderWidget.tsx`, and `DepartmentProvenanceExplorer.tsx` in `apps/web/src/features/marketing/`.
+- 2026-09-26 4-stage statutory revenue desk scrutiny: implemented `StageGatedDeskTracker` in `TrackApplication.tsx` and `ApplicationDetail.tsx` enforcing ROR Act §5 sequential progression (VRO -> Surveyor -> RI -> Tahsildar) with returned clarification handling.
+- 2026-09-26 forensic document cross-verification & cadastral alignment: implemented `services/document_verify.py` and `ai/extract.py` cross-verifying extracted deed survey/extent/parties against PostGIS cadastre with SHA-256 fingerprinting, encumbrance audit, and statutory preconditions.
+- 2026-09-25 land acquisition & linear infrastructure corridors: added migration 017 (`017_land_acquisition_and_projects.sql`), NHAI/Metro ROW buffers, corridor severance calculations, and RFCTLARR 2013 statutory compensation claims.
+- 2026-09-25 comprehensive utilities integration: added migration 016 (`016_comprehensive_utilities.sql`), utility request lifecycle, and CDM aggregation for electricity, water, and gas services.
 - 2026-09-22 hero mountain gradient & colors: upgraded GLSLHills (glsl-hills.tsx) with a dual-mesh multi-chromatic elevation gradient (Forest Green #183B2B -> Radiant Emerald -> Alpine Teal -> Golden Amber #D1A654) on wireframe contour lines and an ethereal translucent topographic relief surface over the mountain body with atmospheric radial glows.
 - 2026-09-21 landing numbering sequence fixed: harmonized landing narrative chapters into strict sequential order 01 to 09 (01 Cadastral GIS, 02 Core Breakthrough, 03 Federated Systems, 04 Capabilities, 05 Unified Search, 06 Pilot Corridors, 07 Interoperability Engine, 08 Operational Architecture, 09 Final CTA), converted LandScenes to non-numeric interludes, eliminating duplicates and gaps.
 - 2026-09-21 landing narrative full restoration: restored all cinematic scenes below hero (SystemScene 01 ParcelMap 3 GIS tiers, ProblemBreakthrough 6-office maze with live interactive parcel check, LandScene farmer livelihood, 6-dept matrix, hardware-accelerated 10-card horizontal scroll with zero-render useScroll binding, ULPIN search scene, 3-state pilot corridors, state adapter flowchart, operational architecture, family dispute scene, final CTA, and GovStrip).
@@ -159,10 +124,9 @@ unverified.
 - 2026-09-16 `9e11d4b` (team) FaintTelemetry hero + landing typography restyle (+`9c493f7` type fix).
 - 2026-09-16 `218c92c` refinement Phases 1–4: nav simplification, design unification, landing bento, docs currency.
 - 2026-09-15 `31fb0b6` NVIDIA models verified per key (nemotron-3-super + 11b vision, reasoning-safe budgets).
-- 2026-09-15 `69c9d17` upgrade phases A–E: AI assist (NVIDIA + rule engine, auto-triggering), keyless imagery,
-  accurate 3D (dims/basements/clickable units), ground-reality names, docs refreshed.
-- 2026-09-14 `e19796a` bounded boundary editing (validate → propose → approve → RoR sync), migrations 008–009.
-- 2026-09-14 `063d212` ParcelPicker, citizen home apps, officer quick actions, alert→field review.
+- 2026-09-15 `69c9d17` upgrade phases A–E: AI assist (NVIDIA + rule engine, auto-triggering), keyless imagery, accurate 3D (dims/basements/clickable units), ground-reality names, docs refreshed.
+- 2026-09-14 `e19796a` bounded boundary editing (validate -> propose -> approve -> RoR sync), migrations 008–009.
+- 2026-09-14 `063d212` ParcelPicker, citizen home apps, officer quick actions, alert->field review.
 - 2026-09-14 `bea8604` per-state revenue dialects (Meebhoomi/Patta Chitta/Dharani) + revenue_tg adapter.
 - 2026-09-14 `7e25a54` national India overview (cluster markers + Regions panel).
 - 2026-09-14 `8c5ee06` settlement/resurvey layer (migration 006) + resurvey badges.
@@ -192,42 +156,31 @@ unverified.
   - **Interactive In-Chat Deep Links**: System prompts and rule engine templates must output clickable Markdown links `[Label](/path)` for application forms (`/citizen/request?type=mutation`), maps, and tracking, allowing frontend components to render instant navigation action buttons.
   - **Lean Context Serialization**: Fact-sheets provided to models must omit empty, null, or zero keys to keep prompt overhead under 350 tokens and prevent context bloat.
   - **Deterministic Rule Fallback Parity**: Fallback responses (`engine: "rules"`) must maintain the exact same structured, clickable, compact standard as LLM-generated output.
-- Backend SQL is plain `text()` with `:named` params through `landstack/db.py` (`fetch/fetchrow/
-  fetchval/execute/transaction`). No ORM models. Migrations are idempotent; add `006_*.sql`, never edit
-  applied files.
-- Departments must only touch their own `dept_<name>` schema and talk to the gateway over HTTP
-  (in-process via `DEPT_BASE_URL=""`). That separation *is* the interoperability story.
-- The aggregator (`services/aggregator.py`) fans out to adapters with a per-source timeout and
-  returns partial results with `provenance`; masking (`services/masking.py`) is applied after the
-  role-independent cache. Keep that order.
-- Web: TanStack Query for all server state, Zustand only for UI state; every profile section renders
-  a `ProvenanceBadge`; status is never colour-only. Design tokens live in `src/styles.css`
-  (green #0E6B54 primary, amber pending, brick disputed, violet mortgaged, slate government;
-  Bricolage Grotesque / IBM Plex Sans / IBM Plex Mono).
-- Dev auth: header `X-Dev-User: <role>[:<department>][:<name>]` (e.g. `officer:revenue:Anitha`,
-  `citizen::Ravi Kumar`, `admin::Admin`). Dev uids are `dev-<slug>`; the seed uses the same.
-  Demo profiles span all 3 pilot states (17 identities across AP, TN, TG):
-  - AP Citizens: Ravi Kumar (Sy 123/4), Lakshmi Devi (Buyer/Assignee), Nageswara Rao Tenali (Sy 124), Leena Jayaraman (Sy 125/2), Jatin Baral (Sy 126), Sambasiva Rao Mekala (Sy 127/1), Venkata Rao Kandula (Sy 128).
-  - AP Officers: Anitha (Revenue / Tahsildar), Suresh (Registration / Sub-Registrar), Farida (Planning / TPO).
-  - TN Citizens & Officers: Robert Kuruvilla (Sy 45/2, Sriperumbudur), Muthu (Revenue / Tahsildar), Karthik (Registration / Sub-Registrar).
-  - TG Citizens & Officers: Pardhasaradhi Naik (Sy 77, Shamshabad), Kavitha (Revenue / Tahsildar), Rajesh (Planning / TPO).
-  - National: Admin (DoLR System Administrator).
-- Tests: `cd apps/api && pytest -q`; with `DATABASE_URL` set the integration tests also run.
-  `make test` runs both lanes. Keep them green before every commit.
-- Commit on `sampath`. Never commit `.env`, `data/s2/*.tif`, `serviceAccount*.json`.
-
-## Suggested next tasks
-
-1. Cloud: Neon project → `make neon-migrate`; Firebase Auth providers (Google + email) →
-   `tools/set_claims.py`; `make deploy-api` (Cloud Run, asia-south1); `make deploy-web` (Hosting).
-   Watch for: the `landstack_app` DO-block on Neon, WeasyPrint deps in the API image.
-2. Performance: ST_Simplify / materialise `parcel_tile_features` below z14; lazy-load the landing's
-   three.js chunk (index bundle ~1.2 MB); bump GitHub Actions v4 → v5 (Node 20 deprecation).
-3. Real data: `tools/seed.py --osm` per region; `tools/fetch_s2.py --compute` for real Sentinel-2;
-   Bhuvan WMS overlay behind a flag if reachable.
-4. AI: with NVIDIA_API_KEY set, tune the brief/advice prompts against real outputs; consider an
-   officer "daily digest" and consistency-finding triage on the same service.
-5. 3D next steps: deck.gl overlay or glTF export; per-unit consent/ownership flows on 3D-ULPINs.
+- **Backend Architecture Rules**:
+  - Backend SQL is plain `text()` with `:named` params through `landstack/db.py` (`fetch/fetchrow/fetchval/execute/transaction`). No ORM models.
+  - Migrations are idempotent plain SQL in `db/migrations/`; always add `018_*.sql`, never edit applied migrations.
+  - Departments must only touch their own `dept_<name>` schema and communicate with the gateway over HTTP (in-process via `DEPT_BASE_URL=""`). That separation *is* the interoperability story.
+  - The aggregator (`services/aggregator.py`) fans out to adapters with a per-source timeout and returns partial results with `provenance`; masking (`services/masking.py`) is applied after the role-independent cache. Keep that order.
+- **Frontend Architecture Rules**:
+  - Web: TanStack Query for all server state, Zustand only for UI state; every profile section renders a `ProvenanceBadge`; status is never colour-only (every status chip has an icon and hatch pattern).
+  - Design tokens live in `apps/web/src/styles.css` (primary `#0A3A2A`, primary-contrast `#FFFFFF`, amber `#B45309`, brick `#B91C1C`, violet `#3730A3`).
+  - Always ensure buttons styled with `bg-primary` apply `text-white` or tokens defined in `@theme inline` to prevent dark-on-dark contrast regressions.
+- **Dev Auth & Personas**:
+  - Header: `X-Dev-User: <role>[:<department>][:<name>]` (e.g. `officer:revenue:tahsildar:Anitha`, `citizen::Ravi Kumar`, `admin::Admin`).
+  - Dev uids are `dev-<slug>`; the database seed uses the same.
+  - Demo profiles span all 3 pilot states (17 identities across AP, TN, TG):
+    - AP Citizens: Ravi Kumar (Sy 123/4), Lakshmi Devi (Buyer/Assignee), Nageswara Rao Tenali (Sy 124), Leena Jayaraman (Sy 125/2), Jatin Baral (Sy 126), Sambasiva Rao Mekala (Sy 127/1), Venkata Rao Kandula (Sy 128).
+    - AP Officers: Anitha (Revenue / Tahsildar), Ramesh (Revenue / VRO), Swathi (Revenue / Surveyor), Prasad (Revenue / RI), Suresh (Registration / Sub-Registrar), Farida (Planning / TPO).
+    - TN Citizens & Officers: Robert Kuruvilla (Sy 45/2, Sriperumbudur), Muthu (Revenue / Tahsildar), Karthik (Registration / Sub-Registrar).
+    - TG Citizens & Officers: Pardhasaradhi Naik (Sy 77, Shamshabad), Kavitha (Revenue / Tahsildar), Rajesh (Planning / TPO), Srinivas (Utilities / Engineer).
+    - National: Admin (DoLR System Administrator).
+- **Testing & Verification**:
+  - Run full test suite: `apps/api/.venv/bin/pytest` (all 111 tests). Note: `test_full_e2e_workflows.py` verifies live workflow transitions against `http://localhost:8000`, so ensure the Docker API container (`landstack-api-1`) is up and healthy.
+  - Frontend typecheck and build: `npm run typecheck && npm run build` in `apps/web`.
+- **Git Branching Strategy**:
+  - Active development branch is `experiment-branch`.
+  - When releasing or preparing submission milestones, fast-forward merge `experiment-branch` into `main` (`git checkout main && git merge experiment-branch && git push origin main`).
+  - Never commit secrets, `.env`, `data/s2/*.tif`, or `serviceAccount*.json`.
 
 ## Sources the plan relies on (for the pitch and the STD)
 

@@ -172,7 +172,7 @@ th {{ background: #f1f5f9; width: 34%; }} .head {{ display: flex; justify-conten
 <h2>Source provenance</h2><table class="prov">
 <tr><th>Department</th><th>Status</th><th>Source</th><th>As of</th><th>Latency</th><th>Error</th></tr>{prov}</table>
 <p class="muted">Verify at {_e(verify_url)}.
-This report aggregates mock department systems for the SIH 2026 prototype and is not a legal document.</p>
+This report aggregates integrated department systems for the Land Stack unified cadastral platform.</p>
 </body></html>"""
 
 

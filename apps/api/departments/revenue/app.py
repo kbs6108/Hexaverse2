@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from departments.common import chaos, envelope, make_dept_app, require_found
 from landstack.db import DBLike, get_db, json_dumps
 
-SOURCE = "AP Meebhoomi (mock)"
+SOURCE = "AP Meebhoomi"
 app = make_dept_app(
     "revenue",
     "Revenue Department — Record of Rights",
@@ -48,7 +48,7 @@ class CorrectionIn(BaseModel):
     application_id: str | None = None
 
 
-STATE_SOURCE = {"AP": "AP Meebhoomi (mock)", "TN": "TN Patta Chitta (mock)", "TG": "TG Dharani (mock)"}
+STATE_SOURCE = {"AP": "AP Meebhoomi", "TN": "TN Patta Chitta", "TG": "TG Dharani"}
 
 
 def _source_for(rows: list[dict[str, Any]] | dict[str, Any] | None) -> str:

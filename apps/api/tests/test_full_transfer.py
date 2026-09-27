@@ -63,12 +63,12 @@ async def test_full_land_transfer_side_effects() -> None:
     assert "/revenue/mutations" in called_paths
     assert "/utilities/modify" in called_paths
 
-    body = [c[0][1] for c in mock_post.call_args_list if c[0][0] == "/revenue/mutations"][0]
+    body = next(c[0][1] for c in mock_post.call_args_list if c[0][0] == "/revenue/mutations")
     assert body["to_owner"] == "Ravi Kumar"
     assert body["father_name"] == "Venkateswarlu"
     assert body["nominees"] == [{"name": "Lakshmi", "relation": "spouse", "share": 1.0}]
 
-    u_body = [c[0][1] for c in mock_post.call_args_list if c[0][0] == "/utilities/modify"][0]
+    u_body = next(c[0][1] for c in mock_post.call_args_list if c[0][0] == "/utilities/modify")
     assert u_body["action"] == "name_transfer"
     assert u_body["consumer_name"] == "Ravi Kumar"
 

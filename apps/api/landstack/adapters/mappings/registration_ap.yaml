@@ -1,4 +1,4 @@
-source: "AP IGRS / CARD (mock)"
+source: "AP IGRS / CARD"
 department: registration
 state: AP
 id_field: ulpin

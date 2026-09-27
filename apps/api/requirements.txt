@@ -13,3 +13,5 @@ segno>=1.6
 python-multipart>=0.0.9
 rapidfuzz>=3
 pypdf>=6.0.0
+reportlab>=5.0.1
+greenlet>=3.0.0

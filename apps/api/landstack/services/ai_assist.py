@@ -924,6 +924,7 @@ async def assistant(
             gas = util.get("gas_details") or {}
             bb = util.get("broadband_details") or {}
             sewer = util.get("sewer_details") or {}
+            ids = cdm.get("identifiers") or {}
             reply = (
                 f"**[Utility Infrastructure for Survey No. {ids.get('survey_no') or target_ulpin}]**\n\n"
                 f"• **⚡ Power / Electricity**: {elec.get('provider', 'DISCOM Grid')} — Consumer No: `{elec.get('consumer_no', 'N/A')}`, Sanctioned Load: **{elec.get('sanctioned_load_kw', 5)} kW** ({elec.get('tariff_category', 'LT-I Domestic')}, {elec.get('phase', '1-Phase')}), Meter: `{elec.get('meter_no', 'N/A')}`\n"
@@ -949,9 +950,10 @@ async def assistant(
         suggestions = ["Apply for utility service", "Check building permission", "Is survey no 123/4 safe to buy?"]
 
     elif intent == "acquisition":
-        if target_cdm and target_cdm.get("acquisition"):
-            acqs = target_cdm["acquisition"]
+        if cdm is not None and cdm.get("acquisition"):
+            acqs = cdm["acquisition"]
             acq = acqs[0]
+            ids = cdm.get("identifiers") or {}
             reply = (
                 f"**[Statutory Land Acquisition Notice for Survey No. {ids.get('survey_no') or target_ulpin}]**\n\n"
                 f"• **Project**: **{acq.get('project_name')}**\n"

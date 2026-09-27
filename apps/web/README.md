@@ -26,11 +26,8 @@ npm run dev                 # http://localhost:5173
   building units (`base_m`/`height_m`) with a 55° pitch.
 - **Parcel drawer** — renders the CDM from `GET /landstack/parcels/{ulpin}`; every section shows a
   provenance badge (source system, latency, as-of) and degrades to "Source unavailable" per block.
-- **Auth** — `VITE_AUTH_MODE=dev` shows a role switcher with the six demo users and sends
-  `X-Dev-User`; `firebase` mode uses Google / email sign-in and sends the ID token. Roles and
-  department come from custom claims.
-- **Routes** — `/` map · `/citizen/*` · `/officer/*` · `/admin/*` · `/verify/:id` (public report
-  verification) · `/login`.
+- **Auth** — `VITE_AUTH_MODE=dev` shows a role switcher with 17 demo identities spanning AP, TN, and TG (citizens and statutory officers) and sends `X-Dev-User`; `firebase` mode uses Google / email sign-in and sends the ID token. Roles and department come from custom claims.
+- **Routes** — `/` (Cinematic landing page with living topo shader) · `/map` (3-tier MapLibre GIS explorer with 3D strata) · `/citizen/*` (Apply wizard, track application, verify ownership) · `/officer/*` (4-stage desk queue, application detail, satellite change alerts) · `/admin/*` (Connectors, adapter mapping, event simulation) · `/help` (Interactive simulators: Statutory Hierarchy, ULPIN Decoder, 3D Strata Explorer, Provenance Matrix) · `/verify/:id` (Public report verification) · `/login`.
 
 ## Structure
 
