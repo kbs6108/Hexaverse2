@@ -51,6 +51,24 @@ def build_deck():
     else:
         phone_mockup_b64 = ""
 
+    legacy_fmb_path = "docs/plan/sih_assets/legacy_fmb_sketch.png"
+    if not os.path.exists(legacy_fmb_path):
+        legacy_fmb_path = "tools/legacy_fmb_sketch.png"
+    if os.path.exists(legacy_fmb_path):
+        with open(legacy_fmb_path, "rb") as f:
+            legacy_fmb_b64 = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
+    else:
+        legacy_fmb_b64 = ""
+
+    tract_cadastre_path = "docs/plan/sih_assets/tract_satellite_cadastre.jpg"
+    if not os.path.exists(tract_cadastre_path):
+        tract_cadastre_path = "tools/tract_satellite_cadastre.jpg"
+    if os.path.exists(tract_cadastre_path):
+        with open(tract_cadastre_path, "rb") as f:
+            tract_cadastre_b64 = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("utf-8")
+    else:
+        tract_cadastre_b64 = ""
+
     farmer_img_path = "docs/plan/assets/farmer_impact.jpg"
     if os.path.exists(farmer_img_path):
         with open(farmer_img_path, "rb") as f:
@@ -1007,7 +1025,7 @@ def build_deck():
       background: #ffffff;
       border: 1.5px solid #cbd5e1;
       border-radius: 9px;
-      padding: 14px 20px;
+      padding: 14px 18px;
       align-items: center;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
       flex: 1;
@@ -1017,11 +1035,11 @@ def build_deck():
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 370px;
+      height: 365px;
     }
 
     .phone-mockup-img {
-      height: 365px;
+      height: 360px;
       width: auto;
       object-fit: contain;
       filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
@@ -1031,11 +1049,13 @@ def build_deck():
       display: flex;
       flex-direction: column;
       gap: 8px;
+      height: 360px;
+      justify-content: space-between;
     }
 
     .mobile-specs-title {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 19.5px;
+      font-size: 17px;
       font-weight: 800;
       color: #0b3b6f;
       letter-spacing: -0.01em;
@@ -1046,62 +1066,126 @@ def build_deck():
 
     .mobile-specs-tag {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       color: #0b3b6f;
       background: #f0f9ff;
       border: 1px solid #bae6fd;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 4px;
+      white-space: nowrap;
     }
 
-    .mobile-specs-grid {
+    .cadastre-comparison-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: 220px 1fr;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
     }
 
-    .mobile-feature-box {
-      background: #f8fafc;
+    .cadastre-card {
+      background: #ffffff;
       border: 1.5px solid #cbd5e1;
-      border-left: 4px solid #0b3b6f;
-      border-radius: 6px;
-      padding: 8px 11px;
+      border-radius: 8px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      justify-content: space-between;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+      height: 100%;
     }
 
-    .mobile-feat-title {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 15.5px;
-      font-weight: 800;
-      color: #0b3b6f;
+    .cadastre-card.legacy {
+      border-left: 4px solid #d97706;
+    }
+
+    .cadastre-card.modern {
+      border-left: 4px solid #0284c7;
+    }
+
+    .cadastre-card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 6px 10px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
     }
 
-    .mobile-feat-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9.5px;
+    .cadastre-card-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13px;
       font-weight: 800;
-      color: #0284c7;
+      color: #0b3b6f;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .cadastre-card-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 1.5px 5px;
+      border-radius: 4px;
+      letter-spacing: 0.1px;
+      white-space: nowrap;
+    }
+
+    .cadastre-card-badge.legacy-badge {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .cadastre-card-badge.modern-badge {
       background: #e0f2fe;
-      padding: 1px 5px;
-      border-radius: 3px;
+      color: #0284c7;
+      border: 1px solid #bae6fd;
     }
 
-    .mobile-feat-desc {
+    .cadastre-card-img-wrap {
+      flex: 1;
+      min-height: 0;
+      max-height: 228px;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .legacy-fmb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 46%;
+      display: block;
+    }
+
+    .tract-cadastre-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+      display: block;
+    }
+
+    .cadastre-card-footer {
       font-family: 'Inter', sans-serif;
-      font-size: 14.2px;
-      line-height: 1.40;
+      font-size: 11.2px;
+      line-height: 1.32;
       color: #334155;
+      padding: 6px 9px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
     }
 
-    .mobile-feat-desc strong {
-      color: #0f172a;
-      font-weight: 700;
+    .cadastre-card-footer strong {
+      color: #0b3b6f;
     }
 
     /* Bottom Official Ribbon */
@@ -3818,37 +3902,36 @@ def build_deck():
           </div>
           <div class="mobile-specs-card">
             <div class="mobile-specs-title">
-              <span>Citizen Passbook & Field App</span>
-              <span class="mobile-specs-tag">PWA · Offline First</span>
+              <span>Ground-Truth Cadastral Modernization</span>
+              <span class="mobile-specs-tag">100-Yr FMB → Vector DPI</span>
             </div>
-            <div class="mobile-specs-grid">
-              <div class="mobile-feature-box">
-                <div class="mobile-feat-title">
-                  <span>Offline QR Verification</span>
-                  <span class="mobile-feat-tag">0 KBPS</span>
+            <div class="cadastre-comparison-grid">
+              <!-- Card 1: Legacy Paper FMB Sketch -->
+              <div class="cadastre-card legacy">
+                <div class="cadastre-card-header">
+                  <span class="cadastre-card-title">1. Legacy FMB</span>
+                  <span class="cadastre-card-badge legacy-badge">100-Yr Paper</span>
                 </div>
-                <div class="mobile-feat-desc">Scannable <strong>SHA-256 QR codes</strong> verify statutory RoR ownership instantly without active internet.</div>
+                <div class="cadastre-card-img-wrap">
+                  <img src="LEGACY_FMB_B64_PLACEHOLDER" alt="Legacy Field Measurement Book Paper Sketch" class="legacy-fmb-img">
+                </div>
+                <div class="cadastre-card-footer">
+                  <strong>Legacy Bottleneck:</strong> 100-yr brittle paper sketches with manual ladder offsets trigger <strong>66%+ of civil litigation</strong> in India.
+                </div>
               </div>
-              <div class="mobile-feature-box">
-                <div class="mobile-feat-title">
-                  <span>Edge Privacy Masking</span>
-                  <span class="mobile-feat-tag">DPDP §6(1)</span>
+
+              <!-- Card 2: TRACT Modern Cadastre -->
+              <div class="cadastre-card modern">
+                <div class="cadastre-card-header">
+                  <span class="cadastre-card-title">2. TRACT Cadastre</span>
+                  <span class="cadastre-card-badge modern-badge">PostGIS Vector</span>
                 </div>
-                <div class="mobile-feat-desc">Citizens unlock full title records via OTP while public view <strong>masks Aadhaar and personal details</strong>.</div>
-              </div>
-              <div class="mobile-feature-box">
-                <div class="mobile-feat-title">
-                  <span>Patwari Spot Inspector</span>
-                  <span class="mobile-feat-tag">&lt;400MS</span>
+                <div class="cadastre-card-img-wrap">
+                  <img src="TRACT_CADASTRE_B64_PLACEHOLDER" alt="TRACT High-Resolution Satellite Vector Cadastre" class="tract-cadastre-img">
                 </div>
-                <div class="mobile-feat-desc">Village patwaris inspect <strong>FMB survey boundaries</strong> and dispute flags on-site on budget smartphones.</div>
-              </div>
-              <div class="mobile-feature-box">
-                <div class="mobile-feat-title">
-                  <span>Vernacular Multi-Lingual</span>
-                  <span class="mobile-feat-tag">BHASHINI</span>
+                <div class="cadastre-card-footer">
+                  <strong>TRACT Resolution:</strong> Sub-meter vector parcels on satellite ortho-imagery with <strong>instant boundary validation</strong> &amp; RoR sync.
                 </div>
-                <div class="mobile-feat-desc">Tailored Telugu, Hindi, Tamil &amp; regional language UI for <strong>rural farmers and panchayat staff</strong>.</div>
               </div>
             </div>
           </div>
@@ -5583,6 +5666,8 @@ def build_deck():
     final_html = final_html.replace('FARMER_IMG_B64_PLACEHOLDER', farmer_img_b64)
     final_html = final_html.replace('GOVTECH_IMG_B64_PLACEHOLDER', govtech_img_b64)
     final_html = final_html.replace('WARD_IMG_B64_PLACEHOLDER', ward_img_b64)
+    final_html = final_html.replace('LEGACY_FMB_B64_PLACEHOLDER', legacy_fmb_b64)
+    final_html = final_html.replace('TRACT_CADASTRE_B64_PLACEHOLDER', tract_cadastre_b64)
     out_html = "docs/plan/sih_presentation_deck.html"
     with open(out_html, "w", encoding="utf-8") as f:
         f.write(final_html)
