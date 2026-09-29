@@ -25,7 +25,7 @@ export function GoogleGLogo({ size = 18 }: { size?: number }) {
       />
       <path
         fill="#FBBC05"
-        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.27C.46 8.2.005 10.05.005 12s.455 3.8.1.265 5.42l4.01-3.15z"
+        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.27C.46 8.2 0 10.05 0 12s.46 3.8 1.27 5.42l4.01-3.15z"
       />
       <path
         fill="#EA4335"
@@ -40,8 +40,6 @@ export function GoogleSignInPopup({ isOpen, onClose, floatingOneTap = false }: G
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDemoUser, setSelectedDemoUser] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const handleGoogleClick = async () => {
     setLoading(true);
@@ -220,15 +218,18 @@ export function GoogleSignInPopup({ isOpen, onClose, floatingOneTap = false }: G
   if (floatingOneTap) {
     return (
       <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, y: -20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-          className="fixed top-20 right-4 sm:right-8 z-[999999]"
-        >
-          {cardContent}
-        </motion.div>
+        {isOpen && (
+          <motion.div
+            key="google-onetap-popup-container"
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="fixed top-20 right-4 sm:right-8 z-[999999]"
+          >
+            {cardContent}
+          </motion.div>
+        )}
       </AnimatePresence>
     );
   }
@@ -236,26 +237,30 @@ export function GoogleSignInPopup({ isOpen, onClose, floatingOneTap = false }: G
   // Centered Modal Mode
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/40 backdrop-blur-xs"
-        />
-        {/* Modal Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.92, y: 10 }}
-          transition={{ type: 'spring', damping: 26, stiffness: 340 }}
-          className="relative z-10"
-        >
-          {cardContent}
-        </motion.div>
-      </div>
+      {isOpen && (
+        <div key="google-modal-container" className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <motion.div
+            key="google-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs"
+          />
+          {/* Modal Card */}
+          <motion.div
+            key="google-modal-card"
+            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 10 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 340 }}
+            className="relative z-10"
+          >
+            {cardContent}
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   );
 }

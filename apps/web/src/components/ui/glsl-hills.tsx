@@ -273,7 +273,7 @@ const GLSLHills = ({
       1,
       10000
     );
-    const clock = new THREE.Clock();
+    let lastTime = performance.now();
     const plane = new Plane();
 
     const resize = () => {
@@ -287,7 +287,10 @@ const GLSLHills = ({
     };
 
     const render = () => {
-      plane.render(clock.getDelta());
+      const now = performance.now();
+      const delta = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+      plane.render(delta);
       renderer.render(scene, camera);
     };
 

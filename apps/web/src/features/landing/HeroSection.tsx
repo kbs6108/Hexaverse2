@@ -69,6 +69,7 @@ export function HeroSection() {
     <>
       {/* Floating Google One Tap Popup in top-right corner of landing page */}
       <GoogleSignInPopup
+        key="hero-onetap-popup"
         isOpen={showOneTap && !showGoogleModal}
         onClose={handleDismissOneTap}
         floatingOneTap={true}
@@ -76,6 +77,7 @@ export function HeroSection() {
 
       {/* Centered Modal when clicking Sign In directly */}
       <GoogleSignInPopup
+        key="hero-modal-popup"
         isOpen={showGoogleModal}
         onClose={() => setShowGoogleModal(false)}
         floatingOneTap={false}

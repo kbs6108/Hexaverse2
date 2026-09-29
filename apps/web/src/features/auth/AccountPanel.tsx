@@ -64,13 +64,14 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !user) return null;
-
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 overflow-hidden">
-        {/* Backdrop overlay */}
-        <motion.div
+    <>
+      <AnimatePresence>
+        {isOpen && user && (
+          <div key="account-panel-wrapper" className="fixed inset-0 z-50 overflow-hidden">
+            {/* Backdrop overlay */}
+            <motion.div
+              key="account-panel-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -533,10 +534,14 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
               </button>
             </div>
           </motion.aside>
-        </div>
-      </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {parcel && (
         <OwnerPrivacyModal
+          key="account-privacy-modal"
           open={privacyModalOpen}
           onClose={() => setPrivacyModalOpen(false)}
           ulpin={parcel.ulpin}
@@ -545,11 +550,12 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
         />
       )}
       <GoogleSignInPopup
+        key="account-google-signin-popup"
         isOpen={googlePopupOpen}
         onClose={() => setGooglePopupOpen(false)}
         floatingOneTap={false}
       />
-    </AnimatePresence>
+    </>
   );
 }
 
