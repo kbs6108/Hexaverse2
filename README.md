@@ -8,7 +8,6 @@
 [![PostGIS 3.4](https://img.shields.io/badge/PostGIS-3.4%20(Postgres%2016)-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgis.net/)
 [![3D Cadastre](https://img.shields.io/badge/Model-3D%20Cadastre%20(LADM)-blue?style=for-the-badge)](https://www.iso.org/standard/51206.html)
 [![Statutory Alignment](https://img.shields.io/badge/Statutory%20Alignment-DPDP%20%7C%20RFCTLARR%20%7C%20RoR-purple?style=for-the-badge)](https://www.meity.gov.in/)
-[![FOSS](https://img.shields.io/badge/License-100%25%20FOSS-success?style=for-the-badge)](LICENSE)
 
 > **Smart India Hackathon 2026** · Problem Statement **SIH26014** (Ministry of Rural Development / Department of Land Resources)  
 > **Team ID:** `145336` · **Team Name:** `Hexaverse`  

@@ -3898,7 +3898,7 @@ def build_deck():
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0070c0" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
               1. Technologies &amp; Software Infrastructure Stack
             </span>
-            <span class="sih-s3-panel-tag">ENTERPRISE FOSS ECOSYSTEM</span>
+            <span class="sih-s3-panel-tag">CORE SOFTWARE ECOSYSTEM</span>
           </div>
 
           <!-- 6 Structured Category Cards -->
@@ -3983,13 +3983,13 @@ def build_deck():
                 </div>
               </div>
               <div class="tech-cat-desc">
-                Stateless Docker micro-containers scaling to zero off-peak; zero lock-in; sovereign deployment on <strong>MeghRaj Government Cloud</strong>; 100% FOSS stack.
+                Stateless Docker micro-containers scaling to zero off-peak; zero lock-in; sovereign deployment on <strong>MeghRaj Government Cloud</strong>; cloud-native microservices.
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Bottom Panel: Survey Hardware & Open-Source Stack -->
+        <!-- Bottom Panel: Survey Hardware & Tech Stack -->
         <div class="sih-s3-panel">
           <div class="sih-s3-panel-header">
             <span class="sih-s3-panel-title">
@@ -4056,7 +4056,7 @@ def build_deck():
           <div class="sih-tech-logos-strip">
             <div class="tech-strip-label">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0070c0" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-              <span>ENTERPRISE OPEN-SOURCE STACK:</span>
+              <span>CORE PRODUCTION TECH STACK:</span>
             </div>
             <div class="tech-logos-container">
               <div class="tech-logo-item" title="Python 3.12"><img src="PYTHON_LOGO_B64_PLACEHOLDER" alt="Python 3.12" style="height: 14px;"></div>
@@ -4538,7 +4538,7 @@ def build_deck():
               <ul class="pillar-bullets">
                 <li class="pillar-bullet-line"><strong>Sub-Second Spatial Core:</strong> PostGIS GiST evaluates spatial containment in <strong>&lt;400ms</strong>; binary MVT vector tiles stream in <strong>&lt;100ms</strong>.</li>
                 <li class="pillar-bullet-line"><strong>Non-Intrusive Adapters:</strong> Maps legacy state databases (Meebhoomi, Patta, Dharani) via <strong>CLM 1.0 JSON-LD</strong> without database overhauls.</li>
-                <li class="pillar-bullet-line"><strong>Zero Vendor Lock-in:</strong> 100% FOSS stack (PostGIS, FastAPI, React 19) eliminates multi-crore proprietary GIS enterprise licenses.</li>
+                <li class="pillar-bullet-line"><strong>Zero Vendor Lock-in:</strong> Open architecture (PostGIS, FastAPI, React 19) eliminates multi-crore proprietary GIS enterprise dependencies.</li>
               </ul>
             </div>
 
@@ -4758,7 +4758,7 @@ def build_deck():
             <div class="sih-stat-box">
               <div class="stat-number">96% OpEx Cut</div>
               <div class="stat-label">Taxpayer Cost Efficiency</div>
-              <div class="stat-sub">₹18.4 Lakhs/district/yr (Cloud Run / MeghRaj FOSS) vs ₹4.80 Cr/yr for legacy proprietary GIS licensing.</div>
+              <div class="stat-sub">₹18.4 Lakhs/district/yr (Cloud Run / MeghRaj) vs ₹4.80 Cr/yr for legacy proprietary GIS contracts.</div>
             </div>
 
             <!-- Stat 4 -->
