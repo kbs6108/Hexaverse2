@@ -405,6 +405,34 @@ Thank you."
 
 ---
 
+### Q6: *"How do you integrate real land data across all 28 Indian States when each state has its own siloed portal (Webland, Dharani, Bhoomi, Bhulekh, AnyRoR)?"*
+> **Authoritative Response:**  
+> "Land administration in India is a constitutional State subject (List II, Entry 18). Each state has evolved its own portal—AP uses Webland, Telangana uses Dharani, Karnataka uses Bhoomi, UP uses Bhulekh, and Gujarat uses AnyRoR—each with divergent regional terminology, local measurement units (cents, gunta, bigha, biswa), and vernacular scripts.  
+> Tract does *not* attempt to build a monolithic replacement. Instead, we implement the **Tract Sovereign Federation Adapter (SFA)**:  
+> 1. **Zero-Invasive Read-Only Connectors:** Tract deploys lightweight API and CDC (Change Data Capture) adapters that consume read-only state endpoints without requiring any state to modify their legacy code or surrender administrative control.  
+> 2. **Universal Canonical Schema (ISO 19152 LADM):** State-specific records are ingested and mapped into a single common data model: regional units are converted dynamically to standard metric square meters (EPSG:4326 / EPSG:3857), and all parcels are bound to the central Ministry of Rural Development's 14-digit ULPIN (Bhu-Aadhaar).  
+> 3. **Federated State Sandboxes:** States can onboard incrementally on their own timeline using our pluggable connector SDK."
+
+---
+
+### Q7: *"Real offline documents in rural tehsils are in terrible shape—faded ink, torn edges, water stains, and handwritten regional scripts. How does your AI handle degraded documents without hallucinating?"*
+> **Authoritative Response:**  
+> "We intentionally designed our document engine for the harsh realities of rural Indian revenue records:  
+> 1. **Multimodal Vision AI (Google Cloud Vertex AI & Gemini):** Rather than fragile legacy OCR (like Tesseract) which fails on low-contrast scans, Tract leverages Gemini Multimodal Vision and Google Cloud Document AI. The model processes the visual document holistically—reading faded Sub-Registrar rubber stamps, cursive vernacular scripts (Telugu, Hindi, Kannada), and irregular deed layouts.  
+> 2. **Spatial Ground-Truth Triangulation:** The AI *never operates in isolation*. When a citizen uploads a deed, Tract cross-references the extracted survey number, executant name, and area against the ground-truth PostGIS cadastre in real time. If the deed text is smudged, Tract computes fuzzy phonetic string matching (`name_score`) and topological area checks against the official Village Settlement Register (1-B).  
+> 3. **Human-in-the-Loop Quasi-Judicial Safety:** The AI is strictly an administrative triage assistant. Low-confidence fields are flagged with explicit warning badges, and no title is ever modified without the digital signature and speaking order of the designated statutory officer (Tahsildar)."
+
+---
+
+### Q8: *"India has over 140 million agricultural plots. How does your infrastructure scale nationwide on Google servers without crippling latency or runaway cloud costs?"*
+> **Authoritative Response:**  
+> "Tract's architecture is architected specifically for Google Cloud enterprise hyperscale:  
+> 1. **Stateless Autoscaling on Google Cloud Run & GKE:** Our FastAPI API gateways and document forensic workers run on Google Cloud Run and GKE with zero cold-start scale-to-zero capabilities, minimizing standby costs while automatically scaling to tens of thousands of concurrent requests during peak business hours.  
+> 2. **Distributed Geospatial Core (Cloud Spanner / PostGIS & BigQuery GIS):** Nationwide parcel queries are partitioned by State and District. For massive analytical spatial joins—such as overlaying NHAI expressway corridors or flood inundation buffers across millions of parcels—we leverage Google BigQuery GIS, processing petabyte-scale geometries in seconds.  
+> 3. **Edge Vector Tiling & Google Cloud CDN:** We never transmit raw GIS geometries to clients. MapLibre clients receive compressed binary Mapbox Vector Tiles (MVT) generated on-the-fly and cached at Google Cloud CDN edge points across India. A full viewport of 5,000 parcels takes less than **150 KB**, running at 60 FPS even on a budget Android phone on 3G rural networks."
+
+---
+
 ## 📋 PRE-RECORDING CHECKLIST FOR A FLAWLESS TAKE
 
 1. **Local Environment Warm-Up:**

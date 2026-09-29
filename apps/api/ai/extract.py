@@ -136,7 +136,9 @@ def parse_document_text(
 
     # 1. Document Type Detection
     doc_type = "Registered Sale Deed"
-    if any(k in low for k in ["gift deed", "deed of gift", "settlement deed"]) or "gift" in fn:
+    if any(k in low for k in ["sale deed", "deed of absolute sale", "deed of sale", "absolute sale", "conveyance deed"]) or "sale" in fn:
+        doc_type = "Registered Sale Deed"
+    elif any(k in low for k in ["gift deed", "deed of gift", "settlement deed"]) or "gift" in fn:
         doc_type = "Registered Gift Deed"
     elif any(k in low for k in ["partition deed", "deed of partition"]) or "partition" in fn:
         doc_type = "Partition Deed"
@@ -222,6 +224,12 @@ def parse_document_text(
             extent_unit = stand_m.group(2).lower()
 
     # 7. Parties (Executant / Seller / Deceased vs Claimant / Buyer / Legal Heir)
+    def _clean_party_name(n: str | None) -> str | None:
+        if not n:
+            return None
+        cleaned = re.sub(r"(?i)^(?:sri|smt|mr\.?|mrs\.?|ms\.?|late)\s+", "", n.strip())
+        return cleaned.strip()
+
     parties = []
     seller_name = None
     seller_father = None
@@ -229,14 +237,14 @@ def parse_document_text(
     buyer_father = None
 
     ex_m = re.search(
-        r"(?i)(?:executant|vendor|seller|first\s*party|transferor|donor)\s*[:#-]?\s*([A-Za-z\s.]+?)(?:,|\n|w/o|s/o|d/o|residing|hereinafter)",
+        r"(?i)(?:executant|vendor|seller|first\s*party|transferor|donor)(?:[/\s\w\(\)]*?)[:#-]\s*([A-Za-z\s.]+?)(?:,|\n|w/o|s/o|d/o|residing|hereinafter)",
         text,
     )
     if ex_m:
-        seller_name = ex_m.group(1).strip()
+        seller_name = _clean_party_name(ex_m.group(1))
         f_m = re.search(r"(?i)(?:w/o|s/o|d/o|wife\s*of|son\s*of|daughter\s*of)\s*[:#-]?\s*([A-Za-z\s.]+?)(?:,|\n|residing)", text[ex_m.end():ex_m.end()+120])
         if f_m:
-            seller_father = f_m.group(1).strip()
+            seller_father = _clean_party_name(f_m.group(1))
         parties.append({
             "name": seller_name,
             "role": "seller/executant",
@@ -245,14 +253,14 @@ def parse_document_text(
         })
 
     cl_m = re.search(
-        r"(?i)(?:claimant|purchaser|buyer|vendee|second\s*party|transferee|donee|legal\s*heir)\s*[:#-]?\s*([A-Za-z\s.]+?)(?:,|\n|w/o|s/o|d/o|residing|hereinafter)",
+        r"(?i)(?:claimant|purchaser|buyer|vendee|second\s*party|transferee|donee|legal\s*heir)(?:[/\s\w\(\)]*?)[:#-]\s*([A-Za-z\s.]+?)(?:,|\n|w/o|s/o|d/o|residing|hereinafter)",
         text,
     )
     if cl_m:
-        buyer_name = cl_m.group(1).strip()
+        buyer_name = _clean_party_name(cl_m.group(1))
         f_m = re.search(r"(?i)(?:w/o|s/o|d/o|wife\s*of|son\s*of|daughter\s*of)\s*[:#-]?\s*([A-Za-z\s.]+?)(?:,|\n|residing)", text[cl_m.end():cl_m.end()+120])
         if f_m:
-            buyer_father = f_m.group(1).strip()
+            buyer_father = _clean_party_name(f_m.group(1))
         parties.append({
             "name": buyer_name,
             "role": "buyer/claimant",
@@ -747,7 +755,7 @@ async def extract_ror_nvidia_text(
 
     user_content = f"Filename: {filename or 'document.pdf'}{ctx_hint}\n\n[Document Text Content]:\n{text[:7000]}"
 
-    async with httpx.AsyncClient(timeout=45.0) as client:
+    async with httpx.AsyncClient(timeout=6.0) as client:
         r = await client.post(
             f"{settings.nvidia_base_url.rstrip('/')}/chat/completions",
             headers={"Authorization": f"Bearer {settings.nvidia_api_key}"},
