@@ -46,14 +46,22 @@ let auth: Auth | null = null;
 
 function firebaseAuth(): Auth | null {
   if (isDevAuth) return null;
+  if (!env.firebase.apiKey || !env.firebase.projectId) {
+    return null;
+  }
   if (!auth) {
-    app = initializeApp({
-      apiKey: env.firebase.apiKey,
-      authDomain: env.firebase.authDomain,
-      projectId: env.firebase.projectId,
-      appId: env.firebase.appId,
-    });
-    auth = getAuth(app);
+    try {
+      app = initializeApp({
+        apiKey: env.firebase.apiKey,
+        authDomain: env.firebase.authDomain,
+        projectId: env.firebase.projectId,
+        appId: env.firebase.appId,
+      });
+      auth = getAuth(app);
+    } catch (e) {
+      console.warn('Firebase initialization notice:', e);
+      return null;
+    }
   }
   return auth;
 }
@@ -80,7 +88,11 @@ function start() {
   if (started || isDevAuth) return;
   started = true;
   const a = firebaseAuth();
-  if (!a) return;
+  if (!a) {
+    snapshot = { ready: true, user: null };
+    emit();
+    return;
+  }
   onAuthStateChanged(a, async (u) => {
     snapshot = { ready: true, user: u ? await toAuthUser(u) : null };
     emit();

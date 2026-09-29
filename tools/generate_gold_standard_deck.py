@@ -5131,7 +5131,7 @@ def build_deck():
               </div>
             </div>
 
-            <!-- Self-Made Prominent Financial Trajectory SVG (Refined Heights & Zero Collision) -->
+            <!-- Self-Made Prominent Financial Trajectory SVG (Mathematically Linear, Neat & Verified) -->
             <svg viewBox="0 0 850 240" width="100%" height="235" xmlns="http://www.w3.org/2000/svg" style="font-family: 'Inter', sans-serif;">
               <defs>
                 <linearGradient id="barRevGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -5144,62 +5144,92 @@ def build_deck():
                 </linearGradient>
               </defs>
 
-              <!-- Chart Background Grid & Axis -->
-              <line x1="60" y1="36" x2="830" y2="36" stroke="#e2e8f0" stroke-dasharray="3,3"/>
-              <text x="52" y="40" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹35 Cr</text>
+              <!-- Chart Background Grid & Axis (Strictly Linear: 0 to 35 Cr, Baseline y=168, 4.0 px/Cr) -->
+              <!-- ₹35 Cr: y = 28 -->
+              <line x1="58" y1="28" x2="835" y2="28" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+              <text x="50" y="32" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹35 Cr</text>
 
-              <line x1="60" y1="80" x2="830" y2="80" stroke="#e2e8f0" stroke-dasharray="3,3"/>
-              <text x="52" y="84" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹20 Cr</text>
+              <!-- ₹20 Cr: 168 - 20*4 = 88 -->
+              <line x1="58" y1="88" x2="835" y2="88" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+              <text x="50" y="92" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹20 Cr</text>
 
-              <line x1="60" y1="128" x2="830" y2="128" stroke="#e2e8f0" stroke-dasharray="3,3"/>
-              <text x="52" y="132" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹10 Cr</text>
+              <!-- ₹10 Cr: 168 - 10*4 = 128 -->
+              <line x1="58" y1="128" x2="835" y2="128" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+              <text x="50" y="132" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹10 Cr</text>
 
-              <line x1="60" y1="180" x2="830" y2="180" stroke="#cbd5e1" stroke-width="1.2"/>
-              <text x="52" y="184" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹0 Cr</text>
+              <!-- ₹5 Cr: 168 - 5*4 = 148 -->
+              <line x1="58" y1="148" x2="835" y2="148" stroke="#f1f5f9" stroke-dasharray="2,2"/>
+              <text x="50" y="151" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="600" fill="#94a3b8">₹5 Cr</text>
 
-              <!-- YEAR 1: PILOT -->
-              <g transform="translate(130, 0)">
-                <!-- OpEx Bar (₹1.20 Cr) -->
-                <rect x="15" y="160" width="36" height="20" rx="3" fill="url(#barOpexGrad)"/>
-                <text x="33" y="153" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹1.2 Cr</text>
-                <!-- Rev Bar (₹1.85 Cr) -->
-                <rect x="57" y="148" width="36" height="32" rx="3" fill="url(#barRevGrad)"/>
-                <text x="75" y="141" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.8" font-weight="800" fill="#0b3b6f">₹1.85 Cr</text>
-                <!-- Breakeven Flag -->
-                <rect x="-10" y="96" width="128" height="24" rx="4" fill="#ecfdf5" stroke="#047857" stroke-width="1"/>
-                <text x="54" y="112" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="800" fill="#065f46">★ BREAKEVEN AT MONTH 14</text>
-                <line x1="54" y1="120" x2="54" y2="140" stroke="#047857" stroke-width="1.2" stroke-dasharray="2,2"/>
+              <!-- ₹0 Cr: y = 168 (Solid Baseline) -->
+              <line x1="58" y1="168" x2="835" y2="168" stroke="#94a3b8" stroke-width="1.5"/>
+              <text x="50" y="172" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#475569">₹0 Cr</text>
+
+              <!-- YEAR 1: PILOT (3 Pilot States) -->
+              <g transform="translate(85, 0)">
+                <!-- OpEx Bar (₹2.50 Cr, h = 10px -> y = 158) -->
+                <rect x="6" y="158" width="36" height="10" rx="2" fill="url(#barOpexGrad)"/>
+                <text x="24" y="146" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹2.50 Cr</text>
+
+                <!-- Rev Bar (₹1.50 Cr, h = 6px -> y = 162) -->
+                <rect x="54" y="162" width="36" height="6" rx="2" fill="url(#barRevGrad)"/>
+                <text x="72" y="156" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="800" fill="#0b3b6f">₹1.50 Cr</text>
+
                 <!-- Labels -->
-                <text x="54" y="202" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="12.5" font-weight="800" fill="#0f172a">Year 1 · 3 Pilot States</text>
-                <text x="54" y="218" text-anchor="middle" font-size="10.5" font-weight="600" fill="#64748b">150k Queries · Breakeven M14</text>
+                <text x="48" y="188" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#0f172a">Year 1 · 3 Pilot States</text>
+                <text x="48" y="204" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="600" fill="#64748b">75k Queries · Pilot Buildout</text>
+                <text x="48" y="219" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="700" fill="#991b1b">Net: -₹1.00 Cr (Setup Phase)</text>
               </g>
 
-              <!-- YEAR 2: EXPANSION -->
-              <g transform="translate(380, 0)">
-                <!-- OpEx Bar (₹3.30 Cr) -->
-                <rect x="15" y="128" width="36" height="52" rx="3" fill="url(#barOpexGrad)"/>
-                <text x="33" y="121" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#64748b">₹3.3 Cr</text>
-                <!-- Rev Bar (₹9.20 Cr) -->
-                <rect x="57" y="64" width="36" height="116" rx="3" fill="url(#barRevGrad)"/>
-                <text x="75" y="55" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="800" fill="#0b3b6f">₹9.20 Cr</text>
+              <!-- BREAKEVEN MILESTONE CALLOUT (Placed at Month 14: Q1 Year 2) -->
+              <g transform="translate(255, 0)">
+                <!-- Soft Green Highlight Column -->
+                <rect x="-56" y="44" width="112" height="124" rx="6" fill="#f0fdf4" opacity="0.8" stroke="#86efac" stroke-width="1.2" stroke-dasharray="3,3"/>
+                <!-- Top Dark Green Milestone Badge -->
+                <rect x="-52" y="48" width="104" height="22" rx="4" fill="#047857"/>
+                <text x="0" y="63" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="8.6" font-weight="800" fill="#ffffff">★ MONTH 14 BREAKEVEN</text>
+                <!-- Guideline to Month 14 Crossover on Baseline Timeline -->
+                <line x1="0" y1="70" x2="0" y2="168" stroke="#047857" stroke-width="1.8" stroke-dasharray="3,3"/>
+                <circle cx="0" cy="168" r="4.5" fill="#047857"/>
+                <!-- Informational Pill -->
+                <rect x="-44" y="90" width="88" height="34" rx="4" fill="#ffffff" stroke="#bbf7d0" stroke-width="1"/>
+                <text x="0" y="103" text-anchor="middle" font-family="'Inter', sans-serif" font-size="8.5" font-weight="700" fill="#047857">Rev &gt; OpEx Run-Rate</text>
+                <text x="0" y="116" text-anchor="middle" font-family="'Inter', sans-serif" font-size="8.2" font-weight="600" fill="#059669">Cash-Flow Positive</text>
+              </g>
+
+              <!-- YEAR 2: EXPANSION (8 States) -->
+              <g transform="translate(415, 0)">
+                <!-- OpEx Bar (₹3.30 Cr, h = 13px -> y = 155) -->
+                <rect x="6" y="155" width="36" height="13" rx="2" fill="url(#barOpexGrad)"/>
+                <text x="24" y="144" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#64748b">₹3.30 Cr</text>
+
+                <!-- Rev Bar (₹9.20 Cr, h = 37px -> y = 131, right below ₹10 Cr line at 128) -->
+                <rect x="54" y="131" width="36" height="37" rx="2" fill="url(#barRevGrad)"/>
+                <text x="72" y="122" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="800" fill="#0b3b6f">₹9.20 Cr</text>
+
                 <!-- Labels -->
-                <text x="56" y="202" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#0f172a">Year 2 · 8 Expansion States</text>
-                <text x="56" y="218" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.8" font-weight="700" fill="#1e40af">1.8M Queries · 64% Net Margin</text>
+                <text x="48" y="188" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#0f172a">Year 2 · 8 Expansion States</text>
+                <text x="48" y="204" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#1e40af">400k Queries · 64% Net Margin</text>
+                <text x="48" y="219" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="700" fill="#166534">Net Profit: +₹5.90 Cr</text>
               </g>
 
               <!-- YEAR 3: PAN-INDIA SCALE -->
-              <g transform="translate(630, 0)">
-                <!-- OpEx Bar (₹9.60 Cr) -->
-                <rect x="15" y="58" width="36" height="122" rx="3" fill="url(#barOpexGrad)"/>
-                <text x="33" y="51" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#64748b">₹9.6 Cr</text>
-                <!-- Rev Bar (₹34.50 Cr) -->
-                <rect x="57" y="46" width="36" height="134" rx="3" fill="url(#barRevGrad)"/>
-                <text x="75" y="38" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="800" fill="#0b3b6f">₹34.50 Cr</text>
+              <g transform="translate(640, 0)">
+                <!-- OpEx Bar (₹9.60 Cr, h = 38px -> y = 130, right below ₹10 Cr line at 128) -->
+                <rect x="6" y="130" width="36" height="38" rx="2" fill="url(#barOpexGrad)"/>
+                <text x="24" y="120" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#64748b">₹9.60 Cr</text>
+
+                <!-- Rev Bar (₹34.50 Cr, h = 138px -> y = 30, right below ₹35 Cr line at 28) -->
+                <rect x="54" y="30" width="34" height="138" rx="2" fill="url(#barRevGrad)"/>
+                <text x="72" y="20" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="12.5" font-weight="800" fill="#0b3b6f">₹34.50 Cr</text>
+
                 <!-- Labels -->
-                <text x="56" y="202" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#0f172a">Year 3 · Pan-India Scale</text>
-                <text x="56" y="218" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.8" font-weight="700" fill="#065f46">8.5M Queries · 72% Op. Margin</text>
+                <text x="48" y="188" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="13" font-weight="800" fill="#0f172a">Year 3 · Pan-India Scale</text>
+                <text x="48" y="204" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#065f46">1.5M Queries · 72% Op. Margin</text>
+                <text x="48" y="219" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="700" fill="#166534">Net Profit: +₹24.90 Cr</text>
               </g>
             </svg>
+
           </div>
         </div>
       </div>

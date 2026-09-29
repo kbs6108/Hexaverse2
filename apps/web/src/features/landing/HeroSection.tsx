@@ -11,7 +11,7 @@ const DOCK_ITEM =
   'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-ink-2 will-change-transform hover:bg-black/5 hover:text-ink';
 
 /** Anchored sections the dock tracks, in page order. */
-const SPY_SECTIONS = ['top', 'departments', 'how'] as const;
+const SPY_SECTIONS = ['top', 'departments', 'how', 'login'] as const;
 
 export function HeroSection() {
   const dockRef = useRef<HTMLElement>(null);
@@ -55,13 +55,21 @@ export function HeroSection() {
             <a data-dock-item data-active={active === 'top'} href="#top" className={DOCK_ITEM}>Home</a>
             <a data-dock-item data-active={active === 'departments'} href="#departments" className={DOCK_ITEM}>Departments</a>
             <a data-dock-item data-active={active === 'how'} href="#how" className={DOCK_ITEM}>How it works</a>
+            <a data-dock-item data-active={active === 'login'} href="#login" className={DOCK_ITEM}>Portal Login</a>
             <Link data-dock-item to="/help" className={DOCK_ITEM}>Guide</Link>
           </nav>
           <div className="flex items-center gap-2">
             {/* Mobile quick jump options */}
             <div className="flex items-center gap-1 md:hidden">
+              <a href="#login" className="rounded-full border border-line bg-panel px-2.5 py-1 text-xs font-semibold text-ink-2">Sign In</a>
               <Link to="/help" className="rounded-full border border-line bg-panel px-2.5 py-1 text-xs font-semibold text-ink-2">Guide</Link>
             </div>
+            <a
+              href="#login"
+              className="shrink-0 rounded-full border border-line bg-panel/90 px-3.5 py-2 text-[13px] font-semibold text-ink transition hover:bg-ground-2 hover:border-line-strong cursor-pointer"
+            >
+              Sign In
+            </a>
             <MapLaunch className="cta-glow shrink-0 rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-white transition hover:brightness-105 active:scale-[0.98]">
               Explore Platform
             </MapLaunch>
