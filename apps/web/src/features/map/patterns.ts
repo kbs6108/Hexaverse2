@@ -59,3 +59,18 @@ export function ensureImages(map: MLMap) {
   if (!map.hasImage(IMG.hatchViolet)) map.addImage(IMG.hatchViolet, hatch('#6B4E9A'));
   if (!map.hasImage(IMG.alert)) map.addImage(IMG.alert, alertIcon('#A63A2B'), { pixelRatio: 2 });
 }
+
+/** Resolves missing custom or third-party basemap icons (e.g. gate, toll_booth) with empty fallback */
+export function resolveStyleImage(map: MLMap, id: string) {
+  ensureImages(map);
+  if (!map.hasImage(id)) {
+    const c = document.createElement('canvas');
+    c.width = 1;
+    c.height = 1;
+    const ctx = c.getContext('2d');
+    if (ctx) {
+      map.addImage(id, ctx.getImageData(0, 0, 1, 1));
+    }
+  }
+}
+

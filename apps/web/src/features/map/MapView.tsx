@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { env } from '@/lib/env';
 import { api, qk } from '@/lib/api';
 import { useUI } from '@/lib/store';
-import { ensureImages } from './patterns';
+import { ensureImages, resolveStyleImage } from './patterns';
 import * as L from './styles/layers';
 import { HoverCard, type HoverInfo } from './HoverCard';
 import { RegionMarkers } from './RegionMarkers';
@@ -40,7 +40,7 @@ export function MapView() {
     const m = mapRef.current?.getMap();
     if (!m) return;
     ensureImages(m);
-    m.on('styleimagemissing', () => ensureImages(m));
+    m.on('styleimagemissing', (e: { id: string }) => resolveStyleImage(m, e.id));
     m.on('style.load', () => ensureImages(m));
   }, []);
 
