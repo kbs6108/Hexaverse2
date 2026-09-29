@@ -1764,6 +1764,59 @@ def write_db(conn, frames: Frame | list[Frame], only_mutable: bool = False) -> d
             [(s["ulpin"], s["date_a"], s["date_b"], s["ndvi_a"], s["ndvi_b"], s["ndbi_a"], s["ndbi_b"], s["d_ndvi"], s["d_ndbi"], s["label"], s["confidence"])
              for f in frames for s in f.s2_change])
         n.update(write_mutable(cur, frames))
+        # Materialize corridor & project impacts
+        cur.execute("""
+            INSERT INTO gis.project_parcel_impacts (
+                ulpin, project_id, impact_type, total_area_sqm, affected_area_sqm, residual_area_sqm,
+                impact_pct, affected_geom, guideline_rate_per_sqm, base_land_value, solatium_amount,
+                structural_damage_estimate, total_compensation_offer, consent_settlement_total,
+                tdr_units_offered_sqm, severance_risk, status, hearing_date
+            )
+            SELECT
+                p.ulpin,
+                prj.id AS project_id,
+                CASE WHEN prj.kind = 'metro' THEN 'partial_metro_corridor' WHEN prj.kind = 'road' THEN 'partial_road_widening' ELSE 'civic_complex' END AS impact_type,
+                ROUND(ST_Area(p.geom::geography)::numeric, 1) AS total_area_sqm,
+                ROUND(ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography)::numeric, 1) AS affected_area_sqm,
+                ROUND((ST_Area(p.geom::geography) - ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography))::numeric, 1) AS residual_area_sqm,
+                ROUND((ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography) / NULLIF(ST_Area(p.geom::geography), 0) * 100)::numeric, 1) AS impact_pct,
+                ST_Multi(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)) AS affected_geom,
+                COALESCE(f.guideline_value_per_sqm, 22500.0) AS guideline_rate_per_sqm,
+                ROUND((ROUND(ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography)::numeric, 1) * COALESCE(f.guideline_value_per_sqm, 22500.0) * prj.compensation_multiplier)::numeric, 2) AS base_land_value,
+                ROUND((ROUND(ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography)::numeric, 1) * COALESCE(f.guideline_value_per_sqm, 22500.0) * prj.compensation_multiplier * (prj.solatium_pct / 100.0))::numeric, 2) AS solatium_amount,
+                CASE WHEN prj.kind = 'road' THEN 250000.0 ELSE 150000.0 END AS structural_damage_estimate,
+                ROUND(((ROUND(ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography)::numeric, 1) * COALESCE(f.guideline_value_per_sqm, 22500.0) * prj.compensation_multiplier * 2.0) + (CASE WHEN prj.kind = 'road' THEN 250000.0 ELSE 150000.0 END))::numeric, 2) AS total_compensation_offer,
+                ROUND(((ROUND(ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography)::numeric, 1) * COALESCE(f.guideline_value_per_sqm, 22500.0) * prj.compensation_multiplier * 2.25) + (CASE WHEN prj.kind = 'road' THEN 250000.0 ELSE 150000.0 END))::numeric, 2) AS consent_settlement_total,
+                ROUND((ROUND(ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography)::numeric, 1) * prj.tdr_ratio)::numeric, 1) AS tdr_units_offered_sqm,
+                ((ST_Area(p.geom::geography) - ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography)) < 150.0) AS severance_risk,
+                'notice_published' AS status,
+                prj.objection_deadline + INTERVAL '5 days' AS hearing_date
+            FROM tract.parcels p
+            JOIN gis.projects prj ON ST_Intersects(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)
+            LEFT JOIN dept_fiscal.valuation f ON f.ulpin = p.ulpin
+            WHERE ST_Area(ST_Intersection(p.geom, CASE WHEN ST_GeometryType(prj.geom) = 'ST_LineString' THEN ST_Buffer(prj.geom::geography, prj.buffer_width_m)::geometry ELSE prj.geom END)::geography) > 10.0
+            ON CONFLICT (ulpin, project_id) DO NOTHING;
+        """)
+        # Specific story parcel 127/1 NHAI expressway severance
+        cur.execute("""
+            INSERT INTO gis.project_parcel_impacts (
+                ulpin, project_id, impact_type, total_area_sqm, affected_area_sqm, residual_area_sqm,
+                impact_pct, guideline_rate_per_sqm, base_land_value, solatium_amount,
+                structural_damage_estimate, total_compensation_offer, consent_settlement_total,
+                tdr_units_offered_sqm, severance_risk, status, hearing_date
+            ) VALUES (
+                'TFCM91KDED50FD', 1, 'partial_road_widening', 11761.9, 3763.8, 7998.1,
+                32.0, 22500.0, 84685500.0, 84685500.0,
+                250000.0, 169621000.0, 190792375.0,
+                7527.6, true, 'notice_published', CURRENT_DATE + INTERVAL '45 days'
+            )
+            ON CONFLICT (ulpin, project_id) DO UPDATE SET
+                affected_area_sqm = EXCLUDED.affected_area_sqm,
+                residual_area_sqm = EXCLUDED.residual_area_sqm,
+                impact_pct = EXCLUDED.impact_pct,
+                severance_risk = EXCLUDED.severance_risk,
+                status = EXCLUDED.status;
+        """)
     conn.commit()
     return n
 
