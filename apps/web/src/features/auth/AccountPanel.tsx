@@ -27,6 +27,7 @@ import { useTranslation } from '@/lib/i18n';
 import { SlidingTabs } from '@/components/SlidingTabs';
 import { Kbd } from '@/components/Kbd';
 import { OwnerPrivacyModal } from '@/features/parcel/OwnerPrivacyModal';
+import { GoogleSignInPopup, GoogleGLogo } from './GoogleSignInPopup';
 
 interface AccountPanelProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
   const { parcel, hasOwnedLand, goToMyParcel } = useMyParcel();
   const [filter, setFilter] = useState<'all' | 'citizen' | 'officer' | 'admin'>('all');
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+  const [googlePopupOpen, setGooglePopupOpen] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customRole, setCustomRole] = useState<'citizen' | 'officer'>('citizen');
 
@@ -121,6 +123,46 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
                   </div>
                   <p className="text-xs text-ink-3 truncate mt-0.5">{user.email || t('account.authCitizen')}</p>
                 </div>
+              </div>
+
+              {/* Google Sign In / Account Integration */}
+              <div className="rounded-2xl border border-line bg-panel-2/70 p-4 shadow-2xs">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <GoogleGLogo size={16} />
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
+                      Google Authentication
+                    </h4>
+                  </div>
+                  <span className="text-[10.5px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                    {user.email ? 'Connected' : 'OAuth Ready'}
+                  </span>
+                </div>
+
+                {user.email ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-panel border border-line">
+                    <div className="min-w-0 pr-2">
+                      <p className="text-xs font-semibold text-ink truncate">{user.email}</p>
+                      <p className="text-[10.5px] text-ink-3">Google Sign-in active</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setGooglePopupOpen(true)}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-line hover:bg-ground-2 text-ink transition-colors cursor-pointer shrink-0"
+                    >
+                      Switch
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setGooglePopupOpen(true)}
+                    className="w-full flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl border border-line bg-panel hover:bg-ground-2 text-ink text-xs font-semibold shadow-xs transition-all cursor-pointer group"
+                  >
+                    <GoogleGLogo size={16} />
+                    <span className="group-hover:text-primary transition-colors">Sign in with Google</span>
+                  </button>
+                )}
               </div>
 
               {/* Language Selection Card */}
@@ -502,6 +544,11 @@ export function AccountPanel({ isOpen, onClose }: AccountPanelProps) {
           village={parcel.village}
         />
       )}
+      <GoogleSignInPopup
+        isOpen={googlePopupOpen}
+        onClose={() => setGooglePopupOpen(false)}
+        floatingOneTap={false}
+      />
     </AnimatePresence>
   );
 }

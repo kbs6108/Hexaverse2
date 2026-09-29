@@ -6,21 +6,39 @@ import { MapLaunch } from './MapLaunch';
 import { GovBadge } from '@/features/marketing/GovStrip';
 import { BorderBeam } from '@/components/BorderBeam';
 import { createTopDockController } from './top-dock-controller';
+import { GoogleSignInPopup, GoogleGLogo } from '@/features/auth/GoogleSignInPopup';
+import { useAuth } from '@/lib/auth';
 
 const DOCK_ITEM =
   'atd-modern__item inline-flex origin-center items-center rounded-full px-3.5 py-1.5 text-[13px] text-ink-2 will-change-transform hover:bg-black/5 hover:text-ink';
 
 /** Anchored sections the dock tracks, in page order. */
-const SPY_SECTIONS = ['top', 'departments', 'how', 'login'] as const;
+const SPY_SECTIONS = ['top', 'departments', 'how'] as const;
 
 export function HeroSection() {
   const dockRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState<string>('top');
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [showOneTap, setShowOneTap] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const dock = dockRef.current;
     if (!dock) return;
     return createTopDockController(dock, () => ({ proximity: 140, spring: 0.22, damping: 0.55, widthGrowth: 32, heightGrowth: 32, drop: 14 }));
+  }, []);
+
+  // Show subtle Google One Tap popup after 1.5 seconds on landing page if not dismissed this session
+  useEffect(() => {
+    try {
+      const dismissed = sessionStorage.getItem('tract_onetap_dismissed');
+      if (!dismissed) {
+        const timer = setTimeout(() => setShowOneTap(true), 1500);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // ignore storage access issues
+    }
   }, []);
 
   // Scrollspy: mark the dock item whose section currently occupies mid-viewport.
@@ -38,8 +56,31 @@ export function HeroSection() {
     return () => observer.disconnect();
   }, []);
 
+  const handleDismissOneTap = () => {
+    setShowOneTap(false);
+    try {
+      sessionStorage.setItem('tract_onetap_dismissed', '1');
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <>
+      {/* Floating Google One Tap Popup in top-right corner of landing page */}
+      <GoogleSignInPopup
+        isOpen={showOneTap && !showGoogleModal}
+        onClose={handleDismissOneTap}
+        floatingOneTap={true}
+      />
+
+      {/* Centered Modal when clicking Sign In directly */}
+      <GoogleSignInPopup
+        isOpen={showGoogleModal}
+        onClose={() => setShowGoogleModal(false)}
+        floatingOneTap={false}
+      />
+
       {/* Floating Landing Dock: Outside section so it never gets trapped by section stacking contexts */}
       <div className="pointer-events-none fixed left-0 right-0 top-5 z-[99999] flex justify-center px-4" style={{ zIndex: 99999 }}>
         <header
@@ -55,21 +96,31 @@ export function HeroSection() {
             <a data-dock-item data-active={active === 'top'} href="#top" className={DOCK_ITEM}>Home</a>
             <a data-dock-item data-active={active === 'departments'} href="#departments" className={DOCK_ITEM}>Departments</a>
             <a data-dock-item data-active={active === 'how'} href="#how" className={DOCK_ITEM}>How it works</a>
-            <a data-dock-item data-active={active === 'login'} href="#login" className={DOCK_ITEM}>Portal Login</a>
             <Link data-dock-item to="/help" className={DOCK_ITEM}>Guide</Link>
           </nav>
           <div className="flex items-center gap-2">
             {/* Mobile quick jump options */}
             <div className="flex items-center gap-1 md:hidden">
-              <a href="#login" className="rounded-full border border-line bg-panel px-2.5 py-1 text-xs font-semibold text-ink-2">Sign In</a>
+              <button
+                type="button"
+                onClick={() => setShowGoogleModal(true)}
+                className="flex items-center gap-1.5 rounded-full border border-line bg-panel px-2.5 py-1 text-xs font-semibold text-ink-2"
+              >
+                <GoogleGLogo size={12} />
+                <span>{user ? user.name.split(' ')[0] : 'Sign In'}</span>
+              </button>
               <Link to="/help" className="rounded-full border border-line bg-panel px-2.5 py-1 text-xs font-semibold text-ink-2">Guide</Link>
             </div>
-            <a
-              href="#login"
-              className="shrink-0 rounded-full border border-line bg-panel/90 px-3.5 py-2 text-[13px] font-semibold text-ink transition hover:bg-ground-2 hover:border-line-strong cursor-pointer"
+            {/* Desktop Sign In Button */}
+            <button
+              type="button"
+              onClick={() => setShowGoogleModal(true)}
+              className="hidden sm:flex shrink-0 items-center gap-2 rounded-full border border-line bg-panel/90 px-3.5 py-2 text-[13px] font-semibold text-ink transition hover:bg-ground-2 hover:border-line-strong cursor-pointer"
+              title={user ? `Signed in as ${user.name}` : 'Sign in with Google'}
             >
-              Sign In
-            </a>
+              <GoogleGLogo size={15} />
+              <span className="max-w-[120px] truncate">{user ? user.name : 'Sign In'}</span>
+            </button>
             <MapLaunch className="cta-glow shrink-0 rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-white transition hover:brightness-105 active:scale-[0.98]">
               Explore Platform
             </MapLaunch>

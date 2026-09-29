@@ -32,7 +32,6 @@ import { SpotlightCard } from '@/components/SpotlightCard';
 import { NumberTicker } from '@/components/NumberTicker';
 import { BorderBeam } from '@/components/BorderBeam';
 import { Marquee } from '@/components/Marquee';
-import { PortalLoginSection } from './PortalLoginSection';
 
 /* =========================================================================
    1. CINEMATIC NARRATIVE SCENES (System & Land Scenes)
@@ -1408,8 +1407,6 @@ export function StorySections() {
         detail="A connected record turns a maze of departments into a clear next step."
       />
 
-      {/* 09 / Sovereign Portal Login */}
-      <PortalLoginSection />
 
       {/* 10 / Final CTA & Government Compliance Strip */}
       <FinalCTASection />
