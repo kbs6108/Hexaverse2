@@ -1,0 +1,180 @@
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Card, CardBody, CardHeader } from '@/components/Card';
+import { Button } from '@/components/Button';
+import { Field, Input } from '@/components/Field';
+import { useAuth } from '@/lib/auth';
+import { LogoMark } from '@/app/Shell';
+import { Badge } from '@/components/Badge';
+import { useQueryClient } from '@tanstack/react-query';
+
+export function LoginPage() {
+  const { mode, user, signInWithGoogle, signInWithEmail, devUsers, setDevUser } = useAuth();
+  const { next } = useSearch({ from: '/login' });
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [signedInAs, setSignedInAs] = useState<string | null>(null);
+  const [customCitizenName, setCustomCitizenName] = useState('');
+  const doneTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (doneTimer.current !== null) window.clearTimeout(doneTimer.current);
+    },
+    [],
+  );
+
+  /** Confirm the sign-in with a quick toast, then continue — to the page that
+   *  sent us here (`next`, set by the role guard) or to the map by default. */
+  const done = (label?: string) => {
+    const to = next && next.startsWith('/') ? next : '/map';
+    setSignedInAs(label ?? 'Signed in');
+    doneTimer.current = window.setTimeout(() => void navigate({ to }), 900);
+  };
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr(null);
+    try {
+      await signInWithEmail(email, password);
+      done(email);
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : 'Sign-in failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto flex max-w-md flex-col gap-4 px-4 py-14">
+      <Link to="/welcome" className="inline-flex w-fit items-center gap-1 text-xs font-medium text-ink-3 hover:text-ink">
+        <ArrowLeft size={14} /> Back to overview
+      </Link>
+
+      <div className="flex items-center gap-3">
+        <LogoMark size={36} />
+        <div>
+          <h1 className="text-2xl font-semibold">Tract</h1>
+          <p className="text-sm text-ink-3">Parcel-centric land governance · AP · TN · TG Pilot Jurisdictions</p>
+        </div>
+      </div>
+
+      {mode === 'dev' ? (
+        <Card>
+          <CardHeader title="Authorized identities" subtitle="Select an authenticated citizen or departmental officer identity" />
+          <CardBody className="flex flex-col gap-1.5 max-h-[480px] overflow-y-auto scroll-thin">
+            {devUsers.map((d) => (
+              <button
+                key={d.id}
+                disabled={!!signedInAs}
+                onClick={() => {
+                  setDevUser(d.id);
+                  qc.clear();
+                  done(d.label);
+                }}
+                className="flex items-center justify-between rounded-lg border border-line px-3 py-2 text-left text-sm hover:border-primary hover:bg-primary-soft/40 disabled:pointer-events-none disabled:opacity-60 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2 min-w-0 pr-2">
+                  <span className="font-medium truncate">{d.label}</span>
+                  {'state' in d && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-ground-2 text-ink-3">
+                      {d.state}
+                    </span>
+                  )}
+                </div>
+                <span className="flex items-center gap-2 text-xs text-ink-3 shrink-0">
+                  <span className="truncate max-w-[170px]">{d.hint}</span>
+                  <Badge mono>{d.id.split(':')[0]}</Badge>
+                </span>
+              </button>
+            ))}
+            {user && <p className="pt-2 text-xs text-ink-3">Currently: {user.name}</p>}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!customCitizenName.trim()) return;
+                const devId = `citizen::${customCitizenName.trim()}`;
+                setDevUser(devId);
+                qc.clear();
+                done(customCitizenName.trim());
+              }}
+              className="mt-3 pt-3 border-t border-line flex flex-col gap-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-ink">Register / Test Custom Citizen</span>
+                <Badge tone="primary">Multi-device</Badge>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter citizen name (e.g. Ramesh Naidu)"
+                  value={customCitizenName}
+                  onChange={(e) => setCustomCitizenName(e.target.value)}
+                  className="flex-1 bg-ground-2 border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder:text-ink-3 focus:outline-none focus:border-primary"
+                />
+                <Button type="submit" variant="primary" size="sm" disabled={!customCitizenName.trim() || !!signedInAs}>
+                  Continue
+                </Button>
+              </div>
+              <p className="text-[11px] text-ink-3">
+                Open Tract in another browser or incognito window with a different name to test simultaneous multi-citizen actions.
+              </p>
+            </form>
+          </CardBody>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader title="Sign in" subtitle="Roles come from Firebase custom claims. New accounts default to citizen." />
+          <CardBody className="flex flex-col gap-3">
+            <Button variant="primary" onClick={() => void signInWithGoogle().then(() => done('Signed in with Google')).catch((e: Error) => setErr(e.message))}>
+              Continue with Google
+            </Button>
+            <div className="flex items-center gap-2 text-xs text-ink-3">
+              <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
+            </div>
+            <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
+              <Field label="Email" htmlFor="email">
+                <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </Field>
+              <Field label="Password" htmlFor="password">
+                <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </Field>
+              {err && <p className="text-sm text-brick" role="alert">{err}</p>}
+              <Button type="submit" variant="secondary" loading={busy}>
+                Sign in with email
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+      )}
+
+      <p className="text-center text-xs text-ink-3">
+        Just exploring?{' '}
+        <Link to="/map" className="font-medium text-primary hover:underline">
+          Continue as guest to the map
+        </Link>
+      </p>
+
+      {/* Quick signed-in confirmation, then off to the map */}
+      {signedInAs && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fade-up fixed bottom-8 left-1/2 z-[10000] flex -translate-x-1/2 items-center gap-2.5 rounded-full border border-primary/30 bg-panel px-5 py-3 shadow-panel"
+        >
+          <CheckCircle2 size={18} className="text-primary" />
+          <span className="text-sm font-medium text-ink">
+            {signedInAs} <span className="text-ink-3">· opening the map…</span>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
