@@ -1,16 +1,21 @@
 # Tract (Hexaverse) · Integrated Cadastral GIS & Digital Public Infrastructure for Land Governance
 
-[![CI Status](https://img.shields.io/badge/CI-111%20Passed%20(100%25)-emerald?style=for-the-badge&logo=github-actions)](https://github.com/kbs6108/Hexaverse2/actions)
+[![CI Status](https://img.shields.io/badge/CI-105%20Passed%20(100%25)-emerald?style=for-the-badge&logo=github-actions)](https://github.com/kbs6108/Hexaverse2/actions)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostGIS 3.4](https://img.shields.io/badge/PostGIS-3.4%20(Postgres%2016)-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgis.net/)
-[![ISO 19152](https://img.shields.io/badge/Standard-ISO%2019152%20LADM-blue?style=for-the-badge)](https://www.iso.org/standard/51206.html)
-[![DPDP Act 2023](https://img.shields.io/badge/Compliance-DPDP%20Act%202023-purple?style=for-the-badge)](https://www.meity.gov.in/)
+[![3D Cadastre](https://img.shields.io/badge/Model-3D%20Cadastre%20(LADM)-blue?style=for-the-badge)](https://www.iso.org/standard/51206.html)
+[![Statutory Alignment](https://img.shields.io/badge/Statutory%20Alignment-DPDP%20%7C%20RFCTLARR%20%7C%20RoR-purple?style=for-the-badge)](https://www.meity.gov.in/)
+[![FOSS](https://img.shields.io/badge/License-100%25%20FOSS-success?style=for-the-badge)](LICENSE)
 
 > **Smart India Hackathon 2026** · Problem Statement **SIH26014** (Ministry of Rural Development / Department of Land Resources)  
-> *"An Integrated GIS-based Digital Public Infrastructure for Land Governance"*
+> **Team ID:** `145336` · **Team Name:** `Hexaverse`  
+> *"An Integrated GIS-based Digital Public Infrastructure for Land Governance"*  
+> 
+> 📄 **Official Presentation (PDF):** [docs/plan/SIH2026_TRACT_PRESENTATION.pdf](docs/plan/SIH2026_TRACT_PRESENTATION.pdf)  
+> 🖥️ **Interactive Deck (HTML):** [docs/plan/sih_presentation_deck.html](docs/plan/sih_presentation_deck.html)
 
 ---
 
@@ -220,13 +225,14 @@ Hexaverse2/
 
 ---
 
-## ⚖️ Statutory & Standards Compliance
+## ⚖️ Statutory & Standards Alignment
 
-* **ISO 19152 (LADM)**: Land Administration Domain Model compliance for 3D volumetric parcels, legal spaces, and strata rights.
-* **DPDP Act 2023**: Purpose-bound identity tokenization and cryptographic masking of citizen land holdings.
+* **3D Cadastre (LADM Principles)**: Multi-level spatial partitioning aligned with ISO 19152 volumetric concepts for 3D parcels, subsurface infrastructure, and strata units.
+* **DPDP Act 2023 (§6(1))**: Purpose-bound identity tokenization and cryptographic masking of citizen land holdings.
 * **State Survey and Boundaries Act**: Strict area variance bounds ($\le \pm 15\%$) for resurvey adjustments.
-* **RFCTLARR Act 2013**: Right to Fair Compensation and Transparency in Land Acquisition, Rehabilitation and Resettlement (§15 objections, §23A/§64 consent awards).
-* **OGC API Features & MVT**: Open Geospatial Consortium compliant Mapbox Vector Tile generation directly from PostGIS.
+* **RFCTLARR Act 2013 (§23A / §64)**: Automated severance compensation and statutory solatium calculations for infrastructure corridor takes.
+* **Indian Evidence Act (§65B)**: SHA-256 cryptographic provenance hashing and audit trail logging supporting electronic evidence verification.
+* **Vector Tiles (MVT)**: Efficient Mapbox Vector Tile streaming directly from PostGIS spatial indexes.
 
 ---
 
