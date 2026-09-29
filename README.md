@@ -12,9 +12,7 @@
 > **Smart India Hackathon 2026** · Problem Statement **SIH26014** (Ministry of Rural Development / Department of Land Resources)  
 > **Team ID:** `145336` · **Team Name:** `Hexaverse`  
 > *"An Integrated GIS-based Digital Public Infrastructure for Land Governance"*  
-> 
-> 📄 **Official Presentation (PDF):** [docs/plan/SIH2026_TRACT_PRESENTATION.pdf](docs/plan/SIH2026_TRACT_PRESENTATION.pdf)  
-> 🖥️ **Interactive Deck (HTML):** [docs/plan/sih_presentation_deck.html](docs/plan/sih_presentation_deck.html)
+> 📄 **Official Presentation (PDF):** [docs/plan/SIH2026_TRACT_PRESENTATION.pdf](docs/plan/SIH2026_TRACT_PRESENTATION.pdf)
 
 ---
 

@@ -37,3 +37,4 @@ firebase-debug.log
 .firebaserc
 !.firebaserc.example
 dist/
+docs/plan/*.html
