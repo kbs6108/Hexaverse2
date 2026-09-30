@@ -72,7 +72,7 @@ if [[ "$SKIP_BUILD" != "1" ]]; then
 fi
 
 # ---- secrets -------------------------------------------------------------------------------------
-secret_names=(DATABASE_URL EVENTS_SHARED_SECRET REPORT_HMAC_SECRET GEMINI_API_KEY)
+secret_names=(DATABASE_URL EVENTS_SHARED_SECRET REPORT_HMAC_SECRET GEMINI_API_KEY NVIDIA_API_KEY)
 secrets_file="$here/secrets.env"
 project_number="$(gcloud projects describe "$PROJECT_ID" --format 'value(projectNumber)')"
 run_sa="${project_number}-compute@developer.gserviceaccount.com"
@@ -100,7 +100,7 @@ for key in "${secret_names[@]}"; do
     gcloud secrets add-iam-policy-binding "$key" --member "serviceAccount:${run_sa}" \
       --role roles/secretmanager.secretAccessor --quiet >/dev/null
     set_secrets+=("${key}=${key}:latest")
-  elif [[ "$key" != "GEMINI_API_KEY" ]]; then
+  elif [[ "$key" != "GEMINI_API_KEY" && "$key" != "NVIDIA_API_KEY" ]]; then
     echo "ERROR: secret ${key} does not exist. Create infra/cloudrun/secrets.env (see secrets.env.example)." >&2
     exit 1
   fi
